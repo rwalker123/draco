@@ -13,6 +13,7 @@ import { useGolfCourses } from '../../../../../hooks/useGolfCourses';
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../utils/apiResult';
 import { useRole } from '../../../../../context/RoleContext';
+import { useNotifications } from '../../../../../hooks/useNotifications';
 
 const GolfCoursesPage: React.FC = () => {
   const params = useParams();
@@ -33,7 +34,7 @@ const GolfCoursesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   useEffect(() => {
     if (!accountId) return;
@@ -124,7 +125,7 @@ const GolfCoursesPage: React.FC = () => {
       const addResult = await addCourseToLeague(course.courseId);
 
       if (addResult.success) {
-        setSuccessMessage('Course added to league');
+        showNotification('Course added to league', 'success');
         await refreshCourses();
         return { success: true };
       } else {
@@ -138,7 +139,7 @@ const GolfCoursesPage: React.FC = () => {
       const addResult = await addCourseToLeague(result.data.id);
 
       if (addResult.success) {
-        setSuccessMessage('Course imported and added to league');
+        showNotification('Course imported and added to league', 'success');
         await refreshCourses();
         return { success: true, data: result.data };
       } else {
@@ -159,7 +160,7 @@ const GolfCoursesPage: React.FC = () => {
       const result = await removeCourseFromLeague(leagueCourse.course.id);
 
       if (result.success) {
-        setSuccessMessage('Course removed from league');
+        showNotification('Course removed from league', 'success');
         await refreshCourses();
       } else {
         setError(result.error);
@@ -238,19 +239,21 @@ const GolfCoursesPage: React.FC = () => {
       />
 
       <Snackbar
-        open={Boolean(successMessage)}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={() => setSuccessMessage(null)}
-          severity="success"
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
+        {notification ? (
+          <Alert
+            onClose={hideNotification}
+            severity={notification.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {notification.message}
+          </Alert>
+        ) : undefined}
       </Snackbar>
     </main>
   );

@@ -4,7 +4,7 @@ import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
 import { createContextDataService } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
-import { FeedbackState, Role, UseUserManagementReturn } from '../types/users';
+import { Role, UseUserManagementReturn } from '../types/users';
 import { useUserDataManager } from './useUserDataManager';
 import {
   BaseContactType,
@@ -84,7 +84,10 @@ const paginationReducer = (state: PaginationState, action: PaginationAction): Pa
  * Custom hook for user management functionality
  * Centralizes all state and logic for user management operations
  */
-export const useUserManagement = (accountId: string): UseUserManagementReturn => {
+export const useUserManagement = (
+  accountId: string,
+  options?: { onFeedback?: (message: string, severity: 'error' | 'success') => void },
+): UseUserManagementReturn => {
   const { token } = useAuth();
   const { currentSeasonId, fetchCurrentSeason } = useCurrentSeason(accountId);
 
@@ -101,7 +104,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Other state
   const [roles, setRoles] = useState<Role[]>([]);
-  const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Search state
@@ -158,12 +160,9 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   // New architecture hooks
   const dataManager = useUserDataManager(dispatch);
 
-  // Helper to set error feedback
   const setFeedbackError = (message: string | null) => {
-    if (message === null) {
-      setFeedback(null);
-    } else {
-      setFeedback({ severity: 'error', message });
+    if (message !== null) {
+      options?.onFeedback?.(message, 'error');
     }
   };
 
@@ -946,9 +945,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     // State
     users,
     roles,
-    loading: isCurrentlyLoading, // Use loading state
-    isInitialLoad, // Expose initial load state
-    feedback,
+    loading: isCurrentlyLoading,
+    isInitialLoad,
     page,
     rowsPerPage,
     hasNext,
@@ -994,7 +992,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     closeDeleteContactDialog,
     setSelectedUser,
     setSearchTerm,
-    setFeedback,
     loadContextData,
     getRoleDisplayName: getRoleDisplayNameHelper,
     handleRoleAssigned,

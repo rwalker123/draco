@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Alert, FormControlLabel, Stack, Switch, Typography } from '@mui/material';
+import { Alert, FormControlLabel, Snackbar, Stack, Switch, Typography } from '@mui/material';
 import type { AccountSettingState } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 type ToggleKey = 'gameResults' | 'announcements' | 'workouts';
 
@@ -33,7 +34,7 @@ export const BlueskyPostSettingsWidget: React.FC<BlueskyPostSettingsWidgetProps>
   postWorkoutUpdating = false,
   onUpdatePostWorkout,
 }) => {
-  const [error, setError] = React.useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [savingKey, setSavingKey] = React.useState<ToggleKey | null>(null);
 
   const postGameResultsEnabled = resolveSettingValue(postGameResultsSetting);
@@ -46,20 +47,20 @@ export const BlueskyPostSettingsWidget: React.FC<BlueskyPostSettingsWidgetProps>
     updater?: (enabled: boolean) => Promise<void>,
   ) => {
     if (!updater) {
-      setError('Updating this Bluesky setting is not available.');
+      showNotification('Updating this Bluesky setting is not available.', 'error');
       return;
     }
 
     const nextValue = !currentValue;
     setSavingKey(toggleKey);
-    setError(null);
+    hideNotification();
 
     try {
       await updater(nextValue);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to update Bluesky posting settings.';
-      setError(message);
+      showNotification(message, 'error');
     } finally {
       setSavingKey(null);
     }
@@ -77,7 +78,18 @@ export const BlueskyPostSettingsWidget: React.FC<BlueskyPostSettingsWidgetProps>
         <Typography variant="body2" color="text.secondary">
           Choose which updates are posted using your saved Bluesky credentials.
         </Typography>
-        {error && <Alert severity="error">{error}</Alert>}
+        <Snackbar
+          open={!!notification}
+          autoHideDuration={6000}
+          onClose={hideNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          {notification ? (
+            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+              {notification.message}
+            </Alert>
+          ) : undefined}
+        </Snackbar>
         <FormControlLabel
           control={
             <Switch

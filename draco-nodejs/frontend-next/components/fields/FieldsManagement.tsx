@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { Alert, Fab, Snackbar, Stack } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { FieldType } from '@draco/shared-schemas';
 import { useRole } from '../../context/RoleContext';
 import { useDialog } from '../../hooks/useDialog';
+import { useNotifications } from '../../hooks/useNotifications';
 import FieldFormDialog from './FieldFormDialog';
 import FieldDeleteDialog from './FieldDeleteDialog';
 import { FieldsView, type FieldsViewRef } from './FieldsView';
@@ -29,15 +30,11 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
   const formDialog = useDialog<FormDialogData>();
   const deleteDialog = useDialog<FieldType>();
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const handleDialogSuccess = (result: { message: string; field: FieldType }) => {
-    setSuccessMessage(result.message);
+    showNotification(result.message, 'success');
     viewRef.current?.refresh();
-  };
-
-  const handleSnackbarClose = () => {
-    setSuccessMessage(null);
   };
 
   return (
@@ -89,19 +86,21 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
       />
 
       <Snackbar
-        open={Boolean(successMessage)}
+        open={!!notification}
         autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity="success"
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
+        {notification ? (
+          <Alert
+            onClose={hideNotification}
+            severity={notification.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {notification.message}
+          </Alert>
+        ) : undefined}
       </Snackbar>
 
       {canManage ? (

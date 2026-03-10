@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   FormControlLabel,
+  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -20,6 +21,7 @@ import { updateAccountInstagramSettings } from '@draco/shared-api-client';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface InstagramIntegrationAdminWidgetProps {
   account: AccountType;
@@ -46,8 +48,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
     Boolean(syncToGallerySetting?.effectiveValue ?? syncToGallerySetting?.value ?? false),
   );
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   useEffect(() => {
     setInstagramUsername(account.socials?.instagramHandle ?? '');
@@ -71,11 +72,10 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    hideNotification();
 
     if (!hasPendingChanges) {
-      setError('Update at least one field before saving.');
+      showNotification('Update at least one field before saving.', 'error');
       return;
     }
 
@@ -88,7 +88,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
       const currentHandle = (account.socials?.instagramHandle ?? '').trim();
 
       if (clearCredentials && !normalizedUserId) {
-        setError('Instagram Business User ID is required to clear tokens.');
+        showNotification('Instagram Business User ID is required to clear tokens.', 'error');
         setSaving(false);
         return;
       }
@@ -127,12 +127,12 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
         await onUpdateSyncToGallery(syncToGallery);
       }
 
-      setSuccess('Instagram settings saved.');
+      showNotification('Instagram settings saved.', 'success');
       setInstagramUserId('');
       setClearCredentials(false);
     } catch (err) {
       console.error('Failed to save Instagram settings', err);
-      setError('Unable to save Instagram settings. Please try again.');
+      showNotification('Unable to save Instagram settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -161,9 +161,6 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
               https://business.facebook.com/settings/instagram-accounts
             </a>
           </Alert>
-
-          {error && <Alert severity="error">{error}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
 
           <Stack spacing={2}>
             <TextField
@@ -226,6 +223,18 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
             </Button>
           </Box>
         </Stack>
+        <Snackbar
+          open={!!notification}
+          autoHideDuration={6000}
+          onClose={hideNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          {notification ? (
+            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+              {notification.message}
+            </Alert>
+          ) : undefined}
+        </Snackbar>
       </form>
     </WidgetShell>
   );

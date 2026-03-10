@@ -8,11 +8,13 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 import { useDiscordIntegration } from '@/hooks/useDiscordIntegration';
+import { useNotifications } from '@/hooks/useNotifications';
 import WidgetShell from '@/components/ui/WidgetShell';
 
 interface DiscordIntegrationCardProps {
@@ -37,10 +39,11 @@ const formatTimestamp = (value?: string | null) => {
 
 const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ accountId }) => {
   const { getLinkStatus, startLink, unlinkDiscord } = useDiscordIntegration();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [status, setStatus] = useState<DiscordLinkStatusType | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [action, setAction] = useState<'connect' | 'unlink' | 'refresh' | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const isLinked = Boolean(status?.linked);
   const disableActions = !accountId || action !== null;
@@ -56,7 +59,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
 
     const loadStatus = async () => {
       setLoading(true);
-      setError(null);
+      setLoadError(null);
 
       try {
         const payload = await getLinkStatus(accountId, controller.signal);
@@ -66,7 +69,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
         if (controller.signal.aborted) return;
         const message =
           err instanceof Error ? err.message : 'Something went wrong while loading Discord status.';
-        setError(message);
+        setLoadError(message);
         setStatus(null);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -86,7 +89,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     }
 
     setAction('connect');
-    setError(null);
+    hideNotification();
 
     try {
       const { authorizationUrl } = await startLink(accountId);
@@ -94,7 +97,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to start the Discord linking process.';
-      setError(message);
+      showNotification(message, 'error');
     } finally {
       setAction(null);
     }
@@ -106,14 +109,14 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     }
 
     setAction('unlink');
-    setError(null);
+    hideNotification();
 
     try {
       const payload = await unlinkDiscord(accountId);
       setStatus(payload);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to unlink the Discord account.';
-      setError(message);
+      showNotification(message, 'error');
     } finally {
       setAction(null);
     }
@@ -125,7 +128,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     }
 
     setAction('refresh');
-    setError(null);
+    hideNotification();
 
     try {
       const payload = await getLinkStatus(accountId);
@@ -133,7 +136,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Something went wrong while loading Discord status.';
-      setError(message);
+      showNotification(message, 'error');
     } finally {
       setAction(null);
     }
@@ -178,6 +181,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
             size="small"
           />
         </Box>
+        {loadError && <Alert severity="error">{loadError}</Alert>}
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
             <CircularProgress size={28} />
@@ -203,8 +207,6 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
                 </Typography>
               </Box>
             )}
-
-            {error && <Alert severity="error">{error}</Alert>}
 
             <Divider />
 
@@ -253,6 +255,18 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
           </>
         )}
       </Stack>
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {notification ? (
+          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+            {notification.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </WidgetShell>
   );
 };

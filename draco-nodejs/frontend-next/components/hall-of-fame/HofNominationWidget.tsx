@@ -6,6 +6,7 @@ import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import { getAccountHallOfFameNominationSetup } from '@draco/shared-api-client';
 import { type HofNominationSetupType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useNotifications } from '@/hooks/useNotifications';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { sanitizeRichContent } from '@/utils/sanitization';
 import HofNominationDialog from './HofNominationDialog';
@@ -21,10 +22,10 @@ export interface HofNominationWidgetProps {
 
 const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [nominationSetup, setNominationSetup] = React.useState<HofNominationSetupType | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!accountId) {
@@ -139,7 +140,7 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           onSubmitted={() => {
-            setSnackbarOpen(true);
+            showNotification(NOMINATION_SUCCESS_MESSAGE, 'success');
             setDialogOpen(false);
           }}
           criteriaText={nominationSetup.criteriaText ?? undefined}
@@ -147,14 +148,16 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
       ) : null}
 
       <Snackbar
-        open={snackbarOpen}
+        open={!!notification}
         autoHideDuration={6000}
+        onClose={hideNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={() => setSnackbarOpen(false)}
       >
-        <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
-          {NOMINATION_SUCCESS_MESSAGE}
-        </Alert>
+        {notification ? (
+          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+            {notification.message}
+          </Alert>
+        ) : undefined}
       </Snackbar>
     </>
   );

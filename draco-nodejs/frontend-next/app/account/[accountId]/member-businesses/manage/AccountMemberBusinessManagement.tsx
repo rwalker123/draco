@@ -8,6 +8,7 @@ import {
   Container,
   IconButton,
   Paper,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -34,6 +35,7 @@ import MemberBusinessDeleteDialog, {
 } from '@/components/profile/MemberBusinessDeleteDialog';
 import WidgetShell from '@/components/ui/WidgetShell';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface AccountMemberBusinessManagementProps {
   accountId: string;
@@ -60,18 +62,12 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     updatingKey: settingUpdatingKey,
     updateSetting,
   } = useAccountSettings(accountId, { requireManage: true });
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [memberBusinesses, setMemberBusinesses] = useState<MemberBusinessType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [formState, setFormState] = useState<FormState>({ open: false, business: null });
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false, business: null });
-
-  const resetMessages = () => {
-    setError(null);
-    setSuccess(null);
-  };
-
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
@@ -80,7 +76,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
     const loadMemberBusinesses = async () => {
       try {
         setLoading(true);
-        resetMessages();
+        setLoadError(null);
 
         const result = await listMemberBusinesses({
           client: apiClient,
@@ -98,7 +94,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
         if (controller.signal.aborted) return;
         console.error('Failed to load member businesses', err);
         const message = err instanceof Error ? err.message : 'Unable to load member businesses';
-        setError(message);
+        setLoadError(message);
         setMemberBusinesses([]);
       } finally {
         if (!controller.signal.aborted) {
@@ -131,21 +127,19 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
   };
 
   const handleFormSuccess = (result: MemberBusinessDialogResult) => {
-    setSuccess(result.message);
-    setError(null);
+    showNotification(result.message, 'success');
     handleFormClose();
     setRefreshCounter((c) => c + 1);
   };
 
   const handleDeleteSuccess = (result: MemberBusinessDeleteResult) => {
-    setSuccess(result.message);
-    setError(null);
+    showNotification(result.message, 'success');
     handleDeleteClose();
-    setRefreshCounter((c) => c + 1);
+    setMemberBusinesses((prev) => prev.filter((b) => b.id !== result.memberBusinessId));
   };
 
   const handleDialogError = (message: string) => {
-    setError(message);
+    showNotification(message, 'error');
   };
 
   const directorySetting = accountSettings?.find(
@@ -158,12 +152,14 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
   ) => {
     try {
       await updateSetting('ShowBusinessDirectory', checked);
-      setSuccess(`Member Business Directory ${checked ? 'enabled' : 'disabled'} for this account.`);
-      setError(null);
+      showNotification(
+        `Member Business Directory ${checked ? 'enabled' : 'disabled'} for this account.`,
+        'success',
+      );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to update member business availability';
-      setError(message);
+      showNotification(message, 'error');
     }
   };
 
@@ -227,17 +223,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
                 </Stack>
               )}
             </WidgetShell>
-            {success && (
-              <Alert severity="success" onClose={() => setSuccess(null)}>
-                {success}
-              </Alert>
-            )}
-
-            {error && (
-              <Alert severity="error" onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            )}
+            {loadError && <Alert severity="error">{loadError}</Alert>}
 
             <WidgetShell
               title="Registered Member Businesses"
@@ -338,6 +324,19 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
         onSuccess={handleDeleteSuccess}
         onError={handleDialogError}
       />
+
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
+        onClose={hideNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {notification ? (
+          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
+            {notification.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </>
   );
 };
