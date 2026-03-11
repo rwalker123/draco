@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Box, Breadcrumbs, Link as MuiLink, Snackbar, Typography } from '@mui/material';
+import { Box, Breadcrumbs, Link as MuiLink, Typography } from '@mui/material';
 import NextLink from 'next/link';
 import {
   type GameAttendanceType,
@@ -42,17 +42,14 @@ import type {
 } from '../../../../../../../../components/team-stats-entry/types';
 import AsyncConfirmDialog from '../../../../../../../../components/team-stats-entry/dialogs/AsyncConfirmDialog';
 import { emptyAttendance } from '../../../../../../../../components/team-stats-entry/constants';
+import NotificationSnackbar from '../../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../../hooks/useNotifications';
 
 interface TeamStatEntryPageProps {
   accountId: string;
   seasonId: string;
   teamSeasonId: string;
 }
-
-type SnackbarState = {
-  message: string;
-  severity: 'success' | 'error';
-} | null;
 
 type CachedGameStats = {
   batting: GameBattingStatsType;
@@ -326,7 +323,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const [recapError, setRecapError] = useState<string | null>(null);
 
   const [tabValue, setTabValue] = useState<TabKey>('batting');
-  const [snackbar, setSnackbar] = useState<SnackbarState>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [deleteBattingTarget, setDeleteBattingTarget] = useState<GameBattingStatLineType | null>(
     null,
@@ -502,7 +499,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   }, [sortedGames, selectedGameId]);
 
   const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
-    setSnackbar({ message, severity });
+    showNotification(message, severity);
   };
 
   const loadAndActivateGame = async (gameId: string, options?: { forceRefresh?: boolean }) => {
@@ -1533,22 +1530,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           }}
         />
 
-        {snackbar && (
-          <Snackbar
-            open
-            autoHideDuration={4000}
-            onClose={() => setSnackbar(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert
-              severity={snackbar.severity}
-              onClose={() => setSnackbar(null)}
-              sx={{ width: '100%' }}
-            >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        )}
+        <NotificationSnackbar notification={notification} onClose={hideNotification} />
       </Box>
     </main>
   );

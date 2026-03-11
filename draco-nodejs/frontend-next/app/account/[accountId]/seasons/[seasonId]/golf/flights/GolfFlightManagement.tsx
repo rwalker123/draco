@@ -8,7 +8,6 @@ import {
   Button,
   IconButton,
   Chip,
-  Alert,
   Tooltip,
   Accordion,
   AccordionSummary,
@@ -16,7 +15,6 @@ import {
   AccordionActions,
   Link as MuiLink,
   Fab,
-  Snackbar,
   Card,
   CardContent,
 } from '@mui/material';
@@ -57,6 +55,8 @@ import {
   EditGolfTeamDialog,
   DeleteGolfTeamDialog,
 } from '../../../../../../../components/golf/teams';
+import NotificationSnackbar from '../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../hooks/useNotifications';
 
 interface GolfFlightWithTeams extends GolfFlightWithTeamCountType {
   teams: GolfTeamWithPlayerCountType[];
@@ -73,12 +73,9 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
   seasonId,
   onClose: _onClose,
 }) => {
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [flights, setFlights] = useState<GolfFlightWithTeams[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedback, setFeedback] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
   const router = useRouter();
   const apiClient = useApiClient();
   const [season, setSeason] = useState<SeasonType | null>(null);
@@ -118,10 +115,6 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     }
   };
 
-  const handleFeedbackClose = () => {
-    setFeedback(null);
-  };
-
   useEffect(() => {
     if (!seasonId) return;
 
@@ -144,7 +137,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         if (controller.signal.aborted) return;
 
         if (!flightsResult.success) {
-          setFeedback({ severity: 'error', message: flightsResult.error });
+          showNotification(flightsResult.error, 'error');
           return;
         }
 
@@ -167,10 +160,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error('Error loading data:', error);
-        setFeedback({
-          severity: 'error',
-          message: error instanceof Error ? error.message : 'Failed to load data',
-        });
+        showNotification(error instanceof Error ? error.message : 'Failed to load data', 'error');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -183,7 +173,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     return () => {
       controller.abort();
     };
-  }, [accountId, seasonId, apiClient, flightService, teamService]);
+  }, [accountId, seasonId, apiClient, flightService, teamService, showNotification]);
 
   const addFlightToState = (flight: GolfFlightType) => {
     const flightWithTeams: GolfFlightWithTeams = {
@@ -285,20 +275,20 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   const handleFlightCreated = (flight: GolfFlightType, message: string) => {
     addFlightToState(flight);
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     setCreateFlightDialogOpen(false);
   };
 
   const handleFlightUpdated = (flight: GolfFlightType, message: string) => {
     updateFlightInState(flight.id, flight);
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     setEditFlightDialogOpen(false);
     setSelectedFlight(null);
   };
 
   const handleFlightDeleted = (flightId: string, message: string) => {
     removeFlightFromState(flightId);
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     setDeleteFlightDialogOpen(false);
     setSelectedFlight(null);
   };
@@ -307,7 +297,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
     if (teamTargetFlight) {
       addTeamToFlightInState(teamTargetFlight.id, team);
     }
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     setCreateTeamDialogOpen(false);
     setTeamTargetFlight(null);
   };
@@ -324,7 +314,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         }),
       );
     }
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     setEditTeamDialogOpen(false);
     setSelectedTeam(null);
     setTeamTargetFlight(null);
@@ -332,7 +322,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
 
   const handleTeamDeleted = (teamId: string, message: string) => {
     removeTeamFromState(teamId);
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     setDeleteTeamDialogOpen(false);
     setSelectedTeam(null);
     setTeamTargetFlight(null);
@@ -632,18 +622,7 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         onSuccess={handleTeamDeleted}
       />
 
-      {feedback && (
-        <Snackbar
-          open={!!feedback}
-          autoHideDuration={6000}
-          onClose={handleFeedbackClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert severity={feedback.severity} onClose={handleFeedbackClose} sx={{ width: '100%' }}>
-            {feedback.message}
-          </Alert>
-        </Snackbar>
-      )}
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

@@ -8,10 +8,8 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert,
   CircularProgress,
   Typography,
-  Snackbar,
 } from '@mui/material';
 import {
   createLeagueSeasonTeam as apiCreateLeagueSeasonTeam,
@@ -21,6 +19,7 @@ import type { LeagueSeasonType, DivisionSeasonType, TeamSeasonType } from '@drac
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 export interface CreateTeamResult {
   teamSeason: TeamSeasonType;
@@ -170,16 +169,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Create Team'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

@@ -7,7 +7,6 @@ import {
   Container,
   Fab,
   Paper,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -19,6 +18,8 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { BaseContactType, PaginationWithTotalType, UmpireType } from '@draco/shared-schemas';
 import AccountPageHeader from '../AccountPageHeader';
@@ -73,8 +74,7 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
   const [editContactOpen, setEditContactOpen] = useState(false);
   const [umpireToEdit, setUmpireToEdit] = useState<UmpireType | null>(null);
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [dialogError, setDialogError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
@@ -167,18 +167,12 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
   };
 
   const handleDialogSuccess = (result: { message: string }) => {
-    setSuccessMessage(result.message);
-    setDialogError(null);
+    showNotification(result.message, 'success');
     triggerRefresh();
   };
 
   const handleDialogError = (message: string) => {
-    setDialogError(message);
-  };
-
-  const handleSnackbarClose = () => {
-    setSuccessMessage(null);
-    setDialogError(null);
+    showNotification(message, 'error');
   };
 
   const handleOpenEditContactDialog = (umpire: UmpireType) => {
@@ -374,27 +368,12 @@ export const UmpiresManagement: React.FC<UmpiresManagementProps> = ({ accountId 
         accountId={accountId}
         onClose={handleCloseEditContactDialog}
         onSuccess={(result) => {
-          setSuccessMessage(result.message);
+          showNotification(result.message, 'success');
           triggerRefresh();
         }}
       />
 
-      <Snackbar
-        open={Boolean(successMessage || dialogError)}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {successMessage ? (
-          <Alert severity="success" onClose={handleSnackbarClose} sx={{ width: '100%' }}>
-            {successMessage}
-          </Alert>
-        ) : dialogError ? (
-          <Alert severity="error" onClose={handleSnackbarClose} sx={{ width: '100%' }}>
-            {dialogError}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
       {canManage ? (
         <Fab
           color="primary"

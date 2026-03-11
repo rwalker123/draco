@@ -15,7 +15,6 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Pagination,
-  Snackbar,
   Stack,
   TextField,
   Tooltip,
@@ -41,6 +40,7 @@ import { z } from 'zod';
 import { useHallOfFameService } from '@/hooks/useHallOfFameService';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import NotificationSnackbar from '@/components/common/NotificationSnackbar';
 import { formatPhoneInput, formatPhoneNumber } from '@/utils/phoneNumber';
 import WidgetShell from '@/components/ui/WidgetShell';
 
@@ -324,20 +324,7 @@ const NominationsWidget: React.FC<NominationsWidgetProps> = ({
         />
       ) : null}
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={() => hideNotification()}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => hideNotification()}
-          severity={notification?.severity}
-          variant="filled"
-        >
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </WidgetShell>
   );
 };

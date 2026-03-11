@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Divider, Skeleton, Snackbar, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, Skeleton, Stack, Typography } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { Add as AddIcon } from '@mui/icons-material';
 import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
@@ -280,18 +281,7 @@ const MemberBusinessCard: React.FC<MemberBusinessCardProps> = ({ accountId, cont
         )}
       </Stack>
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
 
       <MemberBusinessFormDialog
         open={formOpen}

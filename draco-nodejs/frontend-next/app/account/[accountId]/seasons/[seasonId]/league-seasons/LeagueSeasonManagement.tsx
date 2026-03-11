@@ -19,7 +19,6 @@ import {
   MenuItem,
   FormControl,
   Fab,
-  Snackbar,
   Menu,
 } from '@mui/material';
 import {
@@ -76,6 +75,8 @@ import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
 import { getLogoSize } from '../../../../../../config/teams';
 import type { UpdateTeamMetadataResult } from '../../../../../../hooks/useTeamManagement';
+import NotificationSnackbar from '../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../hooks/useNotifications';
 
 interface LeagueSeasonManagementProps {
   accountId: string;
@@ -89,10 +90,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
   // Remove global divisions state and fetchDivisions
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const router = useRouter();
   const { token } = useAuth();
   const apiClient = useApiClient();
@@ -118,7 +116,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         setSeason(seasonResult);
       } catch {
         if (controller.signal.aborted) return;
-        setFeedback({ severity: 'error', message: 'Failed to load season details.' });
+        showNotification('Failed to load season details.', 'error');
       }
     };
 
@@ -127,7 +125,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
     return () => {
       controller.abort();
     };
-  }, [accountId, seasonId, apiClient]);
+  }, [accountId, seasonId, apiClient, showNotification]);
 
   // Division management state
   const [addDivisionDialogOpen, setAddDivisionDialogOpen] = useState(false);
@@ -190,10 +188,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
   const [leagueExportMenuAnchor, setLeagueExportMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedLeagueForExport, setSelectedLeagueForExport] =
     useState<LeagueSeasonWithDivisionTeamsAndUnassignedType | null>(null);
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
-  };
 
   const availableDivisions: never[] = [];
 
@@ -398,10 +392,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error('Error fetching league seasons:', error);
-        setFeedback({
-          severity: 'error',
-          message: error instanceof Error ? error.message : 'Failed to fetch league seasons',
-        });
+        showNotification(
+          error instanceof Error ? error.message : 'Failed to fetch league seasons',
+          'error',
+        );
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -414,7 +408,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
     return () => {
       controller.abort();
     };
-  }, [accountId, seasonId, apiClient]);
+  }, [accountId, seasonId, apiClient, showNotification]);
 
   // Handler to open add division dialog
   const openAddDivisionDialog = (leagueSeason: LeagueSeasonType) => {
@@ -445,18 +439,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
       const removed = unwrapApiResult(result, 'Failed to remove division from league season');
 
       if (removed) {
-        setFeedback({
-          severity: 'success',
-          message: `Division removed from ${leagueSeason.league.name}`,
-        });
+        showNotification(`Division removed from ${leagueSeason.league.name}`, 'success');
         removeDivisionFromLeagueSeasonInState(leagueSeason.id, divisionSeason.id);
       }
     } catch (error) {
       console.error('Error removing division:', error);
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to remove division',
-      });
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to remove division',
+        'error',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -487,18 +478,18 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
       const assigned = unwrapApiResult(result, 'Failed to assign team to division');
 
       if (assigned) {
-        setFeedback({
-          severity: 'success',
-          message: `Team "${teamSeason.name}" automatically assigned to division "${divisionSeason.division.name}"`,
-        });
+        showNotification(
+          `Team "${teamSeason.name}" automatically assigned to division "${divisionSeason.division.name}"`,
+          'success',
+        );
         addTeamToDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
       }
     } catch (error) {
       console.error('Error assigning team to division:', error);
-      setFeedback({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'Failed to assign team to division',
-      });
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to assign team to division',
+        'error',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -577,7 +568,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
 
   const handleTeamUpdateSuccess = (result: UpdateTeamMetadataResult) => {
     updateTeamInState(result.teamSeason);
-    setFeedback({ severity: 'success', message: result.message });
+    showNotification(result.message, 'success');
   };
 
   // Export handlers
@@ -612,10 +603,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         .toLowerCase();
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to export league roster',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to export league roster',
+        'error',
+      );
     }
     handleLeagueExportMenuClose();
   };
@@ -637,10 +628,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         .toLowerCase();
       downloadBlob(blob, `${sanitizedName}-managers.csv`);
     } catch (err) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to export league managers',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to export league managers',
+        'error',
+      );
     }
     handleLeagueExportMenuClose();
   };
@@ -748,10 +739,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         .toLowerCase();
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to export team roster',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to export team roster',
+        'error',
+      );
     }
   };
 
@@ -1101,7 +1092,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
           availableDivisions={availableDivisions}
           onSuccess={(result: AddDivisionResult, message: string) => {
             addDivisionToLeagueSeasonInState(result.leagueSeasonId, result.divisionSeason);
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1117,7 +1108,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
           leagueSeason={leagueToDelete}
           onSuccess={(leagueSeasonId: string, message: string) => {
             removeLeagueSeasonFromState(leagueSeasonId);
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1143,7 +1134,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
             } else {
               addTeamToLeagueSeasonInState(result.leagueSeasonId, result.teamSeason);
             }
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1161,7 +1152,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
           leagueSeason={teamToDeleteLeagueSeason}
           onSuccess={(leagueSeasonId: string, teamSeasonId: string, message: string) => {
             removeTeamFromLeagueSeasonInState(leagueSeasonId, teamSeasonId);
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1184,7 +1175,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
               result.name,
               result.priority,
             );
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1196,7 +1187,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
           seasonId={seasonId}
           onSuccess={(leagueSeason, message: string) => {
             addLeagueSeasonToState(leagueSeason);
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1211,7 +1202,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
           leagueSeason={leagueToEdit}
           onSuccess={(leagueSeasonId: string, newName: string, message: string) => {
             updateLeagueNameInState(leagueSeasonId, newName);
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
 
@@ -1246,7 +1237,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
               result.divisionSeasonId,
               result.teamSeason,
             );
-            setFeedback({ severity: 'success', message });
+            showNotification(message, 'success');
           }}
         />
       </Container>
@@ -1276,23 +1267,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
         <MenuItem onClick={handleExportLeagueManagers}>Export League Managers</MenuItem>
       </Menu>
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert
-            onClose={handleFeedbackClose}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

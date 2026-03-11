@@ -10,8 +10,8 @@ import {
   Alert,
   CircularProgress,
   Typography,
-  Snackbar,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import type { GolfFlightWithTeamCountType } from '@draco/shared-schemas';
 import { useGolfFlights } from '../../../hooks/useGolfFlights';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -92,16 +92,7 @@ const DeleteFlightDialog: React.FC<DeleteFlightDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Delete Flight'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

@@ -8,11 +8,12 @@ import {
   CardContent,
   Fab,
   IconButton,
-  Snackbar,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -67,11 +68,6 @@ interface ConfirmState {
   message: WelcomeMessageType | null;
 }
 
-type FeedbackState = {
-  severity: 'success' | 'error';
-  message: string;
-} | null;
-
 const sortMessages = (entries: WelcomeMessageType[]): WelcomeMessageType[] =>
   [...entries].sort((a, b) => {
     if (a.order !== b.order) {
@@ -90,13 +86,14 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 }) => {
   const [messages, setMessages] = React.useState<WelcomeMessageType[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [feedback, setFeedback] = React.useState<FeedbackState>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [dialogState, setDialogState] = React.useState<DialogState>({ open: false });
   const [confirmState, setConfirmState] = React.useState<ConfirmState>({
     open: false,
     message: null,
   });
   const [dialogError, setDialogError] = React.useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const [activeScope, setActiveScope] = React.useState<'account' | 'team'>(
     scope.type === 'team' ? 'team' : 'account',
   );
@@ -142,6 +139,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
   const updateMessageRef = useRef(updateMessage);
   const deleteMessageRef = useRef(deleteMessage);
   const clearErrorRef = useRef(clearError);
+  const hideNotificationRef = useRef(hideNotification);
 
   useEffect(() => {
     listMessagesRef.current = listMessages;
@@ -149,7 +147,8 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     updateMessageRef.current = updateMessage;
     deleteMessageRef.current = deleteMessage;
     clearErrorRef.current = clearError;
-  }, [listMessages, createMessage, updateMessage, deleteMessage, clearError]);
+    hideNotificationRef.current = hideNotification;
+  }, [listMessages, createMessage, updateMessage, deleteMessage, clearError, hideNotification]);
 
   React.useEffect(() => {
     if (scope.type === 'team') {
@@ -175,38 +174,48 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     });
   }, [scope]);
 
-  const refreshMessages = async () => {
-    setLoading(true);
-
-    try {
-      const data = await listMessagesRef.current();
-      const sanitized = sortMessages(
-        data.map((message) => ({
-          ...message,
-          bodyHtml: sanitizeRichContent(message.bodyHtml ?? ''),
-        })),
-      );
-      setMessages(sanitized);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load information messages';
-      setFeedback({ severity: 'error', message });
-      setMessages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const operationsScopeKey =
     operationsScope.type === 'team'
       ? `team-${operationsScope.teamSeasonId}`
       : `account-${operationsScope.accountId}`;
 
   useEffect(() => {
-    void refreshMessages();
-  }, [operationsScopeKey]);
+    const controller = new AbortController();
+
+    const loadMessages = async () => {
+      setLoading(true);
+
+      try {
+        const data = await listMessagesRef.current();
+        if (controller.signal.aborted) return;
+        const sanitized = sortMessages(
+          data.map((message) => ({
+            ...message,
+            bodyHtml: sanitizeRichContent(message.bodyHtml ?? ''),
+          })),
+        );
+        setMessages(sanitized);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load information messages';
+        showNotification(message, 'error');
+        setMessages([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadMessages();
+
+    return () => {
+      controller.abort();
+    };
+  }, [operationsScopeKey, refreshKey, showNotification]);
 
   useEffect(() => {
-    setFeedback(null);
+    hideNotificationRef.current();
     clearErrorRef.current();
   }, [operationsScopeKey]);
 
@@ -303,13 +312,13 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
       if (dialogState.open && dialogState.mode === 'edit' && dialogState.message) {
         await updateMessageRef.current(dialogState.message.id, payload, targetScope);
-        setFeedback({ severity: 'success', message: 'Information message updated successfully.' });
+        showNotification('Information message updated successfully.', 'success');
       } else {
         await createMessageRef.current(payload, targetScope);
-        setFeedback({ severity: 'success', message: 'Information message created successfully.' });
+        showNotification('Information message created successfully.', 'success');
       }
       setDialogState({ open: false });
-      await refreshMessages();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save information message';
       setDialogError(message);
@@ -324,18 +333,13 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     try {
       const targetScope = resolveMessageScope(confirmState.message);
       await deleteMessageRef.current(confirmState.message.id, targetScope);
-      setFeedback({ severity: 'success', message: 'Information message deleted successfully.' });
+      showNotification('Information message deleted successfully.', 'success');
       setConfirmState({ open: false, message: null });
-      await refreshMessages();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete information message';
-      setFeedback({ severity: 'error', message });
+      showNotification(message, 'error');
     }
-  };
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
-    clearErrorRef.current();
   };
 
   const disabledCreateButton = mutationLoading || (effectiveScope === 'team' && !hasTeams);
@@ -490,18 +494,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
         />
       </WidgetShell>
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -16,7 +15,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -36,6 +34,7 @@ import { unwrapApiResult } from '../../../utils/apiResult';
 import RichTextEditor, { type RichTextEditorHandle } from '../../email/RichTextEditor';
 import { createWorkout, getWorkout, updateWorkout } from '../../../services/workoutService';
 import { useNotifications } from '../../../hooks/useNotifications';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 
 interface WorkoutFormDialogProps {
   accountId: string;
@@ -423,16 +422,7 @@ export const WorkoutFormDialog: React.FC<WorkoutFormDialogProps> = ({
           </Button>
         </DialogActions>
       </Box>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

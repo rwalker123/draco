@@ -9,15 +9,14 @@ import {
   DialogContent,
   DialogTitle,
   Typography,
-  Snackbar,
 } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import type { BaseContactType, ContactType } from '@draco/shared-schemas';
 import EditableContactAvatar, { EditableContactAvatarHandle } from './EditableContactAvatar';
 import { getContactDisplayName } from '@/utils/contactUtils';
 import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
-import Alert from '@mui/material/Alert';
 import { getPhotoSize } from '@/config/contacts';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { useNotifications } from '../../hooks/useNotifications';
 
 interface ContactPhotoUploadDialogProps {
@@ -173,16 +172,7 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
           {loading ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

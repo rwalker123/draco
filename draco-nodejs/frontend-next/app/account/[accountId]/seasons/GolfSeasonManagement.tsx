@@ -16,7 +16,6 @@ import {
   Alert,
   CircularProgress,
   Fab,
-  Snackbar,
   IconButton,
   Chip,
   Tooltip,
@@ -47,6 +46,8 @@ import {
 import { UpsertSeasonType, SeasonType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
+import NotificationSnackbar from '../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../hooks/useNotifications';
 import {
   mapSeasonWithDivisions,
   mapSeasonsWithDivisions,
@@ -70,10 +71,7 @@ const GolfSeasonManagement: React.FC = () => {
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedback, setFeedback] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -91,10 +89,6 @@ const GolfSeasonManagement: React.FC = () => {
   const canDelete = hasSeasonManagementPermissions;
   const canSetCurrent = hasSeasonManagementPermissions;
   const canManageFlights = hasSeasonManagementPermissions;
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
-  };
 
   const [refreshCounter, setRefreshCounter] = useState(0);
 
@@ -119,10 +113,10 @@ const GolfSeasonManagement: React.FC = () => {
         setSeasons(mappedSeasons);
       } catch (err: unknown) {
         if (controller.signal.aborted) return;
-        setFeedback({
-          severity: 'error',
-          message: err instanceof Error ? err.message : 'Failed to load season data',
-        });
+        showNotification(
+          err instanceof Error ? err.message : 'Failed to load season data',
+          'error',
+        );
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -135,7 +129,7 @@ const GolfSeasonManagement: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [accountIdStr, apiClient, refreshCounter]);
+  }, [accountIdStr, apiClient, refreshCounter, showNotification]);
 
   const addSeasonToState = (newSeason: Season) => {
     setSeasons((prev) => [...prev, newSeason]);
@@ -183,15 +177,12 @@ const GolfSeasonManagement: React.FC = () => {
       const createdSeason = unwrapApiResult(result, 'Failed to create season');
       const mappedSeason = mapSeasonWithDivisions(createdSeason);
 
-      setFeedback({ severity: 'success', message: 'Season created successfully' });
+      showNotification('Season created successfully', 'success');
       setCreateDialogOpen(false);
       setFormData({ name: '' });
       addSeasonToState(mappedSeason);
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to create season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to create season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -212,16 +203,13 @@ const GolfSeasonManagement: React.FC = () => {
 
       const updatedSeason = unwrapApiResult(result, 'Failed to update season') as SeasonType;
 
-      setFeedback({ severity: 'success', message: 'Season updated successfully' });
+      showNotification('Season updated successfully', 'success');
       setEditDialogOpen(false);
       setFormData({ name: '' });
       setSelectedSeason(null);
       updateSeasonInState(mapSeasonUpdate(updatedSeason));
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to update season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to update season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -241,18 +229,15 @@ const GolfSeasonManagement: React.FC = () => {
       const deleted = unwrapApiResult(result, 'Failed to delete season');
 
       if (deleted) {
-        setFeedback({ severity: 'success', message: 'Season deleted successfully' });
+        showNotification('Season deleted successfully', 'success');
         setDeleteDialogOpen(false);
         removeSeasonFromState(selectedSeason.id);
         setSelectedSeason(null);
       } else {
-        setFeedback({ severity: 'error', message: 'Failed to delete season' });
+        showNotification('Failed to delete season', 'error');
       }
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to delete season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to delete season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -271,18 +256,15 @@ const GolfSeasonManagement: React.FC = () => {
 
       unwrapApiResult(result, 'Failed to copy season');
 
-      setFeedback({
-        severity: 'success',
-        message: 'Season copied successfully. All flights and teams were duplicated.',
-      });
+      showNotification(
+        'Season copied successfully. All flights and teams were duplicated.',
+        'success',
+      );
       setCopyDialogOpen(false);
       setSelectedSeason(null);
       setRefreshCounter((c) => c + 1);
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to copy season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to copy season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -300,17 +282,14 @@ const GolfSeasonManagement: React.FC = () => {
 
       const updatedSeason = unwrapApiResult(result, 'Failed to set current season') as SeasonType;
 
-      setFeedback({
-        severity: 'success',
-        message: `"${season.name}" is now the current season`,
-      });
+      showNotification(`"${season.name}" is now the current season`, 'success');
       updateSeasonInState(mapSeasonUpdate(updatedSeason));
       updateCurrentSeasonInState(season.id);
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to set current season',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to set current season',
+        'error',
+      );
     }
   };
 
@@ -611,23 +590,7 @@ const GolfSeasonManagement: React.FC = () => {
         </Fab>
       )}
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert
-            onClose={handleFeedbackClose}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

@@ -13,12 +13,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Alert,
   CircularProgress,
   Card,
   CardContent,
   IconButton,
-  Snackbar,
 } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -61,6 +59,8 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { downloadBlob } from '@/utils/downloadUtils';
 import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
+import NotificationSnackbar from '../../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../../hooks/useNotifications';
 
 interface PlayerAvatarProps {
   member: RosterMemberType;
@@ -99,6 +99,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   teamSeasonId,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [formLoading, setFormLoading] = useState(false);
 
   // Use the new data manager hook
@@ -235,6 +236,20 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchLeagueDataRef.current();
     fetchManagersRef.current();
   }, [accountId, seasonId, teamSeasonId]);
+
+  useEffect(() => {
+    if (error) {
+      showNotification(error, 'error');
+      clearErrorRef.current();
+    }
+  }, [error, showNotification]);
+
+  useEffect(() => {
+    if (successMessage) {
+      showNotification(successMessage, 'success');
+      clearSuccessMessageRef.current();
+    }
+  }, [successMessage, showNotification]);
 
   // Cleanup timeout on unmount or dialog close
   useEffect(() => {
@@ -1043,23 +1058,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         existingManagers={managers}
       />
 
-      {/* Feedback Snackbar */}
-      <Snackbar
-        open={Boolean(error || successMessage)}
-        autoHideDuration={6000}
-        onClose={clearMessages}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {error ? (
-          <Alert onClose={clearMessages} severity="error" variant="filled" sx={{ width: '100%' }}>
-            {error}
-          </Alert>
-        ) : successMessage ? (
-          <Alert onClose={clearMessages} severity="success" variant="filled" sx={{ width: '100%' }}>
-            {successMessage}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

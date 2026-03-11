@@ -11,13 +11,13 @@ import {
   Alert,
   CircularProgress,
   Typography,
-  Snackbar,
 } from '@mui/material';
 import { updateLeagueSeasonDivision as apiUpdateLeagueSeasonDivision } from '@draco/shared-api-client';
 import type { DivisionSeasonType, LeagueSeasonType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 export interface EditDivisionResult {
   leagueSeasonId: string;
@@ -220,16 +220,7 @@ const EditDivisionDialog: React.FC<EditDivisionDialogProps> = ({
           </>
         )}
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

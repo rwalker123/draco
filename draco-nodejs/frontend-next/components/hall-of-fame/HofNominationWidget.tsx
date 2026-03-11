@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Button, CircularProgress, Snackbar, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import { getAccountHallOfFameNominationSetup } from '@draco/shared-api-client';
 import { type HofNominationSetupType } from '@draco/shared-schemas';
@@ -147,18 +148,7 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
         />
       ) : null}
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

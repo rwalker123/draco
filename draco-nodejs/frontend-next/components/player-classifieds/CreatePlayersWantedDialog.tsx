@@ -10,7 +10,6 @@ import {
   Button,
   Alert,
   Box,
-  Snackbar,
   FormControl,
   InputLabel,
   Select,
@@ -37,6 +36,7 @@ import { unwrapApiResult } from '../../utils/apiResult';
 import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
 import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 // Use shared validation constants
 const VALIDATION_CONSTANTS = PLAYER_CLASSIFIED_VALIDATION.PLAYERS_WANTED;
@@ -467,16 +467,7 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
           </Button>
         </DialogActions>
       </form>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

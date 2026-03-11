@@ -15,7 +15,6 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
-  Snackbar,
   Stack,
   Tab,
   Tabs,
@@ -42,6 +41,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import WidgetShell from '@/components/ui/WidgetShell';
 import RichTextContent from '@/components/common/RichTextContent';
+import NotificationSnackbar from '@/components/common/NotificationSnackbar';
 
 interface MembersWidgetProps {
   accountId: string;
@@ -203,8 +203,6 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
     setActionError(message);
     dispatch({ type: 'setError', error: message });
   };
-
-  const handleNotificationClose = () => hideNotification();
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -466,16 +464,7 @@ const MembersWidget: React.FC<MembersWidgetProps> = ({
         />
       ) : null}
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={handleNotificationClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleNotificationClose} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </WidgetShell>
   );
 };

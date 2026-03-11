@@ -1,15 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Container,
-  Snackbar,
-  Typography,
-  Button,
-} from '@mui/material';
+import { Box, CircularProgress, Container, Typography, Button } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import GolferStatsCards from '../stats/GolferStatsCards';
@@ -34,10 +27,6 @@ export default function LeaguePlayerProfile({
 
   const handleBack = () => {
     router.back();
-  };
-
-  const handleSnackbarClose = () => {
-    setErrorDismissed(true);
   };
 
   if (loading) {
@@ -89,16 +78,10 @@ export default function LeaguePlayerProfile({
         emptyMessage="No league match scores recorded yet."
       />
 
-      <Snackbar
-        open={Boolean(error) && !errorDismissed}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar
+        notification={error && !errorDismissed ? { message: error, severity: 'error' } : null}
+        onClose={() => setErrorDismissed(true)}
+      />
     </Container>
   );
 }

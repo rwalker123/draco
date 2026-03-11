@@ -15,7 +15,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Snackbar,
   Switch,
   Typography,
   useMediaQuery,
@@ -43,6 +42,7 @@ import { unwrapApiResult } from '@/utils/apiResult';
 import { GameStatus } from '@/types/schedule';
 import { useGolfLeagueSetup } from '@/hooks/useGolfLeagueSetup';
 import { useNotifications } from '../../../hooks/useNotifications';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 
 const MATCH_STATUS_OPTIONS = [
   { value: 0, label: 'Scheduled' },
@@ -672,16 +672,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           {saving ? 'Saving...' : 'Save Scores'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

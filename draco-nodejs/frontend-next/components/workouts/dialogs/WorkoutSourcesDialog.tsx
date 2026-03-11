@@ -2,18 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Snackbar,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { useAuth } from '../../../context/AuthContext';
 import { getSources, putSources } from '../../../services/workoutService';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -208,16 +207,7 @@ export const WorkoutSourcesDialog: React.FC<WorkoutSourcesDialogProps> = ({
             Close
           </Button>
         </DialogActions>
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={hideNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-            {notification?.message}
-          </Alert>
-        </Snackbar>
+        <NotificationSnackbar notification={notification} onClose={hideNotification} />
       </Dialog>
       <ConfirmDeleteDialog
         open={Boolean(pendingOption)}

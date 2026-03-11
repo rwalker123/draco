@@ -19,7 +19,6 @@ import {
   FormHelperText,
   Switch,
   FormControlLabel,
-  Snackbar,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -37,6 +36,7 @@ import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 import { useAccountMembership } from '../../hooks/useAccountMembership';
 import TurnstileChallenge from '../security/TurnstileChallenge';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 const parseDateOnly = (value: string | null | undefined): Date | undefined => {
   if (!value) {
@@ -722,16 +722,7 @@ Examples:
           </Button>
         </DialogActions>
       </form>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

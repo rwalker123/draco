@@ -16,8 +16,8 @@ import {
   FormControl,
   FormLabel,
   Box,
-  Snackbar,
 } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import {
   AccountRegistrationService,
   CombinedRegistrationPayload,
@@ -351,16 +351,7 @@ const RegistrationDialog: React.FC<Props> = ({ open, onClose, accountId }) => {
           {loading ? 'Submitting...' : 'Continue'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

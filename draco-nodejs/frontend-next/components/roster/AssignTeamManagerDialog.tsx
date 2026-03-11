@@ -7,16 +7,15 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Alert,
   TextField,
   Autocomplete,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
 import { SupervisorAccount as ManagerIcon } from '@mui/icons-material';
 import { RosterMemberType, TeamManagerType } from '@draco/shared-schemas';
 import { getContactDisplayName } from '../../utils/contactUtils';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 interface AssignTeamManagerDialogProps {
   open: boolean;
@@ -111,16 +110,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
           Assign
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

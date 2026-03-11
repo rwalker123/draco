@@ -5,7 +5,6 @@ import {
   CircularProgress,
   Container,
   Fab,
-  Snackbar,
   Stack,
   Typography,
   Button,
@@ -18,6 +17,8 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import { useNotifications } from '../../../hooks/useNotifications';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { styled, alpha } from '@mui/material/styles';
 import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
 import { Add as AddIcon } from '@mui/icons-material';
@@ -47,11 +48,6 @@ import { EditIconButton, DeleteIconButton } from '../../common/ActionIconButtons
 interface PhotoGalleryAdminManagementProps {
   accountId: string;
 }
-
-type SnackbarState = {
-  message: string;
-  severity: 'success' | 'error';
-} | null;
 
 const encodeAlbumId = (value: string | null | undefined): string =>
   value === null || value === undefined ? '__null__' : value;
@@ -120,7 +116,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
   }>({ open: false, mode: 'create', photo: null });
 
   const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
-  const [feedback, setFeedback] = useState<SnackbarState>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [deleteConfirmation, setDeleteConfirmation] = useState<PhotoGalleryPhotoType | null>(null);
   const [selectedAccountAlbumId, setSelectedAccountAlbumId] = useState<string>('all-account');
   const [selectedTeamAlbumId, setSelectedTeamAlbumId] = useState<string>('');
@@ -403,11 +399,11 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     }
 
     adjustAlbumPhotoCounts(adjustments);
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
   };
 
   const handlePhotoDialogError = (message: string) => {
-    setFeedback({ severity: 'error', message });
+    showNotification(message, 'error');
   };
 
   const handleOpenAlbumDialog = () => {
@@ -424,7 +420,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     album?: PhotoGalleryAdminAlbumType;
     albumId?: string;
   }) => {
-    setFeedback({ severity: 'success', message: payload.message });
+    showNotification(payload.message, 'success');
 
     if (payload.operation === 'create' && payload.album) {
       setAlbums((previous) => [...previous, payload.album!]);
@@ -438,7 +434,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
   };
 
   const handleAlbumDialogError = (message: string) => {
-    setFeedback({ severity: 'error', message });
+    showNotification(message, 'error');
   };
 
   const handleConfirmDelete = (photo: PhotoGalleryPhotoType) => {
@@ -456,7 +452,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
       await deleteGalleryPhotoAdmin(accountId, photoToDelete.id, token);
       setPhotos((previous) => previous.filter((photo) => photo.id !== photoToDelete.id));
       adjustAlbumPhotoCounts([{ albumId: photoToDelete.albumId ?? null, delta: -1 }]);
-      setFeedback({ severity: 'success', message: 'Photo deleted successfully' });
+      showNotification('Photo deleted successfully', 'success');
       setDeleteConfirmation(null);
     } catch (err) {
       const message =
@@ -465,12 +461,8 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
           : err instanceof Error
             ? err.message
             : 'Failed to delete photo';
-      setFeedback({ severity: 'error', message });
+      showNotification(message, 'error');
     }
-  };
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
   };
 
   const handleSelectAccountAlbum = (albumId: string) => {
@@ -755,23 +747,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
         onConfirm={handleDeletePhoto}
       />
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert
-            onClose={handleFeedbackClose}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

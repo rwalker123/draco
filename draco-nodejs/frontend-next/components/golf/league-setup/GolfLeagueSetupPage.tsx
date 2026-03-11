@@ -8,8 +8,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Alert,
-  Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -29,6 +27,8 @@ import { unwrapApiResult } from '../../../utils/apiResult';
 import { ScheduleSettingsSection } from './ScheduleSettingsSection';
 import { LeagueOfficersSection } from './LeagueOfficersSection';
 import { ScoringConfigurationSection } from './ScoringConfigurationSection';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface FormData extends UpdateGolfLeagueSetup {
   presidentId?: string;
@@ -55,13 +55,13 @@ export function GolfLeagueSetupPage() {
     seasonId,
     leagueSeasonId,
   );
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [leagueName, setLeagueName] = useState<string>('');
   const [seasonName, setSeasonName] = useState<string>('');
   const [scheduleExpanded, setScheduleExpanded] = useState(true);
   const [scoringExpanded, setScoringExpanded] = useState(true);
   const [officersExpanded, setOfficersExpanded] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const isDirtyRef = useRef(false);
   const pendingNavigationRef = useRef<string | null>(null);
@@ -152,6 +152,13 @@ export function GolfLeagueSetupPage() {
   }, [backHref]);
 
   useEffect(() => {
+    if (error) {
+      showNotification(error, 'error');
+      clearError();
+    }
+  }, [error, clearError, showNotification]);
+
+  useEffect(() => {
     if (setup) {
       reset(
         {
@@ -185,7 +192,7 @@ export function GolfLeagueSetupPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await updateSetup(data);
-      setSuccessMessage('League setup saved successfully');
+      showNotification('League setup saved successfully', 'success');
     } catch {
       // Error is handled by the hook
     }
@@ -308,27 +315,7 @@ export function GolfLeagueSetupPage() {
         </FormProvider>
       </Container>
 
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={clearError}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="error" onClose={clearError}>
-          {error}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
 
       <Dialog
         open={showUnsavedChangesDialog}

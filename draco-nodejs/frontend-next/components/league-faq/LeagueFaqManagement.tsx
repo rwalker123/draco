@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, CircularProgress, Container, Fab, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Fab, Typography } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { LeagueFaqType, LeagueFaqListType } from '@draco/shared-schemas';
 import { listLeagueFaqs } from '@draco/shared-api-client';
@@ -199,18 +200,7 @@ export const LeagueFaqManagement: React.FC<LeagueFaqManagementProps> = ({ accoun
         deleteFaq={deleteFaq}
       />
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

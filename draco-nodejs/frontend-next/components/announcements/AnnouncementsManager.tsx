@@ -12,11 +12,12 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
-  Snackbar,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -32,7 +33,6 @@ import {
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { formatDateTime } from '../../utils/dateUtils';
 import { sanitizeHandoutContent } from '../../utils/sanitization';
-import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 
 interface AnnouncementsManagerProps {
   scope: AnnouncementScope;
@@ -85,36 +85,44 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
 
   const [announcements, setAnnouncements] = React.useState<AnnouncementType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({ open: false });
   const [confirmState, setConfirmState] = React.useState<ConfirmState>({
     open: false,
     announcement: null,
   });
-  const [snackbar, setSnackbar] = React.useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
-
-  const refreshAnnouncements = async () => {
-    try {
-      setLoading(true);
-      const data = await listAnnouncementsRef.current();
-      setAnnouncements(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load announcements';
-      setSnackbar({ severity: 'error', message });
-      setAnnouncements([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const teamSeasonId = 'teamSeasonId' in scope ? scope.teamSeasonId : null;
 
   useEffect(() => {
-    void refreshAnnouncements();
-  }, [scope.type, scope.accountId, teamSeasonId]);
+    const controller = new AbortController();
+
+    const loadAnnouncements = async () => {
+      try {
+        setLoading(true);
+        const data = await listAnnouncementsRef.current();
+        if (controller.signal.aborted) return;
+        setAnnouncements(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load announcements';
+        showNotification(message, 'error');
+        setAnnouncements([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAnnouncements();
+
+    return () => {
+      controller.abort();
+    };
+  }, [scope.type, scope.accountId, teamSeasonId, refreshKey, showNotification]);
 
   const handleCreate = () => {
     clearErrorRef.current();
@@ -144,18 +152,18 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
 
       if (dialogState.mode === 'create') {
         await createAnnouncementRef.current(payload);
-        setSnackbar({ severity: 'success', message: 'Announcement created successfully.' });
+        showNotification('Announcement created successfully.', 'success');
       } else if (dialogState.mode === 'edit' && dialogState.announcement) {
         await updateAnnouncementRef.current(dialogState.announcement.id, payload);
-        setSnackbar({ severity: 'success', message: 'Announcement updated successfully.' });
+        showNotification('Announcement updated successfully.', 'success');
       }
 
       setDialogState({ open: false });
-      await refreshAnnouncements();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save announcement';
       setLocalError(message);
-      setSnackbar({ severity: 'error', message });
+      showNotification(message, 'error');
       throw err;
     }
   };
@@ -180,13 +188,13 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
       setLocalError(null);
       clearErrorRef.current();
       await deleteAnnouncementRef.current(target.id);
-      setSnackbar({ severity: 'success', message: 'Announcement deleted successfully.' });
+      showNotification('Announcement deleted successfully.', 'success');
       setConfirmState({ open: false, announcement: null });
-      await refreshAnnouncements();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete announcement';
       setLocalError(message);
-      setSnackbar({ severity: 'error', message });
+      showNotification(message, 'error');
     }
   };
 
@@ -318,27 +326,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
         onConfirm={handleDeleteConfirm}
       />
 
-      <Snackbar
-        open={Boolean(snackbar)}
-        autoHideDuration={
-          snackbar?.severity === 'error'
-            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
-            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
-        }
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

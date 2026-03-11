@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Typography, Box, Chip, Alert, Snackbar } from '@mui/material';
+import { Typography, Box, Chip } from '@mui/material';
 import { format } from 'date-fns';
 import { PlayersWantedClassifiedType } from '@draco/shared-schemas';
 import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
 import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 export interface DeletePlayersWantedSuccessEvent {
   message: string;
@@ -136,16 +137,7 @@ const DeletePlayersWantedDialog: React.FC<DeletePlayersWantedDialogProps> = ({
         cancelButtonProps={{ disabled: operationLoading }}
         dialogProps={{ maxWidth: 'sm', fullWidth: true }}
       />
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

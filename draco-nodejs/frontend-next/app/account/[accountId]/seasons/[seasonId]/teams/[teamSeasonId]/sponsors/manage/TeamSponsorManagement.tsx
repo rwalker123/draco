@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-  Alert,
   Box,
   Avatar,
   Breadcrumbs,
@@ -11,7 +10,6 @@ import {
   IconButton,
   Paper,
   Fab,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -34,6 +32,8 @@ import PageSectionHeader from '../../../../../../../../../components/common/Page
 import TeamAvatar from '../../../../../../../../../components/TeamAvatar';
 import type { TeamSeasonRecordType } from '@draco/shared-schemas';
 import NextLink from 'next/link';
+import NotificationSnackbar from '../../../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../../../hooks/useNotifications';
 
 interface TeamSponsorManagementProps {
   accountId: string;
@@ -47,17 +47,13 @@ type DialogState = {
   sponsor: SponsorType | null;
 };
 
-type FeedbackState = {
-  severity: 'success' | 'error';
-  message: string;
-} | null;
-
 const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   accountId,
   seasonId,
   teamSeasonId,
 }) => {
   const apiClient = useApiClient();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const { deleteSponsor, loading: mutationLoading } = useSponsorOperations({
     type: 'team',
     accountId,
@@ -66,7 +62,6 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   });
   const [sponsors, setSponsors] = React.useState<SponsorType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
-  const [feedback, setFeedback] = React.useState<FeedbackState>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({
     open: false,
     mode: 'create',
@@ -127,7 +122,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
       setSponsors(data.sponsors ?? []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
-      setFeedback({ severity: 'error', message });
+      showNotification(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -151,7 +146,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
       } catch (err) {
         if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load team sponsors';
-        setFeedback({ severity: 'error', message });
+        showNotification(message, 'error');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -164,7 +159,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     return () => {
       controller.abort();
     };
-  }, [accountId, seasonId, teamSeasonId, apiClient]);
+  }, [accountId, seasonId, teamSeasonId, apiClient, showNotification]);
 
   const handleOpenCreate = () => {
     setDialogState({ open: true, mode: 'create', sponsor: null });
@@ -185,7 +180,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
     sponsor: SponsorType;
     message: string;
   }) => {
-    setFeedback({ severity: 'success', message });
+    showNotification(message, 'success');
     handleDialogClose();
 
     if (dialogState.mode === 'edit') {
@@ -198,16 +193,12 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
   const handleDelete = async (sponsorId: string) => {
     try {
       await deleteSponsor(sponsorId);
-      setFeedback({ severity: 'success', message: 'Sponsor deleted successfully' });
+      showNotification('Sponsor deleted successfully', 'success');
       await refreshSponsors();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete sponsor';
-      setFeedback({ severity: 'error', message });
+      showNotification(message, 'error');
     }
-  };
-
-  const handleFeedbackClose = () => {
-    setFeedback(null);
   };
 
   return (
@@ -339,21 +330,10 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
         initialSponsor={dialogState.mode === 'edit' ? dialogState.sponsor : null}
         onClose={handleDialogClose}
         onSuccess={handleDialogSuccess}
-        onError={(message) => setFeedback({ severity: 'error', message })}
+        onError={(message) => showNotification(message, 'error')}
       />
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert onClose={handleFeedbackClose} severity={feedback.severity} variant="filled">
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

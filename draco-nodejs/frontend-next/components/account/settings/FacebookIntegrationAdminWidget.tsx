@@ -6,16 +6,17 @@ import {
   Box,
   Button,
   FormControlLabel,
-  Snackbar,
   Stack,
   Switch,
   TextField,
   Typography,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import Link from 'next/link';
 import type { AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useNotifications } from '../../../hooks/useNotifications';
 import { useSearchParams } from 'next/navigation';
 import { assertNoApiError, unwrapApiResult } from '@/utils/apiResult';
 import { useAuth } from '@/context/AuthContext';
@@ -46,13 +47,12 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 }) => {
   const apiClient = useApiClient();
   const { token } = useAuth();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const searchParams = useSearchParams();
   const [facebookAppId, setFacebookAppId] = useState('');
   const [facebookAppSecret, setFacebookAppSecret] = useState('');
   const [clearCredentials, setClearCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [pageHandle, setPageHandle] = useState('');
   const [savedPageHandle, setSavedPageHandle] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     } catch (err) {
       if (signal?.aborted) return;
       console.error('Failed to load Facebook status', err);
-      setError('Unable to load Facebook status. Please try again.');
+      showNotification('Unable to load Facebook status. Please try again.', 'error');
     } finally {
       if (!signal?.aborted) {
         setStatusLoading(false);
@@ -126,7 +126,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load Facebook status', err);
-        setError('Unable to load Facebook status. Please try again.');
+        showNotification('Unable to load Facebook status. Please try again.', 'error');
       } finally {
         if (!controller.signal.aborted) {
           setStatusLoading(false);
@@ -139,20 +139,21 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     return () => {
       controller.abort();
     };
-  }, [account.id, apiClient, token]);
+  }, [account.id, apiClient, token, showNotification]);
 
   useEffect(() => {
     if (!authStatus) return;
 
     if (authStatus === 'error') {
-      setError(authMessage || 'Facebook authorization failed.');
+      showNotification(authMessage || 'Facebook authorization failed.', 'error');
       return;
     }
 
     if (authStatus !== 'success') return;
 
-    setSuccess(
+    showNotification(
       authMessage || 'Facebook authorization completed. Enter your Page handle to finish setup.',
+      'success',
     );
 
     if (!token) return;
@@ -177,7 +178,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load Facebook status', err);
-        setError('Unable to load Facebook status. Please try again.');
+        showNotification('Unable to load Facebook status. Please try again.', 'error');
       } finally {
         if (!controller.signal.aborted) {
           setStatusLoading(false);
@@ -190,7 +191,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
     return () => {
       controller.abort();
     };
-  }, [account.id, apiClient, authMessage, authStatus, token]);
+  }, [account.id, apiClient, authMessage, authStatus, token, showNotification]);
 
   const hasPendingChanges =
     facebookAppId.trim().length > 0 || facebookAppSecret.trim().length > 0 || clearCredentials;
@@ -199,11 +200,10 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    hideNotification();
 
     if (!hasPendingChanges) {
-      setError('Update at least one field before saving.');
+      showNotification('Update at least one field before saving.', 'error');
       return;
     }
 
@@ -228,7 +228,10 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       assertNoApiError(result, 'Unable to save Facebook settings');
       onAccountUpdate?.(account);
 
-      setSuccess('Facebook settings saved. Secrets are encrypted and never shown here.');
+      showNotification(
+        'Facebook settings saved. Secrets are encrypted and never shown here.',
+        'success',
+      );
       setFacebookAppId('');
       setFacebookAppSecret('');
       setClearCredentials(false);
@@ -238,7 +241,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       }
     } catch (err) {
       console.error('Failed to save Facebook settings', err);
-      setError('Unable to save Facebook settings. Please try again.');
+      showNotification('Unable to save Facebook settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -246,12 +249,11 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 
   const handleConnect = async () => {
     if (!token) {
-      setError('You must be signed in to connect Facebook.');
+      showNotification('You must be signed in to connect Facebook.', 'error');
       return;
     }
     try {
-      setError(null);
-      setSuccess(null);
+      hideNotification();
       const result = await createFacebookAuthorizationUrl({
         client: apiClient,
         path: { accountId: account.id },
@@ -268,23 +270,25 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       window.location.href = authorizationUrl;
     } catch (err) {
       console.error('Failed to start Facebook authorization', err);
-      setError('Unable to start Facebook authorization. Check app credentials and try again.');
+      showNotification(
+        'Unable to start Facebook authorization. Check app credentials and try again.',
+        'error',
+      );
     }
   };
 
   const handleSavePageHandle = async () => {
     if (!token) {
-      setError('You must be signed in to connect Facebook.');
+      showNotification('You must be signed in to connect Facebook.', 'error');
       return;
     }
     const normalizedHandle = pageHandle.trim();
     if (!normalizedHandle) {
-      setError('Enter a Facebook Page handle before saving.');
+      showNotification('Enter a Facebook Page handle before saving.', 'error');
       return;
     }
     try {
-      setError(null);
-      setSuccess(null);
+      hideNotification();
       setSavingPageHandle(true);
       const result = await upsertAccountFacebookCredentials({
         client: apiClient,
@@ -293,13 +297,16 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
         throwOnError: false,
       });
       assertNoApiError(result, 'Unable to save Facebook Page handle.');
-      setSuccess('Facebook Page handle saved.');
+      showNotification('Facebook Page handle saved.', 'success');
       setSavedPageHandle(normalizedHandle);
 
       await loadFacebookStatus();
     } catch (err) {
       console.error('Failed to save Facebook Page handle', err);
-      setError('Unable to save Facebook Page handle. Confirm Facebook is connected and try again.');
+      showNotification(
+        'Unable to save Facebook Page handle. Confirm Facebook is connected and try again.',
+        'error',
+      );
     } finally {
       setSavingPageHandle(false);
     }
@@ -307,12 +314,11 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
 
   const handleDisconnect = async () => {
     if (!token) {
-      setError('You must be signed in to disconnect Facebook.');
+      showNotification('You must be signed in to disconnect Facebook.', 'error');
       return;
     }
     try {
-      setError(null);
-      setSuccess(null);
+      hideNotification();
       const result = await disconnectAccountFacebook({
         client: apiClient,
         path: { accountId: account.id },
@@ -324,12 +330,12 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
       setPageHandle('');
       setSavedPageHandle(null);
       setUserTokenPresent(false);
-      setSuccess('Facebook integration disconnected.');
+      showNotification('Facebook integration disconnected.', 'success');
 
       await loadFacebookStatus();
     } catch (err) {
       console.error('Failed to disconnect Facebook', err);
-      setError('Unable to disconnect Facebook.');
+      showNotification('Unable to disconnect Facebook.', 'error');
     }
   };
 
@@ -514,26 +520,7 @@ export const FacebookIntegrationAdminWidget: React.FC<FacebookIntegrationAdminWi
           </Stack>
         </form>
       </WidgetShell>
-      <Snackbar
-        open={Boolean(error)}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={() => setError(null)}
-      >
-        <Alert severity="error" onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={Boolean(success)}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={() => setSuccess(null)}
-      >
-        <Alert severity="success" onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

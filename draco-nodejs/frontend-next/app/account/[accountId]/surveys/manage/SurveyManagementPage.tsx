@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Container,
   FormControlLabel,
-  Snackbar,
   Stack,
   Switch,
   Tab,
@@ -22,9 +21,10 @@ import { useApiClient } from '../../../../../hooks/useApiClient';
 import WidgetShell from '@/components/ui/WidgetShell';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
 import { unwrapApiResult } from '@/utils/apiResult';
-import { UI_TIMEOUTS } from '../../../../../constants/timeoutConstants';
 import SurveyStructureWidget, { sortCategories } from './SurveyStructureWidget';
 import SurveyResponsesWidget from './SurveyResponsesWidget';
+import NotificationSnackbar from '../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../hooks/useNotifications';
 
 interface SurveyManagementPageProps {
   accountId: string;
@@ -39,22 +39,19 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
     updatingKey: settingUpdatingKey,
     updateSetting,
   } = useAccountSettings(accountId, { requireManage: true });
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [categories, setCategories] = useState<PlayerSurveyCategoryType[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [responsesInitialized, setResponsesInitialized] = useState(false);
 
   const handleSuccess = (message: string) => {
-    setSnackbar({ severity: 'success', message });
+    showNotification(message, 'success');
   };
 
   const handleError = (message: string) => {
-    setSnackbar({ severity: 'error', message });
+    showNotification(message, 'error');
   };
 
   const surveySetting = accountSettings?.find(
@@ -256,27 +253,7 @@ const SurveyManagementPage: React.FC<SurveyManagementPageProps> = ({ accountId }
         </Stack>
       </Container>
 
-      <Snackbar
-        open={Boolean(snackbar)}
-        autoHideDuration={
-          snackbar?.severity === 'error'
-            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
-            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
-        }
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

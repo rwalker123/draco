@@ -7,13 +7,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
   Button,
   Typography,
   Box,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
+import NotificationSnackbar from './common/NotificationSnackbar';
 import {
   CloudUpload as CloudUploadIcon,
   Delete as DeleteIcon,
@@ -272,16 +271,7 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
         }}
         cancelButtonProps={{ disabled: deleting }}
       />
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

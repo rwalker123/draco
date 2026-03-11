@@ -10,13 +10,13 @@ import {
   Alert,
   CircularProgress,
   Typography,
-  Snackbar,
 } from '@mui/material';
 import { removeLeagueSeasonTeamDivision as apiRemoveLeagueSeasonTeamDivision } from '@draco/shared-api-client';
 import type { TeamSeasonType, LeagueSeasonWithDivisionTeamsType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 export interface RemoveTeamFromDivisionResult {
   leagueSeasonId: string;
@@ -125,16 +125,7 @@ const RemoveTeamFromDivisionDialog: React.FC<RemoveTeamFromDivisionDialogProps> 
           {loading ? <CircularProgress size={20} /> : 'Remove from Division'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

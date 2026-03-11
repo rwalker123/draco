@@ -18,7 +18,6 @@ import {
   Link as MuiLink,
   MenuItem,
   Select,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -45,6 +44,8 @@ import { useGolfLeagueSetup } from '../../../../../../../hooks/useGolfLeagueSetu
 import { useRole } from '../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
+import NotificationSnackbar from '../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../hooks/useNotifications';
 
 const GolfTeamsPage: React.FC = () => {
   const params = useParams();
@@ -91,8 +92,8 @@ const GolfTeamsPage: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingTeam, setEditingTeam] = useState<GolfTeamType | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [formLoading, setFormLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const seasonName = season?.name ?? 'Season';
 
@@ -245,7 +246,7 @@ const GolfTeamsPage: React.FC = () => {
     const result = await deleteTeam(seasonId, team.id);
 
     if (result.success) {
-      setSuccessMessage('Team deleted successfully');
+      showNotification('Team deleted successfully', 'success');
       await reloadTeams();
     } else {
       setError(result.error);
@@ -266,7 +267,7 @@ const GolfTeamsPage: React.FC = () => {
         const result = await createTeam(selectedFlightId, data);
 
         if (result.success) {
-          setSuccessMessage('Team created successfully');
+          showNotification('Team created successfully', 'success');
           setFormOpen(false);
           await reloadTeams();
         } else {
@@ -276,7 +277,7 @@ const GolfTeamsPage: React.FC = () => {
         const result = await updateTeam(seasonId, editingTeam.id, data);
 
         if (result.success) {
-          setSuccessMessage('Team updated successfully');
+          showNotification('Team updated successfully', 'success');
           setFormOpen(false);
           await reloadTeams();
         } else {
@@ -449,21 +450,7 @@ const GolfTeamsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <Snackbar
-        open={Boolean(successMessage)}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSuccessMessage(null)}
-          severity="success"
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

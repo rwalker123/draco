@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Container, Typography, Button, Fab, Snackbar, Alert } from '@mui/material';
+import { Box, Container, Typography, Button, Fab } from '@mui/material';
 import { Add as AddIcon, Settings as SettingsIcon } from '@mui/icons-material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import AccountPageHeader from '../AccountPageHeader';
 import { AdminBreadcrumbs } from '../admin';
 import { WorkoutRegistrationsAccordion } from './WorkoutRegistrationsAccordion';
@@ -148,23 +149,7 @@ export const WorkoutsManagement: React.FC<WorkoutsManagementProps> = ({ accountI
         onError={(message) => showNotification(message, 'error')}
       />
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert
-            onClose={hideNotification}
-            severity={notification.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

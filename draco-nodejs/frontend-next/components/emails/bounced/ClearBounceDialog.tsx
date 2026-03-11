@@ -8,10 +8,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { clearContactEmailBounce } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -113,16 +113,7 @@ const ClearBounceDialog: React.FC<ClearBounceDialogProps> = ({
           {hasNoNewEmail ? 'Clear Flag Only' : 'Clear & Update Email'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

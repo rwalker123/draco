@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Typography,
   Box,
-  Snackbar,
 } from '@mui/material';
 import {
   removeLeagueFromSeason as apiRemoveLeagueFromSeason,
@@ -21,6 +20,7 @@ import type { LeagueSeasonWithDivisionTeamsAndUnassignedType } from '@draco/shar
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 interface DeleteLeagueDialogProps {
   open: boolean;
@@ -121,16 +121,7 @@ const DeleteLeagueDialog: React.FC<DeleteLeagueDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Remove League'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

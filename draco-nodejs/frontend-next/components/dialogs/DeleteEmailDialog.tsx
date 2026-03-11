@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, CircularProgress, Snackbar } from '@mui/material';
+import { CircularProgress } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { deleteAccountEmail } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -89,16 +90,7 @@ const DeleteEmailDialog: React.FC<DeleteEmailDialogProps> = ({
         cancelButtonProps={{ disabled: loading }}
         dialogProps={{ maxWidth: 'xs', fullWidth: true }}
       />
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

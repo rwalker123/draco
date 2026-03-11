@@ -20,8 +20,8 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   TextField,
-  Snackbar,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { Close as CloseIcon, GolfCourse as GolfCourseIcon } from '@mui/icons-material';
 import type { GolfCourseSlimType, GolfCourseTeeType } from '@draco/shared-schemas';
 import { useGolfCourses } from '../../../hooks/useGolfCourses';
@@ -318,16 +318,7 @@ export const StartLiveRoundDialog: React.FC<StartLiveRoundDialogProps> = ({
             {isStarting ? 'Starting...' : 'Start Live Round'}
           </Button>
         </DialogActions>
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={hideNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-            {notification?.message}
-          </Alert>
-        </Snackbar>
+        <NotificationSnackbar notification={notification} onClose={hideNotification} />
       </Dialog>
 
       <CourseSearchDialog

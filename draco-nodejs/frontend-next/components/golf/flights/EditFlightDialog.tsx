@@ -8,13 +8,12 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
 import type { GolfFlightType, GolfFlightWithTeamCountType } from '@draco/shared-schemas';
 import { useGolfFlights } from '../../../hooks/useGolfFlights';
 import { useNotifications } from '../../../hooks/useNotifications';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 
 interface EditFlightDialogProps {
   open: boolean;
@@ -112,16 +111,7 @@ const EditFlightDialog: React.FC<EditFlightDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Save Changes'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

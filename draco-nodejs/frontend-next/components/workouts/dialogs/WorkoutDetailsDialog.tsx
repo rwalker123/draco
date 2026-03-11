@@ -14,15 +14,15 @@ import {
   Select,
   MenuItem,
   CircularProgress,
-  Alert,
   Chip,
   List,
   ListItem,
   ListItemText,
   Divider,
   Stack,
-  Snackbar,
 } from '@mui/material';
+import { useNotifications } from '../../../hooks/useNotifications';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { useAuth } from '../../../context/AuthContext';
 import type {
   WorkoutSummaryType,
@@ -39,7 +39,6 @@ import {
 import { WorkoutRegistrationForm } from '../WorkoutRegistrationForm';
 import ConfirmDeleteDialog from '../../social/ConfirmDeleteDialog';
 import { formatPhoneNumber } from '../../../utils/phoneNumber';
-import { UI_TIMEOUTS } from '../../../constants/timeoutConstants';
 
 interface WorkoutDetailsDialogProps {
   accountId: string;
@@ -67,10 +66,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
   const [registrations, setRegistrations] = useState<WorkoutRegistrationType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [managerFilter, setManagerFilter] = useState<boolean | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
   const [registrationSaving, setRegistrationSaving] = useState(false);
   const [editingRegistration, setEditingRegistration] = useState<WorkoutRegistrationType | null>(
@@ -89,13 +85,19 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
+  const hideNotificationRef = useRef(hideNotification);
+  hideNotificationRef.current = hideNotification;
+
+  const showNotificationRef = useRef(showNotification);
+  showNotificationRef.current = showNotification;
+
   const applySuccessMessage = (message: string) => {
-    setSnackbar({ severity: 'success', message });
+    showNotification(message, 'success');
     onSuccess?.(message);
   };
 
   const applyErrorMessage = (message: string) => {
-    setSnackbar({ severity: 'error', message });
+    showNotification(message, 'error');
     onError?.(message);
   };
 
@@ -104,7 +106,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       setRegistrations([]);
       setSearchTerm('');
       setManagerFilter(null);
-      setSnackbar(null);
+      hideNotificationRef.current();
       setPendingInitialAction(null);
       return;
     }
@@ -120,7 +122,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
     const loadRegistrations = async () => {
       try {
         setLoading(true);
-        setSnackbar(null);
+        hideNotificationRef.current();
         const data = await listWorkoutRegistrations(
           accountId,
           workoutId,
@@ -132,7 +134,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error('Error loading workout registrations:', error);
-        setSnackbar({ severity: 'error', message: 'Failed to load registrations' });
+        showNotificationRef.current('Failed to load registrations', 'error');
         onErrorRef.current?.('Failed to load registrations');
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -188,7 +190,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
 
     try {
       setRegistrationSaving(true);
-      setSnackbar(null);
+      hideNotification();
 
       if (editingRegistration) {
         const updatedRegistration = await updateWorkoutRegistration(
@@ -419,27 +421,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
 
-      <Snackbar
-        open={Boolean(snackbar)}
-        autoHideDuration={
-          snackbar?.severity === 'error'
-            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
-            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
-        }
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
