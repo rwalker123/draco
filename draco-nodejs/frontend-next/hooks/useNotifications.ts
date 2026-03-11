@@ -11,24 +11,21 @@ export interface UseNotificationsReturn {
   hideNotification: () => void;
 }
 
-/**
- * Custom hook for managing notification state
- * Provides centralized notification management to reduce code duplication
- */
 export const useNotifications = (): UseNotificationsReturn => {
   const [notification, setNotification] = useState<NotificationState | null>(null);
 
-  const showNotification = (message: string, severity: NotificationState['severity']) => {
-    setNotification({ message, severity });
-  };
-
-  const hideNotification = () => {
-    setNotification(null);
-  };
+  const [callbacks] = useState(() => ({
+    showNotification: (message: string, severity: NotificationState['severity']) => {
+      setNotification({ message, severity });
+    },
+    hideNotification: () => {
+      setNotification(null);
+    },
+  }));
 
   return {
     notification,
-    showNotification,
-    hideNotification,
+    showNotification: callbacks.showNotification,
+    hideNotification: callbacks.hideNotification,
   };
 };
