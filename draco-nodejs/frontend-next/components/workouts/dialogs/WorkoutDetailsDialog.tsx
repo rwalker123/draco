@@ -85,12 +85,6 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
-  const hideNotificationRef = useRef(hideNotification);
-  hideNotificationRef.current = hideNotification;
-
-  const showNotificationRef = useRef(showNotification);
-  showNotificationRef.current = showNotification;
-
   const applySuccessMessage = (message: string) => {
     showNotification(message, 'success');
     onSuccess?.(message);
@@ -106,7 +100,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       setRegistrations([]);
       setSearchTerm('');
       setManagerFilter(null);
-      hideNotificationRef.current();
+      hideNotification();
       setPendingInitialAction(null);
       return;
     }
@@ -122,7 +116,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
     const loadRegistrations = async () => {
       try {
         setLoading(true);
-        hideNotificationRef.current();
+        hideNotification();
         const data = await listWorkoutRegistrations(
           accountId,
           workoutId,
@@ -134,7 +128,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error('Error loading workout registrations:', error);
-        showNotificationRef.current('Failed to load registrations', 'error');
+        showNotification('Failed to load registrations', 'error');
         onErrorRef.current?.('Failed to load registrations');
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -146,7 +140,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
     return () => {
       controller.abort();
     };
-  }, [open, accountId, workoutId, token, initialAction]);
+  }, [open, accountId, workoutId, token, initialAction, showNotification, hideNotification]);
 
   useEffect(() => {
     if (open && pendingInitialAction === 'createRegistration') {

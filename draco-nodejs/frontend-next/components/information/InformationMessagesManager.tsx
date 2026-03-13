@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -134,22 +134,6 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     clearError,
   } = useWelcomeMessageOperations(operationsScope);
 
-  const listMessagesRef = useRef(listMessages);
-  const createMessageRef = useRef(createMessage);
-  const updateMessageRef = useRef(updateMessage);
-  const deleteMessageRef = useRef(deleteMessage);
-  const clearErrorRef = useRef(clearError);
-  const hideNotificationRef = useRef(hideNotification);
-
-  useEffect(() => {
-    listMessagesRef.current = listMessages;
-    createMessageRef.current = createMessage;
-    updateMessageRef.current = updateMessage;
-    deleteMessageRef.current = deleteMessage;
-    clearErrorRef.current = clearError;
-    hideNotificationRef.current = hideNotification;
-  }, [listMessages, createMessage, updateMessage, deleteMessage, clearError, hideNotification]);
-
   React.useEffect(() => {
     if (scope.type === 'team') {
       setActiveScope('team');
@@ -186,7 +170,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
       setLoading(true);
 
       try {
-        const data = await listMessagesRef.current();
+        const data = await listMessages();
         if (controller.signal.aborted) return;
         const sanitized = sortMessages(
           data.map((message) => ({
@@ -212,22 +196,22 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
     return () => {
       controller.abort();
     };
-  }, [operationsScopeKey, refreshKey, showNotification]);
+  }, [operationsScopeKey, refreshKey, showNotification, listMessages]);
 
   useEffect(() => {
-    hideNotificationRef.current();
-    clearErrorRef.current();
-  }, [operationsScopeKey]);
+    hideNotification();
+    clearError();
+  }, [operationsScopeKey, hideNotification, clearError]);
 
   const handleCreate = () => {
-    clearErrorRef.current();
+    clearError();
     setDialogError(null);
     const scopeForDialog = scope.type === 'team' ? 'team' : activeScope;
     setDialogState({ open: true, mode: 'create', message: null, scope: scopeForDialog });
   };
 
   const handleEdit = (message: WelcomeMessageType) => {
-    clearErrorRef.current();
+    clearError();
     setDialogError(null);
     const scopeForDialog = message.isTeamScoped ? 'team' : 'account';
     setDialogState({ open: true, mode: 'edit', message, scope: scopeForDialog });
@@ -236,11 +220,11 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
   const handleDialogClose = () => {
     setDialogState({ open: false });
     setDialogError(null);
-    clearErrorRef.current();
+    clearError();
   };
 
   const handleDeletePrompt = (message: WelcomeMessageType) => {
-    clearErrorRef.current();
+    clearError();
     setConfirmState({ open: true, message });
   };
 
@@ -311,10 +295,10 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
       }
 
       if (dialogState.open && dialogState.mode === 'edit' && dialogState.message) {
-        await updateMessageRef.current(dialogState.message.id, payload, targetScope);
+        await updateMessage(dialogState.message.id, payload, targetScope);
         showNotification('Information message updated successfully.', 'success');
       } else {
-        await createMessageRef.current(payload, targetScope);
+        await createMessage(payload, targetScope);
         showNotification('Information message created successfully.', 'success');
       }
       setDialogState({ open: false });
@@ -332,7 +316,7 @@ const InformationMessagesManager: React.FC<InformationMessagesManagerProps> = ({
 
     try {
       const targetScope = resolveMessageScope(confirmState.message);
-      await deleteMessageRef.current(confirmState.message.id, targetScope);
+      await deleteMessage(confirmState.message.id, targetScope);
       showNotification('Information message deleted successfully.', 'success');
       setConfirmState({ open: false, message: null });
       setRefreshKey((k) => k + 1);
