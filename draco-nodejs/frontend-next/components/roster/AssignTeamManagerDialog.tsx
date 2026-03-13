@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +21,7 @@ interface AssignTeamManagerDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (result: { message: string; managerId: string }) => void;
-  addManager: (contactId: string) => Promise<void>;
+  addManager: (contactId: string) => Promise<{ success: boolean; message: string }>;
   availablePlayers: RosterMemberType[];
   existingManagers: TeamManagerType[];
 }
@@ -39,16 +39,10 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
   const { notification, showNotification, hideNotification } = useNotifications();
 
   const handleClose = () => {
+    setSelectedContactId(null);
     hideNotification();
     onClose();
   };
-
-  useEffect(() => {
-    if (open) {
-      setSelectedContactId(null);
-      hideNotification();
-    }
-  }, [open, hideNotification]);
 
   const eligiblePlayers = availablePlayers.filter(
     (member) => !existingManagers.some((m) => m.contact.id === member.player.contact.id),
@@ -63,18 +57,19 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     setLoading(true);
     hideNotification();
 
-    try {
-      await addManager(selectedContactId);
+    const result = await addManager(selectedContactId);
+
+    if (result.success) {
       const playerName = getContactDisplayName(selectedPlayer.player.contact);
       onSuccess({
         message: `"${playerName}" assigned as team manager`,
         managerId: selectedContactId,
       });
-    } catch (err) {
-      showNotification(err instanceof Error ? err.message : 'Failed to assign manager', 'error');
-    } finally {
-      setLoading(false);
+    } else {
+      showNotification(result.message, 'error');
     }
+
+    setLoading(false);
   };
 
   return (

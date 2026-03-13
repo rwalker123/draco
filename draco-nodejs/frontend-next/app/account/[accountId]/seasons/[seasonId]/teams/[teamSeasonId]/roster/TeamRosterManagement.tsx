@@ -102,15 +102,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const { notification, showNotification, hideNotification } = useNotifications();
   const [formLoading, setFormLoading] = useState(false);
 
-  // Use the new data manager hook
   const {
     rosterData,
     managers,
     season,
     league,
     loading,
-    error,
-    successMessage,
     fetchRosterData,
     fetchManagers,
     fetchSeasonData,
@@ -122,10 +119,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     addManager,
     removeManager,
     deleteContactPhoto,
-    clearError,
-    clearSuccessMessage,
-    setError,
-    setSuccessMessage,
     setRosterData,
   } = useRosterDataManager({
     accountId,
@@ -133,15 +126,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     teamSeasonId,
   });
 
-  // Refs for unstable functions from useRosterDataManager
   const fetchRosterDataRef = useRef(fetchRosterData);
   const fetchSeasonDataRef = useRef(fetchSeasonData);
   const fetchLeagueDataRef = useRef(fetchLeagueData);
   const fetchManagersRef = useRef(fetchManagers);
-  const clearErrorRef = useRef(clearError);
-  const clearSuccessMessageRef = useRef(clearSuccessMessage);
-  const setSuccessMessageRef = useRef(setSuccessMessage);
-  const setErrorRef = useRef(setError);
   const signPlayerRef = useRef(signPlayer);
   const deleteContactPhotoRef = useRef(deleteContactPhoto);
   const setRosterDataRef = useRef(setRosterData);
@@ -151,10 +139,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchSeasonDataRef.current = fetchSeasonData;
     fetchLeagueDataRef.current = fetchLeagueData;
     fetchManagersRef.current = fetchManagers;
-    clearErrorRef.current = clearError;
-    clearSuccessMessageRef.current = clearSuccessMessage;
-    setSuccessMessageRef.current = setSuccessMessage;
-    setErrorRef.current = setError;
     signPlayerRef.current = signPlayer;
     deleteContactPhotoRef.current = deleteContactPhoto;
     setRosterDataRef.current = setRosterData;
@@ -163,10 +147,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchSeasonData,
     fetchLeagueData,
     fetchManagers,
-    clearError,
-    clearSuccessMessage,
-    setSuccessMessage,
-    setError,
     signPlayer,
     deleteContactPhoto,
     setRosterData,
@@ -237,20 +217,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     fetchManagersRef.current();
   }, [accountId, seasonId, teamSeasonId]);
 
-  useEffect(() => {
-    if (error) {
-      showNotification(error, 'error');
-      clearErrorRef.current();
-    }
-  }, [error, showNotification]);
-
-  useEffect(() => {
-    if (successMessage) {
-      showNotification(successMessage, 'success');
-      clearSuccessMessageRef.current();
-    }
-  }, [successMessage, showNotification]);
-
   // Cleanup timeout on unmount or dialog close
   useEffect(() => {
     return () => {
@@ -262,34 +228,34 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Removed: Initial fetch of all available players - now using dynamic search
 
-  // Handler to release player
   const handleReleasePlayer = async (rosterMember: RosterMemberType) => {
     setFormLoading(true);
     saveScrollPosition();
 
-    try {
-      await releasePlayer(rosterMember.id);
-    } catch {
-      // Error is handled by the data manager
-    } finally {
-      setFormLoading(false);
-      restoreScrollPosition();
+    const result = await releasePlayer(rosterMember.id);
+    if (result.success) {
+      showNotification(result.message, 'success');
+    } else {
+      showNotification(result.message, 'error');
     }
+
+    setFormLoading(false);
+    restoreScrollPosition();
   };
 
-  // Handler to activate player
   const handleActivatePlayer = async (rosterMember: RosterMemberType) => {
     setFormLoading(true);
     saveScrollPosition();
 
-    try {
-      await activatePlayer(rosterMember.id);
-    } catch {
-      // Error is handled by the data manager
-    } finally {
-      setFormLoading(false);
-      restoreScrollPosition();
+    const result = await activatePlayer(rosterMember.id);
+    if (result.success) {
+      showNotification(result.message, 'success');
+    } else {
+      showNotification(result.message, 'error');
     }
+
+    setFormLoading(false);
+    restoreScrollPosition();
   };
 
   // Open delete dialog
@@ -336,15 +302,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setEditPlayerDialogOpen(true);
   };
 
-  // Clear messages
-  const clearMessages = () => {
-    clearErrorRef.current();
-    clearSuccessMessageRef.current();
-  };
-
-  // Close sign player dialog
   const closeSignPlayerDialog = () => {
-    // Clear any existing timeout
     if (signingTimeout) {
       clearTimeout(signingTimeout);
       setSigningTimeout(null);
@@ -365,7 +323,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       },
     });
     setIsSigningNewPlayer(false);
-    clearMessages();
   };
 
   // Close delete dialog
@@ -374,15 +331,11 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setPlayerToDelete(null);
   };
 
-  // Reactive cleanup when dialog closes (from any source)
   useEffect(() => {
     if (!editPlayerDialogOpen) {
-      // Reset parent state when dialog closes
       setIsCreatingNewPlayer(false);
       setAutoSignToRoster(false);
       setEditingContact(null);
-      clearErrorRef.current();
-      clearSuccessMessageRef.current();
     }
   }, [editPlayerDialogOpen]);
 
@@ -428,12 +381,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     const contactName = getContactDisplayName(result.member.player.contact);
 
     if (result.type === 'sign') {
-      // For new signings, fetch full roster data since a new member was added
       await fetchRosterDataRef.current();
-      clearErrorRef.current();
-      setSuccessMessageRef.current(`Player "${contactName}" signed to roster successfully`);
+      showNotification(`Player "${contactName}" signed to roster successfully`, 'success');
     } else {
-      // For updates, only update the specific member in local state
       const updatedRosterData: TeamRosterMembersType = {
         ...rosterData,
         rosterMembers: rosterData.rosterMembers.map((member) =>
@@ -441,12 +391,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         ),
       };
       setRosterDataRef.current(updatedRosterData);
-      clearErrorRef.current();
-      setSuccessMessageRef.current(`Roster information saved for "${contactName}"`);
+      showNotification(`Roster information saved for "${contactName}"`, 'success');
     }
   };
 
-  // Enhanced contact success handler for new EditContactDialog
   const handleEnhancedContactSuccess = async (result: {
     message: string;
     contact: ContactType;
@@ -456,8 +404,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
     try {
       if (result.isCreate && autoSignToRoster) {
-        // Handle automatic roster signup for new players
-        // This implements the same logic as the original createContact function
         const signRosterData: SignRosterMemberType = {
           submittedWaiver: false,
           player: {
@@ -467,29 +413,23 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
           },
         };
 
-        try {
-          // Use the existing signPlayer function from useRosterDataManager
-          await signPlayerRef.current(result.contact.id, signRosterData);
-
-          setSuccessMessageRef.current(
+        const signResult = await signPlayerRef.current(result.contact.id, signRosterData);
+        if (signResult.success) {
+          showNotification(
             `Player "${result.contact.firstName} ${result.contact.lastName}" created and signed to roster successfully`,
+            'success',
           );
-        } catch (signError) {
-          // If roster signup fails, still show contact creation success
-          setSuccessMessageRef.current(
+        } else {
+          showNotification(
             `Player "${result.contact.firstName} ${result.contact.lastName}" created successfully, but failed to sign to roster`,
+            'error',
           );
-          console.error('Failed to sign player to roster:', signError);
         }
       } else {
-        // For edit operations or create without roster signup
         if (result.isCreate) {
-          // Refresh roster data to show the new contact in available players
           await fetchRosterDataRef.current();
-          setSuccessMessageRef.current(result.message);
+          showNotification(result.message, 'success');
         } else {
-          // For edit operations, update the contact in the current roster data optimistically
-          // This implements the same logic as the original updateContact function
           const updatedRosterData: TeamRosterMembersType = {
             ...rosterData,
             rosterMembers: rosterData.rosterMembers.map((member) =>
@@ -513,15 +453,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
             ),
           };
 
-          // Update the roster data state (same pattern as original)
           setRosterDataRef.current(updatedRosterData);
-          setSuccessMessageRef.current(result.message);
+          showNotification(result.message, 'success');
         }
       }
-
-      // Dialog closes itself after calling onSuccess - no need to close here
-    } catch (error) {
-      setErrorRef.current(error instanceof Error ? error.message : 'Failed to update roster');
+    } catch (err) {
+      showNotification(err instanceof Error ? err.message : 'Failed to update roster', 'error');
     } finally {
       restoreScrollPosition();
     }
@@ -530,7 +467,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   // format helpers moved to reusable formatter module
 
   const handleManagerAssigned = (result: { message: string; managerId: string }) => {
-    setSuccessMessageRef.current(result.message);
+    showNotification(result.message, 'success');
     setAddManagerDialogOpen(false);
   };
 
@@ -549,14 +486,14 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
-      setErrorRef.current(err instanceof Error ? err.message : 'Failed to export roster');
+      showNotification(err instanceof Error ? err.message : 'Failed to export roster', 'error');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleDeleteSuccess = (result: { message: string; memberId: string }) => {
-    setSuccessMessageRef.current(result.message);
+    showNotification(result.message, 'success');
     setDeleteDialogOpen(false);
     setPlayerToDelete(null);
   };
@@ -566,8 +503,13 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     return () => openEditDialog(member);
   };
 
-  const handlePhotoDelete = (contactId: string) => {
-    return deleteContactPhotoRef.current(contactId);
+  const handlePhotoDelete = async (contactId: string) => {
+    const result = await deleteContactPhotoRef.current(contactId);
+    if (result.success) {
+      showNotification(result.message, 'success');
+    } else {
+      showNotification(result.message, 'error');
+    }
   };
 
   if (loading) {
@@ -748,10 +690,11 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                     color="error"
                     onClick={async (e) => {
                       e.stopPropagation();
-                      try {
-                        await removeManager(manager.id);
-                      } catch {
-                        // Error is handled by the data manager
+                      const result = await removeManager(manager.id);
+                      if (result.success) {
+                        showNotification(result.message, 'success');
+                      } else {
+                        showNotification(result.message, 'error');
                       }
                     }}
                     aria-label="Remove Manager"
