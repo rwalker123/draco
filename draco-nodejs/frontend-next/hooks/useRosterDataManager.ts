@@ -100,6 +100,14 @@ interface RosterDataManagerActions {
   setRosterData: (data: TeamRosterMembersType) => void;
 }
 
+const getErrorMessage = (error: unknown, defaultMessage: string): string => {
+  if (error instanceof Error) {
+    return error.message || defaultMessage;
+  }
+
+  return getApiErrorMessage(error, defaultMessage);
+};
+
 export const useRosterDataManager = (
   options: UseRosterDataManagerOptions,
 ): RosterDataManagerState & RosterDataManagerActions => {
@@ -124,20 +132,6 @@ export const useRosterDataManager = (
     rosterData: null,
     managers: [],
   });
-
-  const getErrorMessage = (error: unknown, defaultMessage: string): string => {
-    if (error instanceof Error) {
-      return error.message || defaultMessage;
-    }
-
-    return getApiErrorMessage(error, defaultMessage);
-  };
-
-  const getErrorMessageRef = useRef(getErrorMessage);
-  getErrorMessageRef.current = getErrorMessage;
-
-  const getErrorMessageMemo = (error: unknown, defaultMessage: string) =>
-    getErrorMessageRef.current(error, defaultMessage);
 
   const transformBackendData = (data: unknown) => {
     if (!data) return data;
@@ -218,7 +212,7 @@ export const useRosterDataManager = (
       dataCacheRef.current.rosterData = roster;
       setRosterData(roster);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch roster data');
+      const errorMessage = getErrorMessage(error, 'Failed to fetch roster data');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -249,7 +243,7 @@ export const useRosterDataManager = (
       const errorMessage =
         error instanceof ApiClientError
           ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
-          : getErrorMessageMemo(error, 'Failed to fetch available players');
+          : getErrorMessage(error, 'Failed to fetch available players');
       console.error(errorMessage, error);
       return [];
     }
@@ -273,7 +267,7 @@ export const useRosterDataManager = (
       const message =
         error instanceof ApiClientError
           ? getApiErrorMessage(error.details ?? error, 'Failed to fetch managers')
-          : getErrorMessageMemo(error, 'Failed to fetch managers');
+          : getErrorMessage(error, 'Failed to fetch managers');
       console.warn(message, error);
     }
   };
@@ -291,7 +285,7 @@ export const useRosterDataManager = (
       const seasonData = unwrapApiResult(result, 'Failed to fetch season data');
       setSeason({ id: seasonData.id, name: seasonData.name });
     } catch (error: unknown) {
-      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch season data');
+      const errorMessage = getErrorMessage(error, 'Failed to fetch season data');
       setError(errorMessage);
     }
   };
@@ -310,7 +304,7 @@ export const useRosterDataManager = (
 
       setLeague(leagueData ? { id: leagueData.id, name: leagueData.name } : null);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch league data');
+      const errorMessage = getErrorMessage(error, 'Failed to fetch league data');
       setError(errorMessage);
     }
   };

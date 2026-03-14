@@ -996,6 +996,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         open={addManagerDialogOpen}
         onClose={() => setAddManagerDialogOpen(false)}
         onSuccess={handleManagerAssigned}
+        onError={(error) => showNotification(error, 'error')}
         addManager={addManager}
         availablePlayers={activePlayers}
         existingManagers={managers}

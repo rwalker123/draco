@@ -6,7 +6,7 @@ interface NotificationSnackbarProps {
   onClose: () => void;
 }
 
-const NotificationSnackbar: React.FC<NotificationSnackbarProps> = ({ notification, onClose }) => (
+const NotificationSnackbar = ({ notification, onClose }: NotificationSnackbarProps) => (
   <Snackbar
     open={!!notification}
     autoHideDuration={6000}

@@ -14,13 +14,12 @@ import {
 import { SupervisorAccount as ManagerIcon } from '@mui/icons-material';
 import { RosterMemberType, TeamManagerType } from '@draco/shared-schemas';
 import { getContactDisplayName } from '../../utils/contactUtils';
-import { useNotifications } from '../../hooks/useNotifications';
-import NotificationSnackbar from '../common/NotificationSnackbar';
 
 interface AssignTeamManagerDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (result: { message: string; managerId: string }) => void;
+  onError: (error: string) => void;
   addManager: (contactId: string) => Promise<{ success: boolean; message: string }>;
   availablePlayers: RosterMemberType[];
   existingManagers: TeamManagerType[];
@@ -30,17 +29,16 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
   open,
   onClose,
   onSuccess,
+  onError,
   addManager,
   availablePlayers,
   existingManagers,
 }) => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { notification, showNotification, hideNotification } = useNotifications();
 
   const handleClose = () => {
     setSelectedContactId(null);
-    hideNotification();
     onClose();
   };
 
@@ -55,7 +53,6 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     if (!selectedContactId || !selectedPlayer) return;
 
     setLoading(true);
-    hideNotification();
 
     const result = await addManager(selectedContactId);
 
@@ -66,7 +63,7 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
         managerId: selectedContactId,
       });
     } else {
-      showNotification(result.message, 'error');
+      onError(result.message);
     }
 
     setLoading(false);
@@ -105,7 +102,6 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
           Assign
         </Button>
       </DialogActions>
-      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };
