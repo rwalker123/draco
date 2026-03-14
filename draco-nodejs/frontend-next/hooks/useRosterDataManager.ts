@@ -386,14 +386,15 @@ export const useRosterDataManager = (
 
   const signPlayer = async (
     contactId: string,
-    rosterData: SignRosterMemberType,
+    playerData: SignRosterMemberType,
   ): Promise<OperationResult> => {
-    if (!rosterData) return { success: false, message: 'No roster data available' };
+    if (!dataCacheRef.current.rosterData)
+      return { success: false, message: 'No roster data available' };
 
     try {
       const result = await apiSignPlayer({
         path: { accountId, seasonId, teamSeasonId },
-        body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
+        body: { ...playerData, player: { ...playerData.player, contact: { id: contactId } } },
         client: apiClient,
         throwOnError: false,
       });
@@ -401,8 +402,8 @@ export const useRosterDataManager = (
       const newMember = unwrapApiResult(result, 'Failed to sign player') as RosterMemberType;
 
       const updatedRosterData: TeamRosterMembersType = {
-        ...dataCacheRef.current.rosterData!,
-        rosterMembers: [...dataCacheRef.current.rosterData!.rosterMembers, newMember],
+        ...dataCacheRef.current.rosterData,
+        rosterMembers: [...dataCacheRef.current.rosterData.rosterMembers, newMember],
       };
 
       dataCacheRef.current.rosterData = updatedRosterData;
@@ -517,7 +518,7 @@ export const useRosterDataManager = (
 
       const newManager = unwrapApiResult(result, 'Failed to add manager') as TeamManagerType;
 
-      const updatedManagers = [...managers, newManager];
+      const updatedManagers = [...dataCacheRef.current.managers, newManager];
 
       dataCacheRef.current.managers = updatedManagers;
       setManagers(updatedManagers);

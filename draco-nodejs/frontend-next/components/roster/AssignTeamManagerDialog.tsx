@@ -54,19 +54,23 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
 
     setLoading(true);
 
-    const result = await addManager(selectedContactId);
+    try {
+      const result = await addManager(selectedContactId);
 
-    if (result.success) {
-      const playerName = getContactDisplayName(selectedPlayer.player.contact);
-      onSuccess({
-        message: `"${playerName}" assigned as team manager`,
-        managerId: selectedContactId,
-      });
-    } else {
-      onError(result.message);
+      if (result.success) {
+        const playerName = getContactDisplayName(selectedPlayer.player.contact);
+        onSuccess({
+          message: `"${playerName}" assigned as team manager`,
+          managerId: selectedContactId,
+        });
+      } else {
+        onError(result.message);
+      }
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Failed to assign manager');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

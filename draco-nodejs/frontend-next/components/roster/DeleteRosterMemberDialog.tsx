@@ -45,16 +45,20 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
     setLoading(true);
     setError(null);
 
-    const result = await deletePlayer(member.id);
+    try {
+      const result = await deletePlayer(member.id);
 
-    if (result.success) {
-      const playerName = getContactDisplayName(member.player.contact);
-      onSuccess({ message: `Player "${playerName}" deleted successfully`, memberId: member.id });
-    } else {
-      setError(result.message);
+      if (result.success) {
+        const playerName = getContactDisplayName(member.player.contact);
+        onSuccess({ message: `Player "${playerName}" deleted successfully`, memberId: member.id });
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete player');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const playerName = member ? getContactDisplayName(member.player.contact) : '';
