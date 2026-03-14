@@ -11,6 +11,17 @@ vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({ token: 'token-123', user: { id: 'user-1' } }),
 }));
 
+const showNotificationMock = vi.fn();
+const hideNotificationMock = vi.fn();
+
+vi.mock('../../../hooks/useNotifications', () => ({
+  useNotifications: () => ({
+    notification: null,
+    showNotification: showNotificationMock,
+    hideNotification: hideNotificationMock,
+  }),
+}));
+
 const listMessagesMock = vi.fn();
 const createMessageMock = vi.fn();
 const updateMessageMock = vi.fn();
