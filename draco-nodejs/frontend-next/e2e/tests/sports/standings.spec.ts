@@ -21,12 +21,14 @@ test.describe('Standings', () => {
   });
 
   test('displays standings table or empty message', async ({ page }) => {
-    const hasTable = await standingsPage.standingsTable.isVisible().catch(() => false);
-    const hasEmpty = await page
-      .getByText(/no standings available/i)
-      .isVisible()
-      .catch(() => false);
-    expect(hasTable || hasEmpty).toBe(true);
+    await expect(async () => {
+      const hasTable = await standingsPage.standingsTable.isVisible().catch(() => false);
+      const hasEmpty = await page
+        .getByText(/no standings available/i)
+        .isVisible()
+        .catch(() => false);
+      expect(hasTable || hasEmpty).toBe(true);
+    }).toPass({ timeout: 15_000 });
   });
 
   test('standings table contains expected columns when data exists', async ({ page }) => {
