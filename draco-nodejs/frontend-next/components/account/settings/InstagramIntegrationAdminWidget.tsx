@@ -6,12 +6,12 @@ import {
   Box,
   Button,
   FormControlLabel,
-  Snackbar,
   Stack,
   Switch,
   TextField,
   Typography,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import type {
   AccountType,
   AccountSettingState,
@@ -223,18 +223,7 @@ export const InstagramIntegrationAdminWidget: React.FC<InstagramIntegrationAdmin
             </Button>
           </Box>
         </Stack>
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={hideNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          {notification ? (
-            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-              {notification.message}
-            </Alert>
-          ) : undefined}
-        </Snackbar>
+        <NotificationSnackbar notification={notification} onClose={hideNotification} />
       </form>
     </WidgetShell>
   );

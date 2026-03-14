@@ -31,6 +31,34 @@ vi.mock('@/hooks/useApiClient', () => ({
   useApiClient: () => mockApiClient,
 }));
 
+const showNotificationMock = vi.fn();
+const hideNotificationMock = vi.fn();
+
+vi.mock('@/hooks/useNotifications', async () => {
+  const React = await import('react');
+  return {
+    useNotifications: () => {
+      const [notification, setNotification] = React.useState<{
+        message: string;
+        severity: string;
+      } | null>(null);
+
+      showNotificationMock.mockImplementation((message: string, severity: string) => {
+        setNotification({ message, severity });
+      });
+      hideNotificationMock.mockImplementation(() => {
+        setNotification(null);
+      });
+
+      return {
+        notification,
+        showNotification: showNotificationMock,
+        hideNotification: hideNotificationMock,
+      };
+    },
+  };
+});
+
 vi.mock('@draco/shared-api-client', () => ({
   listAccountSeasons: (...args: unknown[]) => mockListAccountSeasons(...args),
   listAccountLeagues: (...args: unknown[]) => mockListAccountLeagues(...args),

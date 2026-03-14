@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Alert, Fab, Snackbar, Stack } from '@mui/material';
+import { Fab, Stack } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { Add as AddIcon } from '@mui/icons-material';
 import type { FieldType } from '@draco/shared-schemas';
 import { useRole } from '../../context/RoleContext';
@@ -85,23 +86,7 @@ export const FieldsManagement: React.FC<FieldsManagementProps> = ({ accountId })
         onSuccess={handleDialogSuccess}
       />
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert
-            onClose={hideNotification}
-            severity={notification.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
 
       {canManage ? (
         <Fab

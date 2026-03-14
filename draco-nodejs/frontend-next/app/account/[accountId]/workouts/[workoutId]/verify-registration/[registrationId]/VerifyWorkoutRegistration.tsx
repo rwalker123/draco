@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Snackbar,
 } from '@mui/material';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import { validateAccessCode } from '../../../../../../../utils/accessCodeValidation';
@@ -28,6 +27,8 @@ import {
 import { WorkoutRegistrationForm } from '../../../../../../../components/workouts/WorkoutRegistrationForm';
 import { UpsertWorkoutRegistrationType, WorkoutRegistrationType } from '@draco/shared-schemas';
 import { ApiClientError, getApiErrorMessage } from '../../../../../../../utils/apiResult';
+import NotificationSnackbar from '../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../hooks/useNotifications';
 
 interface VerifyWorkoutRegistrationProps {
   accountId: string;
@@ -51,6 +52,7 @@ export default function VerifyWorkoutRegistration({
   const searchParams = useSearchParams();
   const router = useRouter();
   const accessCode = searchParams.get('code');
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const [state, setState] = useState<VerificationState>({
     loading: true,
@@ -59,10 +61,6 @@ export default function VerifyWorkoutRegistration({
     accessCode: null,
     success: false,
   });
-  const [feedback, setFeedback] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -159,15 +157,11 @@ export default function VerifyWorkoutRegistration({
 
   const handleUpdate = async (data: UpsertWorkoutRegistrationType) => {
     if (!state.accessCode) {
-      setFeedback({
-        severity: 'error',
-        message: 'Access code missing. Please reopen your verification link.',
-      });
+      showNotification('Access code missing. Please reopen your verification link.', 'error');
       return;
     }
 
     setSaving(true);
-    setFeedback(null);
 
     try {
       const updated = await updateWorkoutRegistration(
@@ -183,9 +177,9 @@ export default function VerifyWorkoutRegistration({
         ...prev,
         registration: updated,
       }));
-      setFeedback({ severity: 'success', message: 'Registration updated successfully.' });
+      showNotification('Registration updated successfully.', 'success');
     } catch (error) {
-      setFeedback({ severity: 'error', message: getApiErrorMessage(error, 'Update failed.') });
+      showNotification(getApiErrorMessage(error, 'Update failed.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -197,14 +191,10 @@ export default function VerifyWorkoutRegistration({
 
   const handleDelete = async () => {
     if (!state.accessCode) {
-      setFeedback({
-        severity: 'error',
-        message: 'Access code missing. Please reopen your verification link.',
-      });
+      showNotification('Access code missing. Please reopen your verification link.', 'error');
       return;
     }
     setDeleting(true);
-    setFeedback(null);
     try {
       await deleteWorkoutRegistrationByAccessCode(
         accountId,
@@ -215,10 +205,7 @@ export default function VerifyWorkoutRegistration({
 
       router.push(`/account/${accountId}`);
     } catch (error) {
-      setFeedback({
-        severity: 'error',
-        message: getApiErrorMessage(error, 'Failed to remove registration.'),
-      });
+      showNotification(getApiErrorMessage(error, 'Failed to remove registration.'), 'error');
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -304,23 +291,7 @@ export default function VerifyWorkoutRegistration({
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={() => setFeedback(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert
-            onClose={() => setFeedback(null)}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 }

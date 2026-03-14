@@ -12,7 +12,6 @@ import {
   Fab,
   IconButton,
   Stack,
-  Snackbar,
   Typography,
 } from '@mui/material';
 import { Close as CloseIcon, Add as AddIcon, ArrowBack as BackIcon } from '@mui/icons-material';
@@ -33,6 +32,8 @@ import {
   deleteAdminGolfTee,
 } from '@/services/adminGolfTeeService';
 import { CourseDetailView, TeeForm } from '@/components/golf/courses';
+import NotificationSnackbar from '@/components/common/NotificationSnackbar';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const AdminGolfCourseDetailPage: React.FC = () => {
   const params = useParams();
@@ -49,11 +50,12 @@ const AdminGolfCourseDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { notification, showNotification, hideNotification } = useNotifications();
+
   const [teeFormOpen, setTeeFormOpen] = useState(false);
   const [teeFormMode, setTeeFormMode] = useState<'create' | 'edit'>('create');
   const [editingTee, setEditingTee] = useState<GolfCourseTeeType | null>(null);
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const isExternal = Boolean(course?.externalId);
@@ -90,7 +92,7 @@ const AdminGolfCourseDetailPage: React.FC = () => {
 
     try {
       await updateAdminGolfCourse(apiClient, course.id, data);
-      setSuccessMessage('Course updated successfully');
+      showNotification('Course updated successfully', 'success');
       setRefreshKey((k) => k + 1);
     } catch (err) {
       throw err;
@@ -117,7 +119,7 @@ const AdminGolfCourseDetailPage: React.FC = () => {
 
     try {
       await deleteAdminGolfTee(apiClient, courseId, tee.id);
-      setSuccessMessage('Tee deleted successfully');
+      showNotification('Tee deleted successfully', 'success');
       setRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to delete tee');
@@ -130,7 +132,7 @@ const AdminGolfCourseDetailPage: React.FC = () => {
     try {
       if (teeFormMode === 'create') {
         await createAdminGolfTee(apiClient, courseId, data as CreateGolfCourseTeeType);
-        setSuccessMessage('Tee added successfully');
+        showNotification('Tee added successfully', 'success');
       } else if (editingTee) {
         await updateAdminGolfTee(
           apiClient,
@@ -138,7 +140,7 @@ const AdminGolfCourseDetailPage: React.FC = () => {
           editingTee.id,
           data as UpdateGolfCourseTeeType,
         );
-        setSuccessMessage('Tee updated successfully');
+        showNotification('Tee updated successfully', 'success');
       }
       setTeeFormOpen(false);
       setRefreshKey((k) => k + 1);
@@ -263,21 +265,7 @@ const AdminGolfCourseDetailPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <Snackbar
-        open={Boolean(successMessage)}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSuccessMessage(null)}
-          severity="success"
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

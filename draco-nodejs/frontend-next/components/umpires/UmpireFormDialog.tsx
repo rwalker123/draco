@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Autocomplete,
   Button,
   CircularProgress,
@@ -10,7 +9,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Snackbar,
   TextField,
 } from '@mui/material';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
@@ -25,6 +23,7 @@ import type {
 import { CreateUmpireSchema } from '@draco/shared-schemas';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { useUmpireService } from '../../hooks/useUmpireService';
 import { unwrapApiResult } from '../../utils/apiResult';
 
@@ -232,16 +231,7 @@ export const UmpireFormDialog: React.FC<UmpireFormDialogProps> = ({
           {isSubmitting ? 'Saving…' : 'Add Umpire'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

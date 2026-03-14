@@ -9,7 +9,6 @@ import {
   Fab,
   IconButton,
   Paper,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -30,7 +29,8 @@ import { useApiClient } from '../../../../../hooks/useApiClient';
 import { useAuth } from '../../../../../context/AuthContext';
 import { unwrapApiResult } from '@/utils/apiResult';
 import { alpha } from '@mui/material/styles';
-import { UI_TIMEOUTS } from '../../../../../constants/timeoutConstants';
+import NotificationSnackbar from '../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../hooks/useNotifications';
 
 interface PollManagementPageProps {
   accountId: string;
@@ -39,12 +39,9 @@ interface PollManagementPageProps {
 const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) => {
   const apiClient = useApiClient();
   const { token } = useAuth();
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [polls, setPolls] = useState<AccountPollType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [snackbar, setSnackbar] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorPoll, setEditorPoll] = useState<AccountPollType | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -79,7 +76,7 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load polls:', err);
-        setSnackbar({ severity: 'error', message: 'Failed to load polls.' });
+        showNotification('Failed to load polls.', 'error');
         setPolls([]);
       } finally {
         if (!controller.signal.aborted) {
@@ -93,7 +90,7 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
     return () => {
       controller.abort();
     };
-  }, [accountId, apiClient, canManage]);
+  }, [accountId, apiClient, canManage, showNotification]);
 
   const handleOpenCreate = () => {
     setEditorPoll(null);
@@ -115,11 +112,11 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
       const exists = prev.some((item) => item.id === poll.id);
       return exists ? prev.map((item) => (item.id === poll.id ? poll : item)) : [...prev, poll];
     });
-    setSnackbar({ severity: 'success', message });
+    showNotification(message, 'success');
   };
 
   const handleEditorError = (message: string) => {
-    setSnackbar({ severity: 'error', message });
+    showNotification(message, 'error');
   };
 
   const handleConfirmDelete = (poll: AccountPollType) => {
@@ -134,11 +131,11 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
 
   const handleDeleteSuccess = ({ message, pollId }: { message: string; pollId: string }) => {
     setPolls((prev) => prev.filter((poll) => poll.id !== pollId));
-    setSnackbar({ severity: 'success', message });
+    showNotification(message, 'success');
   };
 
   const handleDeleteError = (message: string) => {
-    setSnackbar({ severity: 'error', message });
+    showNotification(message, 'error');
   };
 
   if (!canManage) {
@@ -321,27 +318,7 @@ const PollManagementPage: React.FC<PollManagementPageProps> = ({ accountId }) =>
         onError={handleDeleteError}
       />
 
-      <Snackbar
-        open={Boolean(snackbar)}
-        autoHideDuration={
-          snackbar?.severity === 'error'
-            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
-            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
-        }
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

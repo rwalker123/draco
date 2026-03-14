@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Container, Typography, Fab, Snackbar } from '@mui/material';
+import { Box, Container, Typography, Fab } from '@mui/material';
+import NotificationSnackbar from '../../../../components/common/NotificationSnackbar';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import { useUserDialogs } from '../../../../hooks/useUserDialogs';
 import { useNotifications } from '../../../../hooks/useNotifications';
@@ -408,18 +409,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         </Fab>
       )}
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

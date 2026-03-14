@@ -10,9 +10,8 @@ import {
   Select,
   MenuItem,
   Paper,
-  Snackbar,
-  Alert,
 } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import AccountPageHeader from '../AccountPageHeader';
@@ -270,40 +269,12 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
           />
         </Container>
 
-        {feedback && (
-          <Snackbar
-            open
-            autoHideDuration={6000}
-            onClose={onFeedbackClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert
-              onClose={onFeedbackClose}
-              severity={feedback.severity}
-              variant="filled"
-              sx={{ width: '100%' }}
-            >
-              {feedback.message}
-            </Alert>
-          </Snackbar>
-        )}
-
+        {feedback && <NotificationSnackbar notification={feedback} onClose={onFeedbackClose} />}
         {recapError && onRecapErrorClose && (
-          <Snackbar
-            open
-            autoHideDuration={6000}
+          <NotificationSnackbar
+            notification={{ message: recapError, severity: 'error' }}
             onClose={onRecapErrorClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert
-              onClose={onRecapErrorClose}
-              severity="error"
-              variant="filled"
-              sx={{ width: '100%' }}
-            >
-              {recapError}
-            </Alert>
-          </Snackbar>
+          />
         )}
       </main>
     </LocalizationProvider>

@@ -2,17 +2,16 @@
 
 import React, { useState } from 'react';
 import {
-  Alert,
   Button,
   CircularProgress,
   Container,
   IconButton,
   Paper,
-  Snackbar,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import NotificationSnackbar from '@/components/common/NotificationSnackbar';
 import { Home as HomeIcon } from '@mui/icons-material';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
@@ -148,18 +147,7 @@ const ContactPage: React.FC = () => {
           </Paper>
         </Stack>
       </Container>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

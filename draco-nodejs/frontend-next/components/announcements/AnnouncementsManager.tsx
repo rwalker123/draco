@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -12,15 +12,20 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
-  Snackbar,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import type { AnnouncementType, UpsertAnnouncementType } from '@draco/shared-schemas';
+import type {
+  AnnouncementListType,
+  AnnouncementType,
+  UpsertAnnouncementType,
+} from '@draco/shared-schemas';
 import type { WidgetAccent } from '../ui/WidgetShell';
 import WidgetShell from '../ui/WidgetShell';
 import RichTextContent from '../common/RichTextContent';
@@ -32,7 +37,12 @@ import {
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { formatDateTime } from '../../utils/dateUtils';
 import { sanitizeHandoutContent } from '../../utils/sanitization';
-import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
+import {
+  listAccountAnnouncements as apiListAccountAnnouncements,
+  listTeamAnnouncements as apiListTeamAnnouncements,
+} from '@draco/shared-api-client';
+import { useApiClient } from '../../hooks/useApiClient';
+import { unwrapApiResult } from '../../utils/apiResult';
 
 interface AnnouncementsManagerProps {
   scope: AnnouncementScope;
@@ -60,7 +70,6 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
   emptyMessage = 'No announcements have been posted yet.',
 }) => {
   const {
-    listAnnouncements,
     createAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
@@ -69,61 +78,76 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
     clearError,
   } = useAnnouncementOperations(scope);
 
-  const listAnnouncementsRef = useRef(listAnnouncements);
-  const createAnnouncementRef = useRef(createAnnouncement);
-  const updateAnnouncementRef = useRef(updateAnnouncement);
-  const deleteAnnouncementRef = useRef(deleteAnnouncement);
-  const clearErrorRef = useRef(clearError);
-
-  useEffect(() => {
-    listAnnouncementsRef.current = listAnnouncements;
-    createAnnouncementRef.current = createAnnouncement;
-    updateAnnouncementRef.current = updateAnnouncement;
-    deleteAnnouncementRef.current = deleteAnnouncement;
-    clearErrorRef.current = clearError;
-  }, [listAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, clearError]);
-
+  const apiClient = useApiClient();
   const [announcements, setAnnouncements] = React.useState<AnnouncementType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({ open: false });
   const [confirmState, setConfirmState] = React.useState<ConfirmState>({
     open: false,
     announcement: null,
   });
-  const [snackbar, setSnackbar] = React.useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
-
-  const refreshAnnouncements = async () => {
-    try {
-      setLoading(true);
-      const data = await listAnnouncementsRef.current();
-      setAnnouncements(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load announcements';
-      setSnackbar({ severity: 'error', message });
-      setAnnouncements([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   const teamSeasonId = 'teamSeasonId' in scope ? scope.teamSeasonId : null;
+  const teamId = 'teamId' in scope ? scope.teamId : null;
 
   useEffect(() => {
-    void refreshAnnouncements();
-  }, [scope.type, scope.accountId, teamSeasonId]);
+    const controller = new AbortController();
+
+    const loadAnnouncements = async () => {
+      try {
+        setLoading(true);
+
+        const result =
+          scope.type === 'team' && teamId
+            ? await apiListTeamAnnouncements({
+                client: apiClient,
+                path: { accountId: scope.accountId, teamId },
+                signal: controller.signal,
+                throwOnError: false,
+              })
+            : await apiListAccountAnnouncements({
+                client: apiClient,
+                path: { accountId: scope.accountId },
+                signal: controller.signal,
+                throwOnError: false,
+              });
+
+        if (controller.signal.aborted) return;
+        const payload = unwrapApiResult<AnnouncementListType>(
+          result,
+          'Failed to load announcements',
+        );
+        setAnnouncements(payload.announcements);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Failed to load announcements';
+        showNotification(message, 'error');
+        setAnnouncements([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadAnnouncements();
+
+    return () => {
+      controller.abort();
+    };
+  }, [scope.type, scope.accountId, teamId, teamSeasonId, refreshKey, showNotification, apiClient]);
 
   const handleCreate = () => {
-    clearErrorRef.current();
+    clearError();
     setLocalError(null);
     setDialogState({ open: true, mode: 'create', announcement: null });
   };
 
   const handleEdit = (announcement: AnnouncementType) => {
-    clearErrorRef.current();
+    clearError();
     setLocalError(null);
     setDialogState({ open: true, mode: 'edit', announcement });
   };
@@ -131,31 +155,30 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
   const handleDialogClose = () => {
     setDialogState({ open: false });
     setLocalError(null);
-    clearErrorRef.current();
+    clearError();
   };
 
   const handleSubmit = async (payload: UpsertAnnouncementType) => {
     try {
       setLocalError(null);
-      clearErrorRef.current();
+      clearError();
       if (!dialogState.open) {
         return;
       }
 
       if (dialogState.mode === 'create') {
-        await createAnnouncementRef.current(payload);
-        setSnackbar({ severity: 'success', message: 'Announcement created successfully.' });
+        await createAnnouncement(payload);
+        showNotification('Announcement created successfully.', 'success');
       } else if (dialogState.mode === 'edit' && dialogState.announcement) {
-        await updateAnnouncementRef.current(dialogState.announcement.id, payload);
-        setSnackbar({ severity: 'success', message: 'Announcement updated successfully.' });
+        await updateAnnouncement(dialogState.announcement.id, payload);
+        showNotification('Announcement updated successfully.', 'success');
       }
 
       setDialogState({ open: false });
-      await refreshAnnouncements();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save announcement';
       setLocalError(message);
-      setSnackbar({ severity: 'error', message });
       throw err;
     }
   };
@@ -163,7 +186,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
   const handleDeletePrompt = (announcement: AnnouncementType) => {
     setConfirmState({ open: true, announcement });
     setLocalError(null);
-    clearErrorRef.current();
+    clearError();
   };
 
   const handleDeleteCancel = () => {
@@ -178,15 +201,14 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
 
     try {
       setLocalError(null);
-      clearErrorRef.current();
-      await deleteAnnouncementRef.current(target.id);
-      setSnackbar({ severity: 'success', message: 'Announcement deleted successfully.' });
+      clearError();
+      await deleteAnnouncement(target.id);
+      showNotification('Announcement deleted successfully.', 'success');
       setConfirmState({ open: false, announcement: null });
-      await refreshAnnouncements();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete announcement';
-      setLocalError(message);
-      setSnackbar({ severity: 'error', message });
+      showNotification(message, 'error');
     }
   };
 
@@ -318,27 +340,7 @@ const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
         onConfirm={handleDeleteConfirm}
       />
 
-      <Snackbar
-        open={Boolean(snackbar)}
-        autoHideDuration={
-          snackbar?.severity === 'error'
-            ? UI_TIMEOUTS.ERROR_MESSAGE_TIMEOUT_MS
-            : UI_TIMEOUTS.SUCCESS_MESSAGE_TIMEOUT_MS
-        }
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {snackbar ? (
-          <Alert
-            onClose={() => setSnackbar(null)}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

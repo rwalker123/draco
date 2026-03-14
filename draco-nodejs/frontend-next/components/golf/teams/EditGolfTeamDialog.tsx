@@ -8,10 +8,9 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import type { GolfTeamType, GolfTeamWithPlayerCountType } from '@draco/shared-schemas';
 import { useGolfTeams } from '../../../hooks/useGolfTeams';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -120,16 +119,7 @@ const EditGolfTeamDialog: React.FC<EditGolfTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Save'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

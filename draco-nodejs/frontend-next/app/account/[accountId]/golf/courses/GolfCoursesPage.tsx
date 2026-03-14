@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, CircularProgress, Container, Fab, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Fab, Typography } from '@mui/material';
+import NotificationSnackbar from '../../../../../components/common/NotificationSnackbar';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import type { GolfLeagueCourseType } from '@draco/shared-schemas';
@@ -238,23 +239,7 @@ const GolfCoursesPage: React.FC = () => {
         leagueCourses={courses}
       />
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert
-            onClose={hideNotification}
-            severity={notification.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

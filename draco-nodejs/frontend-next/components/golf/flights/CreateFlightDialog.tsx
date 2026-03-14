@@ -8,10 +8,9 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import type { GolfFlightType } from '@draco/shared-schemas';
 import { useGolfFlights } from '../../../hooks/useGolfFlights';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -102,16 +101,7 @@ const CreateFlightDialog: React.FC<CreateFlightDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Create Flight'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

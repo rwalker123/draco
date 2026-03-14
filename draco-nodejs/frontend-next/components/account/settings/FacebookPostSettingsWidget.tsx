@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Alert, FormControlLabel, Snackbar, Stack, Switch, Typography } from '@mui/material';
+import { FormControlLabel, Stack, Switch, Typography } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import type { AccountSettingState } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -77,18 +78,7 @@ export const FacebookPostSettingsWidget: React.FC<FacebookPostSettingsWidgetProp
         <Typography variant="body2" color="text.secondary">
           These toggles will control Facebook posting once the integration is fully wired.
         </Typography>
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={hideNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          {notification ? (
-            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-              {notification.message}
-            </Alert>
-          ) : undefined}
-        </Snackbar>
+        <NotificationSnackbar notification={notification} onClose={hideNotification} />
         <FormControlLabel
           control={
             <Switch

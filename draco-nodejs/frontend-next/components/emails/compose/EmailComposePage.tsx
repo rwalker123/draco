@@ -6,7 +6,6 @@ import {
   Stack,
   Typography,
   Alert,
-  Snackbar,
   useMediaQuery,
   useTheme,
   Fab,
@@ -14,6 +13,7 @@ import {
   AlertTitle,
   LinearProgress,
 } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 // Using Box/Stack layout only; avoid Grid2 to match project conventions
 import { KeyboardArrowDown as ExpandIcon, CloudOff as OfflineIcon } from '@mui/icons-material';
 
@@ -579,17 +579,7 @@ const EmailComposePageInternal: React.FC<
         />
       )}
 
-      {/* Notifications */}
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={handleNotificationClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleNotificationClose} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={handleNotificationClose} />
     </Box>
   );
 };

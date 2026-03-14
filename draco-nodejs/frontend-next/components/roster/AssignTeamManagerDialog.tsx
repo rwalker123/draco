@@ -1,28 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  Alert,
   TextField,
   Autocomplete,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
 import { SupervisorAccount as ManagerIcon } from '@mui/icons-material';
 import { RosterMemberType, TeamManagerType } from '@draco/shared-schemas';
 import { getContactDisplayName } from '../../utils/contactUtils';
-import { useNotifications } from '../../hooks/useNotifications';
 
 interface AssignTeamManagerDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (result: { message: string; managerId: string }) => void;
-  addManager: (contactId: string) => Promise<void>;
+  onError: (error: string) => void;
+  addManager: (contactId: string) => Promise<{ success: boolean; message: string }>;
   availablePlayers: RosterMemberType[];
   existingManagers: TeamManagerType[];
 }
@@ -31,25 +29,18 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
   open,
   onClose,
   onSuccess,
+  onError,
   addManager,
   availablePlayers,
   existingManagers,
 }) => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { notification, showNotification, hideNotification } = useNotifications();
 
   const handleClose = () => {
-    hideNotification();
+    setSelectedContactId(null);
     onClose();
   };
-
-  useEffect(() => {
-    if (open) {
-      setSelectedContactId(null);
-      hideNotification();
-    }
-  }, [open, hideNotification]);
 
   const eligiblePlayers = availablePlayers.filter(
     (member) => !existingManagers.some((m) => m.contact.id === member.player.contact.id),
@@ -62,17 +53,21 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
     if (!selectedContactId || !selectedPlayer) return;
 
     setLoading(true);
-    hideNotification();
 
     try {
-      await addManager(selectedContactId);
-      const playerName = getContactDisplayName(selectedPlayer.player.contact);
-      onSuccess({
-        message: `"${playerName}" assigned as team manager`,
-        managerId: selectedContactId,
-      });
+      const result = await addManager(selectedContactId);
+
+      if (result.success) {
+        const playerName = getContactDisplayName(selectedPlayer.player.contact);
+        onSuccess({
+          message: `"${playerName}" assigned as team manager`,
+          managerId: selectedContactId,
+        });
+      } else {
+        onError(result.message);
+      }
     } catch (err) {
-      showNotification(err instanceof Error ? err.message : 'Failed to assign manager', 'error');
+      onError(err instanceof Error ? err.message : 'Failed to assign manager');
     } finally {
       setLoading(false);
     }
@@ -111,16 +106,6 @@ const AssignTeamManagerDialog: React.FC<AssignTeamManagerDialogProps> = ({
           Assign
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
     </Dialog>
   );
 };

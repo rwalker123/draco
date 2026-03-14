@@ -8,7 +8,6 @@ import {
   Container,
   IconButton,
   Paper,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -20,6 +19,7 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
+import NotificationSnackbar from '@/components/common/NotificationSnackbar';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { listMemberBusinesses } from '@draco/shared-api-client';
 import type { MemberBusinessType } from '@draco/shared-schemas';
@@ -325,18 +325,7 @@ const AccountMemberBusinessManagement: React.FC<AccountMemberBusinessManagementP
         onError={handleDialogError}
       />
 
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </>
   );
 };

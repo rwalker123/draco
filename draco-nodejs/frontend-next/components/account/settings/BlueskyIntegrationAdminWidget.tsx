@@ -1,16 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  FormControlLabel,
-  Snackbar,
-  Stack,
-  Switch,
-  TextField,
-} from '@mui/material';
+import { Alert, Box, Button, FormControlLabel, Stack, Switch, TextField } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { updateAccountBlueskySettings } from '@draco/shared-api-client';
 import type { AccountBlueskySettingsType, AccountType } from '@draco/shared-schemas';
 import WidgetShell from '../../ui/WidgetShell';
@@ -146,18 +138,7 @@ export const BlueskyIntegrationAdminWidget: React.FC<BlueskyIntegrationAdminWidg
             </Button>
           </Box>
         </Stack>
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={hideNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          {notification ? (
-            <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-              {notification.message}
-            </Alert>
-          ) : undefined}
-        </Snackbar>
+        <NotificationSnackbar notification={notification} onClose={hideNotification} />
       </form>
     </WidgetShell>
   );

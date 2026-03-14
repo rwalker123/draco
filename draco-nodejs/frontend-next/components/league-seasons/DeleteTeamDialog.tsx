@@ -12,7 +12,6 @@ import {
   Typography,
   Box,
   TextField,
-  Snackbar,
 } from '@mui/material';
 import {
   deleteSeasonTeam as apiDeleteSeasonTeam,
@@ -25,6 +24,7 @@ import type {
 import { unwrapApiResult, assertNoApiError } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 interface DeleteTeamDialogProps {
   open: boolean;
@@ -166,16 +166,7 @@ const DeleteTeamDialog: React.FC<DeleteTeamDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Remove Team'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

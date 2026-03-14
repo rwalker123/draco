@@ -8,12 +8,10 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert,
   CircularProgress,
   Typography,
   Box,
   Autocomplete,
-  Snackbar,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { addDivisionToLeagueSeason as apiAddDivisionToLeagueSeason } from '@draco/shared-api-client';
@@ -26,6 +24,7 @@ import type {
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import PageSectionHeader from '../common/PageSectionHeader';
 
 export interface AddDivisionResult {
@@ -297,16 +296,7 @@ const AddDivisionDialog: React.FC<AddDivisionDialogProps> = ({
           </Button>
         )}
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

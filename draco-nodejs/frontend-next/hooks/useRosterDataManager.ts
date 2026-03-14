@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
@@ -61,8 +63,11 @@ interface RosterMemberUpdates {
   };
 }
 
-// todo: check to see if we should really be storing the available players in the state
-// it could be better to just fetch the available players when needed
+interface OperationResult {
+  success: boolean;
+  message: string;
+}
+
 interface RosterDataManagerState {
   rosterData: TeamRosterMembersType;
   managers: TeamManagerType[];
@@ -70,35 +75,40 @@ interface RosterDataManagerState {
   league: League | null;
   loading: boolean;
   error: string | null;
-  successMessage: string | null;
 }
 
 interface RosterDataManagerActions {
-  // Data fetching
   fetchRosterData: () => Promise<void>;
   fetchAvailablePlayers: (firstName?: string, lastName?: string) => Promise<BaseContactType[]>;
   fetchManagers: () => Promise<void>;
   fetchSeasonData: () => Promise<void>;
   fetchLeagueData: () => Promise<void>;
 
-  // Operations with optimistic updates
-  updateRosterMember: (rosterMemberId: string, updates: RosterMemberUpdates) => Promise<void>;
+  updateRosterMember: (
+    rosterMemberId: string,
+    updates: RosterMemberUpdates,
+  ) => Promise<OperationResult>;
   getContactRoster: (contactId: string) => Promise<RosterPlayerType | undefined>;
-  signPlayer: (contactId: string, rosterData: SignRosterMemberType) => Promise<void>;
-  releasePlayer: (rosterMemberId: string) => Promise<void>;
-  activatePlayer: (rosterMemberId: string) => Promise<void>;
-  deletePlayer: (rosterMemberId: string) => Promise<void>;
-  addManager: (contactId: string) => Promise<void>;
-  removeManager: (managerId: string) => Promise<void>;
-  deleteContactPhoto: (contactId: string) => Promise<void>;
+  signPlayer: (contactId: string, rosterData: SignRosterMemberType) => Promise<OperationResult>;
+  releasePlayer: (rosterMemberId: string) => Promise<OperationResult>;
+  activatePlayer: (rosterMemberId: string) => Promise<OperationResult>;
+  deletePlayer: (rosterMemberId: string) => Promise<OperationResult>;
+  addManager: (contactId: string) => Promise<OperationResult>;
+  removeManager: (managerId: string) => Promise<OperationResult>;
+  deleteContactPhoto: (contactId: string) => Promise<OperationResult>;
 
-  // State management
   clearError: () => void;
-  clearSuccessMessage: () => void;
   setError: (error: string) => void;
-  setSuccessMessage: (message: string) => void;
   setRosterData: (data: TeamRosterMembersType) => void;
 }
+
+const getErrorMessage = (error: unknown, defaultMessage: string): string => {
+  if (error instanceof Error) {
+    return error.message || defaultMessage;
+  }
+
+  return getApiErrorMessage(error, defaultMessage);
+};
 
 export const useRosterDataManager = (
   options: UseRosterDataManagerOptions,
@@ -107,19 +117,16 @@ export const useRosterDataManager = (
   const { token } = useAuth();
   const apiClient = useApiClient();
 
-  // State
   const [rosterData, setRosterData] = useState<TeamRosterMembersType>({
     teamSeason: { id: teamSeasonId, name: '' },
     rosterMembers: [],
   });
   const [managers, setManagers] = useState<TeamManagerType[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [season, setSeason] = useState<Season | null>(null);
   const [league, setLeague] = useState<League | null>(null);
 
-  // Refs for service and data caching
   const dataCacheRef = useRef<{
     rosterData: TeamRosterMembersType | null;
     managers: TeamManagerType[];
@@ -128,26 +135,9 @@ export const useRosterDataManager = (
     managers: [],
   });
 
-  // Helper function to handle errors
-  const getErrorMessage = (error: unknown, defaultMessage: string): string => {
-    if (error instanceof Error) {
-      return error.message || defaultMessage;
-    }
-
-    return getApiErrorMessage(error, defaultMessage);
-  };
-
-  const getErrorMessageRef = useRef(getErrorMessage);
-  getErrorMessageRef.current = getErrorMessage;
-
-  const getErrorMessageMemo = (error: unknown, defaultMessage: string) =>
-    getErrorMessageRef.current(error, defaultMessage);
-
-  // Helper function to transform backend data
   const transformBackendData = (data: unknown) => {
     if (!data) return data;
 
-    // Handle TeamRosterData with roster members
     if (typeof data === 'object' && data !== null && 'rosterMembers' in data) {
       const teamData = data as { rosterMembers: unknown[] };
       return {
@@ -159,7 +149,6 @@ export const useRosterDataManager = (
             ...memberObj,
             player: {
               ...playerObj,
-              // Transform contact if it has backend field names (lowercase)
               contact: playerObj?.contact
                 ? ContactTransformationService.transformBackendContact(
                     playerObj.contact as Record<string, unknown>,
@@ -171,19 +160,15 @@ export const useRosterDataManager = (
       };
     }
 
-    // Handle array of contacts (available players)
     if (Array.isArray(data)) {
       return data.map((item) => {
         const itemObj = item as Record<string, unknown>;
-        // If it's a ContactEntry with backend field names, transform it
         if (itemObj.firstname || itemObj.lastname) {
           return ContactTransformationService.transformBackendContact(itemObj);
         }
-        // If it already has frontend field names, return as is
         if (itemObj.firstName || itemObj.lastName) {
           return item;
         }
-        // Handle nested contact objects
         return {
           ...itemObj,
           contact: itemObj.contact
@@ -203,7 +188,6 @@ export const useRosterDataManager = (
     return data;
   };
 
-  // Fetch roster data
   const fetchRosterData = async () => {
     if (!accountId || !seasonId || !teamSeasonId || !token) {
       if (!token) {
@@ -230,14 +214,13 @@ export const useRosterDataManager = (
       dataCacheRef.current.rosterData = roster;
       setRosterData(roster);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch roster data');
+      const errorMessage = getErrorMessage(error, 'Failed to fetch roster data');
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch available players - returns data directly instead of storing in state
   const fetchAvailablePlayers = async (
     firstName?: string,
     lastName?: string,
@@ -262,13 +245,12 @@ export const useRosterDataManager = (
       const errorMessage =
         error instanceof ApiClientError
           ? getApiErrorMessage(error.details ?? error, 'Failed to fetch available players')
-          : getErrorMessageMemo(error, 'Failed to fetch available players');
+          : getErrorMessage(error, 'Failed to fetch available players');
       console.error(errorMessage, error);
       return [];
     }
   };
 
-  // Fetch managers
   const fetchManagers = async () => {
     if (!accountId || !seasonId || !teamSeasonId || !token) return;
 
@@ -287,12 +269,11 @@ export const useRosterDataManager = (
       const message =
         error instanceof ApiClientError
           ? getApiErrorMessage(error.details ?? error, 'Failed to fetch managers')
-          : getErrorMessageMemo(error, 'Failed to fetch managers');
+          : getErrorMessage(error, 'Failed to fetch managers');
       console.warn(message, error);
     }
   };
 
-  // Fetch season data
   const fetchSeasonData = async () => {
     if (!accountId || !seasonId || !token) return;
 
@@ -306,12 +287,11 @@ export const useRosterDataManager = (
       const seasonData = unwrapApiResult(result, 'Failed to fetch season data');
       setSeason({ id: seasonData.id, name: seasonData.name });
     } catch (error: unknown) {
-      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch season data');
+      const errorMessage = getErrorMessage(error, 'Failed to fetch season data');
       setError(errorMessage);
     }
   };
 
-  // Fetch league data
   const fetchLeagueData = async () => {
     if (!accountId || !seasonId || !teamSeasonId || !token) return;
 
@@ -326,14 +306,16 @@ export const useRosterDataManager = (
 
       setLeague(leagueData ? { id: leagueData.id, name: leagueData.name } : null);
     } catch (error: unknown) {
-      const errorMessage = getErrorMessageMemo(error, 'Failed to fetch league data');
+      const errorMessage = getErrorMessage(error, 'Failed to fetch league data');
       setError(errorMessage);
     }
   };
 
-  // Update roster member with optimistic updates
-  const updateRosterMember = async (rosterMemberId: string, updates: RosterMemberUpdates) => {
-    if (!rosterData) return;
+  const updateRosterMember = async (
+    rosterMemberId: string,
+    updates: RosterMemberUpdates,
+  ): Promise<OperationResult> => {
+    if (!rosterData) return { success: false, message: 'No roster data available' };
 
     try {
       const sanitizedUpdates: UpdateRosterMemberType = {};
@@ -383,10 +365,12 @@ export const useRosterDataManager = (
 
       dataCacheRef.current.rosterData = updatedRosterData;
       setRosterData(updatedRosterData);
-      setSuccessMessage('Roster information updated successfully');
-      setError(null);
+      return { success: true, message: 'Roster information updated successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to update roster information');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to update roster information',
+      };
     }
   };
 
@@ -402,14 +386,17 @@ export const useRosterDataManager = (
     return unwrapApiResult(result, 'Failed to fetch contact roster') as RosterPlayerType;
   };
 
-  // Sign player with server response updates
-  const signPlayer = async (contactId: string, rosterData: SignRosterMemberType) => {
-    if (!rosterData) return;
+  const signPlayer = async (
+    contactId: string,
+    playerData: SignRosterMemberType,
+  ): Promise<OperationResult> => {
+    if (!dataCacheRef.current.rosterData)
+      return { success: false, message: 'No roster data available' };
 
     try {
       const result = await apiSignPlayer({
         path: { accountId, seasonId, teamSeasonId },
-        body: { ...rosterData, player: { ...rosterData.player, contact: { id: contactId } } },
+        body: { ...playerData, player: { ...playerData.player, contact: { id: contactId } } },
         client: apiClient,
         throwOnError: false,
       });
@@ -417,22 +404,23 @@ export const useRosterDataManager = (
       const newMember = unwrapApiResult(result, 'Failed to sign player') as RosterMemberType;
 
       const updatedRosterData: TeamRosterMembersType = {
-        ...dataCacheRef.current.rosterData!,
-        rosterMembers: [...dataCacheRef.current.rosterData!.rosterMembers, newMember],
+        ...dataCacheRef.current.rosterData,
+        rosterMembers: [...dataCacheRef.current.rosterData.rosterMembers, newMember],
       };
 
       dataCacheRef.current.rosterData = updatedRosterData;
       setRosterData(updatedRosterData);
-      setSuccessMessage('Player signed successfully');
-      setError(null);
+      return { success: true, message: 'Player signed successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to sign player');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to sign player',
+      };
     }
   };
 
-  // Release player with optimistic updates
-  const releasePlayer = async (rosterMemberId: string) => {
-    if (!rosterData) return;
+  const releasePlayer = async (rosterMemberId: string): Promise<OperationResult> => {
+    if (!rosterData) return { success: false, message: 'No roster data available' };
 
     try {
       const result = await apiReleasePlayer({
@@ -452,16 +440,17 @@ export const useRosterDataManager = (
 
       dataCacheRef.current.rosterData = updatedRosterData;
       setRosterData(updatedRosterData);
-      setSuccessMessage('Player released successfully');
-      setError(null);
+      return { success: true, message: 'Player released successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to release player');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to release player',
+      };
     }
   };
 
-  // Activate player with optimistic updates
-  const activatePlayer = async (rosterMemberId: string) => {
-    if (!rosterData) return;
+  const activatePlayer = async (rosterMemberId: string): Promise<OperationResult> => {
+    if (!rosterData) return { success: false, message: 'No roster data available' };
 
     try {
       const result = await apiActivatePlayer({
@@ -481,16 +470,17 @@ export const useRosterDataManager = (
 
       dataCacheRef.current.rosterData = updatedRosterData;
       setRosterData(updatedRosterData);
-      setSuccessMessage('Player activated successfully');
-      setError(null);
+      return { success: true, message: 'Player activated successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to activate player');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to activate player',
+      };
     }
   };
 
-  // Delete player with optimistic updates
-  const deletePlayer = async (rosterMemberId: string) => {
-    if (!rosterData) return;
+  const deletePlayer = async (rosterMemberId: string): Promise<OperationResult> => {
+    if (!rosterData) return { success: false, message: 'No roster data available' };
 
     try {
       const result = await apiDeletePlayer({
@@ -510,15 +500,16 @@ export const useRosterDataManager = (
 
       dataCacheRef.current.rosterData = updatedRosterData;
       setRosterData(updatedRosterData);
-      setSuccessMessage('Player deleted successfully');
-      setError(null);
+      return { success: true, message: 'Player deleted successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to delete player');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete player',
+      };
     }
   };
 
-  // Add manager with optimistic updates
-  const addManager = async (contactId: string) => {
+  const addManager = async (contactId: string): Promise<OperationResult> => {
     try {
       const result = await apiAddManager({
         path: { accountId, seasonId, teamSeasonId },
@@ -529,19 +520,20 @@ export const useRosterDataManager = (
 
       const newManager = unwrapApiResult(result, 'Failed to add manager') as TeamManagerType;
 
-      const updatedManagers = [...managers, newManager];
+      const updatedManagers = [...dataCacheRef.current.managers, newManager];
 
       dataCacheRef.current.managers = updatedManagers;
       setManagers(updatedManagers);
-      setSuccessMessage('Manager added successfully');
-      setError(null);
+      return { success: true, message: 'Manager added successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to add manager');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to add manager',
+      };
     }
   };
 
-  // Remove manager with optimistic updates
-  const removeManager = async (managerId: string) => {
+  const removeManager = async (managerId: string): Promise<OperationResult> => {
     try {
       const result = await apiRemoveManager({
         path: { accountId, seasonId, teamSeasonId, managerId },
@@ -557,16 +549,17 @@ export const useRosterDataManager = (
 
       dataCacheRef.current.managers = updatedManagers;
       setManagers(updatedManagers);
-      setSuccessMessage('Manager removed successfully');
-      setError(null);
+      return { success: true, message: 'Manager removed successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to remove manager');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to remove manager',
+      };
     }
   };
 
-  // Delete contact photo with optimistic updates
-  const deleteContactPhoto = async (contactId: string) => {
-    if (!rosterData) return;
+  const deleteContactPhoto = async (contactId: string): Promise<OperationResult> => {
+    if (!rosterData) return { success: false, message: 'No roster data available' };
 
     try {
       const result = await apiDeleteContactPhoto({
@@ -594,20 +587,17 @@ export const useRosterDataManager = (
 
       dataCacheRef.current.rosterData = updatedRosterData;
       setRosterData(updatedRosterData);
-      setSuccessMessage('Photo deleted successfully');
-      setError(null);
+      return { success: true, message: 'Photo deleted successfully' };
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to delete photo');
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete photo',
+      };
     }
   };
 
-  // State management helpers
   const clearError = () => {
     setError(null);
-  };
-
-  const clearSuccessMessage = () => {
-    setSuccessMessage(null);
   };
 
   return {
@@ -617,7 +607,6 @@ export const useRosterDataManager = (
     league,
     loading,
     error,
-    successMessage,
     fetchRosterData,
     fetchAvailablePlayers,
     fetchManagers,
@@ -633,9 +622,7 @@ export const useRosterDataManager = (
     removeManager,
     deleteContactPhoto,
     clearError,
-    clearSuccessMessage,
     setError,
-    setSuccessMessage,
     setRosterData,
   };
 };

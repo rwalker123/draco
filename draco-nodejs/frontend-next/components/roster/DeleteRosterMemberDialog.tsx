@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +21,7 @@ interface DeleteRosterMemberDialogProps {
   member: RosterMemberType | null;
   onClose: () => void;
   onSuccess: (result: { message: string; memberId: string }) => void;
-  deletePlayer: (rosterMemberId: string) => Promise<void>;
+  deletePlayer: (rosterMemberId: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
@@ -34,11 +34,10 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      setError(null);
-    }
-  }, [open]);
+  const handleClose = () => {
+    setError(null);
+    onClose();
+  };
 
   const handleDelete = async () => {
     if (!member) return;
@@ -47,9 +46,14 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
     setError(null);
 
     try {
-      await deletePlayer(member.id);
-      const playerName = getContactDisplayName(member.player.contact);
-      onSuccess({ message: `Player "${playerName}" deleted successfully`, memberId: member.id });
+      const result = await deletePlayer(member.id);
+
+      if (result.success) {
+        const playerName = getContactDisplayName(member.player.contact);
+        onSuccess({ message: `Player "${playerName}" deleted successfully`, memberId: member.id });
+      } else {
+        setError(result.message);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete player');
     } finally {
@@ -60,7 +64,7 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
   const playerName = member ? getContactDisplayName(member.player.contact) : '';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center">
           <WarningIcon color="error" sx={{ mr: 1 }} />
@@ -81,7 +85,7 @@ const DeleteRosterMemberDialog: React.FC<DeleteRosterMemberDialogProps> = ({
         </Alert>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
         <Button

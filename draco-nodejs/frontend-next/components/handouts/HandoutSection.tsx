@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Alert, Box, Button, Snackbar, Stack, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import type { SxProps, Theme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { HandoutType } from '@draco/shared-schemas';
@@ -302,18 +303,7 @@ const HandoutSection: React.FC<HandoutSectionProps> = ({
         confirmText="Delete"
         confirmButtonColor="error"
       />
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={handleHideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={handleHideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={handleHideNotification} />
     </>
   );
 };

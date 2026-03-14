@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { type UpsertWelcomeMessageType, type WelcomeMessageType } from '@draco/shared-schemas';
 
 import { useAuth } from '../context/AuthContext';
@@ -38,115 +38,126 @@ interface OperationResult {
 export function useWelcomeMessageOperations(scope: WelcomeMessageScope): OperationResult {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const service = new WelcomeMessageService(token, apiClient);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resolveScope = (override?: WelcomeMessageScope) => {
-    const target = override ?? scope;
-    if (target.type === 'team') {
-      return {
-        type: 'team',
-        accountId: target.accountId,
-        teamSeasonId: target.teamSeasonId,
-      } as const;
-    }
-    return { type: 'account', accountId: target.accountId } as const;
-  };
+  const depsRef = useRef({ scope, token, apiClient });
+  depsRef.current = { scope, token, apiClient };
 
-  const listMessages = async (overrideScope?: WelcomeMessageScope) => {
-    const effectiveScope = resolveScope(overrideScope);
-    if (effectiveScope.type === 'team') {
-      return service.listTeamMessages(effectiveScope.accountId, {
-        teamSeasonId: effectiveScope.teamSeasonId,
-      });
-    }
+  const [operations] = useState(() => {
+    const getService = () => {
+      const { token: t, apiClient: c } = depsRef.current;
+      return new WelcomeMessageService(t, c);
+    };
 
-    return service.listAccountMessages(effectiveScope.accountId);
-  };
+    const resolveScope = (override?: WelcomeMessageScope) => {
+      const target = override ?? depsRef.current.scope;
+      if (target.type === 'team') {
+        return {
+          type: 'team',
+          accountId: target.accountId,
+          teamSeasonId: target.teamSeasonId,
+        } as const;
+      }
+      return { type: 'account', accountId: target.accountId } as const;
+    };
 
-  const createMessage = async (
-    payload: UpsertWelcomeMessageType,
-    overrideScope?: WelcomeMessageScope,
-  ) => {
-    setLoading(true);
-
-    try {
-      setError(null);
+    const listMessages = async (overrideScope?: WelcomeMessageScope) => {
       const effectiveScope = resolveScope(overrideScope);
+      const service = getService();
       if (effectiveScope.type === 'team') {
-        return await service.createTeamMessage(effectiveScope.accountId, effectiveScope, payload);
+        return service.listTeamMessages(effectiveScope.accountId, {
+          teamSeasonId: effectiveScope.teamSeasonId,
+        });
       }
 
-      return await service.createAccountMessage(effectiveScope.accountId, payload);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create information message';
-      setError(message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+      return service.listAccountMessages(effectiveScope.accountId);
+    };
 
-  const updateMessage = async (
-    messageId: string,
-    payload: UpsertWelcomeMessageType,
-    overrideScope?: WelcomeMessageScope,
-  ) => {
-    setLoading(true);
+    const createMessage = async (
+      payload: UpsertWelcomeMessageType,
+      overrideScope?: WelcomeMessageScope,
+    ) => {
+      setLoading(true);
 
-    try {
-      setError(null);
-      const effectiveScope = resolveScope(overrideScope);
-      if (effectiveScope.type === 'team') {
-        return await service.updateTeamMessage(
-          effectiveScope.accountId,
-          effectiveScope,
-          messageId,
-          payload,
-        );
+      try {
+        setError(null);
+        const effectiveScope = resolveScope(overrideScope);
+        const service = getService();
+        if (effectiveScope.type === 'team') {
+          return await service.createTeamMessage(effectiveScope.accountId, effectiveScope, payload);
+        }
+
+        return await service.createAccountMessage(effectiveScope.accountId, payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create information message';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    };
 
-      return await service.updateAccountMessage(effectiveScope.accountId, messageId, payload);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update information message';
-      setError(message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    const updateMessage = async (
+      messageId: string,
+      payload: UpsertWelcomeMessageType,
+      overrideScope?: WelcomeMessageScope,
+    ) => {
+      setLoading(true);
 
-  const deleteMessage = async (messageId: string, overrideScope?: WelcomeMessageScope) => {
-    setLoading(true);
+      try {
+        setError(null);
+        const effectiveScope = resolveScope(overrideScope);
+        const service = getService();
+        if (effectiveScope.type === 'team') {
+          return await service.updateTeamMessage(
+            effectiveScope.accountId,
+            effectiveScope,
+            messageId,
+            payload,
+          );
+        }
 
-    try {
-      setError(null);
-      const effectiveScope = resolveScope(overrideScope);
-      if (effectiveScope.type === 'team') {
-        await service.deleteTeamMessage(effectiveScope.accountId, effectiveScope, messageId);
-      } else {
-        await service.deleteAccountMessage(effectiveScope.accountId, messageId);
+        return await service.updateAccountMessage(effectiveScope.accountId, messageId, payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update information message';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete information message';
-      setError(message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  const clearError = () => setError(null);
+    const deleteMessage = async (messageId: string, overrideScope?: WelcomeMessageScope) => {
+      setLoading(true);
+
+      try {
+        setError(null);
+        const effectiveScope = resolveScope(overrideScope);
+        const service = getService();
+        if (effectiveScope.type === 'team') {
+          await service.deleteTeamMessage(effectiveScope.accountId, effectiveScope, messageId);
+        } else {
+          await service.deleteAccountMessage(effectiveScope.accountId, messageId);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete information message';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const clearError = () => setError(null);
+
+    return { listMessages, createMessage, updateMessage, deleteMessage, clearError };
+  });
 
   return {
-    listMessages,
-    createMessage,
-    updateMessage,
-    deleteMessage,
+    ...operations,
     loading,
     error,
-    clearError,
   };
 }

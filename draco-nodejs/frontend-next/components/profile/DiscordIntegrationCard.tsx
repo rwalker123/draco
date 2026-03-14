@@ -8,10 +8,10 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 import { useDiscordIntegration } from '@/hooks/useDiscordIntegration';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -255,18 +255,7 @@ const DiscordIntegrationCard: React.FC<DiscordIntegrationCardProps> = ({ account
           </>
         )}
       </Stack>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {notification ? (
-          <Alert onClose={hideNotification} severity={notification.severity} variant="filled">
-            {notification.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </WidgetShell>
   );
 };

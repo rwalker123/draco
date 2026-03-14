@@ -9,7 +9,6 @@ import {
   Container,
   Paper,
   Fab,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -30,6 +29,8 @@ import {
   DeleteIconButton,
 } from '../../../../../components/common/ActionIconButtons';
 import { useSponsorOperations } from '../../../../../hooks/useSponsorOperations';
+import NotificationSnackbar from '../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../hooks/useNotifications';
 
 interface AccountSponsorManagementProps {
   accountId: string;
@@ -46,10 +47,10 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
     type: 'account',
     accountId,
   });
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [sponsors, setSponsors] = React.useState<SponsorType[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<string | null>(null);
   const [dialogState, setDialogState] = React.useState<DialogState>({
     open: false,
     mode: 'create',
@@ -57,7 +58,6 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   });
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [sponsorToDelete, setSponsorToDelete] = React.useState<SponsorType | null>(null);
-  const [dialogError, setDialogError] = React.useState<string | null>(null);
 
   const listSponsorsRef = React.useRef(listSponsors);
   React.useEffect(() => {
@@ -105,9 +105,8 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   };
 
   const handleDialogSuccess = ({ sponsor, message }: { sponsor: SponsorType; message: string }) => {
-    setSuccess(message);
+    showNotification(message, 'success');
     setError(null);
-    setDialogError(null);
     handleDialogClose();
 
     if (dialogState.mode === 'edit') {
@@ -118,9 +117,8 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   };
 
   const handleDeleteSuccess = ({ sponsor, message }: { sponsor: SponsorType; message: string }) => {
-    setSuccess(message);
+    showNotification(message, 'success');
     setError(null);
-    setDialogError(null);
     handleCloseDeleteDialog();
     setSponsors((prev) => prev.filter((s) => s.id !== sponsor.id));
   };
@@ -136,12 +134,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
   };
 
   const handleDialogError = (message: string) => {
-    setDialogError(message);
-  };
-
-  const handleSnackbarClose = () => {
-    setSuccess(null);
-    setDialogError(null);
+    showNotification(message, 'error');
   };
 
   return (
@@ -270,20 +263,7 @@ const AccountSponsorManagement: React.FC<AccountSponsorManagementProps> = ({ acc
         onError={handleDialogError}
       />
 
-      <Snackbar
-        open={Boolean(success || dialogError)}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={success ? 'success' : 'error'}
-          onClose={handleSnackbarClose}
-          sx={{ width: '100%' }}
-        >
-          {success || dialogError}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

@@ -16,7 +16,6 @@ import {
   Alert,
   CircularProgress,
   Fab,
-  Snackbar,
   Menu,
   MenuItem,
 } from '@mui/material';
@@ -42,6 +41,8 @@ import { UpsertSeasonType, SeasonType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
 import { downloadBlob } from '../../../../utils/downloadUtils';
+import NotificationSnackbar from '../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../hooks/useNotifications';
 import {
   mapSeasonWithDivisions,
   mapSeasonsWithDivisions,
@@ -65,10 +66,7 @@ const BaseballSeasonManagement: React.FC = () => {
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedback, setFeedback] = useState<{
-    severity: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
 
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -95,10 +93,6 @@ const BaseballSeasonManagement: React.FC = () => {
   const canManageLeagues = hasSeasonManagementPermissions;
   const canExport = hasSeasonManagementPermissions;
 
-  const handleFeedbackClose = () => {
-    setFeedback(null);
-  };
-
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
@@ -122,10 +116,10 @@ const BaseballSeasonManagement: React.FC = () => {
         setSeasons(mappedSeasons);
       } catch (err: unknown) {
         if (controller.signal.aborted) return;
-        setFeedback({
-          severity: 'error',
-          message: err instanceof Error ? err.message : 'Failed to load season data',
-        });
+        showNotification(
+          err instanceof Error ? err.message : 'Failed to load season data',
+          'error',
+        );
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -138,7 +132,7 @@ const BaseballSeasonManagement: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [accountIdStr, apiClient, refreshCounter]);
+  }, [accountIdStr, apiClient, refreshCounter, showNotification]);
 
   const addSeasonToState = (newSeason: Season) => {
     setSeasons((prev) => [...prev, newSeason]);
@@ -186,15 +180,12 @@ const BaseballSeasonManagement: React.FC = () => {
       const createdSeason = unwrapApiResult(result, 'Failed to create season');
       const mappedSeason = mapSeasonWithDivisions(createdSeason);
 
-      setFeedback({ severity: 'success', message: 'Season created successfully' });
+      showNotification('Season created successfully', 'success');
       setCreateDialogOpen(false);
       setFormData({ name: '' });
       addSeasonToState(mappedSeason);
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to create season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to create season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -215,16 +206,13 @@ const BaseballSeasonManagement: React.FC = () => {
 
       const updatedSeason = unwrapApiResult(result, 'Failed to update season') as SeasonType;
 
-      setFeedback({ severity: 'success', message: 'Season updated successfully' });
+      showNotification('Season updated successfully', 'success');
       setEditDialogOpen(false);
       setFormData({ name: '' });
       setSelectedSeason(null);
       updateSeasonInState(mapSeasonUpdate(updatedSeason));
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to update season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to update season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -244,18 +232,15 @@ const BaseballSeasonManagement: React.FC = () => {
       const deleted = unwrapApiResult(result, 'Failed to delete season');
 
       if (deleted) {
-        setFeedback({ severity: 'success', message: 'Season deleted successfully' });
+        showNotification('Season deleted successfully', 'success');
         setDeleteDialogOpen(false);
         removeSeasonFromState(selectedSeason.id);
         setSelectedSeason(null);
       } else {
-        setFeedback({ severity: 'error', message: 'Failed to delete season' });
+        showNotification('Failed to delete season', 'error');
       }
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to delete season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to delete season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -274,19 +259,15 @@ const BaseballSeasonManagement: React.FC = () => {
 
       unwrapApiResult(result, 'Failed to copy season');
 
-      setFeedback({
-        severity: 'success',
-        message:
-          'Season copied successfully. All leagues, divisions, teams, active rosters, and managers were duplicated.',
-      });
+      showNotification(
+        'Season copied successfully. All leagues, divisions, teams, active rosters, and managers were duplicated.',
+        'success',
+      );
       setCopyDialogOpen(false);
       setSelectedSeason(null);
       setRefreshCounter((c) => c + 1);
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to copy season',
-      });
+      showNotification(err instanceof Error ? err.message : 'Failed to copy season', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -304,17 +285,14 @@ const BaseballSeasonManagement: React.FC = () => {
 
       const updatedSeason = unwrapApiResult(result, 'Failed to set current season') as SeasonType;
 
-      setFeedback({
-        severity: 'success',
-        message: `"${season.name}" is now the current season`,
-      });
+      showNotification(`"${season.name}" is now the current season`, 'success');
       updateSeasonInState(mapSeasonUpdate(updatedSeason));
       updateCurrentSeasonInState(season.id);
     } catch (err: unknown) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to set current season',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to set current season',
+        'error',
+      );
     }
   };
 
@@ -370,10 +348,10 @@ const BaseballSeasonManagement: React.FC = () => {
         .toLowerCase();
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to export season roster',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to export season roster',
+        'error',
+      );
     }
     handleExportMenuClose();
   };
@@ -395,10 +373,10 @@ const BaseballSeasonManagement: React.FC = () => {
         .toLowerCase();
       downloadBlob(blob, `${sanitizedName}-managers.csv`);
     } catch (err) {
-      setFeedback({
-        severity: 'error',
-        message: err instanceof Error ? err.message : 'Failed to export season managers',
-      });
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to export season managers',
+        'error',
+      );
     }
     handleExportMenuClose();
   };
@@ -639,23 +617,7 @@ const BaseballSeasonManagement: React.FC = () => {
         <MenuItem onClick={handleExportSeasonManagers}>Export All Managers</MenuItem>
       </Menu>
 
-      <Snackbar
-        open={Boolean(feedback)}
-        autoHideDuration={6000}
-        onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {feedback ? (
-          <Alert
-            onClose={handleFeedbackClose}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {feedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

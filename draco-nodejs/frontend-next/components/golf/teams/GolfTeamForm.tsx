@@ -1,17 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  Stack,
-  TextField,
-  Typography,
-  Snackbar,
-} from '@mui/material';
+import { Box, Button, FormControl, FormLabel, Stack, TextField, Typography } from '@mui/material';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateGolfTeamSchema } from '@draco/shared-schemas';
@@ -120,16 +111,7 @@ const GolfTeamForm: React.FC<GolfTeamFormProps> = ({
           </Button>
         </Stack>
       </Stack>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Box>
   );
 };

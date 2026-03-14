@@ -11,7 +11,6 @@ import {
   Link as MuiLink,
   Menu,
   MenuItem,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -49,6 +48,8 @@ import { useGolfLeagueSetup } from '../../../../../../../../hooks/useGolfLeagueS
 import { useRole } from '../../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../../utils/apiResult';
+import NotificationSnackbar from '../../../../../../../../components/common/NotificationSnackbar';
+import { useNotifications } from '../../../../../../../../hooks/useNotifications';
 
 const GolfTeamDetailPage: React.FC = () => {
   const params = useParams();
@@ -110,8 +111,8 @@ const GolfTeamDetailPage: React.FC = () => {
   const [signPlayerOpen, setSignPlayerOpen] = useState(false);
   const [editPlayerOpen, setEditPlayerOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<GolfRosterEntryType | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [formLoading, setFormLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accountId || !teamSeasonId || !seasonId) return;
@@ -276,7 +277,7 @@ const GolfTeamDetailPage: React.FC = () => {
     try {
       const result = await createAndSignPlayer(seasonId, teamSeasonId, data);
       if (result.success) {
-        setSuccessMessage('Player added to roster');
+        showNotification('Player added to roster', 'success');
         setCreatePlayerOpen(false);
         await refreshRoster();
       } else {
@@ -294,7 +295,7 @@ const GolfTeamDetailPage: React.FC = () => {
     try {
       const result = await signPlayer(seasonId, teamSeasonId, data);
       if (result.success) {
-        setSuccessMessage('Player signed to roster');
+        showNotification('Player signed to roster', 'success');
         setSignPlayerOpen(false);
         await refreshRoster();
         await refreshAvailablePlayers();
@@ -313,7 +314,7 @@ const GolfTeamDetailPage: React.FC = () => {
     try {
       const result = await updatePlayer(seasonId, editingPlayer.id, data);
       if (result.success) {
-        setSuccessMessage('Player updated');
+        showNotification('Player updated', 'success');
         setEditPlayerOpen(false);
         setEditingPlayer(null);
         await refreshRoster();
@@ -335,7 +336,7 @@ const GolfTeamDetailPage: React.FC = () => {
       };
       const result = await releasePlayer(seasonId, entry.id, releaseData);
       if (result.success) {
-        setSuccessMessage('Player released');
+        showNotification('Player released', 'success');
         await refreshRoster();
       } else {
         setError(result.error);
@@ -352,7 +353,7 @@ const GolfTeamDetailPage: React.FC = () => {
     try {
       const result = await deletePlayer(seasonId, entry.id);
       if (result.success) {
-        setSuccessMessage('Player removed from roster');
+        showNotification('Player removed from roster', 'success');
         await refreshRoster();
       } else {
         setError(result.error);
@@ -550,21 +551,7 @@ const GolfTeamDetailPage: React.FC = () => {
         teamName={team.name}
       />
 
-      <Snackbar
-        open={Boolean(successMessage)}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSuccessMessage(null)}
-          severity="success"
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

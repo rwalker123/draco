@@ -19,6 +19,37 @@ When starting work on the Next.js frontend, ALWAYS call the `init` tool from nex
 
 **When replacing `useMemo`/`useCallback`**, use simple inline expressions or extract a module-level helper function. Do not use IIFEs (immediately-invoked function expressions) — they create a new function on every render and may interfere with React Compiler optimization.
 
+### DO NOT Remove `useState(() => ...)` Stable Reference Patterns
+
+**CRITICAL:** Some hooks use `useState(() => ...)` (lazy initializer) combined with `useRef` to create **identity-stable** function references. **This is NOT the same as `useMemo`/`useCallback`** and must NEVER be removed or "simplified" to plain function declarations.
+
+React Compiler cannot guarantee referential stability for functions that close over changing values (`scope`, `token`, `apiClient`). The `useRef` + `useState(() => ...)` pattern solves this by:
+1. Storing latest values in a ref (updated every render)
+2. Creating functions once via `useState` initializer that read from the ref at call time
+
+These stable references are required because consumers use them in `useEffect` dependency arrays. Replacing them with plain functions causes **infinite re-render loops** — the effect fires, triggers a re-render, creates a new function reference, which re-triggers the effect.
+
+```typescript
+// ✅ CORRECT: Stable references via useState initializer + useRef
+const depsRef = useRef({ scope, token, apiClient });
+depsRef.current = { scope, token, apiClient };
+
+const [operations] = useState(() => ({
+  listMessages: async () => {
+    const service = new SomeService(depsRef.current.token, depsRef.current.apiClient);
+    return service.list(depsRef.current.scope.accountId);
+  },
+}));
+
+// ❌ WRONG: Plain functions — new reference every render, breaks useEffect consumers
+const listMessages = async () => {
+  const service = new SomeService(token, apiClient);
+  return service.list(scope.accountId);
+};
+```
+
+**Before refactoring any hook that returns functions**, always check consumers for `useEffect` dependency arrays that include those functions. Reference implementations: `hooks/useWelcomeMessageOperations.ts`, `hooks/useNotifications.ts`.
+
 ### Avoiding Infinite Loops
 
 When removing manual memoization, you may encounter "Maximum update depth exceeded" errors. Common causes and fixes:

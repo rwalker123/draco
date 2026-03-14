@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -10,7 +9,6 @@ import {
   DialogTitle,
   Stack,
   TextField,
-  Snackbar,
 } from '@mui/material';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -18,6 +16,7 @@ import { z } from 'zod';
 import { changePassword } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -152,16 +151,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           </Button>
         </DialogActions>
       </form>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

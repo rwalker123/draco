@@ -8,15 +8,14 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert,
   CircularProgress,
-  Snackbar,
 } from '@mui/material';
 import { updateLeague as apiUpdateLeague } from '@draco/shared-api-client';
 import type { LeagueSeasonWithDivisionTeamsAndUnassignedType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../../utils/apiResult';
 import { useApiClient } from '../../hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
+import NotificationSnackbar from '../common/NotificationSnackbar';
 
 interface EditLeagueDialogProps {
   open: boolean;
@@ -111,16 +110,7 @@ const EditLeagueDialog: React.FC<EditLeagueDialogProps> = ({
           {loading ? <CircularProgress size={20} /> : 'Update League'}
         </Button>
       </DialogActions>
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={hideNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideNotification} severity={notification?.severity} variant="filled">
-          {notification?.message}
-        </Alert>
-      </Snackbar>
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };
