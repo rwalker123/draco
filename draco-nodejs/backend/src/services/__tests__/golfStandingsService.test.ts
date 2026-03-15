@@ -659,7 +659,7 @@ describe('GolfStandingsService', () => {
       expect(team1Standing?.strokePoints).toBe(7);
     });
 
-    it('caps stroke points at 10', async () => {
+    it('awards full stroke difference as stroke points', async () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
@@ -697,7 +697,7 @@ describe('GolfStandingsService', () => {
 
       const team1Standing = result.standings.find((s) => s.teamName === 'Team 1');
 
-      expect(team1Standing?.strokePoints).toBe(10);
+      expect(team1Standing?.strokePoints).toBe(25);
     });
   });
 

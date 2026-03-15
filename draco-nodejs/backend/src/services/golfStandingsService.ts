@@ -145,11 +145,10 @@ export class GolfStandingsService {
 
           const strokeDiff = Math.abs(team1Total - team2Total);
           if (strokeDiff > 0) {
-            const strokePts = Math.min(strokeDiff, 10);
             if (team1Total < team2Total) {
-              team1Standing.strokePoints += strokePts;
+              team1Standing.strokePoints += strokeDiff;
             } else {
-              team2Standing.strokePoints += strokePts;
+              team2Standing.strokePoints += strokeDiff;
             }
           }
         }
@@ -257,11 +256,10 @@ export class GolfStandingsService {
     }
 
     const strokeDiff = Math.abs(team1Total - team2Total);
-    const strokePts = Math.min(strokeDiff, 10);
     if (team1Total < team2Total) {
-      team1Points += strokePts;
+      team1Points += strokeDiff;
     } else if (team2Total < team1Total) {
-      team2Points += strokePts;
+      team2Points += strokeDiff;
     }
 
     return { team1Points, team2Points };
