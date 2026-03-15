@@ -1,23 +1,7 @@
 import { test, expect } from '../../fixtures/golf-score-update-fixtures';
 import { ApiHelper } from '../../helpers/api';
-import fs from 'fs';
-import path from 'path';
-
-const AUTH_FILE = path.join(import.meta.dirname, '..', '..', '.auth', 'admin.json');
-const BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.PORT || '4001'}`;
-
-function getJwtToken(): string {
-  const authData = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'));
-  const origin = authData.origins?.[0];
-  const tokenEntry = origin?.localStorage?.find(
-    (entry: { name: string }) => entry.name === 'jwtToken',
-  );
-  if (!tokenEntry?.value) {
-    throw new Error('JWT token not found in auth storage. Run auth-setup first.');
-  }
-  return tokenEntry.value;
-}
+import { getJwtToken, BASE_URL } from '../../helpers/auth';
+import { todayDateString } from '../../helpers/date';
 
 function findTeamStanding(
   standings: Awaited<ReturnType<ApiHelper['getSeasonStandings']>>,
@@ -38,11 +22,7 @@ test.describe('Standings update after score change', () => {
     const { accountId, seasonId, matchId, courseId, teeId, team1Id, team2Id } = scoreUpdateData;
     const { player1RosterId, player2RosterId } = scoreUpdateData;
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const datePlayed = `${year}-${month}-${day}`;
+    const datePlayed = todayDateString();
 
     await api.submitMatchResults(accountId, matchId, {
       courseId,

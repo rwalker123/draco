@@ -52,6 +52,15 @@ export class ApiError extends Error {
   }
 }
 
+export async function tryCleanup(errors: string[], fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
+}
+
 export class ApiHelper {
   private client: E2EClient;
 

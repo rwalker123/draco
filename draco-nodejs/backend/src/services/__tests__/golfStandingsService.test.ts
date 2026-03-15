@@ -319,6 +319,53 @@ describe('GolfStandingsService', () => {
       expect(player2?.matchesWon).toBe(0);
     });
 
+    it('individual scoring: treats near-equal floating-point totals as tied', async () => {
+      vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
+        id: 1n,
+        leagueseasonid: 100n,
+        league: { name: 'Flight A' },
+      } as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
+        scoringtype: 'individual',
+      } as never);
+      vi.mocked(mockTeamRepository.findByFlightId!).mockResolvedValue([
+        { id: 1n, name: 'Player 1' },
+        { id: 2n, name: 'Player 2' },
+      ] as never);
+      vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([
+        {
+          id: 10n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 12.500000000000002,
+          team2points: 12.5,
+          team1matchwins: 0,
+          team2matchwins: 0,
+        },
+      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 40, isabsent: false } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
+
+      const result = await service.getFlightStandings(1n);
+
+      const player1 = result.standings.find((s) => s.teamName === 'Player 1');
+      const player2 = result.standings.find((s) => s.teamName === 'Player 2');
+
+      expect(player1?.matchesTied).toBe(1);
+      expect(player1?.matchesWon).toBe(0);
+      expect(player2?.matchesTied).toBe(1);
+      expect(player2?.matchesWon).toBe(0);
+    });
+
     it('handles tied matches correctly', async () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,

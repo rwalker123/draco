@@ -1,21 +1,7 @@
 import { test as base } from './base-fixtures';
-import { ApiHelper, ApiError } from '../helpers/api';
-import fs from 'fs';
-import path from 'path';
-
-const AUTH_FILE = path.join(import.meta.dirname, '..', '.auth', 'admin.json');
-
-function getJwtToken(): string {
-  const authData = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'));
-  const origin = authData.origins?.[0];
-  const tokenEntry = origin?.localStorage?.find(
-    (entry: { name: string }) => entry.name === 'jwtToken',
-  );
-  if (!tokenEntry?.value) {
-    throw new Error('JWT token not found in auth storage. Run auth-setup first.');
-  }
-  return tokenEntry.value;
-}
+import { ApiHelper, tryCleanup } from '../helpers/api';
+import { getJwtToken, BASE_URL } from '../helpers/auth';
+import { todayDateString } from '../helpers/date';
 
 export type ScoreEntryTestData = {
   accountId: string;
@@ -49,11 +35,7 @@ export async function createScoreEntryTestData(
   const teeId = process.env.E2E_GOLF_TEE_ID || '62';
   const suffix = `${Date.now() % 10000000}w${workerIndex}`;
 
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  const matchDate = `${year}-${month}-${day}`;
+  const matchDate = todayDateString();
   const matchDateTime = `${matchDate}T14:00:00Z`;
 
   const league = await api.createLeague(accountId, { name: `E2E SE Lg ${suffix}` });
@@ -129,46 +111,34 @@ export async function cleanupScoreEntryTestData(
   const api = new ApiHelper(baseURL, token);
   const errors: string[] = [];
 
-  const tryCleanup = async (fn: () => Promise<void>) => {
-    try {
-      await fn();
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 404) return;
-      errors.push(e instanceof Error ? e.message : String(e));
-    }
-  };
-
-  await tryCleanup(() => api.deleteMatch(data.accountId, data.matchId, true));
+  await tryCleanup(errors, () => api.deleteMatch(data.accountId, data.matchId, true));
 
   for (const rosterId of [data.player1RosterId, data.player2RosterId]) {
-    await tryCleanup(() => api.deleteRosterEntry(data.accountId, data.seasonId, rosterId));
+    await tryCleanup(errors, () => api.deleteRosterEntry(data.accountId, data.seasonId, rosterId));
   }
 
   for (const contactId of [data.player1ContactId, data.player2ContactId]) {
-    await tryCleanup(() => api.deleteContact(data.accountId, contactId));
+    await tryCleanup(errors, () => api.deleteContact(data.accountId, contactId));
   }
 
   for (const teamId of [data.team1Id, data.team2Id]) {
-    await tryCleanup(() => api.deleteTeam(data.accountId, data.seasonId, teamId));
+    await tryCleanup(errors, () => api.deleteTeam(data.accountId, data.seasonId, teamId));
   }
 
-  await tryCleanup(() =>
+  await tryCleanup(errors, () =>
     api.removeLeagueFromSeason(data.accountId, data.seasonId, data.leagueSeasonId),
   );
 
   if (data.seasonOwned) {
-    await tryCleanup(() => api.deleteSeason(data.accountId, data.seasonId));
+    await tryCleanup(errors, () => api.deleteSeason(data.accountId, data.seasonId));
   }
 
-  await tryCleanup(() => api.deleteLeague(data.accountId, data.leagueId));
+  await tryCleanup(errors, () => api.deleteLeague(data.accountId, data.leagueId));
 
   if (errors.length > 0) {
     throw new Error(`Score entry test cleanup failed:\n  ${errors.join('\n  ')}`);
   }
 }
-
-const BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.PORT || '4001'}`;
 
 type WorkerFixtures = {
   scoreEntryData: ScoreEntryTestData;

@@ -108,10 +108,13 @@ export class GolfStandingsService {
           team1Standing.matchPoints += match.team1points;
           team2Standing.matchPoints += match.team2points;
 
-          if (match.team1points > match.team2points) {
+          const pointsDiff = match.team1points - match.team2points;
+          const pointsTied = Math.abs(pointsDiff) < 0.001;
+
+          if (!pointsTied && pointsDiff > 0) {
             team1Standing.matchesWon++;
             team2Standing.matchesLost++;
-          } else if (match.team2points > match.team1points) {
+          } else if (!pointsTied && pointsDiff < 0) {
             team2Standing.matchesWon++;
             team1Standing.matchesLost++;
           } else if (match.team1matchwins === 1) {
@@ -163,7 +166,13 @@ export class GolfStandingsService {
           a.matchesPlayed > 0 ? (a.matchesWon + 0.5 * a.matchesTied) / a.matchesPlayed : 0;
         const winPctB =
           b.matchesPlayed > 0 ? (b.matchesWon + 0.5 * b.matchesTied) / b.matchesPlayed : 0;
-        return winPctB - winPctA;
+        const winPctDiff = winPctB - winPctA;
+        if (winPctDiff !== 0) return winPctDiff;
+
+        const strokeDiff = a.totalStrokes - b.totalStrokes;
+        if (strokeDiff !== 0) return strokeDiff;
+
+        return a.teamSeasonId.localeCompare(b.teamSeasonId);
       });
 
     standings.forEach((standing, index) => {
