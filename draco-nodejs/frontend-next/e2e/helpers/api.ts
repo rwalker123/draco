@@ -17,6 +17,7 @@ import {
   updateGolfMatchStatus,
   getCurrentSeason,
   deleteContact,
+  getGolfSeasonStandings,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -25,6 +26,7 @@ import type {
   TeamSeason,
   GolfRosterEntry,
   GolfMatch,
+  GolfLeagueStandings,
   UpdateGolfLeagueSetup,
   SubmitMatchResults,
   CurrentSeasonResponse,
@@ -47,6 +49,15 @@ export class ApiError extends Error {
   constructor(label: string, status: number, details: unknown) {
     super(`${label} (${status}): ${JSON.stringify(details)}`);
     this.status = status;
+  }
+}
+
+export async function tryCleanup(errors: string[], fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    errors.push(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -245,6 +256,15 @@ export class ApiHelper {
     });
     if (error || !season) throw new Error(`getCurrentSeason failed: ${JSON.stringify(error)}`);
     return season;
+  }
+
+  async getSeasonStandings(accountId: string, seasonId: string): Promise<GolfLeagueStandings> {
+    const { data, error } = await getGolfSeasonStandings({
+      client: this.client,
+      path: { accountId, seasonId },
+    });
+    if (error || !data) throw new Error(`getGolfSeasonStandings failed: ${JSON.stringify(error)}`);
+    return data;
   }
 
   async deleteContact(accountId: string, contactId: string): Promise<void> {

@@ -176,6 +176,196 @@ describe('GolfStandingsService', () => {
       expect(player2Standing?.matchPoints).toBe(4.5);
     });
 
+    it('individual scoring: W/L/T determined by points when net scores are tied', async () => {
+      vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
+        id: 1n,
+        leagueseasonid: 100n,
+        league: { name: 'Flight A' },
+      } as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
+        scoringtype: 'individual',
+      } as never);
+      vi.mocked(mockTeamRepository.findByFlightId!).mockResolvedValue([
+        { id: 1n, name: 'Player 1' },
+        { id: 2n, name: 'Player 2' },
+      ] as never);
+      vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([
+        {
+          id: 10n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 12.5,
+          team2points: 11.5,
+          team1matchwins: 0,
+          team2matchwins: 0,
+        },
+      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 96, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 87, isabsent: false } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
+
+      const result = await service.getFlightStandings(1n);
+
+      const player1 = result.standings.find((s) => s.teamName === 'Player 1');
+      const player2 = result.standings.find((s) => s.teamName === 'Player 2');
+
+      expect(player1?.matchesWon).toBe(1);
+      expect(player1?.matchesLost).toBe(0);
+      expect(player1?.matchesTied).toBe(0);
+      expect(player2?.matchesWon).toBe(0);
+      expect(player2?.matchesLost).toBe(1);
+      expect(player2?.matchesTied).toBe(0);
+    });
+
+    it('individual scoring: falls back to matchwins when points are equal', async () => {
+      vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
+        id: 1n,
+        leagueseasonid: 100n,
+        league: { name: 'Flight A' },
+      } as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
+        scoringtype: 'individual',
+      } as never);
+      vi.mocked(mockTeamRepository.findByFlightId!).mockResolvedValue([
+        { id: 1n, name: 'Player 1' },
+        { id: 2n, name: 'Player 2' },
+      ] as never);
+      vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([
+        {
+          id: 10n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 5,
+          team2points: 5,
+          team1matchwins: 1,
+          team2matchwins: 0,
+        },
+      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 42, isabsent: false } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
+
+      const result = await service.getFlightStandings(1n);
+
+      const player1 = result.standings.find((s) => s.teamName === 'Player 1');
+      const player2 = result.standings.find((s) => s.teamName === 'Player 2');
+
+      expect(player1?.matchesWon).toBe(1);
+      expect(player1?.matchesTied).toBe(0);
+      expect(player2?.matchesLost).toBe(1);
+      expect(player2?.matchesTied).toBe(0);
+    });
+
+    it('individual scoring: tie only when points and matchwins both equal', async () => {
+      vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
+        id: 1n,
+        leagueseasonid: 100n,
+        league: { name: 'Flight A' },
+      } as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
+        scoringtype: 'individual',
+      } as never);
+      vi.mocked(mockTeamRepository.findByFlightId!).mockResolvedValue([
+        { id: 1n, name: 'Player 1' },
+        { id: 2n, name: 'Player 2' },
+      ] as never);
+      vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([
+        {
+          id: 10n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 6,
+          team2points: 6,
+          team1matchwins: 0,
+          team2matchwins: 0,
+        },
+      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 40, isabsent: false } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
+
+      const result = await service.getFlightStandings(1n);
+
+      const player1 = result.standings.find((s) => s.teamName === 'Player 1');
+      const player2 = result.standings.find((s) => s.teamName === 'Player 2');
+
+      expect(player1?.matchesTied).toBe(1);
+      expect(player1?.matchesWon).toBe(0);
+      expect(player2?.matchesTied).toBe(1);
+      expect(player2?.matchesWon).toBe(0);
+    });
+
+    it('individual scoring: treats near-equal floating-point totals as tied', async () => {
+      vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
+        id: 1n,
+        leagueseasonid: 100n,
+        league: { name: 'Flight A' },
+      } as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
+        scoringtype: 'individual',
+      } as never);
+      vi.mocked(mockTeamRepository.findByFlightId!).mockResolvedValue([
+        { id: 1n, name: 'Player 1' },
+        { id: 2n, name: 'Player 2' },
+      ] as never);
+      vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([
+        {
+          id: 10n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 12.500000000000002,
+          team2points: 12.5,
+          team1matchwins: 0,
+          team2matchwins: 0,
+        },
+      ] as never);
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 40, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 40, isabsent: false } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
+
+      const result = await service.getFlightStandings(1n);
+
+      const player1 = result.standings.find((s) => s.teamName === 'Player 1');
+      const player2 = result.standings.find((s) => s.teamName === 'Player 2');
+
+      expect(player1?.matchesTied).toBe(1);
+      expect(player1?.matchesWon).toBe(0);
+      expect(player2?.matchesTied).toBe(1);
+      expect(player2?.matchesWon).toBe(0);
+    });
+
     it('handles tied matches correctly', async () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
@@ -268,7 +458,7 @@ describe('GolfStandingsService', () => {
       expect(mockScoreRepository.findByMatchIds).toHaveBeenCalledWith([11n]);
     });
 
-    it('ranks teams by total points then by total strokes', async () => {
+    it('ranks teams by total points then by winning percentage', async () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
@@ -344,6 +534,90 @@ describe('GolfStandingsService', () => {
       expect(result.standings[2].rank).toBe(3);
     });
 
+    it('breaks point ties using winning percentage (ties count as half a win)', async () => {
+      vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
+        id: 1n,
+        leagueseasonid: 100n,
+        league: { name: 'Flight A' },
+      } as never);
+      vi.mocked(mockLeagueRepository.findByLeagueSeasonId!).mockResolvedValue({
+        scoringtype: 'individual',
+      } as never);
+      vi.mocked(mockTeamRepository.findByFlightId!).mockResolvedValue([
+        { id: 1n, name: 'Player 1' },
+        { id: 2n, name: 'Player 2' },
+      ] as never);
+      vi.mocked(mockMatchRepository.findByFlightId!).mockResolvedValue([
+        {
+          id: 10n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 5,
+          team2points: 7,
+          team1matchwins: 0,
+          team2matchwins: 1,
+        },
+        {
+          id: 11n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 9,
+          team2points: 3,
+          team1matchwins: 1,
+          team2matchwins: 0,
+        },
+        {
+          id: 12n,
+          team1: 1n,
+          team2: 2n,
+          matchstatus: GolfMatchStatus.COMPLETED,
+          team1points: 6,
+          team2points: 10,
+          team1matchwins: 0,
+          team2matchwins: 1,
+        },
+      ] as never);
+
+      const scoresMap = new Map([
+        [
+          10n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 42, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 38, isabsent: false } },
+          ],
+        ],
+        [
+          11n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 36, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 44, isabsent: false } },
+          ],
+        ],
+        [
+          12n,
+          [
+            { teamid: 1n, golfscore: { totalscore: 44, isabsent: false } },
+            { teamid: 2n, golfscore: { totalscore: 36, isabsent: false } },
+          ],
+        ],
+      ]);
+      vi.mocked(mockScoreRepository.findByMatchIds!).mockResolvedValue(scoresMap as never);
+
+      const result = await service.getFlightStandings(1n);
+
+      const player1 = result.standings.find((s) => s.teamName === 'Player 1');
+      const player2 = result.standings.find((s) => s.teamName === 'Player 2');
+      expect(player1?.matchPoints).toBe(20);
+      expect(player2?.matchPoints).toBe(20);
+
+      expect(result.standings[0].teamName).toBe('Player 2');
+      expect(result.standings[0].rank).toBe(1);
+      expect(result.standings[1].teamName).toBe('Player 1');
+      expect(result.standings[1].rank).toBe(2);
+    });
+
     it('calculates stroke points correctly', async () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
@@ -385,7 +659,7 @@ describe('GolfStandingsService', () => {
       expect(team1Standing?.strokePoints).toBe(7);
     });
 
-    it('caps stroke points at 10', async () => {
+    it('awards full stroke difference as stroke points', async () => {
       vi.mocked(mockFlightRepository.findById!).mockResolvedValue({
         id: 1n,
         leagueseasonid: 100n,
@@ -423,7 +697,7 @@ describe('GolfStandingsService', () => {
 
       const team1Standing = result.standings.find((s) => s.teamName === 'Team 1');
 
-      expect(team1Standing?.strokePoints).toBe(10);
+      expect(team1Standing?.strokePoints).toBe(25);
     });
   });
 
