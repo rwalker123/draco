@@ -108,7 +108,13 @@ export class GolfStandingsService {
           team1Standing.matchPoints += match.team1points;
           team2Standing.matchPoints += match.team2points;
 
-          if (match.team1matchwins === 1) {
+          if (match.team1points > match.team2points) {
+            team1Standing.matchesWon++;
+            team2Standing.matchesLost++;
+          } else if (match.team2points > match.team1points) {
+            team2Standing.matchesWon++;
+            team1Standing.matchesLost++;
+          } else if (match.team1matchwins === 1) {
             team1Standing.matchesWon++;
             team2Standing.matchesLost++;
           } else if (match.team2matchwins === 1) {
@@ -149,7 +155,16 @@ export class GolfStandingsService {
 
     const standings = Array.from(standingsMap.values())
       .map((data) => this.formatTeamStanding(data))
-      .sort((a, b) => b.totalPoints - a.totalPoints || a.totalStrokes - b.totalStrokes);
+      .sort((a, b) => {
+        const pointsDiff = b.totalPoints - a.totalPoints;
+        if (pointsDiff !== 0) return pointsDiff;
+
+        const winPctA =
+          a.matchesPlayed > 0 ? (a.matchesWon + 0.5 * a.matchesTied) / a.matchesPlayed : 0;
+        const winPctB =
+          b.matchesPlayed > 0 ? (b.matchesWon + 0.5 * b.matchesTied) / b.matchesPlayed : 0;
+        return winPctB - winPctA;
+      });
 
     standings.forEach((standing, index) => {
       standing.rank = index + 1;
