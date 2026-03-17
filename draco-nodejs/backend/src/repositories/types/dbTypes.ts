@@ -713,6 +713,13 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
             teamsize: true;
           };
         };
+        golfleaguesub: {
+          where: { isactive: true };
+          select: {
+            golferid: true;
+            isactive: true;
+          };
+        };
       };
     };
   };

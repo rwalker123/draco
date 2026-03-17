@@ -25,6 +25,7 @@ import {
   Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
   People as PeopleIcon,
+  PersonOff as PersonOffIcon,
   GolfCourse as GolfCourseIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
@@ -451,7 +452,15 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
           flight.teams.map((team) => renderTeamRow(team, flight))
         )}
       </AccordionDetails>
-      <AccordionActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+      <AccordionActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+        <Button
+          component={Link}
+          href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${flight.id}/substitutes`}
+          startIcon={<PersonOffIcon />}
+          size="small"
+        >
+          Substitutes
+        </Button>
         <Button startIcon={<AddIcon />} onClick={() => handleCreateTeam(flight)}>
           Create Team
         </Button>

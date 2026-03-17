@@ -72,12 +72,6 @@ export function PlayerScoreRow({
     playerGender === 'F' ? courseParData?.womansHandicap : courseParData?.mensHandicap;
 
   const playerName = `${player.player.firstName} ${player.player.lastName}`;
-  const substitutePlayer = scoreData.substituteGolferId
-    ? substitutes.find((s) => s.golferId === scoreData.substituteGolferId)
-    : null;
-  const displayName = substitutePlayer
-    ? `${substitutePlayer.player.firstName} ${substitutePlayer.player.lastName} (sub for ${playerName})`
-    : playerName;
 
   const handleAbsentChange = (checked: boolean) => {
     onChange({
@@ -133,7 +127,7 @@ export function PlayerScoreRow({
     });
   };
 
-  const isScoreDisabled = disabled || scoreData.isAbsent;
+  const isScoreDisabled = disabled || (scoreData.isAbsent && !scoreData.substituteGolferId);
 
   const effectiveCourseHandicap = courseHandicap ?? 0;
 
@@ -148,9 +142,7 @@ export function PlayerScoreRow({
         border: `1px solid ${theme.palette.divider}`,
         borderRadius: 1,
         mb: 1,
-        backgroundColor: scoreData.isAbsent
-          ? theme.palette.action.disabledBackground
-          : theme.palette.background.paper,
+        backgroundColor: theme.palette.background.paper,
       }}
     >
       <Box
@@ -168,12 +160,10 @@ export function PlayerScoreRow({
               variant="body1"
               sx={{
                 fontWeight: 500,
-                color: scoreData.isAbsent
-                  ? theme.palette.text.disabled
-                  : theme.palette.text.primary,
+                color: theme.palette.text.primary,
               }}
             >
-              {displayName}
+              {playerName}
             </Typography>
             {showHandicap && (
               <Typography

@@ -90,6 +90,7 @@ interface PlayerScoreEntry {
   courseHandicap?: number;
   differential?: number;
   isAbsent?: boolean;
+  substituteForName?: string;
   golferId: string;
   teamId: string;
 }
@@ -107,6 +108,8 @@ function computePlayerScores(
   const allScores = [...(matchData.team1Scores || []), ...(matchData.team2Scores || [])];
 
   if (allScores.length > 0) {
+    const allRosterEntries = [...(team1Roster?.roster || []), ...(team2Roster?.roster || [])];
+
     return allScores.map((score) => {
       const baseHoleScores = [...(score.holeScores || Array(holesPlayedCount).fill(0))];
 
@@ -122,6 +125,14 @@ function computePlayerScores(
         ? score.totalScore
         : baseHoleScores.reduce((sum, s) => sum + (s || 0), 0);
 
+      let substituteForName: string | undefined;
+      if (score.substituteForRosterId) {
+        const rosterEntry = allRosterEntries.find((r) => r.id === score.substituteForRosterId);
+        if (rosterEntry) {
+          substituteForName = `${rosterEntry.player.firstName} ${rosterEntry.player.lastName}`;
+        }
+      }
+
       return {
         playerName: score.player
           ? `${score.player.firstName} ${score.player.lastName}`
@@ -132,6 +143,7 @@ function computePlayerScores(
         courseHandicap: score.courseHandicap,
         differential: score.differential,
         isAbsent: score.isAbsent,
+        substituteForName,
         golferId: score.golferId,
         teamId: matchData.team1Scores?.some((s) => s.golferId === score.golferId)
           ? matchData.team1.id

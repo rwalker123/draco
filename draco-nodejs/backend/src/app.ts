@@ -303,7 +303,7 @@ app.use('/api/accounts/:accountId/golf/flights', golfFlightsRouter);
 app.use('/api/accounts/:accountId/golf/teams', golfTeamsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/golf/rosters', seasonsGolfRostersRouter);
 app.use(
-  '/api/accounts/:accountId/seasons/:seasonId/golf/substitutes',
+  '/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/golf/substitutes',
   seasonsGolfSubstitutesRouter,
 );
 app.use(

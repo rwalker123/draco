@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Container, Typography, Divider } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -10,10 +10,13 @@ import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
+import { getCurrentSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { AdminCategoryCard, AdminHubSearch } from '../../../../components/admin';
 import { useRole } from '../../../../context/RoleContext';
+import { useApiClient } from '../../../../hooks/useApiClient';
 import { getGolfAdminItems } from '../../../../lib/admin-hub-registry';
+import { unwrapApiResult } from '../../../../utils/apiResult';
 
 interface CategoryConfig {
   title: string;
@@ -27,11 +30,43 @@ const GolfAdminHubPage: React.FC = () => {
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
   const { hasRole } = useRole();
+  const apiClient = useApiClient();
 
   const isGlobalAdmin = hasRole('Administrator');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentSeasonId, setCurrentSeasonId] = useState<string | undefined>(undefined);
 
-  const golfItems = getGolfAdminItems();
+  useEffect(() => {
+    if (!accountId) return;
+
+    const controller = new AbortController();
+
+    const fetchSeason = async () => {
+      try {
+        const result = await getCurrentSeason({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const season = unwrapApiResult(result, 'Failed to load current season');
+        setCurrentSeasonId(season.id);
+      } catch {
+        if (controller.signal.aborted) return;
+      }
+    };
+
+    void fetchSeason();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient]);
+
+  const golfItems = getGolfAdminItems(currentSeasonId);
 
   if (!accountId) {
     return null;

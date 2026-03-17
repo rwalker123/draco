@@ -25,7 +25,7 @@ export interface IGolfRosterRepository {
   findById(rosterId: bigint): Promise<GolfRosterWithGolfer | null>;
   findByIds(rosterIds: bigint[]): Promise<GolfRosterWithGolfer[]>;
   findByGolferAndTeam(golferId: bigint, teamSeasonId: bigint): Promise<golfroster | null>;
-  findSubstitutesForSeason(seasonId: bigint): Promise<GolfLeagueSubWithGolfer[]>;
+  findSubstitutesForLeague(leagueSeasonId: bigint): Promise<GolfLeagueSubWithGolfer[]>;
   findGolferByContactId(contactId: bigint): Promise<golfer | null>;
   findGolfersByIds(golferIds: bigint[]): Promise<golfer[]>;
   findOrCreateGolfer(contactId: bigint, initialDifferential?: number | null): Promise<golfer>;

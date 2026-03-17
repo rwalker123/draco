@@ -275,10 +275,15 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
     submissions: MatchScoreSubmission[],
   ): Promise<SubmitMatchScoresResult> {
     return this.prisma.$transaction(async (tx) => {
-      const existingByGolfer = new Map<
+      const existingByRosterEntry = new Map<
         string,
-        { scoreid: bigint; teamid: bigint; startindex: number | null }
+        { scoreid: bigint; teamid: bigint; golferid: bigint; startindex: number | null }
       >();
+
+      const golferIdToRosterEntryId = new Map<string, string>();
+      for (const sub of submissions) {
+        golferIdToRosterEntryId.set(sub.rosterGolferId.toString(), sub.rosterEntryId.toString());
+      }
 
       for (const teamId of teamIds) {
         const existingMatchScores = await tx.golfmatchscores.findMany({
@@ -290,6 +295,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
             golferid: true,
             scoreid: true,
             teamid: true,
+            substitutefor: true,
             golfscore: {
               select: { startindex: true },
             },
@@ -297,30 +303,37 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         });
 
         for (const ms of existingMatchScores) {
-          existingByGolfer.set(ms.golferid.toString(), {
+          const rosterKey = ms.substitutefor
+            ? ms.substitutefor.toString()
+            : (golferIdToRosterEntryId.get(ms.golferid.toString()) ?? ms.golferid.toString());
+          existingByRosterEntry.set(rosterKey, {
             scoreid: ms.scoreid,
             teamid: ms.teamid,
+            golferid: ms.golferid,
             startindex: ms.golfscore.startindex,
           });
         }
       }
 
-      const submittedGolferIds = new Set<string>();
+      const submittedRosterEntryIds = new Set<string>();
       const createdScoreIds: bigint[] = [];
 
       for (const submission of submissions) {
-        const golferKey = submission.golferId.toString();
-        submittedGolferIds.add(golferKey);
+        const rosterKey = submission.rosterEntryId.toString();
+        submittedRosterEntryIds.add(rosterKey);
 
-        const existing = existingByGolfer.get(golferKey);
+        const existing = existingByRosterEntry.get(rosterKey);
 
         if (existing) {
-          const shouldBackfillStartindex =
-            existing.startindex === null && submission.scoreData.startindex !== null;
+          const golferChanged = existing.golferid !== submission.golferId;
+          const shouldUpdateStartindex =
+            golferChanged ||
+            (existing.startindex === null && submission.scoreData.startindex !== null);
 
           await tx.golfscore.update({
             where: { id: existing.scoreid },
             data: {
+              golferid: submission.scoreData.golferid,
               courseid: submission.scoreData.courseid,
               teeid: submission.scoreData.teeid,
               dateplayed: submission.scoreData.dateplayed,
@@ -346,19 +359,21 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               holescrore16: submission.scoreData.holescrore16,
               holescrore17: submission.scoreData.holescrore17,
               holescrore18: submission.scoreData.holescrore18,
-              ...(shouldBackfillStartindex && {
+              ...(shouldUpdateStartindex && {
                 startindex: submission.scoreData.startindex,
                 startindex9: submission.scoreData.startindex9,
               }),
             },
           });
 
-          if (existing.teamid !== submission.teamId) {
-            await tx.golfmatchscores.updateMany({
-              where: { matchid: matchId, golferid: submission.golferId },
-              data: { teamid: submission.teamId },
-            });
-          }
+          await tx.golfmatchscores.updateMany({
+            where: { matchid: matchId, scoreid: existing.scoreid },
+            data: {
+              teamid: submission.teamId,
+              golferid: submission.golferId,
+              substitutefor: submission.substituteForRosterId ?? null,
+            },
+          });
         } else {
           const score = await tx.golfscore.create({
             data: {
@@ -399,6 +414,7 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
               teamid: submission.teamId,
               golferid: submission.golferId,
               scoreid: score.id,
+              substitutefor: submission.substituteForRosterId ?? null,
             },
           });
 
@@ -406,8 +422,8 @@ export class PrismaGolfScoreRepository implements IGolfScoreRepository {
         }
       }
 
-      for (const [golferKey, existing] of existingByGolfer) {
-        if (!submittedGolferIds.has(golferKey)) {
+      for (const [rosterKey, existing] of existingByRosterEntry) {
+        if (!submittedRosterEntryIds.has(rosterKey)) {
           await tx.golfmatchscores.deleteMany({
             where: { matchid: matchId, scoreid: existing.scoreid },
           });

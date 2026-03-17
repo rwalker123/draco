@@ -61,6 +61,7 @@ export const GolfScoreSchema = z
 
 export const GolfScoreWithDetailsSchema = GolfScoreSchema.extend({
   isAbsent: z.boolean().optional(),
+  substituteForRosterId: bigintToStringSchema.optional(),
   player: GolfPlayerSchema.optional(),
   tee: GolfCourseTeeSchema.optional(),
   differential: z.number().optional(),

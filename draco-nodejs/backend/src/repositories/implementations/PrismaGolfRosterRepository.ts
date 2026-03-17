@@ -59,10 +59,10 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     });
   }
 
-  async findSubstitutesForSeason(seasonId: bigint): Promise<GolfLeagueSubWithGolfer[]> {
+  async findSubstitutesForLeague(leagueSeasonId: bigint): Promise<GolfLeagueSubWithGolfer[]> {
     return this.prisma.golfleaguesub.findMany({
       where: {
-        seasonid: seasonId,
+        seasonid: leagueSeasonId,
         isactive: true,
       },
       include: {
@@ -286,7 +286,7 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     return this.prisma.golfleaguesub.findFirst({
       where: {
         golferid: golferId,
-        seasonid: seasonId,
+        leagueseason: { seasonid: seasonId },
       },
     });
   }
