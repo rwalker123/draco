@@ -3,7 +3,7 @@ import nextTypescript from 'eslint-config-next/typescript';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 const eslintConfig = [{
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "e2e/.report/**"]
 }, ...nextCoreWebVitals, ...nextTypescript,
   reactHooks.configs.flat['recommended-latest'],
 {

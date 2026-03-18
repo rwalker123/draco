@@ -129,8 +129,10 @@ export class GolfLeagueScoreService {
 
     const team1Players = scoresByTeam.get(match.team1) ?? [];
     const team2Players = scoresByTeam.get(match.team2) ?? [];
-    const team1Present = team1Players.filter((p) => !p.isAbsent);
-    const team2Present = team2Players.filter((p) => !p.isAbsent);
+    const isEffectivelyPresent = (p: PlayerMatchScoreType) =>
+      !p.isAbsent || (p.isSubstitute && !!p.substituteGolferId);
+    const team1Present = team1Players.filter(isEffectivelyPresent);
+    const team2Present = team2Players.filter(isEffectivelyPresent);
     const team1FullAbsent = team1Players.length > 0 && team1Present.length === 0;
     const team2FullAbsent = team2Players.length > 0 && team2Present.length === 0;
 
@@ -159,16 +161,26 @@ export class GolfLeagueScoreService {
           throw new NotFoundError(`Roster entry ${playerScore.rosterId} not found`);
         }
 
+        const hasSubstitute = playerScore.isSubstitute && !!playerScore.substituteGolferId;
+        const effectiveGolferId = hasSubstitute
+          ? BigInt(playerScore.substituteGolferId!)
+          : rosterEntry.golferid;
+
         let startIndex = await handicapService.calculateHandicapIndexAsOf(
-          rosterEntry.golferid,
+          effectiveGolferId,
           match.matchdate,
         );
         if (startIndex === null) {
-          startIndex = rosterEntry.golfer.initialdifferential ?? null;
+          if (hasSubstitute) {
+            const subGolfers = await this.rosterRepository.findGolfersByIds([effectiveGolferId]);
+            startIndex = subGolfers[0]?.initialdifferential ?? null;
+          } else {
+            startIndex = rosterEntry.golfer.initialdifferential ?? null;
+          }
         }
         const startIndex9 = startIndex !== null ? startIndex / 2 : null;
 
-        if (playerScore.isAbsent) {
+        if (playerScore.isAbsent && !hasSubstitute) {
           if (!data.teeId) continue;
           const matchTeeId = BigInt(data.teeId);
 
@@ -208,9 +220,11 @@ export class GolfLeagueScoreService {
                 hcpIdx,
               }));
               indexedHoles.sort((a, b) => a.hcpIdx - b.hcpIdx);
-              for (let i = 0; i < totalPenalty; i++) {
-                const { holeIdx } = indexedHoles[i % relevantPars.length];
-                syntheticScores[holeIdx]++;
+              if (indexedHoles.length > 0) {
+                for (let i = 0; i < totalPenalty; i++) {
+                  const { holeIdx } = indexedHoles[i % relevantPars.length];
+                  syntheticScores[holeIdx]++;
+                }
               }
             }
 
@@ -227,6 +241,8 @@ export class GolfLeagueScoreService {
           submissions.push({
             teamId,
             golferId: rosterEntry.golferid,
+            rosterGolferId: rosterEntry.golferid,
+            rosterEntryId: rosterEntry.id,
             scoreData: {
               courseid: courseId,
               golferid: rosterEntry.golferid,
@@ -276,10 +292,13 @@ export class GolfLeagueScoreService {
 
         submissions.push({
           teamId,
-          golferId: rosterEntry.golferid,
+          golferId: effectiveGolferId,
+          rosterGolferId: rosterEntry.golferid,
+          rosterEntryId: rosterEntry.id,
+          substituteForRosterId: hasSubstitute ? rosterEntry.id : undefined,
           scoreData: {
             courseid: courseId,
-            golferid: rosterEntry.golferid,
+            golferid: effectiveGolferId,
             teeid: teeId,
             dateplayed: new Date(scoreData.datePlayed),
             holesplayed: scoreData.holesPlayed,
@@ -309,6 +328,7 @@ export class GolfLeagueScoreService {
             holescrore18: holeScores[17] ?? 0,
             startindex: startIndex,
             startindex9: startIndex9,
+            isabsent: false,
           },
         });
       }

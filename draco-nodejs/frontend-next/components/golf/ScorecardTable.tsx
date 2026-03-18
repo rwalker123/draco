@@ -22,6 +22,7 @@ interface PlayerScore {
   differential?: number;
   isAbsent?: boolean;
   absentModeLabel?: string;
+  substituteForName?: string;
 }
 
 interface ScorecardTableProps {
@@ -264,16 +265,19 @@ export default function ScorecardTable({
                     {player.playerName}
                   </Typography>
                   {(player.isAbsent ||
+                    player.substituteForName ||
                     player.courseHandicap !== undefined ||
                     player.differential !== undefined) && (
                     <Typography variant="caption" color="text.secondary">
                       {[
                         player.courseHandicap !== undefined ? `CH: ${player.courseHandicap}` : null,
-                        player.isAbsent
-                          ? (player.absentModeLabel ?? 'Absent')
-                          : player.differential !== undefined
-                            ? `Diff: ${player.differential.toFixed(1)}`
-                            : null,
+                        player.substituteForName
+                          ? `Sub for ${player.substituteForName}`
+                          : player.isAbsent
+                            ? (player.absentModeLabel ?? 'Absent')
+                            : player.differential !== undefined
+                              ? `Diff: ${player.differential.toFixed(1)}`
+                              : null,
                       ]
                         .filter(Boolean)
                         .join('  ')}

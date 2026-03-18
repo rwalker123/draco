@@ -84,6 +84,7 @@ const createSourceSeason = (): dbSeasonCopySource => ({
       ],
       golfleaguesetup: null,
       golfseasonconfig: null,
+      golfleaguesub: [],
     },
   ],
 });
@@ -141,6 +142,7 @@ const createGolfSourceSeason = (): dbSeasonCopySource => ({
       golfseasonconfig: {
         teamsize: 4,
       },
+      golfleaguesub: [],
     },
   ],
 });

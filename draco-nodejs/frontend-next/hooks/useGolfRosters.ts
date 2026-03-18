@@ -2,7 +2,7 @@
 
 import {
   getGolfTeamRoster,
-  listGolfSubstitutesForSeason,
+  listGolfSubstitutesForLeague,
   listAvailableGolfPlayers,
   getGolfRosterEntry,
   createAndSignGolfPlayer,
@@ -10,6 +10,9 @@ import {
   updateGolfPlayer,
   releaseGolfPlayer,
   deleteGolfPlayer,
+  createGolfSubstitute,
+  deleteGolfSubstitute,
+  updateGolfSubstitute,
 } from '@draco/shared-api-client';
 import type {
   GolfRosterEntryType,
@@ -33,8 +36,9 @@ export interface GolfRosterService {
     teamSeasonId: string,
     signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfRosterEntryType[]>>;
-  listSubstitutesForSeason: (
+  listSubstitutesForLeague: (
     seasonId: string,
+    leagueSeasonId: string,
     signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfSubstituteType[]>>;
   listAvailablePlayers: (
@@ -75,6 +79,25 @@ export interface GolfRosterService {
     rosterId: string,
     signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<void>>;
+  createSubstitute: (
+    seasonId: string,
+    leagueSeasonId: string,
+    payload: CreateGolfPlayerType,
+    signal?: AbortSignal,
+  ) => Promise<GolfRosterServiceResult<GolfSubstituteType>>;
+  deleteSubstitute: (
+    seasonId: string,
+    leagueSeasonId: string,
+    subId: string,
+    signal?: AbortSignal,
+  ) => Promise<GolfRosterServiceResult<void>>;
+  updateSubstitute: (
+    seasonId: string,
+    leagueSeasonId: string,
+    subId: string,
+    payload: UpdateGolfPlayerType,
+    signal?: AbortSignal,
+  ) => Promise<GolfRosterServiceResult<GolfSubstituteType>>;
 }
 
 export function useGolfRosters(accountId: string): GolfRosterService {
@@ -106,14 +129,15 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
-  const listSubstitutesForSeason: GolfRosterService['listSubstitutesForSeason'] = async (
+  const listSubstitutesForLeague: GolfRosterService['listSubstitutesForLeague'] = async (
     seasonId,
+    leagueSeasonId,
     signal,
   ) => {
     try {
-      const result = await listGolfSubstitutesForSeason({
+      const result = await listGolfSubstitutesForLeague({
         client: apiClient,
-        path: { accountId, seasonId },
+        path: { accountId, seasonId, leagueSeasonId },
         signal,
         throwOnError: false,
       });
@@ -319,9 +343,93 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
+  const createSubstitute: GolfRosterService['createSubstitute'] = async (
+    seasonId,
+    leagueSeasonId,
+    payload,
+    signal,
+  ) => {
+    try {
+      const result = await createGolfSubstitute({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId },
+        body: payload,
+        signal,
+        throwOnError: false,
+      });
+
+      const sub = unwrapApiResult(result, 'Failed to create substitute') as GolfSubstituteType;
+
+      return {
+        success: true,
+        data: sub,
+        message: 'Substitute created successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create substitute';
+      return { success: false, error: message } as const;
+    }
+  };
+
+  const deleteSubstitute: GolfRosterService['deleteSubstitute'] = async (
+    seasonId,
+    leagueSeasonId,
+    subId,
+    signal,
+  ) => {
+    try {
+      const result = await deleteGolfSubstitute({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId, subId },
+        signal,
+        throwOnError: false,
+      });
+
+      unwrapApiResult(result, 'Failed to delete substitute');
+
+      return {
+        success: true,
+        data: undefined as void,
+        message: 'Substitute removed successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete substitute';
+      return { success: false, error: message } as const;
+    }
+  };
+
+  const updateSubstitute: GolfRosterService['updateSubstitute'] = async (
+    seasonId,
+    leagueSeasonId,
+    subId,
+    payload,
+    signal,
+  ) => {
+    try {
+      const result = await updateGolfSubstitute({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId, subId },
+        body: payload,
+        signal,
+        throwOnError: false,
+      });
+
+      const sub = unwrapApiResult(result, 'Failed to update substitute') as GolfSubstituteType;
+
+      return {
+        success: true,
+        data: sub,
+        message: 'Substitute updated successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update substitute';
+      return { success: false, error: message } as const;
+    }
+  };
+
   return {
     getTeamRoster,
-    listSubstitutesForSeason,
+    listSubstitutesForLeague,
     listAvailablePlayers,
     getRosterEntry,
     createAndSignPlayer,
@@ -329,5 +437,8 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     updatePlayer,
     releasePlayer,
     deletePlayer,
+    createSubstitute,
+    deleteSubstitute,
+    updateSubstitute,
   };
 }

@@ -22,6 +22,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
+import PersonOffIcon from '@mui/icons-material/PersonOff';
 
 export interface AdminSearchItem {
   id: string;
@@ -261,7 +262,7 @@ export function getBaseballAdminItems(): AdminSearchItem[] {
   ];
 }
 
-export function getGolfAdminItems(): AdminSearchItem[] {
+export function getGolfAdminItems(currentSeasonId?: string): AdminSearchItem[] {
   return [
     ...baseAccountItems,
     ...baseSeasonItems,
@@ -274,6 +275,21 @@ export function getGolfAdminItems(): AdminSearchItem[] {
       category: 'Golf Courses',
       keywords: ['courses', 'tees', 'golf', 'clubs'],
     },
+    ...(currentSeasonId
+      ? [
+          {
+            id: 'league-substitutes',
+            title: 'League Substitutes',
+            description:
+              'Manage substitute players from within each flight on the Flights & Teams page.',
+            icon: <PersonOffIcon />,
+            getHref: (accountId: string) =>
+              `/account/${accountId}/seasons/${currentSeasonId}/golf/flights`,
+            category: 'Season',
+            keywords: ['substitutes', 'subs', 'replacement', 'players', 'pool', 'golf'],
+          },
+        ]
+      : []),
     ...globalAdminItems,
     {
       id: 'golf-course-management-global',

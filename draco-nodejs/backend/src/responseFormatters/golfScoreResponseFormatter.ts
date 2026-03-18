@@ -230,6 +230,7 @@ export class GolfScoreResponseFormatter {
       startIndex9: score.startindex9 ?? undefined,
       holeScores,
       isAbsent: score.isabsent ?? false,
+      substituteForRosterId: matchScore.substitutefor?.toString(),
       player: {
         id: matchScore.golfer.contact.id.toString(),
         firstName: matchScore.golfer.contact.firstname,
@@ -350,6 +351,7 @@ export class GolfScoreResponseFormatter {
       startIndex9: score.startindex9 ?? undefined,
       holeScores,
       isAbsent: score.isabsent ?? false,
+      substituteForRosterId: matchScore.substitutefor?.toString(),
       player: {
         id: score.golfer.contact.id.toString(),
         firstName: score.golfer.contact.firstname,

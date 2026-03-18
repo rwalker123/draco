@@ -59,10 +59,10 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     });
   }
 
-  async findSubstitutesForSeason(seasonId: bigint): Promise<GolfLeagueSubWithGolfer[]> {
+  async findSubstitutesForLeague(leagueSeasonId: bigint): Promise<GolfLeagueSubWithGolfer[]> {
     return this.prisma.golfleaguesub.findMany({
       where: {
-        seasonid: seasonId,
+        seasonid: leagueSeasonId,
         isactive: true,
       },
       include: {
@@ -125,13 +125,13 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
 
   async createLeagueSub(data: {
     golferid: bigint;
-    seasonid: bigint;
+    leagueseasonid: bigint;
     isactive: boolean;
   }): Promise<golfleaguesub> {
     return this.prisma.golfleaguesub.create({
       data: {
         golferid: data.golferid,
-        seasonid: data.seasonid,
+        seasonid: data.leagueseasonid,
         isactive: data.isactive,
       },
     });
@@ -266,9 +266,17 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     return count > 0;
   }
 
-  async findLeagueSubById(subId: bigint): Promise<GolfLeagueSubWithGolfer | null> {
-    return this.prisma.golfleaguesub.findUnique({
-      where: { id: subId },
+  async findLeagueSubById(
+    subId: bigint,
+    accountId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<GolfLeagueSubWithGolfer | null> {
+    return this.prisma.golfleaguesub.findFirst({
+      where: {
+        id: subId,
+        seasonid: leagueSeasonId,
+        leagueseason: { league: { accountid: accountId } },
+      },
       include: {
         golfer: {
           include: {
@@ -286,8 +294,36 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     return this.prisma.golfleaguesub.findFirst({
       where: {
         golferid: golferId,
-        seasonid: seasonId,
+        leagueseason: { seasonid: seasonId },
       },
     });
+  }
+
+  async findLeagueSubByGolferAndLeagueSeason(
+    golferId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<golfleaguesub | null> {
+    return this.prisma.golfleaguesub.findFirst({
+      where: {
+        golferid: golferId,
+        seasonid: leagueSeasonId,
+      },
+    });
+  }
+
+  async leagueSeasonExists(
+    leagueSeasonId: bigint,
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<boolean> {
+    const record = await this.prisma.leagueseason.findFirst({
+      where: {
+        id: leagueSeasonId,
+        seasonid: seasonId,
+        league: { accountid: accountId },
+      },
+      select: { id: true },
+    });
+    return record !== null;
   }
 }

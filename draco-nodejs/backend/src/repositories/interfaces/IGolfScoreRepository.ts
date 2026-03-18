@@ -55,7 +55,10 @@ export type CreateMatchScoreData = {
 export type MatchScoreSubmission = {
   teamId: bigint;
   golferId: bigint;
+  rosterGolferId: bigint;
+  rosterEntryId: bigint;
   scoreData: CreateGolfScoreData;
+  substituteForRosterId?: bigint;
 };
 
 export type SubmitMatchScoresResult = {

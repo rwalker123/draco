@@ -291,6 +291,13 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
                 teamsize: true,
               },
             },
+            golfleaguesub: {
+              where: { isactive: true },
+              select: {
+                golferid: true,
+                isactive: true,
+              },
+            },
           },
         },
       },
@@ -423,6 +430,16 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
               leagueseasonid: createdLeagueSeason.id,
               teamsize: leagueSeason.golfseasonconfig.teamsize,
             },
+          });
+        }
+
+        if (isGolfAccount && leagueSeason.golfleaguesub && leagueSeason.golfleaguesub.length > 0) {
+          await tx.golfleaguesub.createMany({
+            data: leagueSeason.golfleaguesub.map((sub) => ({
+              golferid: sub.golferid,
+              seasonid: createdLeagueSeason.id,
+              isactive: true,
+            })),
           });
         }
       }

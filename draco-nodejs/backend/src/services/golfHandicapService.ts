@@ -115,8 +115,16 @@ export class GolfHandicapService {
       .sort((a, b) => a.dateplayed.getTime() - b.dateplayed.getTime());
 
     for (const score of eighteenHoleScores) {
-      const rating = Number(score.golfteeinformation.mensrating) || 72;
-      const slope = Number(score.golfteeinformation.menslope) || 113;
+      const rawRating = Number(score.golfteeinformation.mensrating);
+      const rawSlope = Number(score.golfteeinformation.menslope);
+      if (isNaN(rawRating)) {
+        console.warn(`Invalid mensrating for score ${score.id}, using fallback 72`);
+      }
+      if (isNaN(rawSlope)) {
+        console.warn(`Invalid menslope for score ${score.id}, using fallback 113`);
+      }
+      const rating = isNaN(rawRating) ? 72 : rawRating || 72;
+      const slope = isNaN(rawSlope) ? 113 : rawSlope || 113;
 
       differentials.push({
         scoreId: score.id,
@@ -257,12 +265,15 @@ export class GolfHandicapService {
     const teams = await this.teamRepository.findByFlightId(flightId);
     const playerHandicaps: PlayerHandicapType[] = [];
 
+    const seenGolferIds = new Set<bigint>();
+
     for (const team of teams) {
       const roster = await this.rosterRepository.findByTeamSeasonId(team.id);
 
       for (const entry of roster) {
         if (!entry.isactive) continue;
 
+        seenGolferIds.add(entry.golferid);
         const handicap = await this.getPlayerHandicap(entry.golferid);
 
         if (!handicap.contactId || handicap.contactId === '') {
@@ -278,6 +289,28 @@ export class GolfHandicapService {
 
         playerHandicaps.push(handicap);
       }
+    }
+
+    const subs = await this.rosterRepository.findSubstitutesForLeague(flightId);
+
+    for (const sub of subs) {
+      if (seenGolferIds.has(sub.golferid)) continue;
+
+      seenGolferIds.add(sub.golferid);
+      const handicap = await this.getPlayerHandicap(sub.golferid);
+
+      if (!handicap.contactId || handicap.contactId === '') {
+        handicap.contactId = sub.golfer.contact.id.toString();
+        handicap.firstName = sub.golfer.contact.firstname;
+        handicap.lastName = sub.golfer.contact.lastname;
+      }
+
+      if (handicap.handicapIndex === null && sub.golfer.initialdifferential !== null) {
+        handicap.handicapIndex = sub.golfer.initialdifferential;
+        handicap.isInitialIndex = true;
+      }
+
+      playerHandicaps.push(handicap);
     }
 
     playerHandicaps.sort((a, b) => {

@@ -2,28 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Alert,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   FormLabel,
   Stack,
   TextField,
 } from '@mui/material';
 import type { CreateGolfPlayerType } from '@draco/shared-schemas';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface CreateGolfPlayerDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateGolfPlayerType) => Promise<void>;
   teamName?: string;
-  showSubOption?: boolean;
+  title?: string;
 }
 
 const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
@@ -31,15 +30,14 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
   onClose,
   onSubmit,
   teamName,
-  showSubOption = true,
+  title,
 }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [email, setEmail] = useState('');
   const [initialDifferential, setInitialDifferential] = useState<number | null>(null);
-  const [isSub, setIsSub] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,8 +48,6 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
       setMiddleName('');
       setEmail('');
       setInitialDifferential(null);
-      setIsSub(false);
-      setError(null);
       setFieldErrors({});
     }
   }, [open]);
@@ -81,7 +77,6 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
       return;
     }
 
-    setError(null);
     setIsSubmitting(true);
 
     try {
@@ -92,12 +87,12 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
         middleName: middleName.trim() || undefined,
         email: trimmedEmail || undefined,
         initialDifferential,
-        isSub,
+        isSub: false,
       };
       await onSubmit(playerData);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add player');
+      showNotification(err instanceof Error ? err.message : 'Failed to add player', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -113,16 +108,10 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add New Player{teamName ? ` to ${teamName}` : ''}</DialogTitle>
+      <DialogTitle>{title ?? `Add New Player${teamName ? ` to ${teamName}` : ''}`}</DialogTitle>
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <FormControl fullWidth error={!!fieldErrors.firstName}>
               <FormLabel htmlFor="player-firstName" required>
@@ -207,19 +196,6 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
               inputProps={{ step: 0.1 }}
             />
           </FormControl>
-
-          {showSubOption && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={isSub}
-                  onChange={(e) => setIsSub(e.target.checked)}
-                  disabled={isSubmitting}
-                />
-              }
-              label="Register as substitute player"
-            />
-          )}
         </Stack>
       </DialogContent>
 
@@ -231,6 +207,8 @@ const CreateGolfPlayerDialog: React.FC<CreateGolfPlayerDialogProps> = ({
           {isSubmitting ? <CircularProgress size={20} /> : 'Add Player'}
         </Button>
       </DialogActions>
+
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </Dialog>
   );
 };

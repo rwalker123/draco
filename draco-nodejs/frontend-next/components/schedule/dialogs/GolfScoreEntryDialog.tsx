@@ -152,7 +152,11 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         const [roster1Result, roster2Result, subsResult, scoresResult] = await Promise.all([
           rosterService.getTeamRoster(seasonId, selectedGame.homeTeamId, controller.signal),
           rosterService.getTeamRoster(seasonId, selectedGame.visitorTeamId, controller.signal),
-          rosterService.listSubstitutesForSeason(seasonId, controller.signal),
+          rosterService.listSubstitutesForLeague(
+            seasonId,
+            selectedGame.season.id,
+            controller.signal,
+          ),
           scoreService.getMatchScores(selectedGame.id, controller.signal),
         ]);
 
@@ -205,10 +209,14 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         if (controller.signal.aborted) return;
 
         const team1ExistingScores = loadedExistingScores.filter((s) =>
-          roster1Result.data.some((p) => p.golferId === s.golferId),
+          roster1Result.data.some(
+            (p) => p.golferId === s.golferId || s.substituteForRosterId === p.id,
+          ),
         );
         const team2ExistingScores = loadedExistingScores.filter((s) =>
-          roster2Result.data.some((p) => p.golferId === s.golferId),
+          roster2Result.data.some(
+            (p) => p.golferId === s.golferId || s.substituteForRosterId === p.id,
+          ),
         );
 
         const hasHoleByHoleScores = loadedExistingScores.some((s) => s.totalsOnly === false);
@@ -225,14 +233,17 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           const hasMoreThanAllowed = roster.length > maxPlayers;
 
           roster.forEach((player, index) => {
-            const existingScore = existing.find((s) => s.golferId === player.golferId);
+            const existingScore = existing.find(
+              (s) => s.golferId === player.golferId || s.substituteForRosterId === player.id,
+            );
             const excessRosterAbsent = hasMoreThanAllowed && index >= maxPlayers;
+            const hasSub = !!existingScore?.substituteForRosterId;
 
             scores[player.id] = {
               rosterId: player.id,
-              isAbsent: existingScore?.isAbsent ?? excessRosterAbsent,
-              isSubstitute: false,
-              substituteGolferId: undefined,
+              isAbsent: hasSub || (existingScore?.isAbsent ?? excessRosterAbsent),
+              isSubstitute: hasSub,
+              substituteGolferId: hasSub ? existingScore.golferId : undefined,
               totalsOnly: existingScore?.totalsOnly ?? true,
               totalScore: existingScore?.totalScore ?? 0,
               frontNineScore: existingScore?.frontNineScore ?? 0,
@@ -304,9 +315,11 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
       return;
     }
 
+    const substituteGolferIds = substitutes.map((s) => s.golferId);
     const allGolferIds = [
       ...team1Roster.map((p) => p.golferId),
       ...team2Roster.map((p) => p.golferId),
+      ...substituteGolferIds,
     ];
 
     if (allGolferIds.length === 0) return;
@@ -339,6 +352,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
     useHandicapScoring,
     team1Roster,
     team2Roster,
+    substitutes,
     scoreService,
   ]);
 
@@ -355,7 +369,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
         substituteGolferId: score.substituteGolferId,
       };
 
-      if (score.totalScore > 0 && !score.isAbsent) {
+      const hasSubstitute = score.isSubstitute && !!score.substituteGolferId;
+      if (score.totalScore > 0 && (!score.isAbsent || hasSubstitute)) {
         const isTotalsOnly = score.totalsOnly || showHoleByHole === false;
         const isTotalsOnlyEighteen = isTotalsOnly && numberOfHoles >= 18;
         playerScore.score = {
@@ -469,9 +484,7 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
   }
   if (courseHandicapData?.players) {
     for (const player of courseHandicapData.players) {
-      if (!(player.golferId in courseHandicapMap)) {
-        courseHandicapMap[player.golferId] = player.courseHandicap;
-      }
+      courseHandicapMap[player.golferId] = player.courseHandicap;
     }
   }
 

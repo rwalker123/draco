@@ -6,14 +6,12 @@ import {
   Autocomplete,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   FormLabel,
   Stack,
   TextField,
@@ -48,7 +46,6 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
 }) => {
   const [selectedPlayer, setSelectedPlayer] = useState<AvailablePlayerType | null>(null);
   const [initialDifferential, setInitialDifferential] = useState<number | null>(null);
-  const [isSub, setIsSub] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,7 +53,6 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     if (!open) {
       setSelectedPlayer(null);
       setInitialDifferential(null);
-      setIsSub(false);
       setError(null);
     }
   }, [open]);
@@ -74,7 +70,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       const signData: SignPlayerType = {
         contactId: selectedPlayer.id,
         initialDifferential,
-        isSub,
+        isSub: false,
       };
       await onSign(signData);
       onClose();
@@ -166,17 +162,6 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
               inputProps={{ step: 0.1 }}
             />
           </FormControl>
-
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={isSub}
-                onChange={(e) => setIsSub(e.target.checked)}
-                disabled={isSubmitting}
-              />
-            }
-            label="Sign as substitute player"
-          />
         </Stack>
       </DialogContent>
 

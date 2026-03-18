@@ -528,7 +528,6 @@ const GolfTeamDetailPage: React.FC = () => {
         onClose={() => setCreatePlayerOpen(false)}
         onSubmit={handleCreatePlayer}
         teamName={team.name}
-        showSubOption
       />
 
       <SignPlayerDialog

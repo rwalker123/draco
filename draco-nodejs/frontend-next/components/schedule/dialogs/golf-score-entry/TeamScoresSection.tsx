@@ -246,11 +246,15 @@ export function TeamScoresSection({
                       showHoleByHole={showHoleByHole}
                       disabled={disabled}
                       courseHandicap={
-                        showHandicaps ? courseHandicapMap[player.golferId] : undefined
+                        showHandicaps
+                          ? courseHandicapMap[scoreData.substituteGolferId ?? player.golferId]
+                          : undefined
                       }
                       showHandicap={showHandicaps}
                       courseParData={courseParData}
-                      playerGender={genderMap[player.golferId] ?? 'M'}
+                      playerGender={
+                        genderMap[scoreData.substituteGolferId ?? player.golferId] ?? 'M'
+                      }
                     />
                   </Box>
                 )}
@@ -278,10 +282,14 @@ export function TeamScoresSection({
                 numberOfHoles={numberOfHoles}
                 showHoleByHole={showHoleByHole}
                 disabled={disabled}
-                courseHandicap={showHandicaps ? courseHandicapMap[player.golferId] : undefined}
+                courseHandicap={
+                  showHandicaps
+                    ? courseHandicapMap[scoreData.substituteGolferId ?? player.golferId]
+                    : undefined
+                }
                 showHandicap={showHandicaps}
                 courseParData={courseParData}
-                playerGender={genderMap[player.golferId] ?? 'M'}
+                playerGender={genderMap[scoreData.substituteGolferId ?? player.golferId] ?? 'M'}
               />
             );
           })

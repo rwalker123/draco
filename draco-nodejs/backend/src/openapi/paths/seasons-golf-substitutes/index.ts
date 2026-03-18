@@ -8,7 +8,11 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
   const {
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
+    CreateGolfPlayerSchemaRef,
     GolfSubstituteSchemaRef,
+    NotFoundErrorSchemaRef,
+    UpdateGolfPlayerSchemaRef,
+    ValidationErrorSchemaRef,
     InternalServerErrorSchemaRef,
   } = schemaRefs;
 
@@ -17,35 +21,56 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
     description: 'List of golf substitutes',
   });
 
-  // GET /api/accounts/{accountId}/seasons/{seasonId}/golf/substitutes
+  const leagueSeasonIdParam = {
+    name: 'leagueSeasonId',
+    in: 'path' as const,
+    required: true,
+    schema: {
+      type: 'string' as const,
+      format: 'number',
+    },
+  };
+
+  const accountIdParam = {
+    name: 'accountId',
+    in: 'path' as const,
+    required: true,
+    schema: {
+      type: 'string' as const,
+      format: 'number',
+    },
+  };
+
+  const seasonIdParam = {
+    name: 'seasonId',
+    in: 'path' as const,
+    required: true,
+    schema: {
+      type: 'string' as const,
+      format: 'number',
+    },
+  };
+
+  const subIdParam = {
+    name: 'subId',
+    in: 'path' as const,
+    required: true,
+    schema: {
+      type: 'string' as const,
+      format: 'number',
+    },
+  };
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes
   registry.registerPath({
     method: 'get',
-    path: '/api/accounts/{accountId}/seasons/{seasonId}/golf/substitutes',
-    description: 'List all substitutes for a season',
-    operationId: 'listGolfSubstitutesForSeason',
-    summary: 'List season substitutes',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes',
+    description: 'List all substitutes for a league season',
+    operationId: 'listGolfSubstitutesForLeague',
+    summary: 'List league substitutes',
     tags: ['Golf Substitutes'],
     security: [{ bearerAuth: [] }],
-    parameters: [
-      {
-        name: 'accountId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-      {
-        name: 'seasonId',
-        in: 'path',
-        required: true,
-        schema: {
-          type: 'string',
-          format: 'number',
-        },
-      },
-    ],
+    parameters: [accountIdParam, seasonIdParam, leagueSeasonIdParam],
     responses: {
       200: {
         description: 'List of substitutes',
@@ -54,6 +79,173 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
             schema: GolfSubstituteListSchemaRef,
           },
         },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes',
+    description: 'Create a new substitute player in the league pool',
+    operationId: 'createGolfSubstitute',
+    summary: 'Create golf substitute',
+    tags: ['Golf Substitutes'],
+    security: [{ bearerAuth: [] }],
+    parameters: [accountIdParam, seasonIdParam, leagueSeasonIdParam],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateGolfPlayerSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Substitute created',
+        content: {
+          'application/json': {
+            schema: GolfSubstituteSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Duplicate substitute already exists',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'League season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // PATCH /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/{subId}
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/{subId}',
+    description: 'Update a substitute in the league pool',
+    operationId: 'updateGolfSubstitute',
+    summary: 'Update golf substitute',
+    tags: ['Golf Substitutes'],
+    security: [{ bearerAuth: [] }],
+    parameters: [accountIdParam, seasonIdParam, leagueSeasonIdParam, subIdParam],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateGolfPlayerSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Substitute updated',
+        content: {
+          'application/json': {
+            schema: GolfSubstituteSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // DELETE /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/{subId}
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/{subId}',
+    description: 'Delete a substitute from the league pool',
+    operationId: 'deleteGolfSubstitute',
+    summary: 'Delete golf substitute',
+    tags: ['Golf Substitutes'],
+    security: [{ bearerAuth: [] }],
+    parameters: [accountIdParam, seasonIdParam, leagueSeasonIdParam, subIdParam],
+    responses: {
+      204: {
+        description: 'Substitute deleted',
       },
       401: {
         description: 'Authentication required',

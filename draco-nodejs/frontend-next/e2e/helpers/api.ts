@@ -18,6 +18,10 @@ import {
   getCurrentSeason,
   deleteContact,
   getGolfSeasonStandings,
+  createGolfSubstitute,
+  deleteGolfSubstitute,
+  listGolfSubstitutesForLeague,
+  signGolfPlayer,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -30,6 +34,7 @@ import type {
   UpdateGolfLeagueSetup,
   SubmitMatchResults,
   CurrentSeasonResponse,
+  GolfSubstitute,
 } from '@draco/shared-api-client';
 
 export function createE2EApiClient(baseUrl: string, token: string) {
@@ -274,5 +279,61 @@ export class ApiHelper {
       query: { force: true },
     });
     if (error) throw new ApiError('deleteContact', response.status, error);
+  }
+
+  async createSubstitute(
+    accountId: string,
+    seasonId: string,
+    leagueSeasonId: string,
+    data: { firstName: string; lastName: string; initialDifferential?: number },
+  ): Promise<GolfSubstitute> {
+    const { data: sub, error } = await createGolfSubstitute({
+      client: this.client,
+      path: { accountId, seasonId, leagueSeasonId },
+      body: data,
+    });
+    if (error || !sub) throw new Error(`createSubstitute failed: ${JSON.stringify(error)}`);
+    return sub;
+  }
+
+  async deleteSubstitute(
+    accountId: string,
+    seasonId: string,
+    leagueSeasonId: string,
+    subId: string,
+  ): Promise<void> {
+    const { error, response } = await deleteGolfSubstitute({
+      client: this.client,
+      path: { accountId, seasonId, leagueSeasonId, subId },
+    });
+    if (error) throw new ApiError('deleteSubstitute', response.status, error);
+  }
+
+  async listSubstitutes(
+    accountId: string,
+    seasonId: string,
+    leagueSeasonId: string,
+  ): Promise<GolfSubstitute[]> {
+    const { data: subs, error } = await listGolfSubstitutesForLeague({
+      client: this.client,
+      path: { accountId, seasonId, leagueSeasonId },
+    });
+    if (error || !subs) throw new Error(`listSubstitutes failed: ${JSON.stringify(error)}`);
+    return subs;
+  }
+
+  async signPlayerAsSub(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    contactId: string,
+    initialDifferential?: number,
+  ): Promise<{ error: unknown; status: number }> {
+    const { error, response } = await signGolfPlayer({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      body: { contactId, isSub: true, initialDifferential },
+    });
+    return { error, status: response.status };
   }
 }

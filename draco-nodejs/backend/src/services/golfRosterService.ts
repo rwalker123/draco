@@ -46,12 +46,20 @@ export class GolfRosterService {
     return GolfRosterResponseFormatter.format(entry);
   }
 
-  async getSubstitutesForSeason(seasonId: bigint): Promise<GolfSubstituteType[]> {
-    const hasFlights = await this.flightRepository.seasonHasFlights(seasonId);
-    if (!hasFlights) {
-      throw new NotFoundError('Season has no golf flights');
+  async getSubstitutesForLeague(
+    leagueSeasonId: bigint,
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<GolfSubstituteType[]> {
+    const leagueSeasonExists = await this.rosterRepository.leagueSeasonExists(
+      leagueSeasonId,
+      accountId,
+      seasonId,
+    );
+    if (!leagueSeasonExists) {
+      throw new NotFoundError('League season not found');
     }
-    const subs = await this.rosterRepository.findSubstitutesForSeason(seasonId);
+    const subs = await this.rosterRepository.findSubstitutesForLeague(leagueSeasonId);
     return GolfRosterResponseFormatter.formatSubstitutes(subs);
   }
 
@@ -68,7 +76,7 @@ export class GolfRosterService {
     teamSeasonId: bigint,
     accountId: bigint,
     data: CreateGolfPlayerType,
-  ): Promise<GolfRosterEntryType> {
+  ): Promise<GolfRosterEntryType | GolfSubstituteType> {
     const team = await this.teamRepository.findById(teamSeasonId);
     if (!team) {
       throw new NotFoundError('Golf team not found');
@@ -89,22 +97,18 @@ export class GolfRosterService {
     if (data.isSub) {
       const sub = await this.rosterRepository.createLeagueSub({
         golferid: golfer.id,
-        seasonid: team.leagueseasonid,
+        leagueseasonid: team.leagueseasonid,
         isactive: true,
       });
-      const subEntry = await this.rosterRepository.findLeagueSubById(sub.id);
+      const subEntry = await this.rosterRepository.findLeagueSubById(
+        sub.id,
+        accountId,
+        team.leagueseasonid,
+      );
       if (!subEntry) {
         throw new NotFoundError('Created substitute entry not found');
       }
-      const formatted = GolfRosterResponseFormatter.formatSubstitute(subEntry);
-      return {
-        id: formatted.id,
-        golferId: formatted.golferId,
-        teamSeasonId: teamSeasonId.toString(),
-        isActive: formatted.isActive,
-        initialDifferential: formatted.initialDifferential,
-        player: formatted.player,
-      };
+      return GolfRosterResponseFormatter.formatSubstitute(subEntry);
     }
 
     const rosterEntry = await this.rosterRepository.createRosterEntry({
@@ -124,7 +128,7 @@ export class GolfRosterService {
     teamSeasonId: bigint,
     accountId: bigint,
     data: SignPlayerType,
-  ): Promise<GolfRosterEntryType> {
+  ): Promise<GolfRosterEntryType | GolfSubstituteType> {
     const team = await this.teamRepository.findById(teamSeasonId);
     if (!team) {
       throw new NotFoundError('Golf team not found');
@@ -146,7 +150,7 @@ export class GolfRosterService {
       throw new ValidationError('This player is already on this team');
     }
 
-    const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(
+    const existingSub = await this.rosterRepository.findLeagueSubByGolferAndLeagueSeason(
       golfer.id,
       team.leagueseasonid,
     );
@@ -157,22 +161,18 @@ export class GolfRosterService {
     if (data.isSub) {
       const sub = await this.rosterRepository.createLeagueSub({
         golferid: golfer.id,
-        seasonid: team.leagueseasonid,
+        leagueseasonid: team.leagueseasonid,
         isactive: true,
       });
-      const subEntry = await this.rosterRepository.findLeagueSubById(sub.id);
+      const subEntry = await this.rosterRepository.findLeagueSubById(
+        sub.id,
+        accountId,
+        team.leagueseasonid,
+      );
       if (!subEntry) {
         throw new NotFoundError('Created substitute entry not found');
       }
-      const formatted = GolfRosterResponseFormatter.formatSubstitute(subEntry);
-      return {
-        id: formatted.id,
-        golferId: formatted.golferId,
-        teamSeasonId: teamSeasonId.toString(),
-        isActive: formatted.isActive,
-        initialDifferential: formatted.initialDifferential,
-        player: formatted.player,
-      };
+      return GolfRosterResponseFormatter.formatSubstitute(subEntry);
     }
 
     const rosterEntry = await this.rosterRepository.createRosterEntry({
@@ -225,6 +225,11 @@ export class GolfRosterService {
         throw new NotFoundError('Season has no golf flights');
       }
 
+      const team = await this.teamRepository.findById(entry.teamseasonid);
+      if (!team) {
+        throw new NotFoundError('Team not found for roster entry');
+      }
+
       const existingSub = await this.rosterRepository.findLeagueSubByGolferAndSeason(
         entry.golferid,
         seasonId,
@@ -235,7 +240,7 @@ export class GolfRosterService {
       } else {
         await this.rosterRepository.createLeagueSub({
           golferid: entry.golferid,
-          seasonid: seasonId,
+          leagueseasonid: team.leagueseasonid,
           isactive: true,
         });
       }
@@ -256,13 +261,21 @@ export class GolfRosterService {
     await this.rosterRepository.deleteRosterEntry(rosterId);
   }
 
-  async signSubToTeam(subId: bigint, teamSeasonId: bigint): Promise<GolfRosterEntryType> {
+  async signSubToTeam(
+    subId: bigint,
+    teamSeasonId: bigint,
+    accountId: bigint,
+  ): Promise<GolfRosterEntryType> {
     const team = await this.teamRepository.findById(teamSeasonId);
     if (!team) {
       throw new NotFoundError('Golf team not found');
     }
 
-    const sub = await this.rosterRepository.findLeagueSubById(subId);
+    const sub = await this.rosterRepository.findLeagueSubById(
+      subId,
+      accountId,
+      team.leagueseasonid,
+    );
     if (!sub) {
       throw new NotFoundError('Substitute not found');
     }
@@ -290,8 +303,75 @@ export class GolfRosterService {
     return GolfRosterResponseFormatter.format(createdEntry);
   }
 
-  async updateSubstitute(subId: bigint, data: UpdateGolfPlayerType): Promise<GolfSubstituteType> {
-    const sub = await this.rosterRepository.findLeagueSubById(subId);
+  async createSubstitute(
+    leagueSeasonId: bigint,
+    accountId: bigint,
+    seasonId: bigint,
+    data: CreateGolfPlayerType,
+  ): Promise<GolfSubstituteType> {
+    const leagueSeasonExists = await this.rosterRepository.leagueSeasonExists(
+      leagueSeasonId,
+      accountId,
+      seasonId,
+    );
+    if (!leagueSeasonExists) {
+      throw new NotFoundError('League season not found');
+    }
+
+    const contact = await this.rosterRepository.createContact(accountId, {
+      firstname: data.firstName.trim(),
+      lastname: data.lastName.trim(),
+      middlename: data.middleName?.trim() ?? null,
+      email: data.email?.trim() ?? null,
+    });
+
+    const golfer = await this.rosterRepository.findOrCreateGolfer(
+      contact.id,
+      data.initialDifferential ?? null,
+    );
+
+    const existingSub = await this.rosterRepository.findLeagueSubByGolferAndLeagueSeason(
+      golfer.id,
+      leagueSeasonId,
+    );
+    if (existingSub) {
+      throw new ValidationError('This player is already in the substitute pool for this league');
+    }
+
+    const sub = await this.rosterRepository.createLeagueSub({
+      golferid: golfer.id,
+      leagueseasonid: leagueSeasonId,
+      isactive: true,
+    });
+
+    const subEntry = await this.rosterRepository.findLeagueSubById(
+      sub.id,
+      accountId,
+      leagueSeasonId,
+    );
+    if (!subEntry) {
+      throw new NotFoundError('Created substitute entry not found');
+    }
+
+    return GolfRosterResponseFormatter.formatSubstitute(subEntry);
+  }
+
+  async updateSubstitute(
+    subId: bigint,
+    leagueSeasonId: bigint,
+    accountId: bigint,
+    seasonId: bigint,
+    data: UpdateGolfPlayerType,
+  ): Promise<GolfSubstituteType> {
+    const leagueSeasonExists = await this.rosterRepository.leagueSeasonExists(
+      leagueSeasonId,
+      accountId,
+      seasonId,
+    );
+    if (!leagueSeasonExists) {
+      throw new NotFoundError('League season not found');
+    }
+    const sub = await this.rosterRepository.findLeagueSubById(subId, accountId, leagueSeasonId);
     if (!sub) {
       throw new NotFoundError('Substitute not found');
     }
@@ -308,15 +388,32 @@ export class GolfRosterService {
       });
     }
 
-    const updatedSub = await this.rosterRepository.findLeagueSubById(subId);
+    const updatedSub = await this.rosterRepository.findLeagueSubById(
+      subId,
+      accountId,
+      leagueSeasonId,
+    );
     if (!updatedSub) {
       throw new NotFoundError('Updated substitute not found');
     }
     return GolfRosterResponseFormatter.formatSubstitute(updatedSub);
   }
 
-  async deleteSubstitute(subId: bigint): Promise<void> {
-    const sub = await this.rosterRepository.findLeagueSubById(subId);
+  async deleteSubstitute(
+    subId: bigint,
+    leagueSeasonId: bigint,
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<void> {
+    const leagueSeasonExists = await this.rosterRepository.leagueSeasonExists(
+      leagueSeasonId,
+      accountId,
+      seasonId,
+    );
+    if (!leagueSeasonExists) {
+      throw new NotFoundError('League season not found');
+    }
+    const sub = await this.rosterRepository.findLeagueSubById(subId, accountId, leagueSeasonId);
     if (!sub) {
       throw new NotFoundError('Substitute not found');
     }

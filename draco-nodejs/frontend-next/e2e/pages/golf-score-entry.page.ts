@@ -47,9 +47,15 @@ export class GolfScoreEntryPage {
   }
 
   async setHoles(holes: '9 Holes' | '18 Holes'): Promise<void> {
-    const holesSelect = this.dialog().getByRole('combobox', { name: 'Holes' });
+    const holesSelect = this.dialog()
+      .locator('.MuiFormControl-root', { hasText: 'Holes' })
+      .locator('[role="combobox"]');
     await holesSelect.click();
     await this.page.getByRole('option', { name: holes }).click();
+    await this.page
+      .locator('[role="listbox"]')
+      .waitFor({ state: 'hidden', timeout: 5000 })
+      .catch(() => {});
   }
 
   async fillFrontNine(teamName: string, score: string): Promise<void> {
@@ -97,9 +103,47 @@ export class GolfScoreEntryPage {
   }
 
   async closeDialog(): Promise<void> {
-    const btn = this.dialog().getByRole('button', { name: 'Cancel' });
-    await btn.scrollIntoViewIfNeeded();
-    await btn.click({ force: true });
-    await this.page.getByTestId('score-entry-dialog').waitFor({ state: 'hidden', timeout: 10000 });
+    const dialog = this.page.getByTestId('score-entry-dialog');
+    await dialog.press('Escape');
+    await dialog.waitFor({ state: 'hidden', timeout: 10000 });
+  }
+
+  async isSubstituteSelectVisible(teamName: string): Promise<boolean> {
+    const accordion = this.teamAccordion(teamName);
+    const select = accordion.locator('.MuiSelect-select');
+    try {
+      await select.waitFor({ state: 'visible', timeout: 3000 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async selectSubstitute(teamName: string, substituteName: string): Promise<void> {
+    const accordion = this.teamAccordion(teamName);
+    const select = accordion.locator('.MuiSelect-select');
+    await select.waitFor({ state: 'visible', timeout: 5000 });
+    await select.click();
+    await this.page.getByRole('option', { name: substituteName }).click();
+    await this.page
+      .locator('[role="listbox"]')
+      .waitFor({ state: 'hidden', timeout: 3000 })
+      .catch(() => {});
+  }
+
+  async getSelectedSubstituteText(teamName: string): Promise<string> {
+    const accordion = this.teamAccordion(teamName);
+    const select = accordion.locator('.MuiSelect-select');
+    return (await select.textContent()) ?? '';
+  }
+
+  async fillTotalScore(teamName: string, score: string): Promise<void> {
+    const accordion = this.teamAccordion(teamName);
+    await accordion.getByLabel('Total Score').fill(score);
+  }
+
+  async getTotalScoreValue(teamName: string): Promise<string> {
+    const accordion = this.teamAccordion(teamName);
+    return accordion.getByLabel('Total Score').inputValue();
   }
 }

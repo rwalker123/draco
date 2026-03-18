@@ -20414,6 +20414,10 @@ components:
                 maxItems: 18
               isAbsent:
                 type: boolean
+              substituteForRosterId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
               player:
                 type: object
                 properties:
@@ -20609,6 +20613,10 @@ components:
                 maxItems: 18
               isAbsent:
                 type: boolean
+              substituteForRosterId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
               player:
                 type: object
                 properties:
@@ -20958,6 +20966,10 @@ components:
           maxItems: 18
         isAbsent:
           type: boolean
+        substituteForRosterId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
         player:
           type: object
           properties:
@@ -22440,6 +22452,10 @@ components:
                 maxItems: 18
               isAbsent:
                 type: boolean
+              substituteForRosterId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
               player:
                 type: object
                 properties:
@@ -44828,23 +44844,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
-  /api/accounts/{accountId}/seasons/{seasonId}/golf/substitutes:
+  /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes:
     get:
-      description: List all substitutes for a season
-      operationId: listGolfSubstitutesForSeason
-      summary: List season substitutes
+      description: List all substitutes for a league season
+      operationId: listGolfSubstitutesForLeague
+      summary: List league substitutes
       tags:
         - Golf Substitutes
       security:
         - bearerAuth: []
       parameters:
-        - name: accountId
+        - &a26
+          name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - name: seasonId
+        - &a27
+          name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - &a28
+          name: leagueSeasonId
           in: path
           required: true
           schema:
@@ -44861,6 +44886,144 @@ paths:
                   $ref: "#/components/schemas/GolfSubstitute"
                 title: GolfSubstituteList
                 description: List of golf substitutes
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create a new substitute player in the league pool
+      operationId: createGolfSubstitute
+      summary: Create golf substitute
+      tags:
+        - Golf Substitutes
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a26
+        - *a27
+        - *a28
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGolfPlayer"
+      responses:
+        "201":
+          description: Substitute created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfSubstitute"
+        "400":
+          description: Duplicate substitute already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: League season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/{subId}:
+    patch:
+      description: Update a substitute in the league pool
+      operationId: updateGolfSubstitute
+      summary: Update golf substitute
+      tags:
+        - Golf Substitutes
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a26
+        - *a27
+        - *a28
+        - &a29
+          name: subId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGolfPlayer"
+      responses:
+        "200":
+          description: Substitute updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfSubstitute"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a substitute from the league pool
+      operationId: deleteGolfSubstitute
+      summary: Delete golf substitute
+      tags:
+        - Golf Substitutes
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a26
+        - *a27
+        - *a28
+        - *a29
+      responses:
+        "204":
+          description: Substitute deleted
         "401":
           description: Authentication required
           content:
@@ -45140,14 +45303,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a26
+        - &a30
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a27
+        - &a31
           name: seasonId
           in: path
           required: true
@@ -45253,8 +45416,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
         - name: feedItemId
           in: path
           required: true
@@ -45297,8 +45460,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
         - name: feedItemId
           in: path
           required: true
@@ -45341,8 +45504,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
         - schema:
             type: string
             pattern: ^\d+$
@@ -45409,8 +45572,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
         - schema:
             type: string
             pattern: ^\d+$
@@ -45476,8 +45639,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
         - schema:
             type: string
             nullable: true
@@ -45521,8 +45684,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
         - schema:
             type: string
             pattern: ^\d+$
@@ -45589,8 +45752,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
+        - *a30
+        - *a31
       requestBody:
         content:
           application/json:
@@ -45643,9 +45806,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
-        - &a28
+        - *a30
+        - *a31
+        - &a32
           name: liveEventId
           in: path
           required: true
@@ -45692,9 +45855,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
-        - *a28
+        - *a30
+        - *a31
+        - *a32
       requestBody:
         content:
           application/json:
@@ -45746,9 +45909,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a26
-        - *a27
-        - *a28
+        - *a30
+        - *a31
+        - *a32
       responses:
         "204":
           description: Live event deleted.
@@ -47118,23 +47281,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a30
+        - &a34
           name: accountId
           in: path
           required: true
-          schema: &a29
+          schema: &a33
             type: string
             format: number
-        - &a31
+        - &a35
           name: seasonId
           in: path
           required: true
-          schema: *a29
-        - &a32
+          schema: *a33
+        - &a36
           name: teamSeasonId
           in: path
           required: true
-          schema: *a29
+          schema: *a33
       responses:
         "200":
           description: Completed games retrieved.
@@ -47180,14 +47343,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - &a33
+        - *a34
+        - *a35
+        - *a36
+        - &a37
           name: gameId
           in: path
           required: true
-          schema: *a29
+          schema: *a33
       responses:
         "200":
           description: Batting stats retrieved.
@@ -47232,10 +47395,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
+        - *a34
+        - *a35
+        - *a36
+        - *a37
       requestBody:
         required: true
         content:
@@ -47293,15 +47456,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
-        - &a34
+        - *a34
+        - *a35
+        - *a36
+        - *a37
+        - &a38
           name: statId
           in: path
           required: true
-          schema: *a29
+          schema: *a33
       requestBody:
         required: true
         content:
@@ -47352,11 +47515,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
         - *a34
+        - *a35
+        - *a36
+        - *a37
+        - *a38
       responses:
         "204":
           description: Batting stat deleted.
@@ -47398,10 +47561,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
+        - *a34
+        - *a35
+        - *a36
+        - *a37
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -47446,10 +47609,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
+        - *a34
+        - *a35
+        - *a36
+        - *a37
       requestBody:
         required: true
         content:
@@ -47507,11 +47670,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
         - *a34
+        - *a35
+        - *a36
+        - *a37
+        - *a38
       requestBody:
         required: true
         content:
@@ -47562,11 +47725,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
         - *a34
+        - *a35
+        - *a36
+        - *a37
+        - *a38
       responses:
         "204":
           description: Pitching stat deleted.
@@ -47608,10 +47771,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
+        - *a34
+        - *a35
+        - *a36
+        - *a37
       responses:
         "200":
           description: Attendance retrieved.
@@ -47656,10 +47819,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a30
-        - *a31
-        - *a32
-        - *a33
+        - *a34
+        - *a35
+        - *a36
+        - *a37
       requestBody:
         required: true
         content:
@@ -49009,7 +49172,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a35
+        - &a39
           name: accountId
           in: path
           required: true
@@ -49034,7 +49197,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a35
+        - *a39
       requestBody:
         content:
           application/json:
@@ -49073,8 +49236,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a35
-        - &a36
+        - *a39
+        - &a40
           name: messageId
           in: path
           required: true
@@ -49103,8 +49266,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a35
-        - *a36
+        - *a39
+        - *a40
       requestBody:
         content:
           application/json:
@@ -49150,8 +49313,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a35
-        - *a36
+        - *a39
+        - *a40
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -49182,8 +49345,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a35
-        - &a37
+        - *a39
+        - &a41
           name: teamSeasonId
           in: path
           required: true
@@ -49212,8 +49375,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a35
-        - *a37
+        - *a39
+        - *a41
       requestBody:
         content:
           application/json:
@@ -49258,9 +49421,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a35
-        - *a37
-        - *a36
+        - *a39
+        - *a41
+        - *a40
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -49283,9 +49446,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a35
-        - *a37
-        - *a36
+        - *a39
+        - *a41
+        - *a40
       requestBody:
         content:
           application/json:
@@ -49331,9 +49494,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a35
-        - *a37
-        - *a36
+        - *a39
+        - *a41
+        - *a40
       responses:
         "204":
           description: Team welcome message deleted successfully.
