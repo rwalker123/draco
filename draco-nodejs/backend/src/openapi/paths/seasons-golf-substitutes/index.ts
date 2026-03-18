@@ -11,6 +11,7 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
     CreateGolfPlayerSchemaRef,
     GolfSubstituteSchemaRef,
     NotFoundErrorSchemaRef,
+    SignPlayerSchemaRef,
     UpdateGolfPlayerSchemaRef,
     ValidationErrorSchemaRef,
     InternalServerErrorSchemaRef,
@@ -161,6 +162,77 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
       },
       404: {
         description: 'League season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // POST /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/sign
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/sign',
+    description: 'Add an existing contact as a substitute in the league pool',
+    operationId: 'signGolfSubstitute',
+    summary: 'Sign existing contact as substitute',
+    tags: ['Golf Substitutes'],
+    security: [{ bearerAuth: [] }],
+    parameters: [accountIdParam, seasonIdParam, leagueSeasonIdParam],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: SignPlayerSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Substitute created from existing contact',
+        content: {
+          'application/json': {
+            schema: GolfSubstituteSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Duplicate substitute already exists',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'League season or contact not found',
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,

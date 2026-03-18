@@ -26486,7 +26486,7 @@
             "pattern": "^\\d+$",
             "example": "12345"
           },
-          "seasonId": {
+          "leagueSeasonId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -26543,7 +26543,7 @@
         "required": [
           "id",
           "golferId",
-          "seasonId",
+          "leagueSeasonId",
           "player"
         ],
         "title": "GolfSubstitute",
@@ -66358,6 +66358,121 @@
           },
           "404": {
             "description": "League season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/sign": {
+      "post": {
+        "description": "Add an existing contact as a substitute in the league pool",
+        "operationId": "signGolfSubstitute",
+        "summary": "Sign existing contact as substitute",
+        "tags": [
+          "Golf Substitutes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignPlayer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Substitute created from existing contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GolfSubstitute"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Duplicate substitute already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "League season or contact not found",
             "content": {
               "application/json": {
                 "schema": {

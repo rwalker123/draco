@@ -16,7 +16,7 @@ export type AvailableContact = contacts & {
   golfer: {
     id: bigint;
     rosters: Array<{ id: bigint; teamseasonid: bigint }>;
-    leaguesubs: Array<{ id: bigint; seasonid: bigint }>;
+    leaguesubs: Array<{ id: bigint; leagueseasonid: bigint }>;
   } | null;
 };
 
@@ -82,4 +82,13 @@ export interface IGolfRosterRepository {
     leagueSeasonId: bigint,
   ): Promise<golfleaguesub | null>;
   leagueSeasonExists(leagueSeasonId: bigint, accountId: bigint, seasonId: bigint): Promise<boolean>;
+  moveSubToRoster(
+    subId: bigint,
+    rosterData: { golferid: bigint; teamseasonid: bigint; isactive: boolean },
+  ): Promise<GolfRosterWithGolfer>;
+  moveRosterToSub(
+    rosterId: bigint,
+    existingSubId: bigint | null,
+    subData: { golferid: bigint; leagueseasonid: bigint; isactive: boolean },
+  ): Promise<void>;
 }

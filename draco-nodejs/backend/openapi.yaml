@@ -19982,7 +19982,7 @@ components:
           type: string
           pattern: ^\d+$
           example: "12345"
-        seasonId:
+        leagueSeasonId:
           type: string
           pattern: ^\d+$
           example: "12345"
@@ -20026,7 +20026,7 @@ components:
       required:
         - id
         - golferId
-        - seasonId
+        - leagueSeasonId
         - player
       title: GolfSubstitute
       description: A substitute player available for the season
@@ -44948,6 +44948,61 @@ paths:
                 $ref: "#/components/schemas/AuthorizationError"
         "404":
           description: League season not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/golf/substitutes/sign:
+    post:
+      description: Add an existing contact as a substitute in the league pool
+      operationId: signGolfSubstitute
+      summary: Sign existing contact as substitute
+      tags:
+        - Golf Substitutes
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a26
+        - *a27
+        - *a28
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignPlayer"
+      responses:
+        "201":
+          description: Substitute created from existing contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfSubstitute"
+        "400":
+          description: Duplicate substitute already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: League season or contact not found
           content:
             application/json:
               schema:
