@@ -15,8 +15,17 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { leagueSeasonId } = extractBigIntParams(req.params, 'leagueSeasonId');
-    const subs = await golfRosterService.getSubstitutesForLeague(leagueSeasonId);
+    const { accountId, seasonId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'leagueSeasonId',
+    );
+    const subs = await golfRosterService.getSubstitutesForLeague(
+      leagueSeasonId,
+      accountId,
+      seasonId,
+    );
     res.json(subs);
   }),
 );
@@ -28,13 +37,14 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, leagueSeasonId } = extractBigIntParams(
+    const { accountId, seasonId, leagueSeasonId } = extractBigIntParams(
       req.params,
       'accountId',
+      'seasonId',
       'leagueSeasonId',
     );
     const data = CreateGolfPlayerSchema.parse(req.body);
-    const sub = await golfRosterService.createSubstitute(leagueSeasonId, accountId, data);
+    const sub = await golfRosterService.createSubstitute(leagueSeasonId, accountId, seasonId, data);
     res.status(201).json(sub);
   }),
 );
@@ -46,9 +56,21 @@ router.patch(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { subId } = extractBigIntParams(req.params, 'subId');
+    const { accountId, seasonId, subId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'subId',
+      'leagueSeasonId',
+    );
     const data = UpdateGolfPlayerSchema.parse(req.body);
-    const updated = await golfRosterService.updateSubstitute(subId, data);
+    const updated = await golfRosterService.updateSubstitute(
+      subId,
+      leagueSeasonId,
+      accountId,
+      seasonId,
+      data,
+    );
     res.json(updated);
   }),
 );
@@ -60,8 +82,14 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { subId } = extractBigIntParams(req.params, 'subId');
-    await golfRosterService.deleteSubstitute(subId);
+    const { accountId, seasonId, subId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'subId',
+      'leagueSeasonId',
+    );
+    await golfRosterService.deleteSubstitute(subId, leagueSeasonId, accountId, seasonId);
     res.status(204).send();
   }),
 );

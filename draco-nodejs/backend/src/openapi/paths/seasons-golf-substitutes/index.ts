@@ -10,7 +10,9 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
     AuthorizationErrorSchemaRef,
     CreateGolfPlayerSchemaRef,
     GolfSubstituteSchemaRef,
+    NotFoundErrorSchemaRef,
     UpdateGolfPlayerSchemaRef,
+    ValidationErrorSchemaRef,
     InternalServerErrorSchemaRef,
   } = schemaRefs;
 
@@ -133,6 +135,14 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
           },
         },
       },
+      400: {
+        description: 'Duplicate substitute already exists',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
       401: {
         description: 'Authentication required',
         content: {
@@ -146,6 +156,14 @@ export const registerSeasonsGolfSubstitutesEndpoints = ({
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'League season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
           },
         },
       },

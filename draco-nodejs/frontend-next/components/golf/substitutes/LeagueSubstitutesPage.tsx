@@ -154,7 +154,8 @@ export function LeagueSubstitutesPage() {
 
     setSaving(true);
     try {
-      const parsedValue = editDifferential.trim() === '' ? null : parseFloat(editDifferential);
+      const parsed = parseFloat(editDifferential);
+      const parsedValue = editDifferential.trim() === '' || isNaN(parsed) ? null : parsed;
       const payload: UpdateGolfPlayerType = {
         initialDifferential: parsedValue,
       };

@@ -36,7 +36,7 @@ export interface IGolfRosterRepository {
   }): Promise<golfroster>;
   createLeagueSub(data: {
     golferid: bigint;
-    seasonid: bigint;
+    leagueseasonid: bigint;
     isactive: boolean;
   }): Promise<golfleaguesub>;
   updateRosterEntry(
@@ -71,6 +71,15 @@ export interface IGolfRosterRepository {
     },
   ): Promise<contacts>;
   hasMatchScores(golferId: bigint): Promise<boolean>;
-  findLeagueSubById(subId: bigint): Promise<GolfLeagueSubWithGolfer | null>;
+  findLeagueSubById(
+    subId: bigint,
+    accountId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<GolfLeagueSubWithGolfer | null>;
   findLeagueSubByGolferAndSeason(golferId: bigint, seasonId: bigint): Promise<golfleaguesub | null>;
+  findLeagueSubByGolferAndLeagueSeason(
+    golferId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<golfleaguesub | null>;
+  leagueSeasonExists(leagueSeasonId: bigint, accountId: bigint, seasonId: bigint): Promise<boolean>;
 }

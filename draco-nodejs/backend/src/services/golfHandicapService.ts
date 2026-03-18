@@ -115,8 +115,16 @@ export class GolfHandicapService {
       .sort((a, b) => a.dateplayed.getTime() - b.dateplayed.getTime());
 
     for (const score of eighteenHoleScores) {
-      const rating = Number(score.golfteeinformation.mensrating) || 72;
-      const slope = Number(score.golfteeinformation.menslope) || 113;
+      const rawRating = Number(score.golfteeinformation.mensrating);
+      const rawSlope = Number(score.golfteeinformation.menslope);
+      if (isNaN(rawRating)) {
+        console.warn(`Invalid mensrating for score ${score.id}, using fallback 72`);
+      }
+      if (isNaN(rawSlope)) {
+        console.warn(`Invalid menslope for score ${score.id}, using fallback 113`);
+      }
+      const rating = isNaN(rawRating) ? 72 : rawRating || 72;
+      const slope = isNaN(rawSlope) ? 113 : rawSlope || 113;
 
       differentials.push({
         scoreId: score.id,

@@ -21,6 +21,7 @@ import {
   createGolfSubstitute,
   deleteGolfSubstitute,
   listGolfSubstitutesForLeague,
+  signGolfPlayer,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -319,5 +320,20 @@ export class ApiHelper {
     });
     if (error || !subs) throw new Error(`listSubstitutes failed: ${JSON.stringify(error)}`);
     return subs;
+  }
+
+  async signPlayerAsSub(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    contactId: string,
+    initialDifferential?: number,
+  ): Promise<{ error: unknown; status: number }> {
+    const { error, response } = await signGolfPlayer({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      body: { contactId, isSub: true, initialDifferential },
+    });
+    return { error, status: response.status };
   }
 }

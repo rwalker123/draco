@@ -220,9 +220,11 @@ export class GolfLeagueScoreService {
                 hcpIdx,
               }));
               indexedHoles.sort((a, b) => a.hcpIdx - b.hcpIdx);
-              for (let i = 0; i < totalPenalty; i++) {
-                const { holeIdx } = indexedHoles[i % relevantPars.length];
-                syntheticScores[holeIdx]++;
+              if (indexedHoles.length > 0) {
+                for (let i = 0; i < totalPenalty; i++) {
+                  const { holeIdx } = indexedHoles[i % relevantPars.length];
+                  syntheticScores[holeIdx]++;
+                }
               }
             }
 
