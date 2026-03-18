@@ -437,7 +437,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
           await tx.golfleaguesub.createMany({
             data: leagueSeason.golfleaguesub.map((sub) => ({
               golferid: sub.golferid,
-              seasonid: createdLeagueSeason.id,
+              leagueseasonid: createdLeagueSeason.id,
               isactive: true,
             })),
           });

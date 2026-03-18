@@ -907,14 +907,14 @@ model golfer {
 }
 
 model golfleaguesub {
-  id           BigInt       @id @default(autoincrement())
-  golferid     BigInt
-  seasonid     BigInt
-  isactive     Boolean      @default(true)
-  golfer       golfer       @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_golfer")
-  leagueseason leagueseason @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_leagueseason")
+  id             BigInt       @id @default(autoincrement())
+  golferid       BigInt
+  leagueseasonid BigInt
+  isactive       Boolean      @default(true)
+  golfer         golfer       @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_golfer")
+  leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_leagueseason")
 
-  @@unique([golferid, seasonid], map: "uq_golfleaguesub_golfer_season")
+  @@unique([golferid, leagueseasonid], map: "uq_golfleaguesub_golfer_season")
 }
 
 model golfmatchscores {

@@ -13,6 +13,7 @@ import {
   createGolfSubstitute,
   deleteGolfSubstitute,
   updateGolfSubstitute,
+  signGolfSubstitute,
 } from '@draco/shared-api-client';
 import type {
   GolfRosterEntryType,
@@ -96,6 +97,12 @@ export interface GolfRosterService {
     leagueSeasonId: string,
     subId: string,
     payload: UpdateGolfPlayerType,
+    signal?: AbortSignal,
+  ) => Promise<GolfRosterServiceResult<GolfSubstituteType>>;
+  signSubstitute: (
+    seasonId: string,
+    leagueSeasonId: string,
+    payload: SignPlayerType,
     signal?: AbortSignal,
   ) => Promise<GolfRosterServiceResult<GolfSubstituteType>>;
 }
@@ -427,6 +434,34 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     }
   };
 
+  const signSubstitute: GolfRosterService['signSubstitute'] = async (
+    seasonId,
+    leagueSeasonId,
+    payload,
+    signal,
+  ) => {
+    try {
+      const result = await signGolfSubstitute({
+        client: apiClient,
+        path: { accountId, seasonId, leagueSeasonId },
+        body: payload,
+        signal,
+        throwOnError: false,
+      });
+
+      const sub = unwrapApiResult(result, 'Failed to sign substitute') as GolfSubstituteType;
+
+      return {
+        success: true,
+        data: sub,
+        message: 'Substitute signed successfully',
+      } as const;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sign substitute';
+      return { success: false, error: message } as const;
+    }
+  };
+
   return {
     getTeamRoster,
     listSubstitutesForLeague,
@@ -440,5 +475,6 @@ export function useGolfRosters(accountId: string): GolfRosterService {
     createSubstitute,
     deleteSubstitute,
     updateSubstitute,
+    signSubstitute,
   };
 }

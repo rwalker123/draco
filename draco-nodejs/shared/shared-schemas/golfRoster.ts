@@ -31,7 +31,7 @@ export const GolfSubstituteSchema = z
   .object({
     id: bigintToStringSchema,
     golferId: bigintToStringSchema,
-    seasonId: bigintToStringSchema,
+    leagueSeasonId: bigintToStringSchema,
     isActive: z.boolean().default(true),
     initialDifferential: z.number().nullable().optional(),
     player: GolfPlayerSchema,

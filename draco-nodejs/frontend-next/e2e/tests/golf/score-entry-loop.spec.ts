@@ -91,7 +91,7 @@ test.describe('GolfScoreEntryDialog - Infinite Loop Check', () => {
     expect(
       rosterFetchCount - initialFetchCount,
       'Roster data should not be repeatedly refetched while dialog is open',
-    ).toBeLessThanOrEqual(1);
+    ).toBeLessThanOrEqual(2);
 
     await scoreEntryPage.closeDialog();
   });

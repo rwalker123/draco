@@ -62,7 +62,7 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
   async findSubstitutesForLeague(leagueSeasonId: bigint): Promise<GolfLeagueSubWithGolfer[]> {
     return this.prisma.golfleaguesub.findMany({
       where: {
-        seasonid: leagueSeasonId,
+        leagueseasonid: leagueSeasonId,
         isactive: true,
       },
       include: {
@@ -131,7 +131,7 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     return this.prisma.golfleaguesub.create({
       data: {
         golferid: data.golferid,
-        seasonid: data.leagueseasonid,
+        leagueseasonid: data.leagueseasonid,
         isactive: data.isactive,
       },
     });
@@ -216,7 +216,7 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
               },
               select: {
                 id: true,
-                seasonid: true,
+                leagueseasonid: true,
               },
             },
           },
@@ -274,7 +274,7 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     return this.prisma.golfleaguesub.findFirst({
       where: {
         id: subId,
-        seasonid: leagueSeasonId,
+        leagueseasonid: leagueSeasonId,
         leagueseason: { league: { accountid: accountId } },
       },
       include: {
@@ -306,7 +306,7 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
     return this.prisma.golfleaguesub.findFirst({
       where: {
         golferid: golferId,
-        seasonid: leagueSeasonId,
+        leagueseasonid: leagueSeasonId,
       },
     });
   }
@@ -325,5 +325,67 @@ export class PrismaGolfRosterRepository implements IGolfRosterRepository {
       select: { id: true },
     });
     return record !== null;
+  }
+
+  async moveSubToRoster(
+    subId: bigint,
+    rosterData: { golferid: bigint; teamseasonid: bigint; isactive: boolean },
+  ): Promise<GolfRosterWithGolfer> {
+    return this.prisma.$transaction(async (tx) => {
+      const rosterEntry = await tx.golfroster.create({
+        data: {
+          golferid: rosterData.golferid,
+          teamseasonid: rosterData.teamseasonid,
+          isactive: rosterData.isactive,
+        },
+      });
+
+      await tx.golfleaguesub.delete({
+        where: { id: subId },
+      });
+
+      const created = await tx.golfroster.findUnique({
+        where: { id: rosterEntry.id },
+        include: {
+          golfer: {
+            include: {
+              contact: true,
+            },
+          },
+        },
+      });
+
+      if (!created) {
+        throw new Error('Created roster entry not found');
+      }
+      return created;
+    });
+  }
+
+  async moveRosterToSub(
+    rosterId: bigint,
+    existingSubId: bigint | null,
+    subData: { golferid: bigint; leagueseasonid: bigint; isactive: boolean },
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      if (existingSubId) {
+        await tx.golfleaguesub.update({
+          where: { id: existingSubId },
+          data: { isactive: true },
+        });
+      } else {
+        await tx.golfleaguesub.create({
+          data: {
+            golferid: subData.golferid,
+            leagueseasonid: subData.leagueseasonid,
+            isactive: subData.isactive,
+          },
+        });
+      }
+
+      await tx.golfroster.delete({
+        where: { id: rosterId },
+      });
+    });
   }
 }

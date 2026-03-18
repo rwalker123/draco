@@ -39,7 +39,7 @@ export class GolfRosterResponseFormatter {
     return {
       id: entry.id.toString(),
       golferId: entry.golferid.toString(),
-      seasonId: entry.seasonid.toString(),
+      leagueSeasonId: entry.leagueseasonid.toString(),
       isActive: entry.isactive,
       initialDifferential: entry.golfer.initialdifferential ?? undefined,
       player: this.formatPlayer(entry.golfer.contact),

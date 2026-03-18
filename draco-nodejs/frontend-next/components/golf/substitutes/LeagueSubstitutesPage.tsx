@@ -14,6 +14,8 @@ import {
   Button,
   Fab,
   IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -27,15 +29,20 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import { getAccountSeason } from '@draco/shared-api-client';
 import type {
+  AvailablePlayerType,
   CreateGolfPlayerType,
   GolfSubstituteType,
   SeasonType,
+  SignPlayerType,
   UpdateGolfPlayerType,
 } from '@draco/shared-schemas';
 import CreateGolfPlayerDialog from '../teams/CreateGolfPlayerDialog';
+import SignPlayerDialog from '../teams/SignPlayerDialog';
 import AccountPageHeader from '../../AccountPageHeader';
 import { AdminBreadcrumbs } from '../../admin';
 import { useApiClient } from '../../../hooks/useApiClient';
@@ -71,6 +78,10 @@ export function LeagueSubstitutesPage() {
   const [editDifferential, setEditDifferential] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [signDialogOpen, setSignDialogOpen] = useState(false);
+  const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [availablePlayers, setAvailablePlayers] = useState<AvailablePlayerType[]>([]);
+  const [availableLoading, setAvailableLoading] = useState(false);
 
   useEffect(() => {
     if (!seasonId || !leagueSeasonId) return;
@@ -179,6 +190,48 @@ export function LeagueSubstitutesPage() {
 
   const handleCreateSubmit = async (data: CreateGolfPlayerType) => {
     const result = await rosterService.createSubstitute(seasonId, leagueSeasonId, data);
+    if (result.success) {
+      setSubstitutes((prev) => [...prev, result.data]);
+      showNotification('Substitute added successfully', 'success');
+    } else {
+      throw new Error(result.error);
+    }
+  };
+
+  const refreshAvailablePlayers = async () => {
+    if (!seasonId) return;
+    setAvailableLoading(true);
+    try {
+      const result = await rosterService.listAvailablePlayers(seasonId);
+      if (result.success) {
+        setAvailablePlayers(result.data);
+      }
+    } finally {
+      setAvailableLoading(false);
+    }
+  };
+
+  const handleAddMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAddMenuAnchor(event.currentTarget);
+  };
+
+  const handleAddMenuClose = () => {
+    setAddMenuAnchor(null);
+  };
+
+  const handleOpenCreateDialog = () => {
+    handleAddMenuClose();
+    setCreateDialogOpen(true);
+  };
+
+  const handleOpenSignDialog = async () => {
+    handleAddMenuClose();
+    await refreshAvailablePlayers();
+    setSignDialogOpen(true);
+  };
+
+  const handleSignSubmit = async (data: SignPlayerType) => {
+    const result = await rosterService.signSubstitute(seasonId, leagueSeasonId, data);
     if (result.success) {
       setSubstitutes((prev) => [...prev, result.data]);
       showNotification('Substitute added successfully', 'success');
@@ -338,14 +391,33 @@ export function LeagueSubstitutesPage() {
       </Dialog>
 
       {canManage && (
-        <Fab
-          color="primary"
-          aria-label="add"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          <AddIcon />
-        </Fab>
+        <>
+          <Fab
+            color="primary"
+            aria-label="add substitute"
+            onClick={handleAddMenuOpen}
+            sx={{ position: 'fixed', bottom: 16, right: 16 }}
+          >
+            <AddIcon />
+          </Fab>
+
+          <Menu
+            anchorEl={addMenuAnchor}
+            open={Boolean(addMenuAnchor)}
+            onClose={handleAddMenuClose}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <MenuItem onClick={handleOpenSignDialog}>
+              <GroupAddIcon sx={{ mr: 1 }} />
+              Add Existing Contact
+            </MenuItem>
+            <MenuItem onClick={handleOpenCreateDialog}>
+              <PersonAddIcon sx={{ mr: 1 }} />
+              Create New Contact
+            </MenuItem>
+          </Menu>
+        </>
       )}
 
       <CreateGolfPlayerDialog
@@ -353,6 +425,14 @@ export function LeagueSubstitutesPage() {
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={handleCreateSubmit}
         title="Add Substitute"
+      />
+
+      <SignPlayerDialog
+        open={signDialogOpen}
+        onClose={() => setSignDialogOpen(false)}
+        onSign={handleSignSubmit}
+        availablePlayers={availablePlayers}
+        loadingPlayers={availableLoading}
       />
 
       <NotificationSnackbar notification={notification} onClose={hideNotification} />

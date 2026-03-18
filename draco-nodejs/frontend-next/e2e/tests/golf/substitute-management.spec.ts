@@ -30,8 +30,12 @@ test.describe('Golf Substitute Management', () => {
     const table = page.locator('table');
     await table.waitFor({ state: 'visible', timeout: 10000 });
 
-    const fab = page.getByRole('button', { name: 'add' });
+    const fab = page.getByRole('button', { name: 'add substitute' });
     await fab.click();
+
+    const menu = page.getByRole('menu');
+    await menu.waitFor({ state: 'visible', timeout: 5000 });
+    await menu.getByText('Create New Contact').click();
 
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ state: 'visible', timeout: 5000 });
@@ -95,8 +99,12 @@ test.describe('Golf Substitute Management', () => {
     const table = page.locator('table');
     await table.waitFor({ state: 'visible', timeout: 10000 });
 
-    const fab = page.getByRole('button', { name: 'add' });
+    const fab = page.getByRole('button', { name: 'add substitute' });
     await fab.click();
+
+    const menu = page.getByRole('menu');
+    await menu.waitFor({ state: 'visible', timeout: 5000 });
+    await menu.getByText('Create New Contact').click();
 
     const addDialog = page.getByRole('dialog');
     await addDialog.waitFor({ state: 'visible', timeout: 5000 });
