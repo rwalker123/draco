@@ -77,6 +77,7 @@ export interface IGolfRosterRepository {
     leagueSeasonId: bigint,
   ): Promise<GolfLeagueSubWithGolfer | null>;
   findLeagueSubByGolferAndSeason(golferId: bigint, seasonId: bigint): Promise<golfleaguesub | null>;
+
   findLeagueSubByGolferAndLeagueSeason(
     golferId: bigint,
     leagueSeasonId: bigint,
