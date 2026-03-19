@@ -34,7 +34,7 @@ import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
 import ChangePasswordDialog from '@/components/profile/ChangePasswordDialog';
 import AccountOptional from '@/components/account/AccountOptional';
 import DeleteIndividualGolfAccountDialog from '@/components/golf/dialogs/DeleteIndividualGolfAccountDialog';
-import { isGolfIndividualAccountType } from '@/utils/accountTypeUtils';
+import { isGolfIndividualAccountType, isGolfLeagueAccountType } from '@/utils/accountTypeUtils';
 
 interface OrganizationTeamsState {
   teams: UserTeam[];
@@ -49,6 +49,7 @@ const mapTeamSeasonToUserTeam = (team: TeamSeasonType): UserTeam => ({
   divisionName: team.division?.name ?? undefined,
   teamId: team.team?.id,
   logoUrl: team.team?.logoUrl ?? undefined,
+  seasonId: team.season?.id,
 });
 
 const CONTACT_ERROR_MESSAGE =
@@ -352,7 +353,19 @@ const ProfilePageClient: React.FC = () => {
           const teams = teamsEntry?.teams ?? [];
 
           const handleViewTeam = (teamSeasonId: string) => {
-            router.push(`/account/${organization.id}/home?teamSeasonId=${teamSeasonId}`);
+            const team = teams.find((t) => t.id === teamSeasonId);
+            if (team?.seasonId) {
+              const isGolfLeague = isGolfLeagueAccountType(
+                organization.configuration?.accountType?.name,
+              );
+              const basePath = `/account/${organization.id}/seasons/${team.seasonId}`;
+              const path = isGolfLeague
+                ? `${basePath}/golf/teams/${teamSeasonId}`
+                : `${basePath}/teams/${teamSeasonId}`;
+              router.push(path);
+            } else {
+              router.push(`/account/${organization.id}/home`);
+            }
           };
 
           if (isLoading) {

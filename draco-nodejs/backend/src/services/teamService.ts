@@ -74,12 +74,6 @@ export class TeamService {
       throw new NotFoundError('Current season not set for account');
     }
 
-    const season = await this.seasonRepository.findSeasonById(accountId, currentSeason.id);
-
-    if (!season) {
-      throw new NotFoundError('Current season not found');
-    }
-
     const contactId = BigInt(userContact?.id || 0);
 
     // Determine if this is a golf account to use the appropriate roster lookup
@@ -87,40 +81,46 @@ export class TeamService {
     const accountTypeName = account?.accounttypes?.name?.toLowerCase() ?? '';
     const isGolfLeagueAccount = accountTypeName === 'golf';
 
+    const seasonData = {
+      id: currentSeason.id.toString(),
+      name: currentSeason.name,
+      accountId: accountId.toString(),
+    };
+
+    let formatted: TeamSeasonType[];
+
     if (isGolfLeagueAccount) {
-      // Golf leagues use golfroster table instead of rosterseason
       const golfTeams = await this.teamRepository.findContactGolfTeams(
         accountId,
         contactId,
         currentSeason.id,
       );
-      // Golf teams use the same teamsseason structure, so we can use the same formatter
-      // The dbGolfUserTeams type has the same teamsseason include shape as dbUserTeams
-      return TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
+      formatted = TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
         accountId,
         golfTeams,
         [],
       );
+    } else {
+      const userTeams = await this.teamRepository.findContactTeams(
+        accountId,
+        contactId,
+        currentSeason.id,
+      );
+
+      const managedTeams = await this.teamRepository.findContactManager(
+        accountId,
+        contactId,
+        currentSeason.id,
+      );
+
+      formatted = TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
+        accountId,
+        userTeams,
+        managedTeams,
+      );
     }
 
-    const userTeams = await this.teamRepository.findContactTeams(
-      accountId,
-      contactId,
-      currentSeason.id,
-    );
-
-    // Get teams where the user is a manager
-    const managedTeams = await this.teamRepository.findContactManager(
-      accountId,
-      contactId,
-      currentSeason.id,
-    );
-
-    return TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
-      accountId,
-      userTeams,
-      managedTeams,
-    );
+    return formatted.map((team) => ({ ...team, season: seasonData }));
   }
 
   async getTeamsBySeasonId(seasonId: bigint, accountId: bigint): Promise<TeamSeasonType[]> {

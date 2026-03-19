@@ -20,6 +20,7 @@ export interface UserTeam {
   };
   logoUrl?: string;
   teamId?: string;
+  seasonId?: string;
 }
 
 interface MyTeamsProps {
