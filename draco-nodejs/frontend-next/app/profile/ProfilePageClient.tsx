@@ -49,6 +49,7 @@ const mapTeamSeasonToUserTeam = (team: TeamSeasonType): UserTeam => ({
   divisionName: team.division?.name ?? undefined,
   teamId: team.team?.id,
   logoUrl: team.team?.logoUrl ?? undefined,
+  seasonId: team.season?.id,
 });
 
 const CONTACT_ERROR_MESSAGE =
@@ -352,7 +353,14 @@ const ProfilePageClient: React.FC = () => {
           const teams = teamsEntry?.teams ?? [];
 
           const handleViewTeam = (teamSeasonId: string) => {
-            router.push(`/account/${organization.id}/home?teamSeasonId=${teamSeasonId}`);
+            const team = teams.find((t) => t.id === teamSeasonId);
+            if (team?.seasonId) {
+              router.push(
+                `/account/${organization.id}/seasons/${team.seasonId}/teams/${teamSeasonId}`,
+              );
+            } else {
+              router.push(`/account/${organization.id}/home`);
+            }
           };
 
           if (isLoading) {
