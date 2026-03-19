@@ -93,37 +93,39 @@ export class TeamService {
       accountId: accountId.toString(),
     };
 
+    let formatted: TeamSeasonType[];
+
     if (isGolfLeagueAccount) {
       const golfTeams = await this.teamRepository.findContactGolfTeams(
         accountId,
         contactId,
         currentSeason.id,
       );
-      const formatted = TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
+      formatted = TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
         accountId,
         golfTeams,
         [],
       );
-      return formatted.map((team) => ({ ...team, season: seasonData }));
+    } else {
+      const userTeams = await this.teamRepository.findContactTeams(
+        accountId,
+        contactId,
+        currentSeason.id,
+      );
+
+      const managedTeams = await this.teamRepository.findContactManager(
+        accountId,
+        contactId,
+        currentSeason.id,
+      );
+
+      formatted = TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
+        accountId,
+        userTeams,
+        managedTeams,
+      );
     }
 
-    const userTeams = await this.teamRepository.findContactTeams(
-      accountId,
-      contactId,
-      currentSeason.id,
-    );
-
-    const managedTeams = await this.teamRepository.findContactManager(
-      accountId,
-      contactId,
-      currentSeason.id,
-    );
-
-    const formatted = TeamResponseFormatter.formatAndCombineTeamsWithLeagueResponse(
-      accountId,
-      userTeams,
-      managedTeams,
-    );
     return formatted.map((team) => ({ ...team, season: seasonData }));
   }
 
