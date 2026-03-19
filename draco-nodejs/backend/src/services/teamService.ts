@@ -74,12 +74,6 @@ export class TeamService {
       throw new NotFoundError('Current season not set for account');
     }
 
-    const season = await this.seasonRepository.findSeasonById(accountId, currentSeason.id);
-
-    if (!season) {
-      throw new NotFoundError('Current season not found');
-    }
-
     const contactId = BigInt(userContact?.id || 0);
 
     // Determine if this is a golf account to use the appropriate roster lookup
@@ -88,8 +82,8 @@ export class TeamService {
     const isGolfLeagueAccount = accountTypeName === 'golf';
 
     const seasonData = {
-      id: season.id.toString(),
-      name: season.name,
+      id: currentSeason.id.toString(),
+      name: currentSeason.name,
       accountId: accountId.toString(),
     };
 
