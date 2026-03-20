@@ -1,28 +1,37 @@
 #!/usr/bin/env node
 
-/**
- * Script to manually update the detect-secrets baseline
- * Run this when you want to update the baseline with new approved secrets
- */
-
 const { execSync } = require('child_process');
 
-console.log('🔄 Updating detect-secrets baseline...');
+function findBinary(name) {
+  const searchPath = `${process.env.HOME}/Library/Python/3.9/bin:${process.env.HOME}/.local/bin:${process.env.PATH}`;
+  try {
+    return execSync(`PATH="${searchPath}" command -v ${name}`, { encoding: 'utf8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
+console.log('Updating detect-secrets baseline...');
+
+const detectSecrets = findBinary('detect-secrets');
+if (!detectSecrets) {
+  console.error('detect-secrets not found in PATH.');
+  console.error('Install with: pip install detect-secrets');
+  process.exit(1);
+}
 
 try {
-  // Run detect-secrets scan to update the baseline
-  execSync('~/Library/Python/3.9/bin/detect-secrets scan --baseline .secrets.baseline --exclude-files pnpm-lock.yaml', {
-    stdio: 'inherit'
+  execSync(`"${detectSecrets}" scan --baseline .secrets.baseline --exclude-files pnpm-lock.yaml`, {
+    stdio: 'inherit',
   });
-  
-  console.log('✅ Baseline updated successfully!');
+
+  console.log('Baseline updated successfully!');
   console.log('');
-  console.log('📝 Next steps:');
+  console.log('Next steps:');
   console.log('   1. Review the updated baseline file');
   console.log('   2. Commit the changes: git add .secrets.baseline && git commit -m "Update baseline"');
   console.log('   3. Push the changes: git push');
-  
 } catch (error) {
-  console.error('❌ Error updating baseline:', error.message);
+  console.error('Error updating baseline:', error.message);
   process.exit(1);
-} 
+}

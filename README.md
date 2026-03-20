@@ -383,7 +383,7 @@ docker run --rm -p 3001:3001 \
   -e PORT=3001 \
   -e NODE_ENV=production \
   -e JWT_SECRET=your-secret \
-  -e DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/draco \
+  -e DATABASE_URL=postgresql://<user>:<password>@host.docker.internal:5432/draco \
   -e FRONTEND_URL=http://localhost:3000 \
   draco-backend
 ```

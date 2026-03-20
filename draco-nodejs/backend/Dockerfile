@@ -1,7 +1,7 @@
 # Stage 1 – Install all dependencies (dev included for build tools)
 FROM node:24-bookworm-slim AS deps
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY draco-nodejs/backend/package.json draco-nodejs/backend/
@@ -25,7 +25,7 @@ RUN pnpm --filter @draco/backend build
 # Stage 3 – Production-only deps (separate stage for clean node_modules)
 FROM node:24-bookworm-slim AS prod-deps
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY draco-nodejs/backend/package.json draco-nodejs/backend/
@@ -37,6 +37,7 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @draco/backe
 
 # Stage 4 – Runtime
 FROM node:24-bookworm-slim AS runner
+RUN corepack enable
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gnupg curl ca-certificates \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
