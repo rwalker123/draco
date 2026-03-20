@@ -25,16 +25,10 @@ test.describe('Teams', () => {
   });
 
   test('team entries are displayed', async ({ page }) => {
-    const teamButtons = page.getByRole('main').getByRole('button');
-    const teamLinks = page.getByRole('main').getByRole('link');
-    const hasButtons = await teamButtons
-      .first()
-      .isVisible({ timeout: 15_000 })
-      .catch(() => false);
-    const hasLinks = await teamLinks
-      .first()
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    expect(hasButtons || hasLinks).toBe(true);
+    const teamEntries = page
+      .getByRole('main')
+      .getByRole('button')
+      .or(page.getByRole('main').getByRole('link'));
+    await expect(teamEntries.first()).toBeVisible({ timeout: 15_000 });
   });
 });
