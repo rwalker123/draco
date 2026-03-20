@@ -9,7 +9,7 @@ COPY draco-nodejs/shared/shared-schemas/package.json draco-nodejs/shared/shared-
 COPY draco-nodejs/shared/shared-api-client/package.json draco-nodejs/shared/shared-api-client/
 COPY draco-nodejs/stoplight-assets/package.json draco-nodejs/stoplight-assets/
 ENV HUSKY=0
-RUN pnpm install --frozen-lockfile --filter @draco/backend --filter @draco/shared-schemas --filter @draco/shared-api-client --filter @draco/stoplight-assets...
+RUN pnpm install --frozen-lockfile --filter @draco/backend...
 
 # Stage 2 – Build backend + shared packages
 FROM deps AS builder
@@ -33,7 +33,7 @@ COPY draco-nodejs/shared/shared-schemas/package.json draco-nodejs/shared/shared-
 COPY draco-nodejs/shared/shared-api-client/package.json draco-nodejs/shared/shared-api-client/
 COPY draco-nodejs/stoplight-assets/package.json draco-nodejs/stoplight-assets/
 ENV HUSKY=0
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @draco/backend --filter @draco/shared-schemas --filter @draco/shared-api-client --filter @draco/stoplight-assets...
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @draco/backend...
 
 # Stage 4 – Runtime
 FROM node:24-bookworm-slim AS runner

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const fs = require('fs');
 
 function findBinary(name) {
@@ -13,10 +13,9 @@ function findBinary(name) {
 }
 
 function main() {
-  const args = process.argv.slice(2);
-  const stagedFiles = args.join(' ');
+  const stagedFiles = process.argv.slice(2);
 
-  if (!stagedFiles) {
+  if (stagedFiles.length === 0) {
     console.log('No staged files to check');
     return 0;
   }
@@ -39,8 +38,9 @@ function main() {
   }
 
   try {
-    execSync(
-      `"${detectSecretsHook}" --exclude-files '${excludeFilesPattern}' --baseline ${baselinePath} ${stagedFiles}`,
+    execFileSync(
+      detectSecretsHook,
+      ['--exclude-files', excludeFilesPattern, '--baseline', baselinePath, ...stagedFiles],
       { stdio: 'inherit' },
     );
 
