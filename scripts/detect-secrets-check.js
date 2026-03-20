@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
-const { execFileSync, execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 
 function findBinary(name) {
   const searchPath = `${process.env.HOME}/Library/Python/3.9/bin:${process.env.HOME}/.local/bin:${process.env.PATH}`;
   try {
-    return execSync(`PATH="${searchPath}" command -v ${name}`, { encoding: 'utf8' }).trim();
+    return execFileSync('which', [name], {
+      encoding: 'utf8',
+      env: { ...process.env, PATH: searchPath },
+    }).trim();
   } catch {
     return null;
   }
