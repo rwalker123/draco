@@ -25,8 +25,8 @@
     "e2e:update-snapshots": "dotenv -e .env.local -e .env.e2e -- playwright test --update-snapshots --project=chromium"
   },
   "dependencies": {
-    "@draco/shared-api-client": "*",
-    "@draco/shared-schemas": "*",
+    "@draco/shared-api-client": "workspace:*",
+    "@draco/shared-schemas": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hookform/resolvers": "^5.2.2",

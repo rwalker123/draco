@@ -22,7 +22,7 @@ function main() {
   // Create a temporary copy of the baseline
   const baselinePath = '.secrets.baseline';
   const tempBaselinePath = '.secrets.baseline.tmp';
-  const excludeFilesPattern = 'scripts/load-test\\.config\\.example\\.json';
+  const excludeFilesPattern = 'scripts/load-test\\.config\\.example\\.json|pnpm-lock\\.yaml';
   
   if (fs.existsSync(baselinePath)) {
     fs.copyFileSync(baselinePath, tempBaselinePath);
@@ -49,7 +49,7 @@ function main() {
     console.log('\n❌ detect-secrets found potential secrets in staged files');
     console.log('');
     console.log('💡 To add a new secret to the baseline (if it\'s approved):');
-    console.log('   npm run secrets:update-baseline');
+    console.log('   pnpm secrets:update-baseline');
     console.log('   git add .secrets.baseline && git commit -m "Update baseline"');
     
     return 1;

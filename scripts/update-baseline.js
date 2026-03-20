@@ -11,7 +11,7 @@ console.log('🔄 Updating detect-secrets baseline...');
 
 try {
   // Run detect-secrets scan to update the baseline
-  execSync('~/Library/Python/3.9/bin/detect-secrets scan --update .secrets.baseline', { 
+  execSync('~/Library/Python/3.9/bin/detect-secrets scan --baseline .secrets.baseline --exclude-files pnpm-lock.yaml', {
     stdio: 'inherit'
   });
   

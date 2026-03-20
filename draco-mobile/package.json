@@ -17,8 +17,8 @@
     "format:fix": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\""
   },
   "dependencies": {
-    "@draco/shared-api-client": "*",
-    "@draco/shared-schemas": "*",
+    "@draco/shared-api-client": "workspace:*",
+    "@draco/shared-schemas": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.9",
     "@react-navigation/native": "^7.1.18",

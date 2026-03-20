@@ -15,37 +15,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24.13.1'
-          cache: 'npm'
+          cache: 'pnpm'
 
-      - name: Install npm 11
-        run: npm install -g npm@11
-          
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Restore Next.js build cache
         uses: actions/cache@v3
         with:
           path: draco-nodejs/frontend-next/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-
 
       - name: Security - Audit Dependencies
-        run: npm audit --audit-level=critical
+        run: pnpm audit --audit-level=critical
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Test
-        run: npm run test
+        run: pnpm run test
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         
