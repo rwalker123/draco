@@ -25,6 +25,8 @@ test.describe('Workouts Management', () => {
   test('create workout dialog can be closed', async () => {
     await workoutsPage.openCreateWorkoutDialog();
     await expect(workoutsPage.dialog).toBeVisible();
+    const titleInput = workoutsPage.dialog.getByRole('textbox', { name: /workout title/i });
+    await expect(titleInput).toBeVisible({ timeout: 10_000 });
     const cancelButton = workoutsPage.dialog.getByRole('button', { name: /cancel/i });
     await cancelButton.click();
     await expect(workoutsPage.dialog).not.toBeVisible();

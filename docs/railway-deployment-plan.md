@@ -48,7 +48,7 @@ Preserve continuity from the existing platform by preparing and importing histor
 4. **Establish build & deploy automation**
    - Use the Railway GitHub integration to trigger builds on pushes to the main branch for Production and to the `develop` branch for Development.
    - Disable auto-deploy on Production; require manual promotion from a validated Development deployment.
-   - Configure build commands so that `npm run build` is executed from the repo root, ensuring shared schema sync before compiling backend and frontend bundles.
+   - Configure build commands so that `pnpm build` is executed from the repo root, ensuring shared schema sync before compiling backend and frontend bundles.
 5. **Domain & routing configuration**
    - Accept the default Railway subdomain for Development (e.g., `draco-dev.up.railway.app`) to avoid DNS changes.
    - Attach `draco-sports-manager.railway.app` as the primary Production domain and map tenant custom domains through the Railway dashboard once Production is live.
@@ -59,7 +59,7 @@ Preserve continuity from the existing platform by preparing and importing histor
    - Document incident response steps (rollback via previous deployment, database snapshot restoration) inside the runbook.
 
 ## Testing & Promotion Gates
-- **Pre-deploy**: Run `npm run test`, `npm run lint --workspaces`, and database migrations in CI before Railway receives an artifact.
+- **Pre-deploy**: Run `pnpm test`, `pnpm lint`, and database migrations in CI before Railway receives an artifact.
 - **Development smoke checks**: Validate API routes, frontend tenant switching, and file uploads immediately after each Development deployment.
 - **Promotion checklist**: Confirm database migrations are idempotent, cache TTLs are tuned, and logs show no elevated error rate before promoting to Production.
 

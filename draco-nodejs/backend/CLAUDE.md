@@ -4,9 +4,9 @@
 - For detailed examples, diagrams, and tools, see [Backend Reference](./BACKEND_REFERENCE.md).
 
 ## Daily Workflow
-- Develop locally with `npm run backend:dev` from the repo root.
-- Run the backend suite with `npm run backend:test`.
-- After changes, run `npm run backend:lint` and `npm run backend:type-check`.
+- Develop locally with `pnpm backend:dev` from the repo root.
+- Run the backend suite with `pnpm backend:test`.
+- After changes, run `pnpm backend:lint` and `pnpm backend:type-check`.
 
 ## Key Directories
 - `src/routes` — Express route definitions, validation, and access control.
@@ -190,7 +190,7 @@ registry.registerPath({
 });
 ```
 
-After changes, regenerate with `npm run sync:api` to update frontend SDK.
+After changes, regenerate with `pnpm sync:api` to update frontend SDK.
 
 ## Error Handling
 
@@ -268,7 +268,7 @@ For each new endpoint:
 5. ✅ Create Repository Method for database operations
 6. ✅ Create Response Formatter for type conversion
 7. ✅ Test Integration end-to-end
-8. ✅ Run `npm run backend:lint` and `npm run backend:type-check`
+8. ✅ Run `pnpm backend:lint` and `pnpm backend:type-check`
 
 ## Anti-Patterns to Avoid
 

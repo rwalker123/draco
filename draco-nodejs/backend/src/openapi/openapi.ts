@@ -12,8 +12,7 @@ const __dirname = path.dirname(__filename);
  */
 function loadOpenApiSpec() {
   try {
-    // Point to the YAML file in the backend root (not in dist)
-    const yamlPath = path.resolve(process.cwd(), 'openapi.yaml');
+    const yamlPath = path.resolve(__dirname, '../../openapi.yaml');
     const yamlContent = fs.readFileSync(yamlPath, 'utf8');
     const spec = YAML.parse(yamlContent);
 
