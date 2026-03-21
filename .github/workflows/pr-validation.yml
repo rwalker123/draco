@@ -43,7 +43,7 @@ jobs:
           pip install detect-secrets
           cp .secrets.baseline .secrets.baseline.bak
           detect-secrets scan --baseline .secrets.baseline --exclude-files 'pnpm-lock\.yaml'
-          diff .secrets.baseline.bak .secrets.baseline
+          diff <(grep -v '"generated_at"' .secrets.baseline.bak) <(grep -v '"generated_at"' .secrets.baseline)
 
       - name: Lint
         run: pnpm run lint

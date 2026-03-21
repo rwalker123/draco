@@ -42,7 +42,7 @@ if (!detectSecrets) {
 }
 
 try {
-  execFileSync(detectSecrets, ['scan', '--baseline', '.secrets.baseline', '--exclude-files', 'pnpm-lock.yaml'], {
+  execFileSync(detectSecrets, ['scan', '--baseline', '.secrets.baseline', '--exclude-files', 'pnpm-lock\\.yaml'], {
     stdio: 'inherit',
   });
 
