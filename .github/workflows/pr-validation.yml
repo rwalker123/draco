@@ -38,11 +38,17 @@ jobs:
       - name: Security - Audit Dependencies
         run: pnpm audit --audit-level=critical
 
+      - name: Setup pip cache
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
       - name: Security - Detect Secrets
         run: |
-          pip install detect-secrets
+          pip install detect-secrets==1.5.0
           cp .secrets.baseline .secrets.baseline.bak
-          detect-secrets scan --baseline .secrets.baseline --exclude-files 'pnpm-lock\.yaml'
+          detect-secrets scan --baseline .secrets.baseline --exclude-files 'scripts/load-test\.config\.example\.json|pnpm-lock\.yaml'
           diff <(grep -v '"generated_at"' .secrets.baseline.bak) <(grep -v '"generated_at"' .secrets.baseline)
 
       - name: Lint

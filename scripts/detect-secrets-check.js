@@ -2,35 +2,7 @@
 
 const { execFileSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
-
-function getMacOSPythonBinPaths() {
-  const libPython = path.join(process.env.HOME, 'Library', 'Python');
-  if (!fs.existsSync(libPython)) return [];
-  try {
-    return fs.readdirSync(libPython)
-      .map(ver => path.join(libPython, ver, 'bin'))
-      .filter(p => fs.existsSync(p));
-  } catch {
-    return [];
-  }
-}
-
-function findBinary(name) {
-  const extraPaths = [
-    `${process.env.HOME}/.local/bin`,
-    ...getMacOSPythonBinPaths(),
-  ];
-  const searchPath = [...extraPaths, process.env.PATH].join(':');
-  try {
-    return execFileSync('which', [name], {
-      encoding: 'utf8',
-      env: { ...process.env, PATH: searchPath },
-    }).trim();
-  } catch {
-    return null;
-  }
-}
+const { findBinary, EXCLUDE_FILES_PATTERN } = require('./detectSecretsUtils');
 
 function main() {
   const stagedFiles = process.argv.slice(2);
@@ -51,7 +23,6 @@ function main() {
 
   const baselinePath = '.secrets.baseline';
   const tempBaselinePath = '.secrets.baseline.tmp';
-  const excludeFilesPattern = 'scripts/load-test\\.config\\.example\\.json|pnpm-lock\\.yaml';
 
   if (fs.existsSync(baselinePath)) {
     fs.copyFileSync(baselinePath, tempBaselinePath);
@@ -60,7 +31,7 @@ function main() {
   try {
     execFileSync(
       detectSecretsHook,
-      ['--exclude-files', excludeFilesPattern, '--baseline', baselinePath, ...stagedFiles],
+      ['--exclude-files', EXCLUDE_FILES_PATTERN, '--baseline', baselinePath, ...stagedFiles],
       { stdio: 'inherit' },
     );
 
