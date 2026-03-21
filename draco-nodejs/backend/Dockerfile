@@ -37,7 +37,6 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @draco/backe
 
 # Stage 4 – Runtime
 FROM node:24-bookworm-slim AS runner
-RUN corepack enable
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gnupg curl ca-certificates \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
@@ -51,6 +50,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/draco-nodejs/backend/node_modules ./draco-nodejs/backend/node_modules
 COPY --from=prod-deps /app/draco-nodejs/shared ./draco-nodejs/shared
 COPY --from=prod-deps /app/package.json ./
 COPY --from=builder /app/draco-nodejs/backend/dist ./draco-nodejs/backend/dist

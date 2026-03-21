@@ -2,9 +2,26 @@
 
 const { execFileSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
+
+function getMacOSPythonBinPaths() {
+  const libPython = path.join(process.env.HOME, 'Library', 'Python');
+  if (!fs.existsSync(libPython)) return [];
+  try {
+    return fs.readdirSync(libPython)
+      .map(ver => path.join(libPython, ver, 'bin'))
+      .filter(p => fs.existsSync(p));
+  } catch {
+    return [];
+  }
+}
 
 function findBinary(name) {
-  const searchPath = `${process.env.HOME}/Library/Python/3.9/bin:${process.env.HOME}/.local/bin:${process.env.PATH}`;
+  const extraPaths = [
+    `${process.env.HOME}/.local/bin`,
+    ...getMacOSPythonBinPaths(),
+  ];
+  const searchPath = [...extraPaths, process.env.PATH].join(':');
   try {
     return execFileSync('which', [name], {
       encoding: 'utf8',

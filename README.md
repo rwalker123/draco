@@ -567,10 +567,10 @@ This project uses **detect-secrets** to prevent accidental commits of sensitive 
 pnpm secrets:update-baseline
 
 # Check for secrets in the entire repo
-~/Library/Python/3.9/bin/detect-secrets scan
+detect-secrets scan
 
 # Audit baseline file (interactive)
-~/Library/Python/3.9/bin/detect-secrets audit .secrets.baseline
+detect-secrets audit .secrets.baseline
 ```
 
 #### **Workflow for New Secrets:**

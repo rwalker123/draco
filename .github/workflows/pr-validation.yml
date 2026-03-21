@@ -38,6 +38,12 @@ jobs:
       - name: Security - Audit Dependencies
         run: pnpm audit --audit-level=critical
 
+      - name: Security - Detect Secrets
+        run: |
+          pip install detect-secrets
+          detect-secrets scan --baseline .secrets.baseline --exclude-files 'pnpm-lock\.yaml'
+          detect-secrets audit --report --baseline .secrets.baseline
+
       - name: Lint
         run: pnpm run lint
 
