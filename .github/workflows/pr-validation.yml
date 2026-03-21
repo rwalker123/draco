@@ -41,8 +41,9 @@ jobs:
       - name: Security - Detect Secrets
         run: |
           pip install detect-secrets
+          cp .secrets.baseline .secrets.baseline.bak
           detect-secrets scan --baseline .secrets.baseline --exclude-files 'pnpm-lock\.yaml'
-          detect-secrets audit --report --baseline .secrets.baseline
+          diff .secrets.baseline.bak .secrets.baseline
 
       - name: Lint
         run: pnpm run lint

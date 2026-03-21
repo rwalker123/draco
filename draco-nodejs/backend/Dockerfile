@@ -48,6 +48,7 @@ RUN apt-get update \
     && apt-get purge -y gnupg curl \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/draco-nodejs/backend/node_modules ./draco-nodejs/backend/node_modules
