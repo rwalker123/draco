@@ -5,10 +5,10 @@
 - Follow the "Derived Data in Render" section below which cites React's [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect).
 
 ## Daily Workflow
-- Launch the Next.js app with `npm run dev -w @draco/frontend-next` from the repo root.
-- Run the Vitest suite with `npm run frontend:test` or `npm run test:coverage -w @draco/frontend-next`.
-- Regenerate shared clients with `npm run sync:api` after backend contract updates.
-- After changes, run `npm run frontend:lint` and check for errors.
+- Launch the Next.js app with `pnpm --filter @draco/frontend-next dev` from the repo root.
+- Run the Vitest suite with `pnpm frontend:test` or `pnpm --filter @draco/frontend-next test:coverage`.
+- Regenerate shared clients with `pnpm sync:api` after backend contract updates.
+- After changes, run `pnpm frontend:lint` and check for errors.
 - If you add a new route with metadata, use the helpers in `lib/metadataParams` for both `searchParams` and `params`.
 
 ## MCP Initialization

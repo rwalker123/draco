@@ -1,14 +1,15 @@
 # Stage 1 – Install all dependencies (dev included for build tools)
 FROM node:24-bookworm-slim AS deps
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY draco-nodejs/backend/package.json draco-nodejs/backend/
 COPY draco-nodejs/shared/shared-schemas/package.json draco-nodejs/shared/shared-schemas/
 COPY draco-nodejs/shared/shared-api-client/package.json draco-nodejs/shared/shared-api-client/
 COPY draco-nodejs/stoplight-assets/package.json draco-nodejs/stoplight-assets/
 ENV HUSKY=0
-RUN npm ci -w @draco/backend -w @draco/shared-schemas -w @draco/shared-api-client -w @draco/stoplight-assets --include-workspace-root
+RUN pnpm install --frozen-lockfile --filter @draco/backend...
 
 # Stage 2 – Build backend + shared packages
 FROM deps AS builder
@@ -16,20 +17,23 @@ WORKDIR /app
 COPY draco-nodejs/backend/ draco-nodejs/backend/
 COPY draco-nodejs/shared/ draco-nodejs/shared/
 COPY draco-nodejs/stoplight-assets/ draco-nodejs/stoplight-assets/
-RUN npm run backend:prisma-generate
-RUN npm run build -w @draco/shared-schemas
-RUN npm run sync:api
-RUN npm run build -w @draco/backend
+RUN pnpm --filter @draco/backend exec prisma generate
+RUN pnpm --filter @draco/shared-schemas build
+RUN pnpm run sync:api
+RUN pnpm --filter @draco/backend build
 
 # Stage 3 – Production-only deps (separate stage for clean node_modules)
 FROM node:24-bookworm-slim AS prod-deps
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY draco-nodejs/backend/package.json draco-nodejs/backend/
 COPY draco-nodejs/shared/shared-schemas/package.json draco-nodejs/shared/shared-schemas/
 COPY draco-nodejs/shared/shared-api-client/package.json draco-nodejs/shared/shared-api-client/
 COPY draco-nodejs/stoplight-assets/package.json draco-nodejs/stoplight-assets/
-RUN npm ci -w @draco/backend -w @draco/shared-schemas -w @draco/shared-api-client -w @draco/stoplight-assets --include-workspace-root --omit=dev --ignore-scripts
+ENV HUSKY=0
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @draco/backend...
 
 # Stage 4 – Runtime
 FROM node:24-bookworm-slim AS runner
@@ -44,8 +48,10 @@ RUN apt-get update \
     && apt-get purge -y gnupg curl \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/draco-nodejs/backend/node_modules ./draco-nodejs/backend/node_modules
 COPY --from=prod-deps /app/draco-nodejs/shared ./draco-nodejs/shared
 COPY --from=prod-deps /app/package.json ./
 COPY --from=builder /app/draco-nodejs/backend/dist ./draco-nodejs/backend/dist

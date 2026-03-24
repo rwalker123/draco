@@ -82,17 +82,19 @@ Before starting deployment, ensure the following are in place:
 
 Configure these in Railway Dashboard → Service → Deploy tab:
 
-#### Backend Service
+#### Backend Service (Dockerfile builder)
 | Setting | Value |
 |---------|-------|
-| Build Command | `npm run build -w @draco/shared-schemas && npm run sync:api && npm run build -w @draco/backend` |
-| Start Command | `npm run start -w @draco/backend` |
+| Builder | `DOCKERFILE` (`/draco-nodejs/backend/Dockerfile`) |
+| Build Command | `pnpm --filter @draco/shared-schemas build && pnpm sync:api && pnpm --filter @draco/backend build` |
+| Start Command | `/bin/sh -c "cd /app/draco-nodejs/backend && pnpm exec prisma migrate deploy && node /app/draco-nodejs/backend/dist/src/server.js"` |
 
-#### Frontend Service
+#### Frontend Service (Railpack builder)
 | Setting | Value |
 |---------|-------|
-| Build Command | `npm run build -w @draco/shared-schemas && npm run sync:api && npm run build -w @draco/frontend-next` |
-| Start Command | `npm run start -w @draco/frontend-next` |
+| Builder | `RAILPACK` |
+| Build Command | `pnpm --filter @draco/shared-schemas build && pnpm sync:api && pnpm --filter @draco/frontend-next build` |
+| Start Command | `NODE_OPTIONS=--max-old-space-size=768 pnpm --filter @draco/frontend-next start` |
 
 ### Install-Time Environment Variables
 
@@ -101,13 +103,13 @@ Set these in Railway Dashboard → Service → Variables:
 #### Backend Service
 | Variable | Value |
 |----------|-------|
-| `RAILPACK_INSTALL_CMD` | `npm install --workspaces --include-workspace-root && npm run backend:prisma-generate` |
+| `RAILPACK_INSTALL_CMD` | `pnpm install --frozen-lockfile && pnpm backend:prisma-generate` |
 | `HUSKY` | `0` |
 
 #### Frontend Service
 | Variable | Value |
 |----------|-------|
-| `RAILPACK_INSTALL_CMD` | `npm install --workspaces --include-workspace-root` |
+| `RAILPACK_INSTALL_CMD` | `pnpm install --frozen-lockfile` |
 
 ### GitHub Integration
 
@@ -249,8 +251,8 @@ Perform these validations on the Development environment:
 
 1. **CI Gate**: Run before promoting artifacts
    ```bash
-   npm run test
-   npm run lint --workspaces
+   pnpm test
+   pnpm lint
    ```
 
 2. **Functional Tests**:
@@ -330,14 +332,14 @@ railway run --service draco-backend \
 
 ```bash
 railway run --service draco-backend \
-  "npm exec --workspace @draco/backend -- prisma migrate resolve --applied 20240710120000_add_email_sender_metadata"
+  "pnpm --filter @draco/backend exec prisma migrate resolve --applied 20240710120000_add_email_sender_metadata"
 ```
 
 ### Step 3: Resume Normal Migration Flow
 
 ```bash
 railway run --service draco-backend \
-  "npm exec --workspace @draco/backend -- prisma migrate deploy"
+  "pnpm --filter @draco/backend exec prisma migrate deploy"
 ```
 
 > **Important**: Run these steps once per Railway environment (Development, Production) before relying on auto-deploys for migrations.

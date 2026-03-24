@@ -1,0 +1,7 @@
+packages:
+  - 'dbMigration'
+  - 'draco-mobile'
+  - 'draco-nodejs/backend'
+  - 'draco-nodejs/frontend-next'
+  - 'draco-nodejs/shared/*'
+  - 'draco-nodejs/stoplight-assets'

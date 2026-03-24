@@ -25,19 +25,24 @@
     "e2e:update-snapshots": "dotenv -e .env.local -e .env.e2e -- playwright test --update-snapshots --project=chromium"
   },
   "dependencies": {
-    "@draco/shared-api-client": "*",
-    "@draco/shared-schemas": "*",
+    "@draco/shared-api-client": "workspace:*",
+    "@draco/shared-schemas": "workspace:*",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hookform/resolvers": "^5.2.2",
+    "@lexical/code": "^0.40.0",
     "@lexical/html": "^0.40.0",
     "@lexical/link": "^0.40.0",
     "@lexical/list": "^0.40.0",
     "@lexical/react": "^0.40.0",
     "@lexical/rich-text": "^0.40.0",
+    "@lexical/selection": "^0.40.0",
     "@lexical/utils": "^0.40.0",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
+    "@mui/system": "^7.3.9",
+    "@mui/utils": "^7.3.9",
     "@mui/x-data-grid": "8.18.0",
     "@mui/x-date-pickers": "^8.6.0",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -95,9 +100,5 @@
     "jsdom": "^27.2.0",
     "tailwindcss": "^4.1.13",
     "tw-animate-css": "^1.3.8"
-  },
-  "overrides": {
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3"
   }
 }

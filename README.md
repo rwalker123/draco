@@ -1,6 +1,6 @@
 # Draco Sports Manager
 
-A comprehensive sports management application migrated from ASP.NET Framework to a modern Node.js stack. Manage baseball and golf leagues, teams, players, games, and sports-related activities with a focus on real-time updates and user-friendly interfaces.
+A comprehensive sports management application for baseball and golf leagues, teams, players, games, and sports-related activities with a focus on real-time updates and user-friendly interfaces.
 
 ## 🏆 Features
 
@@ -17,23 +17,22 @@ A comprehensive sports management application migrated from ASP.NET Framework to
 ### Technology Stack
 
 **Backend:**
-- **Runtime**: Node.js v22.16.0 (minimum v20.19.0+ for Prisma 7)
-- **Framework**: Express.js 4.18.2
+- **Runtime**: Node.js v24+ (minimum v24.0.0)
+- **Framework**: Express.js 5
 - **Language**: TypeScript 5.9.x
 - **Database ORM**: Prisma 7
 - **Database**: PostgreSQL
-- **Authentication**: JWT (jsonwebtoken 9.0.2)
-- **Password Hashing**: bcrypt 6.0.0
-- **Email Service**: Nodemailer 7.0.3
-- **Security**: Helmet 8.1.0, CORS 2.8.5
+- **Authentication**: JWT
+- **Security**: Helmet, CORS
 
 **Frontend:**
-- **Framework**: React 19.1.0
-- **Language**: TypeScript 4.9.5
-- **UI Library**: Material-UI 7.1.1
-- **State Management**: Redux Toolkit 2.8.2
-- **Routing**: React Router DOM 7.6.2
-- **HTTP Client**: Axios 1.10.0
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript 5.9.x
+- **UI Library**: Material-UI 7
+- **Data Fetching**: TanStack React Query
+- **Forms**: React Hook Form + Zod
+
+**Package Manager:** pnpm (via corepack)
 
 ### Infrastructure & External Services
 
@@ -83,9 +82,9 @@ draco-nodejs/
 
 ### Prerequisites
 
-- **Node.js** v20.19 or higher
+- **Node.js** v24.0.0 or higher
+- **pnpm** (enabled via corepack, see below)
 - **PostgreSQL** v12 or higher
-- **npm** or **yarn** package manager
 
 ### Installation
 
@@ -95,54 +94,42 @@ draco-nodejs/
    cd draco
    ```
 
-2. **Set up the backend**
+2. **Enable pnpm via corepack**
+   ```bash
+   corepack enable
+   ```
+   This automatically installs the correct pnpm version specified in `package.json`.
+
+3. **Install all dependencies**
+   ```bash
+   pnpm install
+   ```
+
+4. **Set up the backend**
    ```bash
    cd draco-nodejs/backend
-   npm install
-   
-   # Set up environment variables
    cp .env.example .env
    # Edit .env with your database credentials
 
-   # Prisma CLI reads DATABASE_URL via prisma.config.ts (dotenv), so ensure .env is in place
-
    # Set up database
-   npx prisma generate
-   npx prisma db push
-   
-   # Start development server
-   npm run dev
+   pnpm exec prisma generate
+   pnpm exec prisma db push
    ```
 
-3. **Set up the frontend**
+5. **Start development**
    ```bash
-   cd ../frontend-next
-   npm install
+   # From repo root - start both backend and frontend
+   pnpm dev
 
-   # Start development server
-   npm run dev
+   # Or individually
+   pnpm backend:dev
+   pnpm --filter @draco/frontend-next dev
    ```
 
-4. **Set up the mobile scorekeeping app**
-   ```bash
-   cd ../draco-mobile
-   npm install
-
-   # Provide the backend API base URL used for authentication
-   cp .env.example .env
-   ```
-
-   Start the Expo development server from the repository root:
-
-   ```bash
-   npm run mobile:start
-   ```
-
-5. **Access the application**
+6. **Access the application**
    - Frontend (web): http://localhost:3000
-   - Backend API: http://localhost:5000
-   - API Documentation: http://localhost:5000/docs
-   - Mobile app: run on iOS Simulator, Android emulator, or Expo Go via the QR code shown in the terminal
+   - Backend API: http://localhost:3001
+   - Mobile app: `pnpm mobile:start` for Expo dev server
 
 ### Environment Variables
 
@@ -201,29 +188,47 @@ The API documentation is automatically generated using Swagger and available at:
 
 ### Available Scripts
 
+All commands run from the repository root:
+
+**Full Stack:**
+```bash
+pnpm dev                   # Start both backend and frontend
+pnpm build                 # Build everything (shared schemas → API client → backend → frontend)
+pnpm lint                  # Lint all workspaces
+pnpm test                  # Test all workspaces
+pnpm type-check            # Type-check all workspaces
+```
+
 **Backend:**
 ```bash
-npm run dev          # Start development server with hot reload
-npm run build        # Build TypeScript to JavaScript
-npm run start        # Start production server
-npm run clean        # Clean build directory
-npm run docs:generate # Generate API documentation
+pnpm backend:dev           # Start development server with hot reload
+pnpm backend:build         # Build TypeScript to JavaScript
+pnpm backend:test          # Run backend tests
+pnpm backend:lint          # Lint backend
+pnpm backend:type-check    # Type-check backend
 ```
 
 **Frontend:**
 ```bash
-npm start            # Start development server
-npm run build        # Build for production
-npm test             # Run tests
-npm run eject        # Eject from Create React App
+pnpm --filter @draco/frontend-next dev    # Start dev server
+pnpm frontend:build        # Build for production
+pnpm frontend:test         # Run frontend tests
+pnpm frontend:lint         # Lint frontend
+pnpm frontend:type-check   # Type-check frontend
+pnpm frontend:e2e          # Run E2E tests
 ```
 
 **Mobile (React Native / Expo):**
 ```bash
-npm run mobile:start       # Launch Expo development server
-npm run mobile:lint        # Lint the mobile workspace
-npm run mobile:type-check  # Type-check the mobile workspace
-npm run mobile:test        # Run mobile unit tests
+pnpm mobile:start          # Launch Expo development server
+pnpm mobile:lint           # Lint the mobile workspace
+pnpm mobile:type-check     # Type-check the mobile workspace
+pnpm mobile:test           # Run mobile unit tests
+```
+
+**API Sync:**
+```bash
+pnpm sync:api              # Regenerate OpenAPI spec and frontend SDK
 ```
 
 ### Database Management
@@ -232,16 +237,16 @@ Prisma CLI commands should be run from `draco-nodejs/backend`, where `prisma.con
 
 ```bash
 # Generate Prisma client
-npx prisma generate
+pnpm exec prisma generate
 
 # Push schema changes to database
-npx prisma db push
+pnpm exec prisma db push
 
 # Run database migrations
-npx prisma migrate dev
+pnpm exec prisma migrate dev
 
 # Open Prisma Studio
-npx prisma studio
+pnpm exec prisma studio
 ```
 
 ## 🐳 LocalStack Setup (S3 Testing)
@@ -332,45 +337,58 @@ curl http://localhost:4566/_localstack/health
 ## 🧪 Testing
 
 ```bash
-# Backend tests
-cd backend
-npm test
+# All tests
+pnpm test
 
-# Frontend tests
-cd frontend
-npm test
+# Backend tests only
+pnpm backend:test
+
+# Frontend tests only
+pnpm frontend:test
+
+# E2E tests
+pnpm frontend:e2e
 ```
 
 ## 📦 Deployment
 
 ### Production Build
 
-1. **Build the backend**
-   ```bash
-   cd draco-nodejs/backend
-   npm run build
-   ```
+```bash
+# Build everything (from repo root)
+pnpm build
 
-2. **Build the frontend**
-   ```bash
-   cd draco-nodejs/frontend
-   npm run build
-   ```
-
-3. **Deploy to your preferred platform**
-   - **Backend**: Deploy the `dist` folder to your Node.js hosting
-   - **Frontend**: Deploy the `build` folder to your static hosting
-
-### Environment Variables for Production
-
-```env
-NODE_ENV=production
-DATABASE_URL="your-production-database-url"  # pragma: allowlist secret
-JWT_SECRET="your-production-jwt-secret"  # pragma: allowlist secret
-EMAIL_HOST="your-smtp-host"
-EMAIL_USER="your-email"
-EMAIL_PASS="your-password"  # pragma: allowlist secret
+# Or individually
+pnpm backend:build
+pnpm frontend:build
 ```
+
+### Docker
+
+```bash
+# Build the backend Docker image
+pnpm docker:backend:build
+
+# Run backend in Docker with frontend dev server locally
+pnpm docker:dev
+
+# Run backend Docker tests (build + health check)
+pnpm docker:backend:test
+```
+
+To run the Docker image manually (e.g. for local testing against a real database):
+
+```bash
+docker run --rm -p 3001:3001 \
+  -e PORT=3001 \
+  -e NODE_ENV=production \
+  -e JWT_SECRET=your-secret \
+  -e DATABASE_URL=postgresql://<user>:<password>@host.docker.internal:5432/draco \
+  -e FRONTEND_URL=http://localhost:3000 \
+  draco-backend
+```
+
+The health endpoint is available at `http://localhost:3001/health`.
 
 ## 🤝 Contributing
 
@@ -389,162 +407,148 @@ This project is licensed under the ISC License.
 For support and questions:
 - Create an issue in the GitHub repository
 - Check the [ARCHITECTURE.md](draco-nodejs/ARCHITECTURE.md) for detailed technical documentation
-- Review the [MIGRATION_TODO.md](MIGRATION_TODO.md) for current development status
 
-## 🔄 Migration Status
+## 📦 pnpm Reference Guide
 
-This project is a migration from an ASP.NET Framework application. See [MIGRATION_TODO.md](MIGRATION_TODO.md) for detailed progress and remaining tasks.
+This project uses **pnpm** as its package manager (managed via corepack). Below is a quick reference for common tasks.
 
-**Completed:**
-- ✅ Database migration from SQL Server to PostgreSQL
-- ✅ Authentication system with JWT
-- ✅ User management and role-based access
-- ✅ Accounts and organization management
-- ✅ Schedule management system
-- ✅ Basic frontend with Material-UI
+### Setup
 
-**In Progress:**
-- 🔄 Team and player management
-- 🔄 Game statistics and reporting
-- 🔄 Media management system
-
----
-
-**Draco Sports Manager** - Modern sports management for the digital age.
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 20.19+ and npm
-- PostgreSQL database
-- Environment variables configured
-
-### Installation
 ```bash
-# Install all dependencies (root, backend, and frontend)
-npm run install:all
+# Enable pnpm (one-time, uses version from package.json)
+corepack enable
 
-# Or install individually
-npm install                    # Root dependencies
-npm run backend:install        # Backend dependencies  
-npm run frontend:install       # Frontend dependencies
+# Install all workspace dependencies
+pnpm install
+
+# Install with locked versions (CI)
+pnpm install --frozen-lockfile
 ```
 
-### Regenerating `package-lock.json`
-If the lockfile is ever deleted or needs to be rebuilt, regenerate it from a Linux environment so CI runners (which use Ubuntu) capture the required native optional dependencies (e.g., `lightningcss-linux-x64-gnu`). A reliable workflow:
+### Installing & Removing Packages
 
-1. Remove the existing lockfile and all workspace `node_modules` directories (or stash them if you prefer to restore later).
-   ```bash
-   rm -rf package-lock.json node_modules draco-nodejs/**/node_modules
-   ```
-2. Recreate the lock inside Linux via Docker so npm records the Linux binaries:
-   ```bash
-   docker run --rm -v "$PWD":/repo -w /repo node:20 npm install
-   ```
-3. Back on macOS (or your host OS), run `npm install` again so local native modules for that platform are present, while keeping the Linux entries that CI needs.
-
-### Development
 ```bash
-# Start both backend and frontend in development mode
-npm run dev
+# Add a dependency to a specific workspace
+pnpm --filter @draco/backend add express
+pnpm --filter @draco/frontend-next add @mui/material
 
-# Or start individually
-npm run backend:dev           # Backend with nodemon (port 5000)
-npm run frontend:start        # Frontend dev server (port 3000)
+# Add a dev dependency
+pnpm --filter @draco/backend add -D vitest
+
+# Add to root workspace
+pnpm add -w concurrently
+
+# Remove a dependency
+pnpm --filter @draco/backend remove express
+
+# Add a workspace dependency (link local package)
+pnpm --filter @draco/backend add @draco/shared-schemas --workspace
 ```
 
-### Production
-```bash
-# Build both projects
-npm run build
+### Updating Packages
 
-# Start production backend
-npm start                     # or npm run backend:start
+```bash
+# Check for outdated packages across all workspaces
+pnpm -r outdated
+
+# Check outdated in a specific workspace
+pnpm --filter @draco/backend outdated
+
+# Update all packages (respects semver ranges in package.json)
+pnpm -r update
+
+# Update a specific package
+pnpm --filter @draco/backend update express
+
+# Update to latest (ignores semver range)
+pnpm --filter @draco/backend update express --latest
+
+# Interactive update (pick which to update)
+pnpm --filter @draco/backend update -i
 ```
 
-## 📋 Available NPM Scripts
+### Running Scripts
 
-### 🎯 **Root Level Commands** (Replace shell scripts)
-All commands can be run from the root directory using npm scripts instead of the shell scripts:
-
-#### **Development**
 ```bash
-npm run dev                   # Start both backend and frontend (replaces both shell scripts)
-npm run backend:dev          # Backend development with nodemon
-npm run frontend:start       # Frontend development server
+# Run a script in a specific workspace
+pnpm --filter @draco/backend dev
+pnpm --filter @draco/frontend-next build
+
+# Run a script across ALL workspaces
+pnpm -r run lint
+pnpm -r run test
+
+# Run a CLI tool (replaces npx)
+pnpm exec prisma studio
+pnpm exec vitest --ui
+
+# Run from root (shorthand for root scripts)
+pnpm dev          # both backend + frontend
+pnpm build        # full build pipeline
+pnpm lint         # lint everything
+pnpm test         # test everything
 ```
 
-#### **Building**
+### npm → pnpm Command Cheat Sheet
+
+| npm | pnpm |
+|-----|------|
+| `npm install` | `pnpm install` |
+| `npm install express` | `pnpm add express` |
+| `npm install -D vitest` | `pnpm add -D vitest` |
+| `npm uninstall express` | `pnpm remove express` |
+| `npm run dev` | `pnpm dev` |
+| `npm run build` | `pnpm build` |
+| `npm test` | `pnpm test` |
+| `npx prisma studio` | `pnpm exec prisma studio` |
+| `npm outdated` | `pnpm outdated` |
+| `npm update` | `pnpm update` |
+| `npm ci` | `pnpm install --frozen-lockfile` |
+| `npm run lint -w @draco/backend` | `pnpm --filter @draco/backend lint` |
+| `npm run lint --workspaces` | `pnpm -r run lint` |
+| `npm ls` | `pnpm ls` |
+| `npm ls --all` | `pnpm ls --depth Infinity` |
+| `npm audit` | `pnpm audit` |
+| `npm cache clean --force` | `pnpm store prune` |
+
+### Workspace Filtering
+
 ```bash
-npm run build                # Build both backend and frontend
-npm run backend:build        # Build backend TypeScript
-npm run frontend:build       # Build frontend for production
+# Filter by package name
+pnpm --filter @draco/backend <command>
+
+# Filter by directory
+pnpm --filter ./draco-nodejs/backend <command>
+
+# Filter with dependencies (... suffix = include deps)
+pnpm --filter @draco/backend... install
+
+# Filter by changed packages since main
+pnpm --filter "...[main]" run test
 ```
 
-#### **Testing**
+### Useful Commands
+
 ```bash
-npm run test:all             # Run tests for both projects
-npm run backend:test         # Backend tests
-npm run frontend:test        # Frontend tests
+# See why a package is installed
+pnpm why react
+
+# List all workspace packages
+pnpm ls --depth -1
+
+# Clean pnpm store (reclaim disk space)
+pnpm store prune
+
+# Rebuild native packages
+pnpm rebuild
+
+# Check for security vulnerabilities
+pnpm audit
+
+# See disk usage of store
+pnpm store path
+du -sh $(pnpm store path)
 ```
-
-#### **Code Quality**
-```bash
-npm run lint:all             # Lint both projects
-npm run lint:fix:all         # Fix linting issues in both projects
-npm run format:all           # Format code in both projects
-npm run type-check:all       # TypeScript type checking for both projects
-```
-
-#### **Backend Specific**
-```bash
-npm run backend:start        # Start production backend server
-npm run backend:install      # Install backend dependencies
-npm run backend:prisma-generate    # Generate Prisma client
-npm run backend:migrate-passwords  # Run password migration script
-npm run backend:test-passwords     # Test password verification
-npm run backend:clean        # Clean build artifacts
-npm run backend:docs:generate      # Generate API documentation
-```
-
-#### **Frontend Specific**
-```bash
-npm run frontend:install     # Install frontend dependencies
-npm run frontend:eject       # Eject from Create React App (with confirmation)
-```
-
-#### **Installation**
-```bash
-npm run install:all          # Install all dependencies (root + backend + frontend)
-```
-
-### 🔄 **Migration from Shell Scripts**
-
-The following npm commands replace the shell script functionality:
-
-| Shell Script Command | NPM Script Equivalent |
-|---------------------|----------------------|
-| `./run-backend.sh start` | `npm run backend:start` |
-| `./run-backend.sh build` | `npm run backend:build` |
-| `./run-backend.sh dev` | `npm run backend:dev` |
-| `./run-backend.sh test` | `npm run backend:test` |
-| `./run-backend.sh install` | `npm run backend:install` |
-| `./run-backend.sh prisma-generate` | `npm run backend:prisma-generate` |
-| `./run-backend.sh migrate-passwords` | `npm run backend:migrate-passwords` |
-| `./run-backend.sh test-passwords` | `npm run backend:test-passwords` |
-| `./run-frontend.sh start` | `npm run frontend:start` |
-| `./run-frontend.sh build` | `npm run frontend:build` |
-| `./run-frontend.sh test` | `npm run frontend:test` |
-| `./run-frontend.sh install` | `npm run frontend:install` |
-| `./run-frontend.sh eject` | `npm run frontend:eject` |
-
-**Benefits of npm scripts:**
-- ✅ Cross-platform compatibility (no shell script dependencies)
-- ✅ Better integration with npm ecosystem
-- ✅ Easier to maintain and extend
-- ✅ Works with npm workspaces
-- ✅ Can be used in CI/CD pipelines
-- ✅ Better error handling and output formatting
 
 ## 🔒 Security & Secret Detection
 
@@ -560,13 +564,13 @@ This project uses **detect-secrets** to prevent accidental commits of sensitive 
 #### **Available Commands:**
 ```bash
 # Update baseline when new secrets are approved
-npm run secrets:update-baseline
+pnpm secrets:update-baseline
 
 # Check for secrets in the entire repo
-~/Library/Python/3.9/bin/detect-secrets scan
+detect-secrets scan
 
 # Audit baseline file (interactive)
-~/Library/Python/3.9/bin/detect-secrets audit .secrets.baseline
+detect-secrets audit .secrets.baseline
 ```
 
 #### **Workflow for New Secrets:**
@@ -575,7 +579,7 @@ npm run secrets:update-baseline
 ```bash
 # 1. Review the detected secret
 # 2. If it's a false positive or approved secret, update the baseline:
-npm run secrets:update-baseline
+pnpm secrets:update-baseline
 
 # 3. Commit the updated baseline:
 git add .secrets.baseline
@@ -593,7 +597,7 @@ git commit -m "Your changes"
 const apiKey = process.env.API_KEY;
 
 # 3. If you need to add a test/example secret to the baseline:
-npm run secrets:update-baseline
+pnpm secrets:update-baseline
 git add .secrets.baseline
 git commit -m "Add test secret to baseline"
 ```
@@ -610,14 +614,14 @@ git commit -m "Add test secret to baseline"
 - `.secrets.baseline` (the baseline file itself)
 - `.env*` files (environment files)
 - `node_modules/`, `dist/`, `build/` (generated files)
-- Lock files (`package-lock.json`, `yarn.lock`)
+- Lock files (`pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`)
 
 #### **Best Practices:**
 1. **Never commit real secrets** - Use environment variables
 2. **Use placeholder values** for examples and tests
 3. **Review baseline updates** before committing
 4. **Keep baseline file in git** for team consistency
-5. **Run manual scans** periodically: `npm run secrets:update-baseline`
+5. **Run manual scans** periodically: `pnpm secrets:update-baseline`
 
 ## 🧾 Structured Registration & Linking Logs
 
