@@ -10,5 +10,6 @@ localstack-data
 .vscode
 .idea
 .DS_Store
+requirements.txt
 draco-mobile
 dbMigration
