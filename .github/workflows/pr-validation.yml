@@ -43,6 +43,7 @@ jobs:
         with:
           python-version: '3.x'
           cache: 'pip'
+          cache-dependency-path: '.github/requirements.txt'
 
       - name: Security - Detect Secrets
         run: |
