@@ -43,10 +43,11 @@ jobs:
         with:
           python-version: '3.x'
           cache: 'pip'
+          cache-dependency-path: '.github/requirements.txt'
 
       - name: Security - Detect Secrets
         run: |
-          pip install -r requirements.txt
+          pip install -r .github/requirements.txt
           cp .secrets.baseline .secrets.baseline.bak
           detect-secrets scan --baseline .secrets.baseline --exclude-files 'scripts/load-test\.config\.example\.json|pnpm-lock\.yaml'
           diff <(grep -v '"generated_at"' .secrets.baseline.bak) <(grep -v '"generated_at"' .secrets.baseline)
