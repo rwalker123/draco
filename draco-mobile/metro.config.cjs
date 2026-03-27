@@ -21,10 +21,5 @@ config.resolver.extraNodeModules = {
 };
 
 config.resolver.nodeModulesPaths = [mobileNodeModules, workspaceNodeModules];
-config.resolver.disableHierarchicalLookup = true;
-config.resolver.extraNodeModules = {
-  ...config.resolver.extraNodeModules,
-  '@expo/metro-config': path.join(workspaceNodeModules, '@expo/metro-config')
-};
 
 module.exports = config;
