@@ -11,7 +11,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import { Add, Check, Close, Delete } from '@mui/icons-material';
 import {
   DataGrid,
@@ -347,6 +347,23 @@ const PitchingStatsEditableGrid = forwardRef<
     useEffect(() => {
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
+
+    useEffect(() => {
+      const api = apiRef.current;
+      if (!api) return;
+
+      return api.subscribeEvent('cellFocusIn', (params) => {
+        const rowId = String(params.id);
+        const field = params.field as EditablePitchingField;
+        if (rowId === TOTALS_ROW_ID || !editableFields.includes(field)) return;
+
+        const currentMode = api.getCellMode?.(rowId, field);
+        if (currentMode !== 'edit') {
+          api.startCellEditMode({ id: rowId, field });
+          focusEditor();
+        }
+      });
+    }, [apiRef]);
 
     const computeDirtyFields = (row: PitchingRow): EditablePitchingField[] => {
       const original = originalRowsRef.current.get(row.id);
@@ -1205,7 +1222,7 @@ const PitchingStatsEditableGrid = forwardRef<
               bgcolor: 'action.selected',
             },
             '& .MuiDataGrid-cell.dirty-cell': {
-              bgcolor: (theme: Theme) => theme.palette.warning.light,
+              bgcolor: (theme: Theme) => alpha(theme.palette.warning.main, 0.25),
             },
             '& .MuiDataGrid-row.totals-row': {
               bgcolor: (theme: Theme) =>
