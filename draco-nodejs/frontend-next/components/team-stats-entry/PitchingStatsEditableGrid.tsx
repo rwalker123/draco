@@ -45,6 +45,7 @@ import {
   PITCHING_FIELD_LABELS,
   PITCHING_FIELD_TOOLTIPS,
 } from './pitchingColumns';
+import { focusEditor, useCellFocusEditMode } from './useCellFocusEditMode';
 
 interface PitchingStatsEditableGridProps {
   stats: GamePitchingStatsType | null;
@@ -348,22 +349,7 @@ const PitchingStatsEditableGrid = forwardRef<
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
 
-    useEffect(() => {
-      const api = apiRef.current;
-      if (!api) return;
-
-      return api.subscribeEvent('cellFocusIn', (params) => {
-        const rowId = String(params.id);
-        const field = params.field as EditablePitchingField;
-        if (rowId === TOTALS_ROW_ID || !editableFields.includes(field)) return;
-
-        const currentMode = api.getCellMode?.(rowId, field);
-        if (currentMode !== 'edit') {
-          api.startCellEditMode({ id: rowId, field });
-          focusEditor();
-        }
-      });
-    }, [apiRef]);
+    useCellFocusEditMode(apiRef, editableFields, TOTALS_ROW_ID);
 
     const computeDirtyFields = (row: PitchingRow): EditablePitchingField[] => {
       const original = originalRowsRef.current.get(row.id);
@@ -389,15 +375,6 @@ const PitchingStatsEditableGrid = forwardRef<
     const clearDirtyState = () => {
       setDirtyRowId(null);
       setDirtyFields([]);
-    };
-
-    const focusEditor = () => {
-      window.requestAnimationFrame(() => {
-        const input = document.querySelector<HTMLInputElement>(
-          'div.MuiDataGrid-cell--editing input',
-        );
-        input?.select();
-      });
     };
 
     const [newRow, setNewRow] = useState<CreateGamePitchingStatType>(emptyPitchingNewRow);

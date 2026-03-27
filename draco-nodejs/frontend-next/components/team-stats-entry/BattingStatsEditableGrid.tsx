@@ -44,6 +44,7 @@ import {
   BATTING_FIELD_LABELS,
   BATTING_FIELD_TOOLTIPS,
 } from './battingColumns';
+import { focusEditor, useCellFocusEditMode } from './useCellFocusEditMode';
 
 interface BattingStatsEditableGridProps {
   stats: GameBattingStatsType | null;
@@ -191,22 +192,7 @@ const BattingStatsEditableGrid = forwardRef<
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
 
-    useEffect(() => {
-      const api = apiRef.current;
-      if (!api) return;
-
-      return api.subscribeEvent('cellFocusIn', (params) => {
-        const rowId = String(params.id);
-        const field = params.field as EditableBattingField;
-        if (rowId === TOTALS_ROW_ID || !editableFields.includes(field)) return;
-
-        const currentMode = api.getCellMode?.(rowId, field);
-        if (currentMode !== 'edit') {
-          api.startCellEditMode({ id: rowId, field });
-          focusEditor();
-        }
-      });
-    }, [apiRef]);
+    useCellFocusEditMode(apiRef, editableFields, TOTALS_ROW_ID);
 
     const computeDirtyFields = (row: BattingRow): EditableBattingField[] => {
       const original = originalRowsRef.current.get(row.id);
@@ -232,15 +218,6 @@ const BattingStatsEditableGrid = forwardRef<
     const clearDirtyState = () => {
       setDirtyRowId(null);
       setDirtyFields([]);
-    };
-
-    const focusEditor = () => {
-      window.requestAnimationFrame(() => {
-        const input = document.querySelector<HTMLInputElement>(
-          'div.MuiDataGrid-cell--editing input',
-        );
-        input?.select();
-      });
     };
 
     const [newRow, setNewRow] = useState<CreateGameBattingStatType>(emptyBattingNewRow);
