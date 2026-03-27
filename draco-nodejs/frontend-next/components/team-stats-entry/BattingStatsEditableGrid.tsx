@@ -11,7 +11,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import { Add, Check, Close, Delete } from '@mui/icons-material';
 import {
   DataGrid,
@@ -44,6 +44,7 @@ import {
   BATTING_FIELD_LABELS,
   BATTING_FIELD_TOOLTIPS,
 } from './battingColumns';
+import { focusEditor, useCellFocusEditMode } from './useCellFocusEditMode';
 
 interface BattingStatsEditableGridProps {
   stats: GameBattingStatsType | null;
@@ -191,6 +192,8 @@ const BattingStatsEditableGrid = forwardRef<
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
 
+    useCellFocusEditMode(apiRef, editableFields, TOTALS_ROW_ID);
+
     const computeDirtyFields = (row: BattingRow): EditableBattingField[] => {
       const original = originalRowsRef.current.get(row.id);
       if (!original) {
@@ -215,15 +218,6 @@ const BattingStatsEditableGrid = forwardRef<
     const clearDirtyState = () => {
       setDirtyRowId(null);
       setDirtyFields([]);
-    };
-
-    const focusEditor = () => {
-      window.requestAnimationFrame(() => {
-        const input = document.querySelector<HTMLInputElement>(
-          'div.MuiDataGrid-cell--editing input',
-        );
-        input?.select();
-      });
     };
 
     const [newRow, setNewRow] = useState<CreateGameBattingStatType>(emptyBattingNewRow);
@@ -947,6 +941,7 @@ const BattingStatsEditableGrid = forwardRef<
           autoHeight
           disableColumnMenu
           disableRowSelectionOnClick
+          tabNavigation="content"
           editMode="cell"
           rows={gridRows}
           columns={columns}
@@ -997,7 +992,7 @@ const BattingStatsEditableGrid = forwardRef<
               bgcolor: 'action.selected',
             },
             '& .MuiDataGrid-cell.dirty-cell': {
-              bgcolor: (theme: Theme) => theme.palette.warning.light,
+              bgcolor: (theme: Theme) => alpha(theme.palette.warning.main, 0.25),
             },
             '& .MuiDataGrid-row.totals-row': {
               bgcolor: (theme: Theme) =>

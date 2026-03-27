@@ -11,7 +11,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import { Add, Check, Close, Delete } from '@mui/icons-material';
 import {
   DataGrid,
@@ -45,6 +45,7 @@ import {
   PITCHING_FIELD_LABELS,
   PITCHING_FIELD_TOOLTIPS,
 } from './pitchingColumns';
+import { focusEditor, useCellFocusEditMode } from './useCellFocusEditMode';
 
 interface PitchingStatsEditableGridProps {
   stats: GamePitchingStatsType | null;
@@ -348,6 +349,8 @@ const PitchingStatsEditableGrid = forwardRef<
       onDirtyStateChange?.(Boolean(dirtyRowId));
     }, [dirtyRowId, onDirtyStateChange]);
 
+    useCellFocusEditMode(apiRef, editableFields, TOTALS_ROW_ID);
+
     const computeDirtyFields = (row: PitchingRow): EditablePitchingField[] => {
       const original = originalRowsRef.current.get(row.id);
       if (!original) {
@@ -372,15 +375,6 @@ const PitchingStatsEditableGrid = forwardRef<
     const clearDirtyState = () => {
       setDirtyRowId(null);
       setDirtyFields([]);
-    };
-
-    const focusEditor = () => {
-      window.requestAnimationFrame(() => {
-        const input = document.querySelector<HTMLInputElement>(
-          'div.MuiDataGrid-cell--editing input',
-        );
-        input?.select();
-      });
     };
 
     const [newRow, setNewRow] = useState<CreateGamePitchingStatType>(emptyPitchingNewRow);
@@ -1158,6 +1152,7 @@ const PitchingStatsEditableGrid = forwardRef<
           autoHeight
           disableColumnMenu
           disableRowSelectionOnClick
+          tabNavigation="content"
           editMode="cell"
           rows={gridRows}
           columns={columns}
@@ -1204,7 +1199,7 @@ const PitchingStatsEditableGrid = forwardRef<
               bgcolor: 'action.selected',
             },
             '& .MuiDataGrid-cell.dirty-cell': {
-              bgcolor: (theme: Theme) => theme.palette.warning.light,
+              bgcolor: (theme: Theme) => alpha(theme.palette.warning.main, 0.25),
             },
             '& .MuiDataGrid-row.totals-row': {
               bgcolor: (theme: Theme) =>

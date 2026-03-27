@@ -5,7 +5,6 @@
  */
 
 import { fileTypeFromBuffer } from 'file-type';
-import path from 'path';
 
 /**
  * Enhanced validation result types with better type safety
@@ -202,53 +201,20 @@ export const validateFilePath = (filename: string): PathValidationResult => {
     };
   }
 
-  // Use Node.js path module for better security validation (frontend-safe)
-  try {
-    // Check for absolute paths in input first (cross-platform)
-    const isWindowsAbsolute = /^[a-zA-Z]:/;
-    const isUnixAbsolute = filename.startsWith('/');
-
-    if (path.isAbsolute(filename) || isWindowsAbsolute.test(filename) || isUnixAbsolute) {
-      return {
-        isValid: false,
-        error: 'Absolute paths are not allowed',
-        securityRisk: true,
-      };
-    }
-
-    // Normalize the path and check for directory traversal
-    const normalizedInput = path.normalize(filename);
-
-    // After normalization, the path should not start with .. or contain ../ sequences
-    if (
-      normalizedInput.startsWith('..') ||
-      normalizedInput.includes('../') ||
-      normalizedInput.includes('..\\')
-    ) {
-      return {
-        isValid: false,
-        error: 'Path attempts to escape current directory',
-        securityRisk: true,
-      };
-    }
-
-    // Additional check: resolved path should be a simple filename (no directory components)
-    const resolvedPath = path.resolve('.', filename);
-    const basePath = path.resolve('.');
-    if (
-      !resolvedPath.startsWith(basePath + path.sep) &&
-      resolvedPath !== path.join(basePath, filename)
-    ) {
-      return {
-        isValid: false,
-        error: 'Invalid file path structure',
-        securityRisk: true,
-      };
-    }
-  } catch {
+  // Check for absolute paths (cross-platform, browser-safe)
+  if (/^[a-zA-Z]:/.test(filename) || filename.startsWith('/') || filename.startsWith('\\')) {
     return {
       isValid: false,
-      error: 'Invalid path format',
+      error: 'Absolute paths are not allowed',
+      securityRisk: true,
+    };
+  }
+
+  // Reject any directory separators — uploaded filenames should be plain names
+  if (filename.includes('/') || filename.includes('\\')) {
+    return {
+      isValid: false,
+      error: 'Filenames must not contain directory separators',
       securityRisk: true,
     };
   }
