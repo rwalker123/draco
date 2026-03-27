@@ -947,6 +947,7 @@ const BattingStatsEditableGrid = forwardRef<
           autoHeight
           disableColumnMenu
           disableRowSelectionOnClick
+          tabNavigation="content"
           editMode="cell"
           rows={gridRows}
           columns={columns}
