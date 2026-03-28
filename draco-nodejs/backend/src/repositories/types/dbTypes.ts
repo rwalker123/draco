@@ -700,6 +700,7 @@ export type dbSeasonCopySource = Prisma.seasonGetPayload<{
             scoringtype: true;
             usebestball: true;
             usehandicapscoring: true;
+            handicapstrokemethod: true;
             perholepoints: true;
             perninepoints: true;
             permatchpoints: true;

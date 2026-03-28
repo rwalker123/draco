@@ -42,6 +42,7 @@ interface LiveSessionCourseData {
     perNinePoints: number;
     perMatchPoints: number;
     useHandicapScoring: boolean;
+    handicapStrokeMethod: 'full' | 'matchPlay';
   };
 }
 
@@ -663,6 +664,7 @@ export class LiveScoringService {
         perNinePoints: leagueSetup.perninepoints,
         perMatchPoints: leagueSetup.permatchpoints,
         useHandicapScoring: leagueSetup.usehandicapscoring,
+        handicapStrokeMethod: (leagueSetup.handicapstrokemethod ?? 'full') as 'full' | 'matchPlay',
       },
     });
   }
@@ -739,6 +741,7 @@ export class LiveScoringService {
         perNinePoints: perNinePoints,
         perMatchPoints: 0,
         useHandicapScoring: courseData.scoringConfig.useHandicapScoring,
+        handicapStrokeMethod: courseData.scoringConfig.handicapStrokeMethod,
       },
       holesPerMatch as 9 | 18,
     );
@@ -800,6 +803,7 @@ export class LiveScoringService {
           team2Scores.courseHandicap,
           courseData.holeHandicapIndexes,
           holesPerMatch as 9 | 18,
+          courseData.scoringConfig.handicapStrokeMethod,
         )
       : {
           team1Strokes: new Array(holesPerMatch).fill(0),

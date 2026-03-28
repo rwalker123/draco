@@ -842,6 +842,7 @@ model golfleaguesetup {
   absentplayermode                                   Int           @default(0)
   absentplayerpenalty                                Int           @default(0)
   fullteamabsentmode                                 Int           @default(0)
+  handicapstrokemethod                               String        @default("full") @db.VarChar(20)
   accounts                                           accounts      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_accounts")
   leagueseason                                       leagueseason? @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_leagueseason")
   contacts_golfleaguesetup_presidentidTocontacts     contacts?     @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts")

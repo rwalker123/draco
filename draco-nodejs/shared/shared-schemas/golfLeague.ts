@@ -8,11 +8,13 @@ extendZodWithOpenApi(z);
 export const ScoringTypeEnum = z.enum(['individual', 'team']);
 export const AbsentPlayerModeEnum = z.enum(['opponentWins', 'handicapPenalty', 'skipPairing']);
 export const FullTeamAbsentModeEnum = z.enum(['forfeit', 'handicapPenalty']);
+export const HandicapStrokeMethodEnum = z.enum(['full', 'matchPlay']);
 
 export const GolfScoringConfigSchema = z.object({
   scoringType: ScoringTypeEnum.default('team'),
   useBestBall: z.boolean().default(false),
   useHandicapScoring: z.boolean().default(true),
+  handicapStrokeMethod: HandicapStrokeMethodEnum.default('full'),
   perHolePoints: z.number().int().default(0),
   perNinePoints: z.number().int().default(0),
   perMatchPoints: z.number().int().default(0),
@@ -106,6 +108,7 @@ export const UpdateGolfSeasonConfigSchema = GolfSeasonConfigSchema.omit({
 export type ScoringType = z.infer<typeof ScoringTypeEnum>;
 export type AbsentPlayerModeType = z.infer<typeof AbsentPlayerModeEnum>;
 export type FullTeamAbsentModeType = z.infer<typeof FullTeamAbsentModeEnum>;
+export type HandicapStrokeMethodType = z.infer<typeof HandicapStrokeMethodEnum>;
 export type GolfScoringConfigType = z.infer<typeof GolfScoringConfigSchema>;
 export type GolfLeagueSetupType = z.infer<typeof GolfLeagueSetupSchema>;
 export type CreateGolfLeagueSetupType = z.infer<typeof CreateGolfLeagueSetupSchema>;

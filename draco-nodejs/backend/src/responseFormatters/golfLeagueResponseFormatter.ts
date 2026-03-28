@@ -74,6 +74,7 @@ export class GolfLeagueResponseFormatter {
       scoringType: setup.scoringtype as 'individual' | 'team',
       useBestBall: setup.usebestball,
       useHandicapScoring: setup.usehandicapscoring,
+      handicapStrokeMethod: (setup.handicapstrokemethod ?? 'full') as 'full' | 'matchPlay',
       perHolePoints: setup.perholepoints,
       perNinePoints: setup.perninepoints,
       perMatchPoints: setup.permatchpoints,

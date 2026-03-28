@@ -41,12 +41,17 @@ export const SCORING_TOOLTIPS = {
   bestBall: 'Use the best (lowest) score from each team per hole',
   netScoring: 'Strokes are adjusted based on player handicaps',
   actualScoring: 'Raw stroke counts without handicap adjustment',
+  fullHandicap:
+    'Each player receives their full course handicap strokes distributed across holes by difficulty',
+  matchPlayHandicap:
+    'Only the difference in handicaps is distributed — the lower handicap player plays at scratch (USGA match play standard)',
   perHolePoints: 'Points awarded for winning each individual hole',
   perNinePoints: 'Points awarded for winning the front or back nine',
   perMatchPoints: 'Points awarded for winning the overall match',
   totalHolesPoints: 'Points based on total holes won across the match',
   againstFieldPoints: 'Points for performance compared to all other players',
-  againstFieldDescPoints: 'Descending points for performance against the field (higher rank = fewer points)',
+  againstFieldDescPoints:
+    'Descending points for performance against the field (higher rank = fewer points)',
 } as const;
 
 export const SCORING_POINTS_FIELDS = [
@@ -54,8 +59,16 @@ export const SCORING_POINTS_FIELDS = [
   { name: 'perNinePoints', label: 'Per Nine', tooltip: SCORING_TOOLTIPS.perNinePoints },
   { name: 'perMatchPoints', label: 'Per Match', tooltip: SCORING_TOOLTIPS.perMatchPoints },
   { name: 'totalHolesPoints', label: 'Total Holes', tooltip: SCORING_TOOLTIPS.totalHolesPoints },
-  { name: 'againstFieldPoints', label: 'Against Field', tooltip: SCORING_TOOLTIPS.againstFieldPoints },
-  { name: 'againstFieldDescPoints', label: 'Against Field (Desc)', tooltip: SCORING_TOOLTIPS.againstFieldDescPoints },
+  {
+    name: 'againstFieldPoints',
+    label: 'Against Field',
+    tooltip: SCORING_TOOLTIPS.againstFieldPoints,
+  },
+  {
+    name: 'againstFieldDescPoints',
+    label: 'Against Field (Desc)',
+    tooltip: SCORING_TOOLTIPS.againstFieldDescPoints,
+  },
 ] as const;
 
 export const ABSENT_PLAYER_MODE_OPTIONS = [
@@ -70,7 +83,10 @@ export const FULL_TEAM_ABSENT_MODE_OPTIONS = [
 ] as const;
 
 export const ABSENT_PLAYER_TOOLTIPS = {
-  absentPlayerMode: 'How to handle individual player absences: opponent auto-wins the pairing, use handicap with penalty strokes, or skip the pairing entirely',
-  absentPlayerPenalty: 'Number of penalty strokes added to handicap-based score for absent players (0-36)',
-  fullTeamAbsentMode: 'What happens when an entire team is absent: forfeit the match or use team handicaps with penalty strokes',
+  absentPlayerMode:
+    'How to handle individual player absences: opponent auto-wins the pairing, use handicap with penalty strokes, or skip the pairing entirely',
+  absentPlayerPenalty:
+    'Number of penalty strokes added to handicap-based score for absent players (0-36)',
+  fullTeamAbsentMode:
+    'What happens when an entire team is absent: forfeit the match or use team handicaps with penalty strokes',
 } as const;
