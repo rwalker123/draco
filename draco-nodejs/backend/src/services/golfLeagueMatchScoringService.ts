@@ -14,6 +14,7 @@ import {
   AbsentPlayerMode,
   FullTeamAbsentMode,
   DEFAULT_HANDICAP_STROKE_METHOD,
+  toHandicapStrokeMethod,
 } from '../utils/golfConstants.js';
 import type { HandicapStrokeMethodType } from '@draco/shared-schemas';
 import {
@@ -102,28 +103,28 @@ export class GolfLeagueMatchScoringService {
     }));
     indexedHoles.sort((a, b) => a.handicapIndex - b.handicapIndex);
 
-    if (method === 'full') {
-      return {
-        team1Strokes: this.distributeStrokes(team1CourseHandicap, indexedHoles, holesPlayed),
-        team2Strokes: this.distributeStrokes(team2CourseHandicap, indexedHoles, holesPlayed),
-      };
-    }
+    if (method === 'matchPlay') {
+      const strokeDiff = Math.abs(team1CourseHandicap - team2CourseHandicap);
+      const team1Strokes: number[] = new Array(holesPlayed).fill(0);
+      const team2Strokes: number[] = new Array(holesPlayed).fill(0);
 
-    const strokeDiff = Math.abs(team1CourseHandicap - team2CourseHandicap);
-    const team1Strokes: number[] = new Array(holesPlayed).fill(0);
-    const team2Strokes: number[] = new Array(holesPlayed).fill(0);
+      if (strokeDiff === 0 || indexedHoles.length === 0) {
+        return { team1Strokes, team2Strokes };
+      }
 
-    if (strokeDiff === 0 || indexedHoles.length === 0) {
+      const targetStrokes = team1CourseHandicap > team2CourseHandicap ? team1Strokes : team2Strokes;
+      for (let i = 0; i < strokeDiff; i++) {
+        const { holeIndex } = indexedHoles[i % indexedHoles.length];
+        targetStrokes[holeIndex]++;
+      }
+
       return { team1Strokes, team2Strokes };
     }
 
-    const targetStrokes = team1CourseHandicap > team2CourseHandicap ? team1Strokes : team2Strokes;
-    for (let i = 0; i < strokeDiff; i++) {
-      const { holeIndex } = indexedHoles[i % indexedHoles.length];
-      targetStrokes[holeIndex]++;
-    }
-
-    return { team1Strokes, team2Strokes };
+    return {
+      team1Strokes: this.distributeStrokes(team1CourseHandicap, indexedHoles, holesPlayed),
+      team2Strokes: this.distributeStrokes(team2CourseHandicap, indexedHoles, holesPlayed),
+    };
   }
 
   calculateIndividualMatchPoints(
@@ -455,8 +456,7 @@ export class GolfLeagueMatchScoringService {
       perNinePoints: leagueSetup.perninepoints,
       perMatchPoints: leagueSetup.permatchpoints,
       useHandicapScoring: leagueSetup.usehandicapscoring,
-      handicapStrokeMethod: (leagueSetup.handicapstrokemethod ??
-        DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
+      handicapStrokeMethod: toHandicapStrokeMethod(leagueSetup.handicapstrokemethod),
     };
 
     let aggregateResult: IndividualMatchResult = {
@@ -824,8 +824,7 @@ export class GolfLeagueMatchScoringService {
           team2CourseHandicap,
           holeHandicapIndexes,
           18,
-          (leagueSetup.handicapstrokemethod ??
-            DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
+          toHandicapStrokeMethod(leagueSetup.handicapstrokemethod),
         );
         const front9Strokes1 = team1Strokes.slice(0, 9).reduce((s, v) => s + v, 0);
         const front9Strokes2 = team2Strokes.slice(0, 9).reduce((s, v) => s + v, 0);

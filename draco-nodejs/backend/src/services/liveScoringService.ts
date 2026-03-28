@@ -23,7 +23,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { getSSEManager } from './sseManager.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { NotFoundError, ValidationError, AuthorizationError } from '../utils/customErrors.js';
-import { GolfMatchStatus, DEFAULT_HANDICAP_STROKE_METHOD } from '../utils/golfConstants.js';
+import { GolfMatchStatus, toHandicapStrokeMethod } from '../utils/golfConstants.js';
 import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 import { getHolePars, getHoleHandicapIndexes } from '../utils/whsCalculator.js';
 import type { PlayerScoreData } from './golfLeagueMatchScoringService.js';
@@ -639,19 +639,24 @@ export class LiveScoringService {
       holeHandicapIndexes = getHoleHandicapIndexes(course, 'M');
     }
 
-    // Precompute per-golfer stroke arrays using the scoring service
-    const handicapMethod = (leagueSetup.handicapstrokemethod ??
-      DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType;
-    const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
+    // Precompute per-golfer stroke arrays for live net score display.
+    // Only possible for 'full' method where strokes are independent of the opponent.
+    // For 'matchPlay', per-hole net scores require pairing context (both opponents'
+    // handicaps) which isn't available per-golfer, so we skip precomputation and
+    // the live display will show gross scores only.
+    const handicapMethod = toHandicapStrokeMethod(leagueSetup.handicapstrokemethod);
     const golferStrokesByHole: Record<string, number[]> = {};
-    for (const [golferId, ch] of Object.entries(courseHandicaps)) {
-      golferStrokesByHole[golferId] = scoringService.calculateStrokeDistribution(
-        ch,
-        0,
-        holeHandicapIndexes,
-        holesPerMatch as 9 | 18,
-        handicapMethod,
-      ).team1Strokes;
+    if (handicapMethod === 'full') {
+      const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
+      for (const [golferId, ch] of Object.entries(courseHandicaps)) {
+        golferStrokesByHole[golferId] = scoringService.calculateStrokeDistribution(
+          ch,
+          0,
+          holeHandicapIndexes,
+          holesPerMatch as 9 | 18,
+          handicapMethod,
+        ).team1Strokes;
+      }
     }
 
     // Cache the data for this session
