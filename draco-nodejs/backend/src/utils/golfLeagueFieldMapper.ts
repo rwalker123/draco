@@ -3,10 +3,9 @@ import {
   AbsentPlayerModeType,
   FullTeamAbsentModeType,
   HandicapStrokeMethodType,
-  HandicapStrokeMethodEnum,
 } from '@draco/shared-schemas';
 import { DateUtils } from './dateUtils.js';
-import { AbsentPlayerMode, FullTeamAbsentMode } from './golfConstants.js';
+import { AbsentPlayerMode, FullTeamAbsentMode, toHandicapStrokeMethod } from './golfConstants.js';
 import { ValidationError } from './customErrors.js';
 
 type FieldMapping<T> = {
@@ -54,10 +53,7 @@ const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
   {
     camelCase: 'handicapStrokeMethod',
     snakeCase: 'handicapstrokemethod',
-    transform: (v) => {
-      const parsed = HandicapStrokeMethodEnum.safeParse(v);
-      return parsed.success ? parsed.data : 'full';
-    },
+    transform: (v) => toHandicapStrokeMethod(v as string),
   },
   { camelCase: 'perHolePoints', snakeCase: 'perholepoints' },
   { camelCase: 'perNinePoints', snakeCase: 'perninepoints' },
@@ -168,10 +164,7 @@ export function mapGolfLeagueFieldsForCreate(
     scoringtype: data.scoringType ?? DEFAULTS.scoringType,
     usebestball: data.useBestBall ?? DEFAULTS.useBestBall,
     usehandicapscoring: data.useHandicapScoring ?? DEFAULTS.useHandicapScoring,
-    handicapstrokemethod: (() => {
-      const parsed = HandicapStrokeMethodEnum.safeParse(data.handicapStrokeMethod);
-      return parsed.success ? parsed.data : DEFAULTS.handicapStrokeMethod;
-    })(),
+    handicapstrokemethod: toHandicapStrokeMethod(data.handicapStrokeMethod),
     perholepoints: data.perHolePoints ?? DEFAULTS.perHolePoints,
     perninepoints: data.perNinePoints ?? DEFAULTS.perNinePoints,
     permatchpoints: data.perMatchPoints ?? DEFAULTS.perMatchPoints,
