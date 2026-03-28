@@ -255,6 +255,85 @@ describe('GolfLeagueMatchScoringService', () => {
         expect(resultDefault).toEqual(resultFull);
       });
     });
+
+    describe('live scoring precompute pattern (single player vs zero)', () => {
+      it('full method with team2=0 gives full CH strokes to team1', () => {
+        const result = service.calculateStrokeDistribution(
+          13,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(13);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(0);
+      });
+
+      it('matchPlay method with team2=0 also gives full CH strokes (diff = |13-0| = 13)', () => {
+        const result = service.calculateStrokeDistribution(
+          13,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(13);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(0);
+      });
+
+      it('confirms matchPlay per-golfer precompute is wrong for live net display', () => {
+        const ch1 = 13;
+        const ch2 = 18;
+
+        const fullResult1 = service.calculateStrokeDistribution(
+          ch1,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+        const fullResult2 = service.calculateStrokeDistribution(
+          ch2,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(fullResult1.team1Strokes.reduce((s, v) => s + v, 0)).toBe(13);
+        expect(fullResult2.team1Strokes.reduce((s, v) => s + v, 0)).toBe(18);
+
+        const matchPlayResult1 = service.calculateStrokeDistribution(
+          ch1,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+        const matchPlayResult2 = service.calculateStrokeDistribution(
+          ch2,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+
+        expect(matchPlayResult1.team1Strokes.reduce((s, v) => s + v, 0)).toBe(13);
+        expect(matchPlayResult2.team1Strokes.reduce((s, v) => s + v, 0)).toBe(18);
+
+        const matchPlayPaired = service.calculateStrokeDistribution(
+          ch1,
+          ch2,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+        expect(matchPlayPaired.team1Strokes.reduce((s, v) => s + v, 0)).toBe(0);
+        expect(matchPlayPaired.team2Strokes.reduce((s, v) => s + v, 0)).toBe(5);
+      });
+    });
   });
 
   describe('calculateIndividualMatchPoints', () => {

@@ -2,6 +2,8 @@ import {
   UpdateGolfLeagueSetupType,
   AbsentPlayerModeType,
   FullTeamAbsentModeType,
+  HandicapStrokeMethodType,
+  HandicapStrokeMethodEnum,
 } from '@draco/shared-schemas';
 import { DateUtils } from './dateUtils.js';
 import { AbsentPlayerMode, FullTeamAbsentMode } from './golfConstants.js';
@@ -49,7 +51,14 @@ const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
   { camelCase: 'scoringType', snakeCase: 'scoringtype' },
   { camelCase: 'useBestBall', snakeCase: 'usebestball' },
   { camelCase: 'useHandicapScoring', snakeCase: 'usehandicapscoring' },
-  { camelCase: 'handicapStrokeMethod', snakeCase: 'handicapstrokemethod' },
+  {
+    camelCase: 'handicapStrokeMethod',
+    snakeCase: 'handicapstrokemethod',
+    transform: (v) => {
+      const parsed = HandicapStrokeMethodEnum.safeParse(v);
+      return parsed.success ? parsed.data : 'full';
+    },
+  },
   { camelCase: 'perHolePoints', snakeCase: 'perholepoints' },
   { camelCase: 'perNinePoints', snakeCase: 'perninepoints' },
   { camelCase: 'perMatchPoints', snakeCase: 'permatchpoints' },
@@ -104,7 +113,7 @@ type DefaultValues = {
   scoringType: string;
   useBestBall: boolean;
   useHandicapScoring: boolean;
-  handicapStrokeMethod: string;
+  handicapStrokeMethod: HandicapStrokeMethodType;
   perHolePoints: number;
   perNinePoints: number;
   perMatchPoints: number;
@@ -159,7 +168,10 @@ export function mapGolfLeagueFieldsForCreate(
     scoringtype: data.scoringType ?? DEFAULTS.scoringType,
     usebestball: data.useBestBall ?? DEFAULTS.useBestBall,
     usehandicapscoring: data.useHandicapScoring ?? DEFAULTS.useHandicapScoring,
-    handicapstrokemethod: data.handicapStrokeMethod ?? DEFAULTS.handicapStrokeMethod,
+    handicapstrokemethod: (() => {
+      const parsed = HandicapStrokeMethodEnum.safeParse(data.handicapStrokeMethod);
+      return parsed.success ? parsed.data : DEFAULTS.handicapStrokeMethod;
+    })(),
     perholepoints: data.perHolePoints ?? DEFAULTS.perHolePoints,
     perninepoints: data.perNinePoints ?? DEFAULTS.perNinePoints,
     permatchpoints: data.perMatchPoints ?? DEFAULTS.perMatchPoints,

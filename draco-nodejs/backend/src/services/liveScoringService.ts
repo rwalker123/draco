@@ -649,6 +649,8 @@ export class LiveScoringService {
     if (handicapMethod === 'full') {
       const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
       for (const [golferId, ch] of Object.entries(courseHandicaps)) {
+        // team2=0: for 'full' method, each player's strokes are independent of their
+        // opponent, so we pass 0 as the opposing handicap and take team1Strokes.
         golferStrokesByHole[golferId] = scoringService.calculateStrokeDistribution(
           ch,
           0,

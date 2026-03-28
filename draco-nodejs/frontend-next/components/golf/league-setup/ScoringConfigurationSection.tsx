@@ -234,7 +234,7 @@ export function ScoringConfigurationSection<T extends FieldValues>({
                   </Tooltip>
                 </Box>
               </RadioGroup>
-              {useHandicapScoring !== false && (
+              {useHandicapScoring === true && (
                 <Box sx={{ mt: 1, ml: 2 }}>
                   <FormLabel id="handicap-stroke-method-label" sx={{ fontSize: '0.85rem' }}>
                     Stroke Distribution Method
