@@ -10,7 +10,12 @@ import {
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { NotFoundError } from '../utils/customErrors.js';
-import { AbsentPlayerMode, FullTeamAbsentMode } from '../utils/golfConstants.js';
+import {
+  AbsentPlayerMode,
+  FullTeamAbsentMode,
+  DEFAULT_HANDICAP_STROKE_METHOD,
+} from '../utils/golfConstants.js';
+import type { HandicapStrokeMethodType } from '@draco/shared-schemas';
 import {
   getHoleHandicapIndexes,
   getHolePars,
@@ -46,14 +51,12 @@ export interface PlayerScoreData {
   gender: Gender;
 }
 
-export type HandicapStrokeMethod = 'full' | 'matchPlay';
-
 export interface ScoringConfig {
   perHolePoints: number;
   perNinePoints: number;
   perMatchPoints: number;
   useHandicapScoring: boolean;
-  handicapStrokeMethod: HandicapStrokeMethod;
+  handicapStrokeMethod: HandicapStrokeMethodType;
 }
 
 export class GolfLeagueMatchScoringService {
@@ -90,7 +93,7 @@ export class GolfLeagueMatchScoringService {
     team2CourseHandicap: number,
     holeHandicapIndexes: number[],
     holesPlayed: 9 | 18,
-    method: HandicapStrokeMethod = 'full',
+    method: HandicapStrokeMethodType = DEFAULT_HANDICAP_STROKE_METHOD,
   ): StrokeDistribution {
     const relevantIndexes = holeHandicapIndexes.slice(0, holesPlayed);
     const indexedHoles = relevantIndexes.map((handicapIndex, holeIndex) => ({
@@ -452,7 +455,8 @@ export class GolfLeagueMatchScoringService {
       perNinePoints: leagueSetup.perninepoints,
       perMatchPoints: leagueSetup.permatchpoints,
       useHandicapScoring: leagueSetup.usehandicapscoring,
-      handicapStrokeMethod: (leagueSetup.handicapstrokemethod ?? 'full') as HandicapStrokeMethod,
+      handicapStrokeMethod: (leagueSetup.handicapstrokemethod ??
+        DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
     };
 
     let aggregateResult: IndividualMatchResult = {
@@ -820,7 +824,8 @@ export class GolfLeagueMatchScoringService {
           team2CourseHandicap,
           holeHandicapIndexes,
           18,
-          (leagueSetup.handicapstrokemethod ?? 'full') as HandicapStrokeMethod,
+          (leagueSetup.handicapstrokemethod ??
+            DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
         );
         const front9Strokes1 = team1Strokes.slice(0, 9).reduce((s, v) => s + v, 0);
         const front9Strokes2 = team2Strokes.slice(0, 9).reduce((s, v) => s + v, 0);

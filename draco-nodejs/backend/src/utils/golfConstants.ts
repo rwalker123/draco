@@ -16,3 +16,5 @@ export enum FullTeamAbsentMode {
   FORFEIT = 0,
   HANDICAP_PENALTY = 1,
 }
+
+export const DEFAULT_HANDICAP_STROKE_METHOD = 'full' as const;

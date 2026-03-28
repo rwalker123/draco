@@ -7,6 +7,7 @@ import {
   ScoreUpdateEventType,
   SubmitMatchResultsType,
   PlayerMatchScoreType,
+  HandicapStrokeMethodType,
 } from '@draco/shared-schemas';
 import {
   ILiveScoringRepository,
@@ -22,7 +23,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { getSSEManager } from './sseManager.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { NotFoundError, ValidationError, AuthorizationError } from '../utils/customErrors.js';
-import { GolfMatchStatus } from '../utils/golfConstants.js';
+import { GolfMatchStatus, DEFAULT_HANDICAP_STROKE_METHOD } from '../utils/golfConstants.js';
 import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 import { getHolePars, getHoleHandicapIndexes } from '../utils/whsCalculator.js';
 import type { PlayerScoreData } from './golfLeagueMatchScoringService.js';
@@ -42,7 +43,7 @@ interface LiveSessionCourseData {
     perNinePoints: number;
     perMatchPoints: number;
     useHandicapScoring: boolean;
-    handicapStrokeMethod: 'full' | 'matchPlay';
+    handicapStrokeMethod: HandicapStrokeMethodType;
   };
 }
 
@@ -664,7 +665,8 @@ export class LiveScoringService {
         perNinePoints: leagueSetup.perninepoints,
         perMatchPoints: leagueSetup.permatchpoints,
         useHandicapScoring: leagueSetup.usehandicapscoring,
-        handicapStrokeMethod: (leagueSetup.handicapstrokemethod ?? 'full') as 'full' | 'matchPlay',
+        handicapStrokeMethod: (leagueSetup.handicapstrokemethod ??
+          DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
       },
     });
   }

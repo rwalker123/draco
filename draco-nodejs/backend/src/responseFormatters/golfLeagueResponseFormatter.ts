@@ -4,12 +4,17 @@ import {
   NamedContactType,
   AbsentPlayerModeType,
   FullTeamAbsentModeType,
+  HandicapStrokeMethodType,
 } from '@draco/shared-schemas';
 import {
   GolfLeagueSetupWithOfficers,
   GolfAccountInfo,
 } from '../repositories/interfaces/IGolfLeagueRepository.js';
-import { AbsentPlayerMode, FullTeamAbsentMode } from '../utils/golfConstants.js';
+import {
+  AbsentPlayerMode,
+  FullTeamAbsentMode,
+  DEFAULT_HANDICAP_STROKE_METHOD,
+} from '../utils/golfConstants.js';
 
 export type GolfAccountInfoResponse = {
   id: string;
@@ -74,7 +79,8 @@ export class GolfLeagueResponseFormatter {
       scoringType: setup.scoringtype as 'individual' | 'team',
       useBestBall: setup.usebestball,
       useHandicapScoring: setup.usehandicapscoring,
-      handicapStrokeMethod: (setup.handicapstrokemethod ?? 'full') as 'full' | 'matchPlay',
+      handicapStrokeMethod: (setup.handicapstrokemethod ??
+        DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
       perHolePoints: setup.perholepoints,
       perNinePoints: setup.perninepoints,
       perMatchPoints: setup.permatchpoints,
