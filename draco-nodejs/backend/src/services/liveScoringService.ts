@@ -32,6 +32,7 @@ interface LiveSessionCourseData {
   coursePars: number[];
   holeHandicapIndexes: number[];
   courseHandicaps: Record<string, number>;
+  golferStrokesByHole: Record<string, number[]>;
   golferTeamMap: Record<string, 1 | 2>; // golferId -> team number
   team1Id: string;
   team2Id: string;
@@ -188,15 +189,9 @@ export class LiveScoringService {
     let netScore: number | undefined;
 
     if (courseData) {
-      const courseHandicap = courseData.courseHandicaps[data.golferId];
-      if (courseHandicap !== undefined) {
-        // Calculate strokes received on this hole based on handicap
-        const strokesOnHole = this.calculateStrokesOnHole(
-          courseHandicap,
-          data.holeNumber,
-          courseData.holeHandicapIndexes,
-        );
-        netScore = data.score - strokesOnHole;
+      const strokes = courseData.golferStrokesByHole[data.golferId];
+      if (strokes) {
+        netScore = data.score - (strokes[data.holeNumber - 1] ?? 0);
       }
     }
 
@@ -510,14 +505,9 @@ export class LiveScoringService {
     const formattedScores: LiveHoleScoreType[] = session.scores.map((score) => {
       let netScore: number | undefined;
       if (courseData) {
-        const courseHandicap = courseData.courseHandicaps[score.golferid.toString()];
-        if (courseHandicap !== undefined) {
-          const strokesOnHole = this.calculateStrokesOnHole(
-            courseHandicap,
-            score.holenumber,
-            courseData.holeHandicapIndexes,
-          );
-          netScore = score.score - strokesOnHole;
+        const strokes = courseData.golferStrokesByHole[score.golferid.toString()];
+        if (strokes) {
+          netScore = score.score - (strokes[score.holenumber - 1] ?? 0);
         }
       }
       return this.formatHoleScore(score, undefined, netScore);
@@ -649,11 +639,27 @@ export class LiveScoringService {
       holeHandicapIndexes = getHoleHandicapIndexes(course, 'M');
     }
 
+    // Precompute per-golfer stroke arrays using the scoring service
+    const handicapMethod = (leagueSetup.handicapstrokemethod ??
+      DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType;
+    const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
+    const golferStrokesByHole: Record<string, number[]> = {};
+    for (const [golferId, ch] of Object.entries(courseHandicaps)) {
+      golferStrokesByHole[golferId] = scoringService.calculateStrokeDistribution(
+        ch,
+        0,
+        holeHandicapIndexes,
+        holesPerMatch as 9 | 18,
+        handicapMethod,
+      ).team1Strokes;
+    }
+
     // Cache the data for this session
     sessionCourseDataCache.set(cacheKey, {
       coursePars,
       holeHandicapIndexes,
       courseHandicaps,
+      golferStrokesByHole,
       golferTeamMap,
       team1Id: match.team1.toString(),
       team2Id: match.team2.toString(),
@@ -665,37 +671,9 @@ export class LiveScoringService {
         perNinePoints: leagueSetup.perninepoints,
         perMatchPoints: leagueSetup.permatchpoints,
         useHandicapScoring: leagueSetup.usehandicapscoring,
-        handicapStrokeMethod: (leagueSetup.handicapstrokemethod ??
-          DEFAULT_HANDICAP_STROKE_METHOD) as HandicapStrokeMethodType,
+        handicapStrokeMethod: handicapMethod,
       },
     });
-  }
-
-  private calculateStrokesOnHole(
-    courseHandicap: number,
-    holeNumber: number,
-    holeHandicapIndexes: number[],
-  ): number {
-    if (courseHandicap <= 0 || holeHandicapIndexes.length === 0) {
-      return 0;
-    }
-
-    if (holeNumber < 1 || holeNumber > holeHandicapIndexes.length) {
-      return 0;
-    }
-
-    const holeHandicapIndex = holeHandicapIndexes[holeNumber - 1];
-    const numberOfHoles = holeHandicapIndexes.length;
-
-    let strokes = 0;
-    let remainingHandicap = courseHandicap;
-
-    while (remainingHandicap > 0 && holeHandicapIndex <= remainingHandicap) {
-      strokes++;
-      remainingHandicap -= numberOfHoles;
-    }
-
-    return strokes;
   }
 
   private calculateTeamPoints(
