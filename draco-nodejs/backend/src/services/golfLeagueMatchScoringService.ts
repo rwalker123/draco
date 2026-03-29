@@ -836,7 +836,7 @@ export class GolfLeagueMatchScoringService {
           team2CourseHandicap,
           holeHandicapIndexes,
           18,
-          toHandicapStrokeMethod(leagueSetup.handicapstrokemethod),
+          scoringConfig.handicapStrokeMethod,
         );
         const front9Strokes1 = team1Strokes.slice(0, 9).reduce((s, v) => s + v, 0);
         const front9Strokes2 = team2Strokes.slice(0, 9).reduce((s, v) => s + v, 0);
