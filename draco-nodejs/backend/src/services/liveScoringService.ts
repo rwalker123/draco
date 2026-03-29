@@ -7,6 +7,7 @@ import {
   ScoreUpdateEventType,
   SubmitMatchResultsType,
   PlayerMatchScoreType,
+  HandicapStrokeMethodType,
 } from '@draco/shared-schemas';
 import {
   ILiveScoringRepository,
@@ -22,7 +23,7 @@ import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { getSSEManager } from './sseManager.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { NotFoundError, ValidationError, AuthorizationError } from '../utils/customErrors.js';
-import { GolfMatchStatus } from '../utils/golfConstants.js';
+import { GolfMatchStatus, toHandicapStrokeMethod } from '../utils/golfConstants.js';
 import { LIVE_SESSION_STATUS, LIVE_SESSION_STATUS_MAP } from '../constants/liveSessionConstants.js';
 import { getHolePars, getHoleHandicapIndexes } from '../utils/whsCalculator.js';
 import type { PlayerScoreData } from './golfLeagueMatchScoringService.js';
@@ -31,6 +32,7 @@ interface LiveSessionCourseData {
   coursePars: number[];
   holeHandicapIndexes: number[];
   courseHandicaps: Record<string, number>;
+  golferStrokesByHole: Record<string, number[]>;
   golferTeamMap: Record<string, 1 | 2>; // golferId -> team number
   team1Id: string;
   team2Id: string;
@@ -42,6 +44,7 @@ interface LiveSessionCourseData {
     perNinePoints: number;
     perMatchPoints: number;
     useHandicapScoring: boolean;
+    handicapStrokeMethod: HandicapStrokeMethodType;
   };
 }
 
@@ -186,15 +189,9 @@ export class LiveScoringService {
     let netScore: number | undefined;
 
     if (courseData) {
-      const courseHandicap = courseData.courseHandicaps[data.golferId];
-      if (courseHandicap !== undefined) {
-        // Calculate strokes received on this hole based on handicap
-        const strokesOnHole = this.calculateStrokesOnHole(
-          courseHandicap,
-          data.holeNumber,
-          courseData.holeHandicapIndexes,
-        );
-        netScore = data.score - strokesOnHole;
+      const strokes = courseData.golferStrokesByHole[data.golferId];
+      if (strokes) {
+        netScore = data.score - (strokes[data.holeNumber - 1] ?? 0);
       }
     }
 
@@ -508,14 +505,9 @@ export class LiveScoringService {
     const formattedScores: LiveHoleScoreType[] = session.scores.map((score) => {
       let netScore: number | undefined;
       if (courseData) {
-        const courseHandicap = courseData.courseHandicaps[score.golferid.toString()];
-        if (courseHandicap !== undefined) {
-          const strokesOnHole = this.calculateStrokesOnHole(
-            courseHandicap,
-            score.holenumber,
-            courseData.holeHandicapIndexes,
-          );
-          netScore = score.score - strokesOnHole;
+        const strokes = courseData.golferStrokesByHole[score.golferid.toString()];
+        if (strokes) {
+          netScore = score.score - (strokes[score.holenumber - 1] ?? 0);
         }
       }
       return this.formatHoleScore(score, undefined, netScore);
@@ -647,11 +639,30 @@ export class LiveScoringService {
       holeHandicapIndexes = getHoleHandicapIndexes(course, 'M');
     }
 
+    // Precompute per-golfer stroke arrays for live net score display.
+    // Only possible for 'full' method where strokes are independent of the opponent.
+    // For 'matchPlay', per-hole net scores require pairing context (both opponents'
+    // handicaps) which isn't available per-golfer, so we skip precomputation and
+    // the live display will show gross scores only.
+    const handicapMethod = toHandicapStrokeMethod(leagueSetup.handicapstrokemethod);
+    const golferStrokesByHole: Record<string, number[]> = {};
+    if (handicapMethod === 'full') {
+      const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();
+      for (const [golferId, ch] of Object.entries(courseHandicaps)) {
+        golferStrokesByHole[golferId] = scoringService.calculateSinglePlayerStrokes(
+          ch,
+          holeHandicapIndexes,
+          holesPerMatch as 9 | 18,
+        );
+      }
+    }
+
     // Cache the data for this session
     sessionCourseDataCache.set(cacheKey, {
       coursePars,
       holeHandicapIndexes,
       courseHandicaps,
+      golferStrokesByHole,
       golferTeamMap,
       team1Id: match.team1.toString(),
       team2Id: match.team2.toString(),
@@ -663,35 +674,9 @@ export class LiveScoringService {
         perNinePoints: leagueSetup.perninepoints,
         perMatchPoints: leagueSetup.permatchpoints,
         useHandicapScoring: leagueSetup.usehandicapscoring,
+        handicapStrokeMethod: handicapMethod,
       },
     });
-  }
-
-  private calculateStrokesOnHole(
-    courseHandicap: number,
-    holeNumber: number,
-    holeHandicapIndexes: number[],
-  ): number {
-    if (courseHandicap <= 0 || holeHandicapIndexes.length === 0) {
-      return 0;
-    }
-
-    if (holeNumber < 1 || holeNumber > holeHandicapIndexes.length) {
-      return 0;
-    }
-
-    const holeHandicapIndex = holeHandicapIndexes[holeNumber - 1];
-    const numberOfHoles = holeHandicapIndexes.length;
-
-    let strokes = 0;
-    let remainingHandicap = courseHandicap;
-
-    while (remainingHandicap > 0 && holeHandicapIndex <= remainingHandicap) {
-      strokes++;
-      remainingHandicap -= numberOfHoles;
-    }
-
-    return strokes;
   }
 
   private calculateTeamPoints(
@@ -739,6 +724,7 @@ export class LiveScoringService {
         perNinePoints: perNinePoints,
         perMatchPoints: 0,
         useHandicapScoring: courseData.scoringConfig.useHandicapScoring,
+        handicapStrokeMethod: courseData.scoringConfig.handicapStrokeMethod,
       },
       holesPerMatch as 9 | 18,
     );
@@ -800,6 +786,7 @@ export class LiveScoringService {
           team2Scores.courseHandicap,
           courseData.holeHandicapIndexes,
           holesPerMatch as 9 | 18,
+          courseData.scoringConfig.handicapStrokeMethod,
         )
       : {
           team1Strokes: new Array(holesPerMatch).fill(0),

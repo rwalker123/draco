@@ -19410,6 +19410,12 @@ components:
         useHandicapScoring:
           type: boolean
           default: true
+        handicapStrokeMethod:
+          type: string
+          enum:
+            - full
+            - matchPlay
+          default: full
         perHolePoints:
           type: integer
           default: 0
@@ -19495,6 +19501,12 @@ components:
         useHandicapScoring:
           type: boolean
           default: true
+        handicapStrokeMethod:
+          type: string
+          enum:
+            - full
+            - matchPlay
+          default: full
         perHolePoints:
           type: integer
           default: 0

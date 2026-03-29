@@ -58,62 +58,252 @@ describe('GolfLeagueMatchScoringService', () => {
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
     ];
 
-    it('returns zero strokes when handicaps are equal', () => {
-      const result = service.calculateStrokeDistribution(10, 10, defaultHoleHandicapIndexes, 18);
+    describe('matchPlay method (difference only)', () => {
+      it('returns zero strokes when handicaps are equal', () => {
+        const result = service.calculateStrokeDistribution(
+          10,
+          10,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
 
-      expect(result.team1Strokes).toEqual(new Array(18).fill(0));
-      expect(result.team2Strokes).toEqual(new Array(18).fill(0));
+        expect(result.team1Strokes).toEqual(new Array(18).fill(0));
+        expect(result.team2Strokes).toEqual(new Array(18).fill(0));
+      });
+
+      it('gives strokes to higher handicap player (team1)', () => {
+        const result = service.calculateStrokeDistribution(
+          15,
+          10,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(5);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(0);
+        expect(result.team1Strokes[0]).toBe(1);
+        expect(result.team1Strokes[1]).toBe(1);
+        expect(result.team1Strokes[2]).toBe(1);
+        expect(result.team1Strokes[3]).toBe(1);
+        expect(result.team1Strokes[4]).toBe(1);
+        expect(result.team1Strokes[5]).toBe(0);
+      });
+
+      it('gives strokes to higher handicap player (team2)', () => {
+        const result = service.calculateStrokeDistribution(
+          8,
+          12,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(0);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(4);
+        expect(result.team2Strokes[0]).toBe(1);
+        expect(result.team2Strokes[1]).toBe(1);
+        expect(result.team2Strokes[2]).toBe(1);
+        expect(result.team2Strokes[3]).toBe(1);
+        expect(result.team2Strokes[4]).toBe(0);
+      });
+
+      it('handles 9-hole rounds', () => {
+        const result = service.calculateStrokeDistribution(
+          14,
+          10,
+          defaultHoleHandicapIndexes,
+          9,
+          'matchPlay',
+        );
+
+        expect(result.team1Strokes).toHaveLength(9);
+        expect(result.team2Strokes).toHaveLength(9);
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(4);
+      });
+
+      it('distributes strokes on hardest holes first', () => {
+        const customHandicapIndexes = [
+          5, 3, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+        ];
+        const result = service.calculateStrokeDistribution(
+          13,
+          10,
+          customHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+
+        expect(result.team1Strokes[2]).toBe(1);
+        expect(result.team1Strokes[3]).toBe(1);
+        expect(result.team1Strokes[1]).toBe(1);
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(3);
+      });
+
+      it('handles large handicap differences (more than 18 strokes)', () => {
+        const result = service.calculateStrokeDistribution(
+          36,
+          10,
+          defaultHoleHandicapIndexes,
+          18,
+          'matchPlay',
+        );
+
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(26);
+        expect(result.team1Strokes.filter((s) => s === 2).length).toBe(8);
+        expect(result.team1Strokes.filter((s) => s === 1).length).toBe(10);
+      });
     });
 
-    it('gives strokes to higher handicap player (team1)', () => {
-      const result = service.calculateStrokeDistribution(15, 10, defaultHoleHandicapIndexes, 18);
+    describe('full method (each player gets full course handicap)', () => {
+      it('distributes full handicap to both players', () => {
+        const result = service.calculateStrokeDistribution(
+          13,
+          18,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
 
-      expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(5);
-      expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(0);
-      expect(result.team1Strokes[0]).toBe(1);
-      expect(result.team1Strokes[1]).toBe(1);
-      expect(result.team1Strokes[2]).toBe(1);
-      expect(result.team1Strokes[3]).toBe(1);
-      expect(result.team1Strokes[4]).toBe(1);
-      expect(result.team1Strokes[5]).toBe(0);
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(13);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(18);
+      });
+
+      it('gives strokes on hardest holes first for each player', () => {
+        const result = service.calculateStrokeDistribution(
+          3,
+          5,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(result.team1Strokes[0]).toBe(1);
+        expect(result.team1Strokes[1]).toBe(1);
+        expect(result.team1Strokes[2]).toBe(1);
+        expect(result.team1Strokes[3]).toBe(0);
+        expect(result.team2Strokes[0]).toBe(1);
+        expect(result.team2Strokes[1]).toBe(1);
+        expect(result.team2Strokes[2]).toBe(1);
+        expect(result.team2Strokes[3]).toBe(1);
+        expect(result.team2Strokes[4]).toBe(1);
+        expect(result.team2Strokes[5]).toBe(0);
+      });
+
+      it('handles course handicap over 18 with double strokes', () => {
+        const result = service.calculateStrokeDistribution(
+          22,
+          6,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(22);
+        expect(result.team1Strokes[0]).toBe(2);
+        expect(result.team1Strokes[1]).toBe(2);
+        expect(result.team1Strokes[2]).toBe(2);
+        expect(result.team1Strokes[3]).toBe(2);
+        expect(result.team1Strokes[17]).toBe(1);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(6);
+      });
+
+      it('returns equal strokes when handicaps are equal', () => {
+        const result = service.calculateStrokeDistribution(
+          10,
+          10,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(result.team1Strokes).toEqual(result.team2Strokes);
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(10);
+      });
+
+      it('handles 9-hole rounds', () => {
+        const result = service.calculateStrokeDistribution(
+          7,
+          4,
+          defaultHoleHandicapIndexes,
+          9,
+          'full',
+        );
+
+        expect(result.team1Strokes).toHaveLength(9);
+        expect(result.team2Strokes).toHaveLength(9);
+        expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(7);
+        expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(4);
+      });
+
+      it('defaults to full method when no method specified', () => {
+        const resultDefault = service.calculateStrokeDistribution(
+          13,
+          18,
+          defaultHoleHandicapIndexes,
+          18,
+        );
+        const resultFull = service.calculateStrokeDistribution(
+          13,
+          18,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(resultDefault).toEqual(resultFull);
+      });
     });
 
-    it('gives strokes to higher handicap player (team2)', () => {
-      const result = service.calculateStrokeDistribution(8, 12, defaultHoleHandicapIndexes, 18);
+    describe('calculateSinglePlayerStrokes', () => {
+      it('distributes full course handicap across holes by difficulty', () => {
+        const strokes = service.calculateSinglePlayerStrokes(13, defaultHoleHandicapIndexes, 18);
 
-      expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(0);
-      expect(result.team2Strokes.reduce((sum, s) => sum + s, 0)).toBe(4);
-      expect(result.team2Strokes[0]).toBe(1);
-      expect(result.team2Strokes[1]).toBe(1);
-      expect(result.team2Strokes[2]).toBe(1);
-      expect(result.team2Strokes[3]).toBe(1);
-      expect(result.team2Strokes[4]).toBe(0);
-    });
+        expect(strokes.reduce((sum, s) => sum + s, 0)).toBe(13);
+        expect(strokes[0]).toBe(1);
+        expect(strokes[12]).toBe(1);
+        expect(strokes[13]).toBe(0);
+      });
 
-    it('handles 9-hole rounds', () => {
-      const result = service.calculateStrokeDistribution(14, 10, defaultHoleHandicapIndexes, 9);
+      it('handles CH over 18 with double strokes on hardest holes', () => {
+        const strokes = service.calculateSinglePlayerStrokes(22, defaultHoleHandicapIndexes, 18);
 
-      expect(result.team1Strokes).toHaveLength(9);
-      expect(result.team2Strokes).toHaveLength(9);
-      expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(4);
-    });
+        expect(strokes.reduce((sum, s) => sum + s, 0)).toBe(22);
+        expect(strokes[0]).toBe(2);
+        expect(strokes[3]).toBe(2);
+        expect(strokes[17]).toBe(1);
+      });
 
-    it('distributes strokes on hardest holes first', () => {
-      const customHandicapIndexes = [5, 3, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-      const result = service.calculateStrokeDistribution(13, 10, customHandicapIndexes, 18);
+      it('handles 9-hole rounds', () => {
+        const strokes = service.calculateSinglePlayerStrokes(7, defaultHoleHandicapIndexes, 9);
 
-      expect(result.team1Strokes[2]).toBe(1);
-      expect(result.team1Strokes[3]).toBe(1);
-      expect(result.team1Strokes[1]).toBe(1);
-      expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(3);
-    });
+        expect(strokes).toHaveLength(9);
+        expect(strokes.reduce((sum, s) => sum + s, 0)).toBe(7);
+      });
 
-    it('handles large handicap differences (more than 18 strokes)', () => {
-      const result = service.calculateStrokeDistribution(36, 10, defaultHoleHandicapIndexes, 18);
+      it('returns zeros for CH of 0', () => {
+        const strokes = service.calculateSinglePlayerStrokes(0, defaultHoleHandicapIndexes, 18);
 
-      expect(result.team1Strokes.reduce((sum, s) => sum + s, 0)).toBe(26);
-      expect(result.team1Strokes.filter((s) => s === 2).length).toBe(8);
-      expect(result.team1Strokes.filter((s) => s === 1).length).toBe(10);
+        expect(strokes).toEqual(new Array(18).fill(0));
+      });
+
+      it('produces same result as full method in calculateStrokeDistribution', () => {
+        const singlePlayer = service.calculateSinglePlayerStrokes(
+          13,
+          defaultHoleHandicapIndexes,
+          18,
+        );
+        const paired = service.calculateStrokeDistribution(
+          13,
+          0,
+          defaultHoleHandicapIndexes,
+          18,
+          'full',
+        );
+
+        expect(singlePlayer).toEqual(paired.team1Strokes);
+      });
     });
   });
 
@@ -143,6 +333,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -182,6 +373,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -221,6 +413,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: true,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -257,6 +450,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 2,
         perMatchPoints: 4,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -296,6 +490,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -332,6 +527,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: true,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -367,6 +563,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: true,
+        handicapStrokeMethod: 'full' as const,
       };
 
       const result = service.calculateIndividualMatchPoints(
@@ -383,12 +580,100 @@ describe('GolfLeagueMatchScoringService', () => {
     });
   });
 
+  describe('real scorecard: Brandon (CH13) vs Justin (CH18) at Spanish Bay', () => {
+    const spanishBayHdcp = [9, 13, 5, 15, 1, 11, 3, 17, 7, 8, 14, 6, 18, 2, 12, 16, 4, 10];
+    const spanishBayPar = [5, 4, 4, 3, 4, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5];
+
+    const brandonScore = {
+      golferId: 1n,
+      holeScores: [6, 4, 5, 4, 6, 4, 4, 5, 4, 6, 5, 5, 4, 7, 4, 4, 4, 4],
+      totalScore: 85,
+      courseHandicap: 13,
+      gender: 'M' as const,
+    };
+
+    const justinScore = {
+      golferId: 2n,
+      holeScores: [4, 5, 5, 3, 6, 5, 5, 5, 7, 6, 4, 5, 3, 5, 5, 3, 5, 8],
+      totalScore: 89,
+      courseHandicap: 18,
+      gender: 'M' as const,
+    };
+
+    it('full handicap method: each player gets full CH strokes, Justin wins 13-11', () => {
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 2,
+        perMatchPoints: 2,
+        useHandicapScoring: true,
+        handicapStrokeMethod: 'full' as const,
+      };
+
+      const result = service.calculateIndividualMatchPoints(
+        brandonScore,
+        justinScore,
+        spanishBayHdcp,
+        spanishBayPar,
+        scoringConfig,
+        18,
+      );
+
+      expect(result.team1NetScore).toBe(72);
+      expect(result.team2NetScore).toBe(71);
+
+      expect(result.team1HoleWins).toBe(7);
+      expect(result.team2HoleWins).toBe(7);
+
+      expect(result.team1Points).toBe(11);
+      expect(result.team2Points).toBe(13);
+
+      expect(result.team1NineWins).toBe(1);
+      expect(result.team2NineWins).toBe(1);
+      expect(result.team1MatchWins).toBe(0);
+      expect(result.team2MatchWins).toBe(1);
+    });
+
+    it('matchPlay method: only difference (5 strokes to Justin), Justin wins 15.5-8.5', () => {
+      const scoringConfig = {
+        perHolePoints: 1,
+        perNinePoints: 2,
+        perMatchPoints: 2,
+        useHandicapScoring: true,
+        handicapStrokeMethod: 'matchPlay' as const,
+      };
+
+      const result = service.calculateIndividualMatchPoints(
+        brandonScore,
+        justinScore,
+        spanishBayHdcp,
+        spanishBayPar,
+        scoringConfig,
+        18,
+      );
+
+      expect(result.team1NetScore).toBe(72);
+      expect(result.team2NetScore).toBe(71);
+
+      expect(result.team1HoleWins).toBe(5);
+      expect(result.team2HoleWins).toBe(8);
+
+      expect(result.team1Points).toBe(8.5);
+      expect(result.team2Points).toBe(15.5);
+
+      expect(result.team1NineWins).toBe(0);
+      expect(result.team2NineWins).toBe(1);
+      expect(result.team1MatchWins).toBe(0);
+      expect(result.team2MatchWins).toBe(1);
+    });
+  });
+
   describe('calculateAbsentPairingPoints', () => {
     const defaultScoringConfig = {
       perHolePoints: 1,
       perNinePoints: 2,
       perMatchPoints: 3,
       useHandicapScoring: false,
+      handicapStrokeMethod: 'full' as const,
     };
 
     describe('SKIP_PAIRING mode', () => {
@@ -565,6 +850,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
       const playerEntry = createMockPlayerEntry(1n, 40, [4, 5, 4, 5, 4, 5, 4, 5, 4]);
 
@@ -591,6 +877,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
       const playerEntry = createMockPlayerEntry(1n, 40, [4, 5, 4, 5, 4, 5, 4, 5, 4]);
 
@@ -617,6 +904,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
       const playerEntry = createMockPlayerEntry(1n, 32, [3, 4, 3, 4, 3, 4, 4, 4, 3]);
 
@@ -643,6 +931,7 @@ describe('GolfLeagueMatchScoringService', () => {
         perNinePoints: 0,
         perMatchPoints: 2,
         useHandicapScoring: false,
+        handicapStrokeMethod: 'full' as const,
       };
       const playerEntry = createMockPlayerEntry(1n, 50, [5, 6, 5, 6, 5, 6, 6, 6, 5]);
 

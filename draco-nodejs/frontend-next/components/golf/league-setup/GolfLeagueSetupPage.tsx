@@ -174,6 +174,7 @@ export function GolfLeagueSetupPage() {
           scoringType: setup.scoringType,
           useBestBall: setup.useBestBall,
           useHandicapScoring: setup.useHandicapScoring,
+          handicapStrokeMethod: setup.handicapStrokeMethod,
           perHolePoints: setup.perHolePoints,
           perNinePoints: setup.perNinePoints,
           perMatchPoints: setup.perMatchPoints,
