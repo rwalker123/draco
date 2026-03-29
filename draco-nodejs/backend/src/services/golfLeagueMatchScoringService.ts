@@ -89,6 +89,18 @@ export class GolfLeagueMatchScoringService {
     return strokes;
   }
 
+  calculateSinglePlayerStrokes(
+    courseHandicap: number,
+    holeHandicapIndexes: number[],
+    holesPlayed: 9 | 18,
+  ): number[] {
+    const relevantIndexes = holeHandicapIndexes.slice(0, holesPlayed);
+    const indexedHoles = relevantIndexes
+      .map((handicapIndex, holeIndex) => ({ holeIndex, handicapIndex }))
+      .sort((a, b) => a.handicapIndex - b.handicapIndex);
+    return this.distributeStrokes(courseHandicap, indexedHoles, holesPlayed);
+  }
+
   calculateStrokeDistribution(
     team1CourseHandicap: number,
     team2CourseHandicap: number,
