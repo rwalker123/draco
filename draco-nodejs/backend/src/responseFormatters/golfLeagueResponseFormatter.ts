@@ -9,7 +9,11 @@ import {
   GolfLeagueSetupWithOfficers,
   GolfAccountInfo,
 } from '../repositories/interfaces/IGolfLeagueRepository.js';
-import { AbsentPlayerMode, FullTeamAbsentMode } from '../utils/golfConstants.js';
+import {
+  AbsentPlayerMode,
+  FullTeamAbsentMode,
+  toHandicapStrokeMethod,
+} from '../utils/golfConstants.js';
 
 export type GolfAccountInfoResponse = {
   id: string;
@@ -74,6 +78,7 @@ export class GolfLeagueResponseFormatter {
       scoringType: setup.scoringtype as 'individual' | 'team',
       useBestBall: setup.usebestball,
       useHandicapScoring: setup.usehandicapscoring,
+      handicapStrokeMethod: toHandicapStrokeMethod(setup.handicapstrokemethod),
       perHolePoints: setup.perholepoints,
       perNinePoints: setup.perninepoints,
       perMatchPoints: setup.permatchpoints,

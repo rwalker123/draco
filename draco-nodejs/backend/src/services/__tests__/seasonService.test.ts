@@ -132,6 +132,7 @@ const createGolfSourceSeason = (): dbSeasonCopySource => ({
         scoringtype: 'team',
         usebestball: false,
         usehandicapscoring: true,
+        handicapstrokemethod: 'full',
         perholepoints: 1,
         perninepoints: 2,
         permatchpoints: 3,

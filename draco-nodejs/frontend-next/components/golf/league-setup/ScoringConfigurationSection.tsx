@@ -234,6 +234,45 @@ export function ScoringConfigurationSection<T extends FieldValues>({
                   </Tooltip>
                 </Box>
               </RadioGroup>
+              {useHandicapScoring === true && (
+                <Box sx={{ mt: 1, ml: 2 }}>
+                  <FormLabel id="handicap-stroke-method-label" sx={{ fontSize: '0.85rem' }}>
+                    Stroke Distribution Method
+                  </FormLabel>
+                  <Controller
+                    name={'handicapStrokeMethod' as Path<T>}
+                    control={control}
+                    render={({ field }) => (
+                      <RadioGroup
+                        aria-labelledby="handicap-stroke-method-label"
+                        value={field.value ?? 'full'}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <FormControlLabel
+                            value="full"
+                            control={<Radio size="small" />}
+                            label="Full Handicap (Net)"
+                          />
+                          <Tooltip title={SCORING_TOOLTIPS.fullHandicap} placement="top" arrow>
+                            <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: -1 }} />
+                          </Tooltip>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <FormControlLabel
+                            value="matchPlay"
+                            control={<Radio size="small" />}
+                            label="Match Play (Difference)"
+                          />
+                          <Tooltip title={SCORING_TOOLTIPS.matchPlayHandicap} placement="top" arrow>
+                            <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: -1 }} />
+                          </Tooltip>
+                        </Box>
+                      </RadioGroup>
+                    )}
+                  />
+                </Box>
+              )}
             </FormControl>
           </Box>
         </Box>
@@ -321,7 +360,11 @@ export function ScoringConfigurationSection<T extends FieldValues>({
               render={({ field, fieldState }) => (
                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                   <Tooltip
-                    title={!isPenaltyEnabled ? 'Penalty strokes only apply when using Handicap + Penalty mode' : ''}
+                    title={
+                      !isPenaltyEnabled
+                        ? 'Penalty strokes only apply when using Handicap + Penalty mode'
+                        : ''
+                    }
                     placement="top"
                     arrow
                   >
