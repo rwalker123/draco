@@ -21,8 +21,10 @@ import { Forum } from '@mui/icons-material';
 import CommunityMessageList from '@/components/social/CommunityMessageList';
 import AccountPageHeader from '@/components/AccountPageHeader';
 import AdPlacement from '@/components/ads/AdPlacement';
-import { useCurrentSeason } from '@/hooks/useCurrentSeason';
 import { useSocialHubService } from '@/hooks/useSocialHubService';
+import { getCurrentSeason } from '@draco/shared-api-client';
+import { useApiClient } from '@/hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
 import type { CommunityChannelType, CommunityMessagePreviewType } from '@draco/shared-schemas';
 
 const PAGE_SIZE = 50;
@@ -33,12 +35,10 @@ const AccountCommunityMessagesPage: React.FC = () => {
   const accountIdParam = params?.accountId;
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
 
-  const {
-    currentSeasonId,
-    loading: seasonLoading,
-    error: seasonError,
-    fetchCurrentSeason,
-  } = useCurrentSeason(accountId || '');
+  const apiClient = useApiClient();
+  const [currentSeasonId, setCurrentSeasonId] = React.useState<string | null>(null);
+  const [seasonLoading, setSeasonLoading] = React.useState(false);
+  const [seasonError, setSeasonError] = React.useState<string | null>(null);
 
   const { fetchCommunityMessages, fetchCommunityChannels } = useSocialHubService({
     accountId,
@@ -53,11 +53,36 @@ const AccountCommunityMessagesPage: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!accountId) {
-      return;
-    }
-    void fetchCurrentSeason();
-  }, [accountId, fetchCurrentSeason]);
+    if (!accountId) return;
+
+    const controller = new AbortController();
+
+    const loadSeason = async () => {
+      setSeasonLoading(true);
+      setSeasonError(null);
+      try {
+        const result = await getCurrentSeason({
+          client: apiClient,
+          path: { accountId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+        if (controller.signal.aborted) return;
+        const season = unwrapApiResult(result, 'Failed to load current season');
+        setCurrentSeasonId(season.id);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setSeasonError(err instanceof Error ? err.message : 'Failed to load current season');
+      } finally {
+        if (!controller.signal.aborted) setSeasonLoading(false);
+      }
+    };
+
+    void loadSeason();
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, apiClient]);
 
   React.useEffect(() => {
     if (!accountId || !currentSeasonId) {

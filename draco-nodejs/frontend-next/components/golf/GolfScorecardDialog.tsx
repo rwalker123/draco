@@ -12,12 +12,14 @@ import {
   Alert,
   Divider,
   Chip,
+  Button,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   FiberManualRecord as FiberManualRecordIcon,
+  EmojiEvents as EmojiEventsIcon,
 } from '@mui/icons-material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
@@ -37,6 +39,7 @@ import { formatDateTimeInTimezone } from '../../utils/dateUtils';
 import { useAccountTimezone } from '../../context/AccountContext';
 import { LiveScoringProvider, useLiveScoring } from '../../context/LiveScoringContext';
 import ScorecardTable from './ScorecardTable';
+import { ClosestToPinEntryDialog } from './dialogs/ClosestToPinEntryDialog';
 
 interface GolfScorecardDialogProps {
   open: boolean;
@@ -47,6 +50,7 @@ interface GolfScorecardDialogProps {
   seasonId?: string;
   team1Id?: string;
   team2Id?: string;
+  showCtpButton?: boolean;
 }
 
 interface TeamPoints {
@@ -80,6 +84,7 @@ interface GolfScorecardDialogContentProps {
   seasonId?: string;
   team1Id?: string;
   team2Id?: string;
+  showCtpButton?: boolean;
 }
 
 interface PlayerScoreEntry {
@@ -252,6 +257,7 @@ function GolfScorecardDialogContent({
   seasonId,
   team1Id,
   team2Id,
+  showCtpButton,
 }: GolfScorecardDialogContentProps) {
   const apiClient = useApiClient();
   const timeZone = useAccountTimezone();
@@ -263,6 +269,7 @@ function GolfScorecardDialogContent({
   const [team1Roster, setTeam1Roster] = useState<GolfTeamWithRoster | null>(null);
   const [team2Roster, setTeam2Roster] = useState<GolfTeamWithRoster | null>(null);
   const [rosterError, setRosterError] = useState<string | null>(null);
+  const [ctpDialogOpen, setCtpDialogOpen] = useState(false);
 
   const isSessionActive = liveData?.sessionState?.status === 'active';
   const isLiveMode = !!liveData;
@@ -505,6 +512,18 @@ function GolfScorecardDialogContent({
             )}
           </Box>
         )}
+        {showCtpButton && matchData.matchStatus === 1 && (
+          <Box sx={{ mt: 1.5 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<EmojiEventsIcon />}
+              onClick={() => setCtpDialogOpen(true)}
+            >
+              Record CTP
+            </Button>
+          </Box>
+        )}
       </Box>
     );
   };
@@ -688,6 +707,10 @@ function GolfScorecardDialogContent({
     );
   };
 
+  const par3Holes = (courseData?.mensPar || [])
+    .map((par, index) => ({ holeNumber: index + 1, par }))
+    .filter((hole) => hole.par === 3);
+
   return (
     <>
       <DialogTitle
@@ -723,6 +746,15 @@ function GolfScorecardDialogContent({
           </>
         )}
       </DialogContent>
+      {showCtpButton && matchData && matchData.matchStatus === 1 && (
+        <ClosestToPinEntryDialog
+          open={ctpDialogOpen}
+          onClose={() => setCtpDialogOpen(false)}
+          accountId={accountId}
+          matchId={matchId}
+          par3Holes={par3Holes}
+        />
+      )}
     </>
   );
 }
@@ -795,6 +827,7 @@ export default function GolfScorecardDialog({
   seasonId,
   team1Id,
   team2Id,
+  showCtpButton,
 }: GolfScorecardDialogProps) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -824,7 +857,12 @@ export default function GolfScorecardDialog({
           />
         </LiveScoringProvider>
       ) : (
-        <GolfScorecardDialogContent onClose={onClose} matchId={matchId} accountId={accountId} />
+        <GolfScorecardDialogContent
+          onClose={onClose}
+          matchId={matchId}
+          accountId={accountId}
+          showCtpButton={showCtpButton}
+        />
       )}
     </Dialog>
   );

@@ -45,6 +45,7 @@ export type CreateGolfMatchData = {
   teeid?: bigint | null;
   matchstatus: number;
   matchtype: number;
+  weeknumber?: number | null;
   comment: string;
 };
 

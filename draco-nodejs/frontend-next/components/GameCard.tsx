@@ -38,6 +38,7 @@ export interface GolfGameExtras {
   visitorPoints?: number;
   homeCourseHandicap?: number;
   visitorCourseHandicap?: number;
+  weekNumber?: number | null;
 }
 
 export interface BaseballGameExtras {
@@ -499,6 +500,22 @@ const GameCard: React.FC<GameCardProps> = ({
                     />
                   </Tooltip>
                 )}
+                {game.golfExtras?.weekNumber && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      px: 0.75,
+                      py: 0.125,
+                      borderRadius: 0.5,
+                      backgroundColor: 'action.selected',
+                      color: 'text.secondary',
+                      fontWeight: 600,
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    Wk {game.golfExtras.weekNumber}
+                  </Typography>
+                )}
               </Box>
               {showActions && (
                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -640,6 +657,22 @@ const GameCard: React.FC<GameCardProps> = ({
                         }}
                       />
                     </Tooltip>
+                  )}
+                  {game.golfExtras?.weekNumber && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        px: 0.75,
+                        py: 0.125,
+                        borderRadius: 0.5,
+                        backgroundColor: 'action.selected',
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      Wk {game.golfExtras.weekNumber}
+                    </Typography>
                   )}
                 </Box>
                 {showActions && canEditGames && onEnterGameResults && (

@@ -15,6 +15,7 @@ import {
   Tooltip,
   Checkbox,
   Grid,
+  Switch,
   TextField,
   MenuItem,
   Select,
@@ -419,6 +420,34 @@ export function ScoringConfigurationSection<T extends FieldValues>({
             />
           </Grid>
         </Grid>
+
+        <Typography variant="subtitle1" sx={{ mt: 3, mb: 2, fontWeight: 'medium' }}>
+          Contests
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Controller
+            name={'enablePuttContest' as Path<T>}
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={!!field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                }
+                label="Enable 3+ Putt Contest"
+              />
+            )}
+          />
+          <Tooltip
+            title="When enabled, any hole where a player has 3 or more putts is tracked as a contest entry. Requires putt tracking on scorecards."
+            placement="top"
+            arrow
+          >
+            <InfoOutlinedIcon fontSize="small" color="action" sx={{ ml: -1 }} />
+          </Tooltip>
+        </Box>
       </AccordionDetails>
     </Accordion>
   );

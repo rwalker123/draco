@@ -27,6 +27,7 @@ export const GolfMatchSchema = z
     tee: GolfCourseTeeSlimSchema.optional(),
     matchStatus: z.number().int(),
     matchType: z.number().int(),
+    weekNumber: z.number().int().nullable().optional(),
     comment: z.string().max(255).optional(),
     team1TotalScore: z.number().int().optional(),
     team2TotalScore: z.number().int().optional(),
@@ -72,6 +73,7 @@ export const CreateGolfMatchSchema = z
     courseId: bigintToStringSchema.optional(),
     teeId: bigintToStringSchema.optional(),
     matchType: z.number().int().default(0),
+    weekNumber: z.number().int().nullable().optional(),
     comment: z.string().max(255).optional(),
   })
   .openapi({
@@ -88,6 +90,7 @@ export const UpdateGolfMatchSchema = z
     courseId: bigintToStringSchema.optional(),
     teeId: bigintToStringSchema.optional(),
     matchType: z.number().int().optional(),
+    weekNumber: z.number().int().nullable().optional(),
     comment: z.string().max(255).optional(),
     matchStatus: z.number().int().optional(),
   })

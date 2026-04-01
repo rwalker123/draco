@@ -329,6 +329,13 @@ export class GolfLeagueScoreService {
             startindex: startIndex,
             startindex9: startIndex9,
             isabsent: false,
+            ...this.mapPerHoleStats(scoreData.putts, 'putts'),
+            ...this.mapPerHoleStats(scoreData.fairwaysHit, 'fairway'),
+            ...this.computeGir(
+              holeScores,
+              scoreData.putts,
+              getHolePars(course, normalizeGender(rosterEntry.golfer.gender)),
+            ),
           },
         });
       }
@@ -481,5 +488,36 @@ export class GolfLeagueScoreService {
       handicapIndex,
       isInitialIndex,
     };
+  }
+
+  private computeGir(
+    holeScores: number[],
+    putts: (number | null)[] | undefined,
+    coursePars: number[],
+  ): Record<string, boolean | null> {
+    const result: Record<string, boolean | null> = {};
+    for (let i = 0; i < 18; i++) {
+      const score = holeScores[i];
+      const putt = putts?.[i];
+      const par = coursePars[i];
+      if (putt === null || putt === undefined || !score || !par) {
+        result[`gir${i + 1}`] = null;
+      } else {
+        result[`gir${i + 1}`] = score - putt <= par - 2;
+      }
+    }
+    return result;
+  }
+
+  private mapPerHoleStats(
+    values: (number | boolean | null)[] | undefined,
+    prefix: string,
+  ): Record<string, number | boolean | null> {
+    if (!values) return {};
+    const result: Record<string, number | boolean | null> = {};
+    for (let i = 0; i < 18; i++) {
+      result[`${prefix}${i + 1}`] = values[i] ?? null;
+    }
+    return result;
   }
 }

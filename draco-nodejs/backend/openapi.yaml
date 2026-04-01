@@ -19452,6 +19452,9 @@ components:
             - forfeit
             - handicapPenalty
           default: forfeit
+        enablePuttContest:
+          type: boolean
+          default: false
       required:
         - id
         - accountId
@@ -19543,6 +19546,9 @@ components:
             - forfeit
             - handicapPenalty
           default: forfeit
+        enablePuttContest:
+          type: boolean
+          default: false
         presidentId:
           type: string
           pattern: ^\d+$
@@ -20244,6 +20250,9 @@ components:
           type: integer
         matchType:
           type: integer
+        weekNumber:
+          type: integer
+          nullable: true
         comment:
           type: string
           maxLength: 255
@@ -20361,6 +20370,9 @@ components:
           type: integer
         matchType:
           type: integer
+        weekNumber:
+          type: integer
+          nullable: true
         comment:
           type: string
           maxLength: 255
@@ -20424,204 +20436,25 @@ components:
                   maximum: 20
                 minItems: 9
                 maxItems: 18
-              isAbsent:
-                type: boolean
-              substituteForRosterId:
-                type: string
-                pattern: ^\d+$
-                example: "12345"
-              player:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    pattern: ^\d+$
-                    example: "12345"
-                  firstName:
-                    type: string
-                    minLength: 1
-                    maxLength: 100
-                  lastName:
-                    type: string
-                    minLength: 1
-                    maxLength: 100
-                  middleName:
-                    type: string
-                    maxLength: 50
-                  handicapIndex:
-                    type: number
-                    nullable: true
-                  photoUrl:
-                    type: string
-                    nullable: true
-                    format: uri
-                required:
-                  - id
-                  - firstName
-                  - lastName
-                title: GolfPlayer
-                description: Golf player with handicap information
-              tee:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    pattern: ^\d+$
-                    example: "12345"
-                  courseId:
-                    type: string
-                    pattern: ^\d+$
-                    example: "12345"
-                  teeColor:
-                    type: string
-                    maxLength: 20
-                  teeName:
-                    type: string
-                    maxLength: 20
-                  priority:
-                    type: integer
-                    default: 0
-                  distances:
-                    type: array
-                    items:
-                      type: integer
-                      minimum: 0
-                      maximum: 700
-                  mensRating:
-                    type: number
-                    minimum: 55
-                    maximum: 80
-                  mensSlope:
-                    type: integer
-                    minimum: 55
-                    maximum: 155
-                  womansRating:
-                    type: number
-                    minimum: 55
-                    maximum: 80
-                  womansSlope:
-                    type: integer
-                    minimum: 55
-                    maximum: 155
-                  mensRatingFront9:
-                    type: number
-                    minimum: 55
-                    maximum: 80
-                  mensSlopeFront9:
-                    type: integer
-                    minimum: 55
-                    maximum: 155
-                  womansRatingFront9:
-                    type: number
-                    minimum: 55
-                    maximum: 80
-                  womansSlopeFront9:
-                    type: integer
-                    minimum: 55
-                    maximum: 155
-                  mensRatingBack9:
-                    type: number
-                    minimum: 55
-                    maximum: 80
-                  mensSlopeBack9:
-                    type: integer
-                    minimum: 55
-                    maximum: 155
-                  womansRatingBack9:
-                    type: number
-                    minimum: 55
-                    maximum: 80
-                  womansSlopeBack9:
-                    type: integer
-                    minimum: 55
-                    maximum: 155
-                required:
-                  - id
-                  - courseId
-                  - teeColor
-                  - teeName
-                  - distances
-                  - mensRating
-                  - mensSlope
-                  - womansRating
-                  - womansSlope
-                title: GolfCourseTee
-                description: Tee information for a golf course including ratings, slopes, and
-                  hole distances
-              differential:
-                type: number
-              courseHandicap:
-                type: integer
-              frontNineScore:
-                type: integer
-              backNineScore:
-                type: integer
-              courseName:
-                type: string
-              courseCity:
-                type: string
-                nullable: true
-              courseState:
-                type: string
-                nullable: true
-            required:
-              - id
-              - courseId
-              - golferId
-              - teeId
-              - datePlayed
-              - holesPlayed
-              - totalScore
-              - holeScores
-            title: GolfScoreWithDetails
-            description: Golf score with player, tee, and course details
-        team2Scores:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                pattern: ^\d+$
-                example: "12345"
-              courseId:
-                type: string
-                pattern: ^\d+$
-                example: "12345"
-              golferId:
-                type: string
-                pattern: ^\d+$
-                example: "12345"
-              teeId:
-                type: string
-                pattern: ^\d+$
-                example: "12345"
-              datePlayed:
-                type: string
-              holesPlayed:
-                type: integer
-                minimum: 9
-                maximum: 18
-              totalScore:
-                type: integer
-                minimum: 18
-                maximum: 200
-              totalsOnly:
-                type: boolean
-                default: false
-              startIndex:
-                type: number
-                nullable: true
-              startIndex9:
-                type: number
-                nullable: true
-              holeScores:
+              putts:
                 type: array
                 items:
                   type: integer
-                  minimum: 1
-                  maximum: 20
-                minItems: 9
+                  nullable: true
+                  minimum: 0
+                  maximum: 10
+                maxItems: 18
+              fairwaysHit:
+                type: array
+                items:
+                  type: boolean
+                  nullable: true
+                maxItems: 18
+              greensInRegulation:
+                type: array
+                items:
+                  type: boolean
+                  nullable: true
                 maxItems: 18
               isAbsent:
                 type: boolean
@@ -20763,6 +20596,241 @@ components:
               courseState:
                 type: string
                 nullable: true
+              totalPutts:
+                type: integer
+              fairwaysHitCount:
+                type: integer
+              fairwaysEligible:
+                type: integer
+              girCount:
+                type: integer
+            required:
+              - id
+              - courseId
+              - golferId
+              - teeId
+              - datePlayed
+              - holesPlayed
+              - totalScore
+              - holeScores
+            title: GolfScoreWithDetails
+            description: Golf score with player, tee, and course details
+        team2Scores:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              courseId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              golferId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              teeId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              datePlayed:
+                type: string
+              holesPlayed:
+                type: integer
+                minimum: 9
+                maximum: 18
+              totalScore:
+                type: integer
+                minimum: 18
+                maximum: 200
+              totalsOnly:
+                type: boolean
+                default: false
+              startIndex:
+                type: number
+                nullable: true
+              startIndex9:
+                type: number
+                nullable: true
+              holeScores:
+                type: array
+                items:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                minItems: 9
+                maxItems: 18
+              putts:
+                type: array
+                items:
+                  type: integer
+                  nullable: true
+                  minimum: 0
+                  maximum: 10
+                maxItems: 18
+              fairwaysHit:
+                type: array
+                items:
+                  type: boolean
+                  nullable: true
+                maxItems: 18
+              greensInRegulation:
+                type: array
+                items:
+                  type: boolean
+                  nullable: true
+                maxItems: 18
+              isAbsent:
+                type: boolean
+              substituteForRosterId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              player:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  firstName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  lastName:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  middleName:
+                    type: string
+                    maxLength: 50
+                  handicapIndex:
+                    type: number
+                    nullable: true
+                  photoUrl:
+                    type: string
+                    nullable: true
+                    format: uri
+                required:
+                  - id
+                  - firstName
+                  - lastName
+                title: GolfPlayer
+                description: Golf player with handicap information
+              tee:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  courseId:
+                    type: string
+                    pattern: ^\d+$
+                    example: "12345"
+                  teeColor:
+                    type: string
+                    maxLength: 20
+                  teeName:
+                    type: string
+                    maxLength: 20
+                  priority:
+                    type: integer
+                    default: 0
+                  distances:
+                    type: array
+                    items:
+                      type: integer
+                      minimum: 0
+                      maximum: 700
+                  mensRating:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlope:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRating:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlope:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  mensRatingFront9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlopeFront9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRatingFront9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlopeFront9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  mensRatingBack9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  mensSlopeBack9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                  womansRatingBack9:
+                    type: number
+                    minimum: 55
+                    maximum: 80
+                  womansSlopeBack9:
+                    type: integer
+                    minimum: 55
+                    maximum: 155
+                required:
+                  - id
+                  - courseId
+                  - teeColor
+                  - teeName
+                  - distances
+                  - mensRating
+                  - mensSlope
+                  - womansRating
+                  - womansSlope
+                title: GolfCourseTee
+                description: Tee information for a golf course including ratings, slopes, and
+                  hole distances
+              differential:
+                type: number
+              courseHandicap:
+                type: integer
+              frontNineScore:
+                type: integer
+              backNineScore:
+                type: integer
+              courseName:
+                type: string
+              courseCity:
+                type: string
+                nullable: true
+              courseState:
+                type: string
+                nullable: true
+              totalPutts:
+                type: integer
+              fairwaysHitCount:
+                type: integer
+              fairwaysEligible:
+                type: integer
+              girCount:
+                type: integer
             required:
               - id
               - courseId
@@ -20815,6 +20883,9 @@ components:
         matchType:
           type: integer
           default: 0
+        weekNumber:
+          type: integer
+          nullable: true
         comment:
           type: string
           maxLength: 255
@@ -20855,6 +20926,9 @@ components:
           example: "12345"
         matchType:
           type: integer
+        weekNumber:
+          type: integer
+          nullable: true
         comment:
           type: string
           maxLength: 255
@@ -20919,6 +20993,26 @@ components:
             maximum: 20
           minItems: 9
           maxItems: 18
+        putts:
+          type: array
+          items:
+            type: integer
+            nullable: true
+            minimum: 0
+            maximum: 10
+          maxItems: 18
+        fairwaysHit:
+          type: array
+          items:
+            type: boolean
+            nullable: true
+          maxItems: 18
+        greensInRegulation:
+          type: array
+          items:
+            type: boolean
+            nullable: true
+          maxItems: 18
       required:
         - id
         - courseId
@@ -20975,6 +21069,26 @@ components:
             minimum: 1
             maximum: 20
           minItems: 9
+          maxItems: 18
+        putts:
+          type: array
+          items:
+            type: integer
+            nullable: true
+            minimum: 0
+            maximum: 10
+          maxItems: 18
+        fairwaysHit:
+          type: array
+          items:
+            type: boolean
+            nullable: true
+          maxItems: 18
+        greensInRegulation:
+          type: array
+          items:
+            type: boolean
+            nullable: true
           maxItems: 18
         isAbsent:
           type: boolean
@@ -21116,6 +21230,14 @@ components:
         courseState:
           type: string
           nullable: true
+        totalPutts:
+          type: integer
+        fairwaysHitCount:
+          type: integer
+        fairwaysEligible:
+          type: integer
+        girCount:
+          type: integer
       required:
         - id
         - courseId
@@ -21167,6 +21289,20 @@ components:
             maximum: 20
           minItems: 9
           maxItems: 18
+        putts:
+          type: array
+          items:
+            type: integer
+            nullable: true
+            minimum: 0
+            maximum: 10
+          maxItems: 18
+        fairwaysHit:
+          type: array
+          items:
+            type: boolean
+            nullable: true
+          maxItems: 18
       required:
         - courseId
         - teeId
@@ -21204,6 +21340,20 @@ components:
             minimum: 1
             maximum: 20
           minItems: 9
+          maxItems: 18
+        putts:
+          type: array
+          items:
+            type: integer
+            nullable: true
+            minimum: 0
+            maximum: 10
+          maxItems: 18
+        fairwaysHit:
+          type: array
+          items:
+            type: boolean
+            nullable: true
           maxItems: 18
       title: UpdateGolfScore
       description: Data for updating an existing golf score
@@ -21283,6 +21433,20 @@ components:
                       maximum: 20
                     minItems: 9
                     maxItems: 18
+                  putts:
+                    type: array
+                    items:
+                      type: integer
+                      nullable: true
+                      minimum: 0
+                      maximum: 10
+                    maxItems: 18
+                  fairwaysHit:
+                    type: array
+                    items:
+                      type: boolean
+                      nullable: true
+                    maxItems: 18
                 required:
                   - courseId
                   - teeId
@@ -21360,6 +21524,20 @@ components:
                 minimum: 1
                 maximum: 20
               minItems: 9
+              maxItems: 18
+            putts:
+              type: array
+              items:
+                type: integer
+                nullable: true
+                minimum: 0
+                maximum: 10
+              maxItems: 18
+            fairwaysHit:
+              type: array
+              items:
+                type: boolean
+                nullable: true
               maxItems: 18
           required:
             - courseId
@@ -21977,6 +22155,14 @@ components:
           type: integer
         skinsValue:
           type: number
+        skinsType:
+          type: string
+          enum:
+            - actual
+            - net
+        weekNumber:
+          type: integer
+          nullable: true
       required:
         - contactId
         - firstName
@@ -21984,6 +22170,52 @@ components:
         - skinsWon
       title: GolfSkinsEntry
       description: Skins game entry for a player
+    GolfLeaderboard:
+      type: object
+      properties:
+        category:
+          type: string
+        categoryLabel:
+          type: string
+        leaders:
+          type: array
+          items:
+            type: object
+            properties:
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              teamName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              value:
+                type: number
+              rank:
+                type: integer
+            required:
+              - contactId
+              - firstName
+              - lastName
+              - value
+              - rank
+            title: GolfLeader
+            description: A leader entry in a golf statistic category
+      required:
+        - category
+        - categoryLabel
+        - leaders
+      title: GolfLeaderboard
+      description: Leaderboard for a specific statistical category
     GolfFlightLeaders:
       type: object
       properties:
@@ -22121,6 +22353,14 @@ components:
                 type: integer
               skinsValue:
                 type: number
+              skinsType:
+                type: string
+                enum:
+                  - actual
+                  - net
+              weekNumber:
+                type: integer
+                nullable: true
             required:
               - contactId
               - firstName
@@ -22128,6 +22368,182 @@ components:
               - skinsWon
             title: GolfSkinsEntry
             description: Skins game entry for a player
+        netSkins:
+          type: array
+          items:
+            type: object
+            properties:
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              teamName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              skinsWon:
+                type: integer
+              skinsValue:
+                type: number
+              skinsType:
+                type: string
+                enum:
+                  - actual
+                  - net
+              weekNumber:
+                type: integer
+                nullable: true
+            required:
+              - contactId
+              - firstName
+              - lastName
+              - skinsWon
+            title: GolfSkinsEntry
+            description: Skins game entry for a player
+        scoreTypeLeaders:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              categoryLabel:
+                type: string
+              leaders:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    contactId:
+                      type: string
+                      pattern: ^\d+$
+                      example: "12345"
+                    firstName:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                    lastName:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                    teamName:
+                      type: string
+                      minLength: 1
+                      maxLength: 100
+                    value:
+                      type: number
+                    rank:
+                      type: integer
+                  required:
+                    - contactId
+                    - firstName
+                    - lastName
+                    - value
+                    - rank
+                  title: GolfLeader
+                  description: A leader entry in a golf statistic category
+            required:
+              - category
+              - categoryLabel
+              - leaders
+            title: GolfLeaderboard
+            description: Leaderboard for a specific statistical category
+        closestToPin:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              matchId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              holeNumber:
+                type: integer
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              distance:
+                type: number
+              unit:
+                type: string
+              matchDate:
+                type: string
+              weekNumber:
+                type: integer
+                nullable: true
+            required:
+              - id
+              - matchId
+              - holeNumber
+              - contactId
+              - firstName
+              - lastName
+              - distance
+              - unit
+              - matchDate
+            title: GolfClosestToPinEntry
+            description: Closest to pin entry for a par 3 hole
+        puttContestEntries:
+          type: array
+          items:
+            type: object
+            properties:
+              contactId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              firstName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              lastName:
+                type: string
+                minLength: 1
+                maxLength: 100
+              holeNumber:
+                type: integer
+              putts:
+                type: integer
+              matchId:
+                type: string
+                pattern: ^\d+$
+                example: "12345"
+              matchDate:
+                type: string
+              weekNumber:
+                type: integer
+                nullable: true
+            required:
+              - contactId
+              - firstName
+              - lastName
+              - holeNumber
+              - putts
+              - matchId
+              - matchDate
+            title: GolfPuttContestEntry
+            description: A 3+ putt contest entry
       required:
         - flightId
         - flightName
@@ -22136,6 +22552,429 @@ components:
         - scoringAverages
       title: GolfFlightLeaders
       description: All leader categories for a flight
+    GolfScoreTypeCounts:
+      type: object
+      properties:
+        aces:
+          type: integer
+        eagles:
+          type: integer
+        birdies:
+          type: integer
+        pars:
+          type: integer
+        bogeys:
+          type: integer
+        doubleBogeys:
+          type: integer
+        triplesOrWorse:
+          type: integer
+      required:
+        - aces
+        - eagles
+        - birdies
+        - pars
+        - bogeys
+        - doubleBogeys
+        - triplesOrWorse
+      title: GolfScoreTypeCounts
+      description: Count of each score type relative to par
+    GolfHoleTypeStats:
+      type: object
+      properties:
+        par3Average:
+          type: number
+        par4Average:
+          type: number
+        par5Average:
+          type: number
+        par3Rounds:
+          type: integer
+        par4Rounds:
+          type: integer
+        par5Rounds:
+          type: integer
+      title: GolfHoleTypeStats
+      description: Average scoring by hole par type
+    GolfPuttStats:
+      type: object
+      properties:
+        totalPutts:
+          type: integer
+        averagePerRound:
+          type: number
+        bestRound:
+          type: integer
+        worstRound:
+          type: integer
+      required:
+        - totalPutts
+        - averagePerRound
+        - bestRound
+        - worstRound
+      title: GolfPuttStats
+      description: Putt statistics across rounds
+    GolfFairwayStats:
+      type: object
+      properties:
+        averagePercentage:
+          type: number
+        bestPercentage:
+          type: number
+        worstPercentage:
+          type: number
+      required:
+        - averagePercentage
+        - bestPercentage
+        - worstPercentage
+      title: GolfFairwayStats
+      description: Fairway hit statistics across rounds
+    GolfGirStats:
+      type: object
+      properties:
+        averagePercentage:
+          type: number
+        bestPercentage:
+          type: number
+        worstPercentage:
+          type: number
+      required:
+        - averagePercentage
+        - bestPercentage
+        - worstPercentage
+      title: GolfGirStats
+      description: Greens in regulation statistics across rounds
+    GolfPlayerDetailedStats:
+      type: object
+      properties:
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        teamName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        roundsPlayed:
+          type: integer
+        lowActualScore:
+          type: integer
+        highActualScore:
+          type: integer
+        lowNetScore:
+          type: integer
+        highNetScore:
+          type: integer
+        averageScore:
+          type: number
+        averageNetScore:
+          type: number
+        scoreTypeCounts:
+          type: object
+          properties:
+            aces:
+              type: integer
+            eagles:
+              type: integer
+            birdies:
+              type: integer
+            pars:
+              type: integer
+            bogeys:
+              type: integer
+            doubleBogeys:
+              type: integer
+            triplesOrWorse:
+              type: integer
+          required:
+            - aces
+            - eagles
+            - birdies
+            - pars
+            - bogeys
+            - doubleBogeys
+            - triplesOrWorse
+          title: GolfScoreTypeCounts
+          description: Count of each score type relative to par
+        maxBirdiesInRound:
+          type: integer
+        maxParsInRound:
+          type: integer
+        maxBogeyPlusInRound:
+          type: integer
+        puttStats:
+          type: object
+          properties:
+            totalPutts:
+              type: integer
+            averagePerRound:
+              type: number
+            bestRound:
+              type: integer
+            worstRound:
+              type: integer
+          required:
+            - totalPutts
+            - averagePerRound
+            - bestRound
+            - worstRound
+          title: GolfPuttStats
+          description: Putt statistics across rounds
+        fairwayStats:
+          type: object
+          properties:
+            averagePercentage:
+              type: number
+            bestPercentage:
+              type: number
+            worstPercentage:
+              type: number
+          required:
+            - averagePercentage
+            - bestPercentage
+            - worstPercentage
+          title: GolfFairwayStats
+          description: Fairway hit statistics across rounds
+        girStats:
+          type: object
+          properties:
+            averagePercentage:
+              type: number
+            bestPercentage:
+              type: number
+            worstPercentage:
+              type: number
+          required:
+            - averagePercentage
+            - bestPercentage
+            - worstPercentage
+          title: GolfGirStats
+          description: Greens in regulation statistics across rounds
+        scramblingPercentage:
+          type: number
+        consistencyStdDev:
+          type: number
+        holeTypeStats:
+          type: object
+          properties:
+            par3Average:
+              type: number
+            par4Average:
+              type: number
+            par5Average:
+              type: number
+            par3Rounds:
+              type: integer
+            par4Rounds:
+              type: integer
+            par5Rounds:
+              type: integer
+          title: GolfHoleTypeStats
+          description: Average scoring by hole par type
+      required:
+        - contactId
+        - firstName
+        - lastName
+        - roundsPlayed
+        - lowActualScore
+        - highActualScore
+        - averageScore
+        - scoreTypeCounts
+        - maxBirdiesInRound
+        - maxParsInRound
+        - maxBogeyPlusInRound
+      title: GolfPlayerDetailedStats
+      description: Comprehensive individual golfer statistics
+    GolfClosestToPinEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        holeNumber:
+          type: integer
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        distance:
+          type: number
+        unit:
+          type: string
+        matchDate:
+          type: string
+        weekNumber:
+          type: integer
+          nullable: true
+      required:
+        - id
+        - matchId
+        - holeNumber
+        - contactId
+        - firstName
+        - lastName
+        - distance
+        - unit
+        - matchDate
+      title: GolfClosestToPinEntry
+      description: Closest to pin entry for a par 3 hole
+    CreateGolfClosestToPin:
+      type: object
+      properties:
+        holeNumber:
+          type: integer
+          minimum: 1
+          maximum: 18
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        distance:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+          maxLength: 5
+          default: ft
+      required:
+        - holeNumber
+        - contactId
+        - distance
+      title: CreateGolfClosestToPin
+      description: Data to create a closest to pin entry
+    UpdateGolfClosestToPin:
+      type: object
+      properties:
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        distance:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+          maxLength: 5
+      title: UpdateGolfClosestToPin
+      description: Data to update a closest to pin entry
+    GolfPuttContestEntry:
+      type: object
+      properties:
+        contactId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        holeNumber:
+          type: integer
+        putts:
+          type: integer
+        matchId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        matchDate:
+          type: string
+        weekNumber:
+          type: integer
+          nullable: true
+      required:
+        - contactId
+        - firstName
+        - lastName
+        - holeNumber
+        - putts
+        - matchId
+        - matchDate
+      title: GolfPuttContestEntry
+      description: A 3+ putt contest entry
+    WeekBoundary:
+      type: string
+      enum:
+        - sun-sat
+        - mon-sun
+        - tue-mon
+        - wed-tue
+        - thu-wed
+        - fri-thu
+        - sat-fri
+    RegenerateStatsRequest:
+      type: object
+      properties:
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        regenerateGir:
+          type: boolean
+          default: false
+        regenerateWeekNumbers:
+          type: boolean
+          default: false
+        weekBoundary:
+          type: string
+          enum:
+            - sun-sat
+            - mon-sun
+            - tue-mon
+            - wed-tue
+            - thu-wed
+            - fri-thu
+            - sat-fri
+          default: mon-sun
+        timeZone:
+          type: string
+          default: America/New_York
+        recalculateMatchPoints:
+          type: boolean
+          default: false
+      required:
+        - leagueSeasonId
+      title: RegenerateStatsRequest
+      description: Options for regenerating golf statistics
+    RegenerateStatsResult:
+      type: object
+      properties:
+        girScoresUpdated:
+          type: integer
+        weekNumbersAssigned:
+          type: integer
+        matchPointsRecalculated:
+          type: integer
+      required:
+        - girScoresUpdated
+        - weekNumbersAssigned
+        - matchPointsRecalculated
+      title: RegenerateStatsResult
+      description: Results of a stats regeneration operation
     ExternalCourseSearchResult:
       type: object
       properties:
@@ -22462,6 +23301,26 @@ components:
                   maximum: 20
                 minItems: 9
                 maxItems: 18
+              putts:
+                type: array
+                items:
+                  type: integer
+                  nullable: true
+                  minimum: 0
+                  maximum: 10
+                maxItems: 18
+              fairwaysHit:
+                type: array
+                items:
+                  type: boolean
+                  nullable: true
+                maxItems: 18
+              greensInRegulation:
+                type: array
+                items:
+                  type: boolean
+                  nullable: true
+                maxItems: 18
               isAbsent:
                 type: boolean
               substituteForRosterId:
@@ -22602,6 +23461,14 @@ components:
               courseState:
                 type: string
                 nullable: true
+              totalPutts:
+                type: integer
+              fairwaysHitCount:
+                type: integer
+              fairwaysEligible:
+                type: integer
+              girCount:
+                type: integer
             required:
               - id
               - courseId
@@ -33056,6 +33923,265 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/closest-to-pin/match/{matchId}:
+    get:
+      description: Get closest to pin entries for a match
+      operationId: getGolfClosestToPinForMatch
+      summary: Get match closest to pin entries
+      tags:
+        - Golf Closest To Pin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Closest to pin entries for the match
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfClosestToPinEntry"
+                title: GolfClosestToPinEntryList
+                description: List of closest to pin entries
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      description: Create a closest to pin entry for a match
+      operationId: createGolfClosestToPin
+      summary: Create closest to pin entry
+      tags:
+        - Golf Closest To Pin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGolfClosestToPin"
+      responses:
+        "201":
+          description: Closest to pin entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfClosestToPinEntry"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/closest-to-pin/flight/{flightId}:
+    get:
+      description: Get closest to pin entries for a flight
+      operationId: getGolfClosestToPinForFlight
+      summary: Get flight closest to pin entries
+      tags:
+        - Golf Closest To Pin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Closest to pin entries for the flight
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfClosestToPinEntry"
+                title: GolfClosestToPinEntryList
+                description: List of closest to pin entries
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/closest-to-pin/{ctpId}:
+    put:
+      description: Update a closest to pin entry
+      operationId: updateGolfClosestToPin
+      summary: Update closest to pin entry
+      tags:
+        - Golf Closest To Pin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: ctpId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGolfClosestToPin"
+      responses:
+        "200":
+          description: Closest to pin entry updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfClosestToPinEntry"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Entry not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      description: Delete a closest to pin entry
+      operationId: deleteGolfClosestToPin
+      summary: Delete closest to pin entry
+      tags:
+        - Golf Closest To Pin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: ctpId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "204":
+          description: Closest to pin entry deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Entry not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/golf/courses/league-courses:
     get:
       description: List golf courses associated with a league
@@ -35563,6 +36689,460 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/flight/{flightId}/leaders:
+    get:
+      description: Get golf flight leader statistics
+      operationId: getGolfFlightLeaders
+      summary: Get flight leaders
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Golf flight leaders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfFlightLeaders"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/flight/{flightId}/low-scores:
+    get:
+      description: Get low score leaders for a flight
+      operationId: getGolfFlightLowScores
+      summary: Get flight low scores
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - actual
+              - net
+            default: actual
+          description: Score type to return
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Maximum number of leaders to return
+      responses:
+        "200":
+          description: Low score leaders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfLeader"
+                title: GolfLeaderList
+                description: List of golf leaders
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/flight/{flightId}/scoring-averages:
+    get:
+      description: Get scoring averages for players in a flight
+      operationId: getGolfFlightScoringAverages
+      summary: Get flight scoring averages
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of results to return
+      responses:
+        "200":
+          description: Scoring averages for the flight
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfScoringAverage"
+                title: GolfScoringAverageList
+                description: List of golf scoring averages
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/flight/{flightId}/skins:
+    get:
+      description: Get skins leaders for a flight
+      operationId: getGolfFlightSkins
+      summary: Get flight skins leaders
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - actual
+              - net
+            default: actual
+          description: Score type for skins calculation
+        - name: weekNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by week number
+      responses:
+        "200":
+          description: Skins leaders for the flight
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfSkinsEntry"
+                title: GolfSkinsEntryList
+                description: List of golf skins entries
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/flight/{flightId}/score-types:
+    get:
+      description: Get score type leaderboards for a flight
+      operationId: getGolfFlightScoreTypes
+      summary: Get flight score type leaderboards
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Score type leaderboards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfLeaderboard"
+                title: GolfLeaderboardList
+                description: List of golf leaderboards
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/flight/{flightId}/putt-contest:
+    get:
+      description: Get putt contest results for a flight
+      operationId: getGolfFlightPuttContest
+      summary: Get flight putt contest results
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: weekNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by week number
+      responses:
+        "200":
+          description: Putt contest results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GolfPuttContestEntry"
+                title: GolfPuttContestEntryList
+                description: List of golf putt contest entries
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/player/{contactId}/detailed-stats:
+    get:
+      description: Get detailed statistics for a golf player
+      operationId: getGolfPlayerDetailedStats
+      summary: Get player detailed stats
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: number
+          description: Filter stats to a specific season
+      responses:
+        "200":
+          description: Detailed player statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GolfPlayerDetailedStats"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/golf/stats/regenerate:
+    post:
+      description: Regenerate golf statistics for a league season
+      operationId: regenerateGolfStats
+      summary: Regenerate golf stats
+      tags:
+        - Golf Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegenerateStatsRequest"
+      responses:
+        "200":
+          description: Stats regeneration results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegenerateStatsResult"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
         "500":
           description: Internal server error
           content:

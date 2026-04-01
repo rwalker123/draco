@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import GolferStatsCards from '../stats/GolferStatsCards';
 import GolfScoresList from '../scores/GolfScoresList';
 import IndividualAccountScoresSection from './IndividualAccountScoresSection';
+import PlayerStatsDetailPanel from '../stats/PlayerStatsDetailPanel';
 import { useLeaguePlayerProfile } from '../../../hooks/useLeaguePlayerProfile';
 
 export interface LeaguePlayerProfileProps {
@@ -67,6 +68,8 @@ export default function LeaguePlayerProfile({
         averageScore={data?.averageScore ?? null}
         seasonLabel="League rounds"
       />
+
+      <PlayerStatsDetailPanel accountId={accountId} contactId={contactId} />
 
       <IndividualAccountScoresSection contactId={contactId} />
 

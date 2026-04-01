@@ -168,6 +168,8 @@ export function TeamScoresSection({
               totalsOnly: !showHoleByHole,
               totalScore: 0,
               holeScores: [],
+              putts: [],
+              fairways: [],
             };
             const isSelected = !scoreData.isAbsent;
             const canSelect = isSelected || canSelectMore;
@@ -270,6 +272,8 @@ export function TeamScoresSection({
               totalsOnly: !showHoleByHole,
               totalScore: 0,
               holeScores: [],
+              putts: [],
+              fairways: [],
             };
 
             return (

@@ -351,9 +351,23 @@ import {
   GolfFlightStandingsSchema,
   GolfLeagueStandingsSchema,
   GolfLeaderSchema,
+  GolfLeaderboardSchema,
   GolfScoringAverageSchema,
   GolfSkinsEntrySchema,
   GolfFlightLeadersSchema,
+  GolfScoreTypeCountsSchema,
+  GolfHoleTypeStatsSchema,
+  GolfPuttStatsSchema,
+  GolfFairwayStatsSchema,
+  GolfGirStatsSchema,
+  GolfPlayerDetailedStatsSchema,
+  GolfClosestToPinEntrySchema,
+  CreateGolfClosestToPinSchema,
+  UpdateGolfClosestToPinSchema,
+  GolfPuttContestEntrySchema,
+  RegenerateStatsRequestSchema,
+  RegenerateStatsResultSchema,
+  WeekBoundaryEnum,
   ExternalCourseSearchResultSchema,
   ExternalCourseDetailSchema,
   ExternalCourseTeeSchema,
@@ -1416,9 +1430,50 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GolfScoringAverageSchema,
   );
   const GolfSkinsEntrySchemaRef = registry.register('GolfSkinsEntry', GolfSkinsEntrySchema);
+  const GolfLeaderboardSchemaRef = registry.register('GolfLeaderboard', GolfLeaderboardSchema);
   const GolfFlightLeadersSchemaRef = registry.register(
     'GolfFlightLeaders',
     GolfFlightLeadersSchema,
+  );
+  const GolfScoreTypeCountsSchemaRef = registry.register(
+    'GolfScoreTypeCounts',
+    GolfScoreTypeCountsSchema,
+  );
+  const GolfHoleTypeStatsSchemaRef = registry.register(
+    'GolfHoleTypeStats',
+    GolfHoleTypeStatsSchema,
+  );
+  const GolfPuttStatsSchemaRef = registry.register('GolfPuttStats', GolfPuttStatsSchema);
+  const GolfFairwayStatsSchemaRef = registry.register('GolfFairwayStats', GolfFairwayStatsSchema);
+  const GolfGirStatsSchemaRef = registry.register('GolfGirStats', GolfGirStatsSchema);
+  const GolfPlayerDetailedStatsSchemaRef = registry.register(
+    'GolfPlayerDetailedStats',
+    GolfPlayerDetailedStatsSchema,
+  );
+  const GolfClosestToPinEntrySchemaRef = registry.register(
+    'GolfClosestToPinEntry',
+    GolfClosestToPinEntrySchema,
+  );
+  const CreateGolfClosestToPinSchemaRef = registry.register(
+    'CreateGolfClosestToPin',
+    CreateGolfClosestToPinSchema,
+  );
+  const UpdateGolfClosestToPinSchemaRef = registry.register(
+    'UpdateGolfClosestToPin',
+    UpdateGolfClosestToPinSchema,
+  );
+  const GolfPuttContestEntrySchemaRef = registry.register(
+    'GolfPuttContestEntry',
+    GolfPuttContestEntrySchema,
+  );
+  const WeekBoundaryEnumRef = registry.register('WeekBoundary', WeekBoundaryEnum);
+  const RegenerateStatsRequestSchemaRef = registry.register(
+    'RegenerateStatsRequest',
+    RegenerateStatsRequestSchema,
+  );
+  const RegenerateStatsResultSchemaRef = registry.register(
+    'RegenerateStatsResult',
+    RegenerateStatsResultSchema,
   );
   const ExternalCourseSearchResultSchemaRef = registry.register(
     'ExternalCourseSearchResult',
@@ -1895,7 +1950,21 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     GolfLeaderSchemaRef,
     GolfScoringAverageSchemaRef,
     GolfSkinsEntrySchemaRef,
+    GolfLeaderboardSchemaRef,
     GolfFlightLeadersSchemaRef,
+    GolfScoreTypeCountsSchemaRef,
+    GolfHoleTypeStatsSchemaRef,
+    GolfPuttStatsSchemaRef,
+    GolfFairwayStatsSchemaRef,
+    GolfGirStatsSchemaRef,
+    GolfPlayerDetailedStatsSchemaRef,
+    GolfClosestToPinEntrySchemaRef,
+    CreateGolfClosestToPinSchemaRef,
+    UpdateGolfClosestToPinSchemaRef,
+    GolfPuttContestEntrySchemaRef,
+    WeekBoundaryEnumRef,
+    RegenerateStatsRequestSchemaRef,
+    RegenerateStatsResultSchemaRef,
     ExternalCourseSearchResultSchemaRef,
     ExternalCourseDetailSchemaRef,
     ExternalCourseTeeSchemaRef,

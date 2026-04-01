@@ -72,6 +72,7 @@ const GOLF_LEAGUE_FIELD_MAPPINGS: FieldMapping<UpdateGolfLeagueSetupType>[] = [
     snakeCase: 'fullteamabsentmode',
     transform: toFullTeamAbsentModeInt,
   },
+  { camelCase: 'enablePuttContest', snakeCase: 'enableputtcontest' },
 ];
 
 export function validateAbsentPlayerPenalty(data: UpdateGolfLeagueSetupType): void {
@@ -119,6 +120,7 @@ type DefaultValues = {
   absentPlayerMode: number;
   absentPlayerPenalty: number;
   fullTeamAbsentMode: number;
+  enablePuttContest: boolean;
 };
 
 const DEFAULTS: DefaultValues = {
@@ -140,6 +142,7 @@ const DEFAULTS: DefaultValues = {
   absentPlayerMode: AbsentPlayerMode.OPPONENT_WINS,
   absentPlayerPenalty: 0,
   fullTeamAbsentMode: FullTeamAbsentMode.FORFEIT,
+  enablePuttContest: false,
 };
 
 export function mapGolfLeagueFieldsForCreate(
@@ -178,5 +181,6 @@ export function mapGolfLeagueFieldsForCreate(
     fullteamabsentmode: data.fullTeamAbsentMode
       ? toFullTeamAbsentModeInt(data.fullTeamAbsentMode)
       : DEFAULTS.fullTeamAbsentMode,
+    enableputtcontest: data.enablePuttContest ?? DEFAULTS.enablePuttContest,
   };
 }

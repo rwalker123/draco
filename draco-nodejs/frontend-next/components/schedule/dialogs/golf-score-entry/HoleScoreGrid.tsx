@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   Box,
+  Checkbox,
   TextField,
   Typography,
   Table,
@@ -20,6 +21,12 @@ interface HoleScoreGridProps {
   disabled?: boolean;
   par?: number[];
   handicap?: number[];
+  putts?: (number | null)[];
+  onPuttsChange?: (putts: (number | null)[]) => void;
+  fairways?: (boolean | null)[];
+  onFairwaysChange?: (fairways: (boolean | null)[]) => void;
+  showPutts?: boolean;
+  showFairways?: boolean;
 }
 
 export function HoleScoreGrid({
@@ -29,6 +36,12 @@ export function HoleScoreGrid({
   disabled = false,
   par,
   handicap,
+  putts,
+  onPuttsChange,
+  fairways,
+  onFairwaysChange,
+  showPutts = false,
+  showFairways = false,
 }: HoleScoreGridProps) {
   const theme = useTheme();
 
@@ -45,9 +58,31 @@ export function HoleScoreGrid({
     onChange(updatedScores);
   };
 
+  const handlePuttChange = (holeIndex: number, value: string) => {
+    if (!onPuttsChange) return;
+    const numValue = value === '' ? null : parseInt(value, 10);
+    if (numValue !== null && (isNaN(numValue) || numValue < 0 || numValue > 10)) return;
+
+    const updated = [...(putts ?? Array(18).fill(null))];
+    updated[holeIndex] = numValue;
+    onPuttsChange(updated);
+  };
+
+  const handleFairwayChange = (holeIndex: number, checked: boolean) => {
+    if (!onFairwaysChange) return;
+    const updated = [...(fairways ?? Array(18).fill(null))];
+    updated[holeIndex] = checked;
+    onFairwaysChange(updated);
+  };
+
   const getHoleScore = (holeIndex: number): string => {
     const score = holeScores[holeIndex];
     return score && score > 0 ? String(score) : '';
+  };
+
+  const getPuttValue = (holeIndex: number): string => {
+    const value = putts?.[holeIndex];
+    return value !== null && value !== undefined ? String(value) : '';
   };
 
   const front9Total = holeScores.slice(0, 9).reduce((sum, score) => sum + (score || 0), 0);
@@ -58,12 +93,27 @@ export function HoleScoreGrid({
   const back9Par = par ? par.slice(9, 18).reduce((sum, p) => sum + (p || 0), 0) : 0;
   const totalPar = front9Par + back9Par;
 
+  const totalPutts = putts
+    ? putts.filter((p): p is number => p !== null && p !== undefined).reduce((a, b) => a + b, 0)
+    : 0;
+  const fairwaysHitCount = fairways ? fairways.filter((f) => f === true).length : 0;
+  const fairwaysEligible =
+    fairways && par
+      ? par.slice(0, numberOfHoles).filter((p, i) => p !== 3 && fairways[i] !== null).length
+      : 0;
   const frontNineHoles = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const backNineHoles = [10, 11, 12, 13, 14, 15, 16, 17, 18];
 
+  const smallInputSx = {
+    '& .MuiOutlinedInput-root': {
+      '& fieldset': {
+        borderColor: theme.palette.divider,
+      },
+    },
+  };
+
   const renderHoleRow = (holes: number[], label: string, subtotal: number, parSubtotal: number) => (
     <>
-      {/* Hole numbers row */}
       <TableRow>
         <TableCell
           sx={{
@@ -97,7 +147,6 @@ export function HoleScoreGrid({
         </TableCell>
       </TableRow>
 
-      {/* Par row */}
       {par && (
         <TableRow>
           <TableCell sx={{ backgroundColor: theme.palette.action.hover }}>Par</TableCell>
@@ -119,7 +168,6 @@ export function HoleScoreGrid({
         </TableRow>
       )}
 
-      {/* Handicap row */}
       {handicap && (
         <TableRow>
           <TableCell sx={{ backgroundColor: theme.palette.action.hover }}>Hdcp</TableCell>
@@ -136,7 +184,6 @@ export function HoleScoreGrid({
         </TableRow>
       )}
 
-      {/* Score input row */}
       <TableRow>
         <TableCell sx={{ backgroundColor: theme.palette.background.paper }}>Score</TableCell>
         {holes.map((holeNum) => (
@@ -156,13 +203,7 @@ export function HoleScoreGrid({
                   width: '32px',
                 },
               }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: theme.palette.divider,
-                  },
-                },
-              }}
+              sx={smallInputSx}
             />
           </TableCell>
         ))}
@@ -176,6 +217,73 @@ export function HoleScoreGrid({
           {subtotal > 0 ? subtotal : '-'}
         </TableCell>
       </TableRow>
+
+      {showPutts && (
+        <TableRow>
+          <TableCell sx={{ backgroundColor: theme.palette.background.paper }}>
+            <Typography variant="caption">Putts</Typography>
+          </TableCell>
+          {holes.map((holeNum) => (
+            <TableCell key={holeNum} align="center" sx={{ p: 0.5 }}>
+              <TextField
+                type="number"
+                size="small"
+                value={getPuttValue(holeNum - 1)}
+                onChange={(e) => handlePuttChange(holeNum - 1, e.target.value)}
+                disabled={disabled}
+                inputProps={{
+                  min: 0,
+                  max: 10,
+                  style: {
+                    textAlign: 'center',
+                    padding: '4px',
+                    width: '32px',
+                  },
+                }}
+                sx={smallInputSx}
+              />
+            </TableCell>
+          ))}
+          <TableCell align="center" sx={{ backgroundColor: theme.palette.action.hover }}>
+            <Typography variant="caption" fontWeight="bold">
+              {totalPutts > 0 ? totalPutts : '-'}
+            </Typography>
+          </TableCell>
+        </TableRow>
+      )}
+
+      {showFairways && par && (
+        <TableRow>
+          <TableCell sx={{ backgroundColor: theme.palette.background.paper }}>
+            <Typography variant="caption">FW</Typography>
+          </TableCell>
+          {holes.map((holeNum) => {
+            const isPar3 = par[holeNum - 1] === 3;
+            return (
+              <TableCell key={holeNum} align="center" sx={{ p: 0 }}>
+                {isPar3 ? (
+                  <Typography variant="caption" color="text.disabled">
+                    -
+                  </Typography>
+                ) : (
+                  <Checkbox
+                    size="small"
+                    checked={fairways?.[holeNum - 1] === true}
+                    onChange={(e) => handleFairwayChange(holeNum - 1, e.target.checked)}
+                    disabled={disabled}
+                    sx={{ p: 0 }}
+                  />
+                )}
+              </TableCell>
+            );
+          })}
+          <TableCell align="center" sx={{ backgroundColor: theme.palette.action.hover }}>
+            <Typography variant="caption" fontWeight="bold">
+              {fairwaysEligible > 0 ? `${fairwaysHitCount}/${fairwaysEligible}` : '-'}
+            </Typography>
+          </TableCell>
+        </TableRow>
+      )}
     </>
   );
 
@@ -205,6 +313,7 @@ export function HoleScoreGrid({
           justifyContent: 'flex-end',
           mt: 1,
           gap: 2,
+          flexWrap: 'wrap',
         }}
       >
         {numberOfHoles === 18 && (
@@ -237,6 +346,19 @@ export function HoleScoreGrid({
             </Typography>
           )}
         </Typography>
+        {showPutts && totalPutts > 0 && (
+          <Typography variant="body2" color="text.secondary">
+            Putts: <strong>{totalPutts}</strong>
+          </Typography>
+        )}
+        {showFairways && fairwaysEligible > 0 && (
+          <Typography variant="body2" color="text.secondary">
+            FW:{' '}
+            <strong>
+              {fairwaysHitCount}/{fairwaysEligible}
+            </strong>
+          </Typography>
+        )}
       </Box>
     </Box>
   );

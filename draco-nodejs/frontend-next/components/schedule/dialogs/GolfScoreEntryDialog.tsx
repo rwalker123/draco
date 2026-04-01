@@ -249,6 +249,8 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
               frontNineScore: existingScore?.frontNineScore ?? 0,
               backNineScore: existingScore?.backNineScore ?? 0,
               holeScores: existingScore?.holeScores ?? [],
+              putts: existingScore?.putts ?? [],
+              fairways: existingScore?.fairwaysHit ?? [],
             };
           });
 
@@ -383,6 +385,16 @@ const GolfScoreEntryDialog: React.FC<ScoreEntryDialogProps> = ({
           frontNineScore: isTotalsOnlyEighteen ? score.frontNineScore : undefined,
           backNineScore: isTotalsOnlyEighteen ? score.backNineScore : undefined,
           holeScores: isTotalsOnly ? undefined : score.holeScores.filter((s) => s > 0),
+          putts: isTotalsOnly
+            ? undefined
+            : score.putts.some((p) => p !== null)
+              ? score.putts
+              : undefined,
+          fairwaysHit: isTotalsOnly
+            ? undefined
+            : score.fairways.some((f) => f !== null)
+              ? score.fairways
+              : undefined,
         };
       }
 
