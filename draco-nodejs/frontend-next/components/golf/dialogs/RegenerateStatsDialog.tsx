@@ -20,6 +20,7 @@ import {
   InputLabel,
 } from '@mui/material';
 import { regenerateGolfStats } from '@draco/shared-api-client';
+import { WeekBoundaryType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountTimezone } from '../../../context/AccountContext';
 import { unwrapApiResult } from '../../../utils/apiResult';
@@ -32,16 +33,7 @@ interface RegenerateStatsDialogProps {
   leagueSeasonId: string;
 }
 
-type WeekBoundary =
-  | 'sun-sat'
-  | 'mon-sun'
-  | 'tue-mon'
-  | 'wed-tue'
-  | 'thu-wed'
-  | 'fri-thu'
-  | 'sat-fri';
-
-const weekBoundaryOptions: { value: WeekBoundary; label: string }[] = [
+const weekBoundaryOptions: { value: WeekBoundaryType; label: string }[] = [
   { value: 'sun-sat', label: 'Sunday - Saturday' },
   { value: 'mon-sun', label: 'Monday - Sunday' },
   { value: 'tue-mon', label: 'Tuesday - Monday' },
@@ -68,7 +60,7 @@ function RegenerateStatsForm({
   const timeZone = useAccountTimezone();
   const [regenerateGir, setRegenerateGir] = useState(false);
   const [regenerateWeekNumbers, setRegenerateWeekNumbers] = useState(false);
-  const [weekBoundary, setWeekBoundary] = useState<WeekBoundary>('mon-sun');
+  const [weekBoundary, setWeekBoundary] = useState<WeekBoundaryType>('mon-sun');
   const [recalculateMatchPoints, setRecalculateMatchPoints] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +151,7 @@ function RegenerateStatsForm({
                   labelId="week-boundary-label"
                   value={weekBoundary}
                   label="Week boundary"
-                  onChange={(e) => setWeekBoundary(e.target.value as WeekBoundary)}
+                  onChange={(e) => setWeekBoundary(e.target.value as WeekBoundaryType)}
                   disabled={loading}
                 >
                   {weekBoundaryOptions.map((opt) => (

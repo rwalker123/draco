@@ -27,7 +27,6 @@ interface Par3Hole {
 interface HoleFormState {
   holeNumber: number;
   contactId: string;
-  playerName: string;
   distance: string;
 }
 
@@ -60,7 +59,6 @@ function ClosestToPinEntryForm({
     par3Holes.map((hole) => ({
       holeNumber: hole.holeNumber,
       contactId: '',
-      playerName: '',
       distance: '',
     })),
   );
@@ -148,16 +146,6 @@ function ClosestToPinEntryForm({
                     fullWidth
                     size="small"
                     placeholder="Enter contact ID"
-                  />
-                  <TextField
-                    label="Player Name"
-                    value={state.playerName}
-                    onChange={(e) =>
-                      updateHoleState(state.holeNumber, 'playerName', e.target.value)
-                    }
-                    fullWidth
-                    size="small"
-                    placeholder="Enter player name"
                   />
                   <TextField
                     label="Distance (ft)"

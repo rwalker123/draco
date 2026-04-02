@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { extractBigIntParams } from '../utils/paramExtraction.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { CreateGolfClosestToPinSchema, UpdateGolfClosestToPinSchema } from '@draco/shared-schemas';
 
@@ -51,9 +51,10 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
     const { ctpId } = extractBigIntParams(req.params, 'ctpId');
     const data = UpdateGolfClosestToPinSchema.parse(req.body);
-    const entry = await golfClosestToPinService.update(ctpId, data);
+    const entry = await golfClosestToPinService.update(ctpId, data, accountId);
     res.json(entry);
   }),
 );
@@ -64,8 +65,9 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
     const { ctpId } = extractBigIntParams(req.params, 'ctpId');
-    await golfClosestToPinService.delete(ctpId);
+    await golfClosestToPinService.delete(ctpId, accountId);
     res.sendStatus(204);
   }),
 );

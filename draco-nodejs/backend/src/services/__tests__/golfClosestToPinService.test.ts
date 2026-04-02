@@ -12,6 +12,7 @@ const mockCtpRepo = {
 
 const mockMatchRepo = {
   findById: vi.fn(),
+  findByIdWithLeague: vi.fn(),
 };
 
 const mockCourseRepo = {
@@ -81,6 +82,26 @@ const createMockMatch = (
   weeknumber: 5,
   ...overrides,
 });
+
+const TEST_ACCOUNT_ID = 1n;
+
+const mockMatchWithLeague = {
+  id: 10n,
+  leagueid: 100n,
+  leagueseason: {
+    id: 100n,
+    leagueid: 200n,
+    league: {
+      id: 200n,
+      accountid: TEST_ACCOUNT_ID,
+    },
+  },
+};
+
+const setupOwnershipMock = () => {
+  mockCtpRepo.findById.mockResolvedValue(createMockCtpEntry());
+  mockMatchRepo.findByIdWithLeague.mockResolvedValue(mockMatchWithLeague);
+};
 
 describe('GolfClosestToPinService', () => {
   let service: GolfClosestToPinService;
@@ -290,11 +311,14 @@ describe('GolfClosestToPinService', () => {
 
   describe('update', () => {
     it('updates entry and returns formatted result', async () => {
+      setupOwnershipMock();
       const withDetails = createMockCtpEntry({ distance: 15, unit: 'yards' });
       mockCtpRepo.update.mockResolvedValue({});
-      mockCtpRepo.findById.mockResolvedValue(withDetails);
+      mockCtpRepo.findById
+        .mockResolvedValueOnce(createMockCtpEntry())
+        .mockResolvedValueOnce(withDetails);
 
-      const result = await service.update(1n, { distance: 15, unit: 'yards' });
+      const result = await service.update(1n, { distance: 15, unit: 'yards' }, TEST_ACCOUNT_ID);
 
       expect(result).toBeDefined();
       expect(result.distance).toBe(15);
@@ -302,18 +326,24 @@ describe('GolfClosestToPinService', () => {
     });
 
     it('throws NotFoundError when entry not found after update', async () => {
+      setupOwnershipMock();
       mockCtpRepo.update.mockResolvedValue({});
-      mockCtpRepo.findById.mockResolvedValue(null);
+      mockCtpRepo.findById.mockResolvedValueOnce(createMockCtpEntry()).mockResolvedValueOnce(null);
 
-      await expect(service.update(999n, { distance: 10 })).rejects.toThrow(NotFoundError);
+      await expect(service.update(999n, { distance: 10 }, TEST_ACCOUNT_ID)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
     it('converts contactId string to bigint in update', async () => {
+      setupOwnershipMock();
       const withDetails = createMockCtpEntry();
       mockCtpRepo.update.mockResolvedValue({});
-      mockCtpRepo.findById.mockResolvedValue(withDetails);
+      mockCtpRepo.findById
+        .mockResolvedValueOnce(createMockCtpEntry())
+        .mockResolvedValueOnce(withDetails);
 
-      await service.update(1n, { contactId: '200', distance: 10 });
+      await service.update(1n, { contactId: '200', distance: 10 }, TEST_ACCOUNT_ID);
 
       expect(mockCtpRepo.update).toHaveBeenCalledWith(
         1n,
@@ -324,11 +354,14 @@ describe('GolfClosestToPinService', () => {
     });
 
     it('passes undefined contactid when contactId is not in update data', async () => {
+      setupOwnershipMock();
       const withDetails = createMockCtpEntry();
       mockCtpRepo.update.mockResolvedValue({});
-      mockCtpRepo.findById.mockResolvedValue(withDetails);
+      mockCtpRepo.findById
+        .mockResolvedValueOnce(createMockCtpEntry())
+        .mockResolvedValueOnce(withDetails);
 
-      await service.update(1n, { distance: 10 });
+      await service.update(1n, { distance: 10 }, TEST_ACCOUNT_ID);
 
       expect(mockCtpRepo.update).toHaveBeenCalledWith(
         1n,
@@ -342,9 +375,10 @@ describe('GolfClosestToPinService', () => {
 
   describe('delete', () => {
     it('calls repository delete with correct id', async () => {
+      setupOwnershipMock();
       mockCtpRepo.delete.mockResolvedValue({});
 
-      await service.delete(1n);
+      await service.delete(1n, TEST_ACCOUNT_ID);
 
       expect(mockCtpRepo.delete).toHaveBeenCalledWith(1n);
     });

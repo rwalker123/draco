@@ -3,6 +3,7 @@ import {
   IGolfMatchRepository,
   GolfMatchWithTeams,
   GolfMatchWithScores,
+  GolfMatchWithLeague,
   CreateGolfMatchData,
   UpdateGolfMatchData,
 } from '../interfaces/IGolfMatchRepository.js';
@@ -49,6 +50,19 @@ const matchWithScoresInclude = {
 export class PrismaGolfMatchRepository implements IGolfMatchRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  async findByIdWithLeague(matchId: bigint): Promise<GolfMatchWithLeague | null> {
+    return this.prisma.golfmatch.findUnique({
+      where: { id: matchId },
+      include: {
+        leagueseason: {
+          include: {
+            league: true,
+          },
+        },
+      },
+    });
+  }
+
   async findBySeasonId(seasonId: bigint): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
       where: { leagueseason: { seasonid: seasonId } },
@@ -80,9 +94,13 @@ export class PrismaGolfMatchRepository implements IGolfMatchRepository {
   }
 
   async findByFlightId(flightId: bigint): Promise<GolfMatchWithTeams[]> {
+    return this.findByLeagueSeasonId(flightId);
+  }
+
+  async findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfMatchWithTeams[]> {
     return this.prisma.golfmatch.findMany({
       where: {
-        leagueid: flightId,
+        leagueid: leagueSeasonId,
       },
       include: matchTeamInclude,
       orderBy: { matchdate: 'asc' },

@@ -13,10 +13,23 @@ import type { GolfHandicapService } from '../golfHandicapService.js';
 import { GolfMatchStatus } from '../../utils/golfConstants.js';
 import { NotFoundError } from '../../utils/customErrors.js';
 
+const repositoryFactoryMock = vi.hoisted(() => ({
+  getGolfMatchRepository: vi.fn(),
+  getGolfScoreRepository: vi.fn(),
+  getGolfFlightRepository: vi.fn(),
+  getGolfTeamRepository: vi.fn(),
+  getGolfRosterRepository: vi.fn(),
+}));
+
 const serviceFactoryMock = vi.hoisted(() => ({
   getGolfLeagueMatchScoringService: vi.fn(() => ({
     calculateAndStoreMatchPoints: vi.fn().mockResolvedValue(undefined),
   })),
+  getGolfHandicapService: vi.fn(),
+}));
+
+vi.mock('../../repositories/repositoryFactory.js', () => ({
+  RepositoryFactory: repositoryFactoryMock,
 }));
 
 vi.mock('../serviceFactory.js', () => ({
@@ -206,6 +219,7 @@ describe('GolfStatsService', () => {
 
   const mockMatchRepo = {
     findByFlightId,
+    findByLeagueSeasonId: findByFlightId,
     findByIdWithScores,
     update: matchUpdate,
   } as unknown as IGolfMatchRepository;
@@ -241,15 +255,14 @@ describe('GolfStatsService', () => {
     serviceFactoryMock.getGolfLeagueMatchScoringService.mockReturnValue({
       calculateAndStoreMatchPoints: vi.fn().mockResolvedValue(undefined),
     });
+    serviceFactoryMock.getGolfHandicapService.mockReturnValue(mockHandicapService);
+    repositoryFactoryMock.getGolfMatchRepository.mockReturnValue(mockMatchRepo);
+    repositoryFactoryMock.getGolfScoreRepository.mockReturnValue(mockScoreRepo);
+    repositoryFactoryMock.getGolfFlightRepository.mockReturnValue(mockFlightRepo);
+    repositoryFactoryMock.getGolfTeamRepository.mockReturnValue(mockTeamRepo);
+    repositoryFactoryMock.getGolfRosterRepository.mockReturnValue(mockRosterRepo);
 
-    service = new GolfStatsService(
-      mockMatchRepo,
-      mockScoreRepo,
-      mockFlightRepo,
-      mockTeamRepo,
-      mockRosterRepo,
-      mockHandicapService,
-    );
+    service = new GolfStatsService();
   });
 
   describe('getFlightLeaders', () => {

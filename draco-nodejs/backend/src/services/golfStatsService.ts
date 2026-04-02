@@ -108,20 +108,13 @@ export class GolfStatsService {
   private readonly rosterRepository: IGolfRosterRepository;
   private readonly handicapService: GolfHandicapService;
 
-  constructor(
-    matchRepository?: IGolfMatchRepository,
-    scoreRepository?: IGolfScoreRepository,
-    flightRepository?: IGolfFlightRepository,
-    teamRepository?: IGolfTeamRepository,
-    rosterRepository?: IGolfRosterRepository,
-    handicapService?: GolfHandicapService,
-  ) {
-    this.matchRepository = matchRepository ?? RepositoryFactory.getGolfMatchRepository();
-    this.scoreRepository = scoreRepository ?? RepositoryFactory.getGolfScoreRepository();
-    this.flightRepository = flightRepository ?? RepositoryFactory.getGolfFlightRepository();
-    this.teamRepository = teamRepository ?? RepositoryFactory.getGolfTeamRepository();
-    this.rosterRepository = rosterRepository ?? RepositoryFactory.getGolfRosterRepository();
-    this.handicapService = handicapService ?? ServiceFactory.getGolfHandicapService();
+  constructor() {
+    this.matchRepository = RepositoryFactory.getGolfMatchRepository();
+    this.scoreRepository = RepositoryFactory.getGolfScoreRepository();
+    this.flightRepository = RepositoryFactory.getGolfFlightRepository();
+    this.teamRepository = RepositoryFactory.getGolfTeamRepository();
+    this.rosterRepository = RepositoryFactory.getGolfRosterRepository();
+    this.handicapService = ServiceFactory.getGolfHandicapService();
   }
 
   async getFlightLeaders(flightId: bigint): Promise<GolfFlightLeadersType> {
@@ -956,7 +949,7 @@ export class GolfStatsService {
   }
 
   private async regenerateGirForLeague(leagueSeasonId: bigint): Promise<number> {
-    const matches = await this.matchRepository.findByFlightId(leagueSeasonId);
+    const matches = await this.matchRepository.findByLeagueSeasonId(leagueSeasonId);
     const completedMatches = matches.filter((m) => m.matchstatus === GolfMatchStatus.COMPLETED);
 
     let updatedCount = 0;
@@ -1025,7 +1018,7 @@ export class GolfStatsService {
     weekBoundary: string,
     timeZone: string,
   ): Promise<number> {
-    const matches = await this.matchRepository.findByFlightId(leagueSeasonId);
+    const matches = await this.matchRepository.findByLeagueSeasonId(leagueSeasonId);
     if (matches.length === 0) return 0;
 
     const dayMap: Record<string, number> = {
@@ -1095,7 +1088,7 @@ export class GolfStatsService {
   }
 
   private async recalculateMatchPoints(leagueSeasonId: bigint): Promise<number> {
-    const matches = await this.matchRepository.findByFlightId(leagueSeasonId);
+    const matches = await this.matchRepository.findByLeagueSeasonId(leagueSeasonId);
     const completedMatches = matches.filter((m) => m.matchstatus === GolfMatchStatus.COMPLETED);
 
     const scoringService = ServiceFactory.getGolfLeagueMatchScoringService();

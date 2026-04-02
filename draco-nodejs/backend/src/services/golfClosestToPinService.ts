@@ -8,7 +8,7 @@ import { IGolfClosestToPinRepository } from '../repositories/interfaces/IGolfClo
 import { IGolfMatchRepository } from '../repositories/interfaces/IGolfMatchRepository.js';
 import { IGolfCourseRepository } from '../repositories/interfaces/IGolfCourseRepository.js';
 import { GolfClosestToPinResponseFormatter } from '../responseFormatters/golfClosestToPinResponseFormatter.js';
-import { NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { AuthorizationError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 
 export class GolfClosestToPinService {
   private readonly ctpRepository: IGolfClosestToPinRepository;
@@ -19,6 +19,18 @@ export class GolfClosestToPinService {
     this.ctpRepository = RepositoryFactory.getGolfClosestToPinRepository();
     this.matchRepository = RepositoryFactory.getGolfMatchRepository();
     this.courseRepository = RepositoryFactory.getGolfCourseRepository();
+  }
+
+  private async verifyCtpOwnership(ctpId: bigint, accountId: bigint): Promise<void> {
+    const entry = await this.ctpRepository.findById(ctpId);
+    if (!entry) {
+      throw new NotFoundError('Closest to pin entry not found');
+    }
+
+    const match = await this.matchRepository.findByIdWithLeague(entry.matchid);
+    if (!match || match.leagueseason.league.accountid !== accountId) {
+      throw new AuthorizationError('Closest to pin entry does not belong to this account');
+    }
   }
 
   async getForMatch(matchId: bigint): Promise<GolfClosestToPinEntryType[]> {
@@ -74,7 +86,13 @@ export class GolfClosestToPinService {
     return GolfClosestToPinResponseFormatter.format(withDetails);
   }
 
-  async update(id: bigint, data: UpdateGolfClosestToPinType): Promise<GolfClosestToPinEntryType> {
+  async update(
+    id: bigint,
+    data: UpdateGolfClosestToPinType,
+    accountId: bigint,
+  ): Promise<GolfClosestToPinEntryType> {
+    await this.verifyCtpOwnership(id, accountId);
+
     await this.ctpRepository.update(id, {
       contactid: data.contactId !== undefined ? BigInt(data.contactId) : undefined,
       distance: data.distance,
@@ -89,7 +107,8 @@ export class GolfClosestToPinService {
     return GolfClosestToPinResponseFormatter.format(withDetails);
   }
 
-  async delete(id: bigint): Promise<void> {
+  async delete(id: bigint, accountId: bigint): Promise<void> {
+    await this.verifyCtpOwnership(id, accountId);
     await this.ctpRepository.delete(id);
   }
 }

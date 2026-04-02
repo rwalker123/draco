@@ -707,9 +707,13 @@ function GolfScorecardDialogContent({
     );
   };
 
-  const par3Holes = (courseData?.mensPar || [])
-    .map((par, index) => ({ holeNumber: index + 1, par }))
-    .filter((hole) => hole.par === 3);
+  const par3Holes = Array.from({ length: 18 }, (_, i) => i + 1)
+    .filter((holeNumber) => {
+      const mensPar = courseData?.mensPar?.[holeNumber - 1];
+      const womansPar = courseData?.womansPar?.[holeNumber - 1];
+      return mensPar === 3 || womansPar === 3;
+    })
+    .map((holeNumber) => ({ holeNumber, par: 3 }));
 
   return (
     <>

@@ -6,6 +6,8 @@ import {
   golfteeinformation,
   golfmatchscores,
   golfscore,
+  leagueseason,
+  league,
 } from '#prisma/client';
 import { GolferWithContact } from './IGolfRosterRepository.js';
 
@@ -36,6 +38,12 @@ export type GolfMatchWithScores = GolfMatchWithTeams & {
   golfmatchscores: GolfMatchScoreEntry[];
 };
 
+export type GolfMatchWithLeague = golfmatch & {
+  leagueseason: leagueseason & {
+    league: league;
+  };
+};
+
 export type CreateGolfMatchData = {
   team1: bigint;
   team2: bigint;
@@ -52,6 +60,7 @@ export type CreateGolfMatchData = {
 export type UpdateGolfMatchData = Partial<Omit<CreateGolfMatchData, 'leagueid'>>;
 
 export interface IGolfMatchRepository {
+  findByIdWithLeague(matchId: bigint): Promise<GolfMatchWithLeague | null>;
   findBySeasonId(seasonId: bigint): Promise<GolfMatchWithTeams[]>;
   findBySeasonIdWithDateRange(
     seasonId: bigint,
@@ -59,6 +68,7 @@ export interface IGolfMatchRepository {
     endDate?: Date,
   ): Promise<GolfMatchWithTeams[]>;
   findByFlightId(flightId: bigint): Promise<GolfMatchWithTeams[]>;
+  findByLeagueSeasonId(leagueSeasonId: bigint): Promise<GolfMatchWithTeams[]>;
   findById(matchId: bigint): Promise<GolfMatchWithTeams | null>;
   findByIdWithScores(matchId: bigint): Promise<GolfMatchWithScores | null>;
   findUpcoming(seasonId: bigint, limit?: number): Promise<GolfMatchWithTeams[]>;

@@ -436,7 +436,26 @@ export class GolferService {
           existingScore.holescrore17,
           existingScore.holescrore18,
         ];
-        const effectivePutts = updateData.putts;
+        const effectivePutts = updateData.putts ?? [
+          existingScore.putts1,
+          existingScore.putts2,
+          existingScore.putts3,
+          existingScore.putts4,
+          existingScore.putts5,
+          existingScore.putts6,
+          existingScore.putts7,
+          existingScore.putts8,
+          existingScore.putts9,
+          existingScore.putts10,
+          existingScore.putts11,
+          existingScore.putts12,
+          existingScore.putts13,
+          existingScore.putts14,
+          existingScore.putts15,
+          existingScore.putts16,
+          existingScore.putts17,
+          existingScore.putts18,
+        ];
         const computedGir = this.computeGirFromPutts(
           effectiveHoleScores,
           effectivePutts,
