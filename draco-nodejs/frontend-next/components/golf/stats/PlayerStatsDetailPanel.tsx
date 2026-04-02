@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Alert,
   Box,
   Card,
   CardContent,
@@ -104,7 +105,11 @@ export default function PlayerStatsDetailPanel({
     );
   }
 
-  if (error || !stats) {
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
+
+  if (!stats) {
     return null;
   }
 
