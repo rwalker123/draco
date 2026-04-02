@@ -271,37 +271,37 @@ describe('PlayerStatsDetailPanel', () => {
   });
 
   describe('error state', () => {
-    it('renders nothing when API returns an error object', async () => {
+    it('renders error alert when API returns an error object', async () => {
       mockApiGet.mockResolvedValue({ data: undefined, error: { message: 'Not found' } });
 
-      const { container } = render(<PlayerStatsDetailPanel {...defaultProps} />);
+      render(<PlayerStatsDetailPanel {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
-      expect(container.innerHTML).toBe('');
+      expect(screen.getByRole('alert')).toHaveTextContent('Not found');
     });
 
-    it('renders nothing when API error has no message', async () => {
+    it('renders error alert with fallback message when API error has no message', async () => {
       mockApiGet.mockResolvedValue({ data: undefined, error: {} });
 
-      const { container } = render(<PlayerStatsDetailPanel {...defaultProps} />);
+      render(<PlayerStatsDetailPanel {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
-      expect(container.innerHTML).toBe('');
+      expect(screen.getByRole('alert')).toHaveTextContent('Failed to load player stats');
     });
 
-    it('renders nothing when the API call throws', async () => {
+    it('renders error alert when the API call throws', async () => {
       mockApiGet.mockRejectedValue(new Error('Network error'));
 
-      const { container } = render(<PlayerStatsDetailPanel {...defaultProps} />);
+      render(<PlayerStatsDetailPanel {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
-      expect(container.innerHTML).toBe('');
+      expect(screen.getByRole('alert')).toHaveTextContent('Network error');
     });
   });
 
