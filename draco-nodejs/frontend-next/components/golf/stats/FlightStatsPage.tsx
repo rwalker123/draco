@@ -563,9 +563,44 @@ export default function FlightStatsPage({
   flightId,
   flightName,
 }: FlightStatsPageProps) {
+  const apiClient = useApiClient();
   const [activeTab, setActiveTab] = useState(0);
   const [activatedTabs, setActivatedTabs] = useState<Set<number>>(new Set([0]));
   const [selectedWeek, setSelectedWeek] = useState<number | undefined>(undefined);
+  const [availableWeeks, setAvailableWeeks] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!accountId || !flightId) return;
+
+    const controller = new AbortController();
+
+    const loadWeeks = async () => {
+      const result = await getGolfClosestToPinForFlight({
+        client: apiClient,
+        path: { accountId, flightId },
+        signal: controller.signal,
+        throwOnError: false,
+      });
+
+      if (controller.signal.aborted) return;
+
+      if (result.data) {
+        const weeks = new Set<number>();
+        for (const entry of result.data) {
+          if (entry.weekNumber != null) {
+            weeks.add(entry.weekNumber);
+          }
+        }
+        setAvailableWeeks([...weeks].sort((a, b) => a - b));
+      }
+    };
+
+    void loadWeeks();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, flightId, apiClient]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -611,9 +646,9 @@ export default function FlightStatsPage({
               label="Week"
             >
               <MenuItem value="">All Weeks</MenuItem>
-              {Array.from({ length: 20 }, (_, i) => (
-                <MenuItem key={i + 1} value={i + 1}>
-                  Week {i + 1}
+              {availableWeeks.map((week) => (
+                <MenuItem key={week} value={week}>
+                  Week {week}
                 </MenuItem>
               ))}
             </Select>
