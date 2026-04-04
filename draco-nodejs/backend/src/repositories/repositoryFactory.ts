@@ -66,6 +66,7 @@ import {
   IGolfRosterRepository,
   IGolfMatchRepository,
   IGolfScoreRepository,
+  IGolfClosestToPinRepository,
   IGolferRepository,
   ILiveScoringRepository,
   IIndividualLiveScoringRepository,
@@ -137,6 +138,7 @@ import {
   PrismaGolfRosterRepository,
   PrismaGolfMatchRepository,
   PrismaGolfScoreRepository,
+  PrismaGolfClosestToPinRepository,
   PrismaGolferRepository,
   PrismaLiveScoringRepository,
   PrismaIndividualLiveScoringRepository,
@@ -215,6 +217,7 @@ export class RepositoryFactory {
   private static golfRosterRepository: IGolfRosterRepository;
   private static golfMatchRepository: IGolfMatchRepository;
   private static golfScoreRepository: IGolfScoreRepository;
+  private static golfClosestToPinRepository: IGolfClosestToPinRepository;
   private static golferRepository: IGolferRepository;
   private static liveScoringRepository: ILiveScoringRepository;
   private static individualLiveScoringRepository: IIndividualLiveScoringRepository;
@@ -703,6 +706,13 @@ export class RepositoryFactory {
       this.golfScoreRepository = new PrismaGolfScoreRepository(prisma);
     }
     return this.golfScoreRepository;
+  }
+
+  static getGolfClosestToPinRepository(): IGolfClosestToPinRepository {
+    if (!this.golfClosestToPinRepository) {
+      this.golfClosestToPinRepository = new PrismaGolfClosestToPinRepository(prisma);
+    }
+    return this.golfClosestToPinRepository;
   }
 
   static getGolferRepository(): IGolferRepository {

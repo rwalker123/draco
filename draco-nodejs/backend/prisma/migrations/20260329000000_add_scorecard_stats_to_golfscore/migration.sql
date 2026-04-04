@@ -1,0 +1,59 @@
+-- Add per-hole putt counts (nullable, 0-10 putts per hole)
+ALTER TABLE golfscore ADD COLUMN putts1 INT;
+ALTER TABLE golfscore ADD COLUMN putts2 INT;
+ALTER TABLE golfscore ADD COLUMN putts3 INT;
+ALTER TABLE golfscore ADD COLUMN putts4 INT;
+ALTER TABLE golfscore ADD COLUMN putts5 INT;
+ALTER TABLE golfscore ADD COLUMN putts6 INT;
+ALTER TABLE golfscore ADD COLUMN putts7 INT;
+ALTER TABLE golfscore ADD COLUMN putts8 INT;
+ALTER TABLE golfscore ADD COLUMN putts9 INT;
+ALTER TABLE golfscore ADD COLUMN putts10 INT;
+ALTER TABLE golfscore ADD COLUMN putts11 INT;
+ALTER TABLE golfscore ADD COLUMN putts12 INT;
+ALTER TABLE golfscore ADD COLUMN putts13 INT;
+ALTER TABLE golfscore ADD COLUMN putts14 INT;
+ALTER TABLE golfscore ADD COLUMN putts15 INT;
+ALTER TABLE golfscore ADD COLUMN putts16 INT;
+ALTER TABLE golfscore ADD COLUMN putts17 INT;
+ALTER TABLE golfscore ADD COLUMN putts18 INT;
+
+-- Add per-hole fairway hit flags (nullable boolean)
+ALTER TABLE golfscore ADD COLUMN fairway1 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway2 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway3 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway4 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway5 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway6 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway7 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway8 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway9 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway10 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway11 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway12 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway13 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway14 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway15 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway16 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway17 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN fairway18 BOOLEAN;
+
+-- Add per-hole green in regulation flags (nullable boolean)
+ALTER TABLE golfscore ADD COLUMN gir1 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir2 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir3 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir4 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir5 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir6 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir7 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir8 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir9 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir10 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir11 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir12 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir13 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir14 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir15 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir16 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir17 BOOLEAN;
+ALTER TABLE golfscore ADD COLUMN gir18 BOOLEAN;

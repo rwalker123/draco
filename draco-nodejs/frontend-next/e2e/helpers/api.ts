@@ -22,6 +22,16 @@ import {
   deleteGolfSubstitute,
   listGolfSubstitutesForLeague,
   signGolfPlayer,
+  getGolfFlightLeaders,
+  getGolfFlightSkins,
+  getGolfFlightScoreTypes,
+  getGolfFlightPuttContest,
+  getGolfPlayerDetailedStats,
+  getGolfClosestToPinForMatch,
+  getGolfClosestToPinForFlight,
+  createGolfClosestToPin,
+  deleteGolfClosestToPin,
+  getGolfCourse,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -35,6 +45,14 @@ import type {
   SubmitMatchResults,
   CurrentSeasonResponse,
   GolfSubstitute,
+  GolfFlightLeaders,
+  GolfSkinsEntry,
+  GolfLeaderboard,
+  GolfPuttContestEntry,
+  GolfPlayerDetailedStats,
+  GolfClosestToPinEntry,
+  CreateGolfClosestToPin,
+  GolfCourseWithTees,
 } from '@draco/shared-api-client';
 
 export function createE2EApiClient(baseUrl: string, token: string) {
@@ -211,6 +229,7 @@ export class ApiHelper {
       matchDateTime: string;
       courseId?: string;
       teeId?: string;
+      weekNumber?: number;
     },
   ): Promise<GolfMatch> {
     const { data: match, error } = await createGolfMatch({
@@ -335,5 +354,120 @@ export class ApiHelper {
       body: { contactId, isSub: true, initialDifferential },
     });
     return { error, status: response.status };
+  }
+
+  async getFlightLeaders(accountId: string, flightId: string): Promise<GolfFlightLeaders> {
+    const { data, error } = await getGolfFlightLeaders({
+      client: this.client,
+      path: { accountId, flightId },
+    });
+    if (error || !data) throw new Error(`getFlightLeaders failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async getFlightSkins(
+    accountId: string,
+    flightId: string,
+    type?: 'actual' | 'net',
+    weekNumber?: number,
+  ): Promise<GolfSkinsEntry[]> {
+    const { data, error } = await getGolfFlightSkins({
+      client: this.client,
+      path: { accountId, flightId },
+      query: { type, weekNumber },
+    });
+    if (error || !data) throw new Error(`getFlightSkins failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async getFlightScoreTypes(accountId: string, flightId: string): Promise<GolfLeaderboard[]> {
+    const { data, error } = await getGolfFlightScoreTypes({
+      client: this.client,
+      path: { accountId, flightId },
+    });
+    if (error || !data) throw new Error(`getFlightScoreTypes failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async getFlightPuttContest(
+    accountId: string,
+    flightId: string,
+    weekNumber?: number,
+  ): Promise<GolfPuttContestEntry[]> {
+    const { data, error } = await getGolfFlightPuttContest({
+      client: this.client,
+      path: { accountId, flightId },
+      query: { weekNumber },
+    });
+    if (error || !data) throw new Error(`getFlightPuttContest failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async getPlayerDetailedStats(
+    accountId: string,
+    contactId: string,
+  ): Promise<GolfPlayerDetailedStats> {
+    const { data, error } = await getGolfPlayerDetailedStats({
+      client: this.client,
+      path: { accountId, contactId },
+    });
+    if (error || !data) throw new Error(`getPlayerDetailedStats failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async getClosestToPinForMatch(
+    accountId: string,
+    matchId: string,
+  ): Promise<GolfClosestToPinEntry[]> {
+    const { data, error } = await getGolfClosestToPinForMatch({
+      client: this.client,
+      path: { accountId, matchId },
+    });
+    if (error || !data) throw new Error(`getClosestToPinForMatch failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async getClosestToPinForFlight(
+    accountId: string,
+    flightId: string,
+  ): Promise<GolfClosestToPinEntry[]> {
+    const { data, error } = await getGolfClosestToPinForFlight({
+      client: this.client,
+      path: { accountId, flightId },
+    });
+    if (error || !data)
+      throw new Error(`getClosestToPinForFlight failed: ${JSON.stringify(error)}`);
+    return data;
+  }
+
+  async createClosestToPin(
+    accountId: string,
+    matchId: string,
+    ctpData: CreateGolfClosestToPin,
+  ): Promise<GolfClosestToPinEntry> {
+    const { data: ctp, error } = await createGolfClosestToPin({
+      client: this.client,
+      path: { accountId, matchId },
+      body: ctpData,
+    });
+    if (error || !ctp) throw new Error(`createClosestToPin failed: ${JSON.stringify(error)}`);
+    return ctp;
+  }
+
+  async deleteClosestToPin(accountId: string, ctpId: string): Promise<void> {
+    const { error, response } = await deleteGolfClosestToPin({
+      client: this.client,
+      path: { accountId, ctpId },
+    });
+    if (error) throw new ApiError('deleteClosestToPin', response.status, error);
+  }
+
+  async getCourse(accountId: string, courseId: string): Promise<GolfCourseWithTees> {
+    const { data, error } = await getGolfCourse({
+      client: this.client,
+      path: { accountId, courseId },
+    });
+    if (error || !data) throw new Error(`getCourse failed: ${JSON.stringify(error)}`);
+    return data;
   }
 }

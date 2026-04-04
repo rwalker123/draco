@@ -28,6 +28,8 @@ export interface PlayerScoreData {
   frontNineScore: number;
   backNineScore: number;
   holeScores: number[];
+  putts: (number | null)[];
+  fairways: (boolean | null)[];
 }
 
 interface CourseParData {
@@ -125,6 +127,14 @@ export function PlayerScoreRow({
       totalScore: total,
       totalsOnly: false,
     });
+  };
+
+  const handlePuttsChange = (putts: (number | null)[]) => {
+    onChange({ ...scoreData, putts });
+  };
+
+  const handleFairwaysChange = (fairways: (boolean | null)[]) => {
+    onChange({ ...scoreData, fairways });
   };
 
   const isScoreDisabled = disabled || (scoreData.isAbsent && !scoreData.substituteGolferId);
@@ -322,6 +332,12 @@ export function PlayerScoreRow({
               disabled={isScoreDisabled}
               par={par}
               handicap={handicap}
+              putts={scoreData.putts}
+              onPuttsChange={handlePuttsChange}
+              fairways={scoreData.fairways}
+              onFairwaysChange={handleFairwaysChange}
+              showPutts={showHoleByHole}
+              showFairways={showHoleByHole}
             />
           </Box>
         </Collapse>

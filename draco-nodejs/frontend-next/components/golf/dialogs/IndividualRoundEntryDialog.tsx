@@ -64,6 +64,7 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
 
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
+  const [coursePar, setCoursePar] = useState<number[]>([]);
   const [tees, setTees] = useState<GolfCourseTeeType[]>([]);
   const [selectedTeeId, setSelectedTeeId] = useState<string>('');
   const [datePlayed, setDatePlayed] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -71,6 +72,8 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
   const [totalsOnly, setTotalsOnly] = useState(true);
   const [totalScore, setTotalScore] = useState<number | null>(null);
   const [holeScores, setHoleScores] = useState<number[]>([]);
+  const [putts, setPutts] = useState<(number | null)[]>([]);
+  const [fairways, setFairways] = useState<(boolean | null)[]>([]);
 
   const [courseSearchOpen, setCourseSearchOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -105,6 +108,7 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
 
         if (course.tees) {
           setTees(course.tees);
+          setCoursePar(course.mensPar ?? []);
           setSelectedCourseId(courseId);
           setSelectedCourseName(courseName ?? course.name);
           if (course.tees.length > 0) {
@@ -131,6 +135,7 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
     if (!open) {
       setSelectedCourseId(null);
       setSelectedCourseName(null);
+      setCoursePar([]);
       setTees([]);
       setSelectedTeeId('');
       setDatePlayed(new Date().toISOString().split('T')[0]);
@@ -138,6 +143,8 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
       setTotalsOnly(true);
       setTotalScore(null);
       setHoleScores([]);
+      setPutts([]);
+      setFairways([]);
       setError(null);
     } else if (editScore) {
       setDatePlayed(editScore.datePlayed.split('T')[0]);
@@ -145,6 +152,8 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
       setTotalsOnly(editScore.totalsOnly ?? true);
       setTotalScore(editScore.totalScore);
       setHoleScores(editScore.holeScores ?? []);
+      setPutts(editScore.putts ?? []);
+      setFairways(editScore.fairwaysHit ?? []);
       if (editScore.teeId) {
         setSelectedTeeId(editScore.teeId);
       }
@@ -159,6 +168,7 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
       const result = await getCourse(courseId);
       if (result.success) {
         setTees(result.data.tees ?? []);
+        setCoursePar(result.data.mensPar ?? []);
         setSelectedCourseId(courseId);
         setSelectedCourseName(result.data.name);
         if (result.data.tees && result.data.tees.length > 0) {
@@ -195,6 +205,9 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
     setError(null);
 
     try {
+      const hasPutts = putts.some((p) => p !== null && p !== undefined);
+      const hasFairways = fairways.some((f) => f !== null);
+
       const scoreData: CreateGolfScore = {
         courseId: selectedCourseId,
         teeId: selectedTeeId,
@@ -203,6 +216,8 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
         totalsOnly,
         totalScore: totalsOnly ? (totalScore ?? 0) : undefined,
         holeScores: totalsOnly ? undefined : holeScores.slice(0, numberOfHoles),
+        ...(!totalsOnly && hasPutts && { putts: putts.slice(0, numberOfHoles) }),
+        ...(!totalsOnly && hasFairways && { fairwaysHit: fairways.slice(0, numberOfHoles) }),
       };
 
       let result;
@@ -381,6 +396,13 @@ export const IndividualRoundEntryDialog: React.FC<IndividualRoundEntryDialogProp
                     onChange={handleHoleScoresChange}
                     numberOfHoles={numberOfHoles}
                     disabled={false}
+                    par={coursePar.length > 0 ? coursePar : undefined}
+                    putts={putts}
+                    onPuttsChange={setPutts}
+                    fairways={fairways}
+                    onFairwaysChange={setFairways}
+                    showPutts
+                    showFairways
                   />
                 </Box>
               )}

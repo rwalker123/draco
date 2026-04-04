@@ -6,6 +6,7 @@ import { createGolfMatch, updateGolfMatch, changeGolfMatchSeason } from '@draco/
 import type { GolfMatch } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import type { Game } from '@/types/schedule';
+import type { GolfGameExtras } from '@/components/GameCard';
 
 export interface GolfMatchFormValues {
   leagueSeasonId: string;
@@ -17,6 +18,7 @@ export interface GolfMatchFormValues {
   teeId?: string | null;
   comment?: string;
   matchType: number;
+  weekNumber?: number | null;
 }
 
 export interface GolfMatchOperationResult {
@@ -103,6 +105,9 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
       id: match.leagueSeasonId,
       name: '',
     },
+    golfExtras: {
+      weekNumber: match.weekNumber ?? undefined,
+    } satisfies GolfGameExtras,
   };
 }
 
@@ -129,6 +134,7 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
           teeId: values.teeId || undefined,
           matchType: values.matchType,
           comment: values.comment ?? '',
+          weekNumber: values.weekNumber ?? undefined,
         },
         throwOnError: false,
       });
@@ -163,6 +169,7 @@ export const useGolfMatchOperations = ({ accountId, timeZone }: UseGolfMatchOper
           teeId: values.teeId || undefined,
           matchType: values.matchType,
           comment: values.comment ?? '',
+          weekNumber: values.weekNumber,
         },
         throwOnError: false,
       });

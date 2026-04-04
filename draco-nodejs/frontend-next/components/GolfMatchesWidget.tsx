@@ -34,6 +34,7 @@ import WidgetShell from './ui/WidgetShell';
 import GameCard, { GameCardData } from './GameCard';
 import { useAccountTimezone } from '../context/AccountContext';
 import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
 import GolfScorecardDialog from './golf/GolfScorecardDialog';
 import LiveScoringDialog from './golf/live-scoring/LiveScoringDialog';
 import { AccountOptional } from './account/AccountOptional';
@@ -53,7 +54,9 @@ export default function GolfMatchesWidget({
   const apiClient = useApiClient();
   const timeZone = useAccountTimezone();
   const { user } = useAuth();
+  const { hasPermission } = useRole();
   const isAuthenticated = !!user;
+  const canManageLeague = hasPermission('account.manage');
 
   const apiClientRef = useRef(apiClient);
   useEffect(() => {
@@ -365,6 +368,7 @@ export default function GolfMatchesWidget({
         visitorPoints: match.team2Points,
         homeCourseHandicap: getTeamCourseHandicap(match.team1.id, match.id),
         visitorCourseHandicap: getTeamCourseHandicap(match.team2.id, match.id),
+        weekNumber: match.weekNumber ?? undefined,
       },
     };
   };
@@ -389,16 +393,38 @@ export default function GolfMatchesWidget({
         </Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {matches.map((match) => {
+          {matches.map((match, idx) => {
             const hasActiveSession = activeSessions.has(match.id);
             const showLiveButton =
               isMatchToday(match.matchDateTime) && match.matchStatus === 0 && !!match.course;
             const isParticipant = isUserParticipant(match);
 
+            const gameCardData = mapMatchToGameCardData(match);
+            const weekNum = gameCardData.golfExtras?.weekNumber;
+            const prevWeekNum =
+              idx > 0 ? mapMatchToGameCardData(matches[idx - 1]).golfExtras?.weekNumber : undefined;
+            const showWeekHeader = weekNum && weekNum !== prevWeekNum;
+
             return (
               <Box key={match.id}>
+                {showWeekHeader && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: 'block',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      mb: 0.5,
+                      mt: idx > 0 ? 1 : 0,
+                    }}
+                  >
+                    Week {weekNum}
+                  </Typography>
+                )}
                 <GameCard
-                  game={mapMatchToGameCardData(match)}
+                  game={gameCardData}
                   layout="horizontal"
                   canEditGames={false}
                   timeZone={timeZone}
@@ -526,6 +552,7 @@ export default function GolfMatchesWidget({
           onClose={handleScorecardClose}
           matchId={selectedMatchId}
           accountId={accountId}
+          showCtpButton={canManageLeague}
         />
       )}
       {liveScoringMatchId && getLiveScoringMatch() && (

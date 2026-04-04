@@ -24,6 +24,7 @@ export const GolfScoringConfigSchema = z.object({
   absentPlayerMode: AbsentPlayerModeEnum.default('opponentWins'),
   absentPlayerPenalty: z.number().int().min(0).max(36).default(0),
   fullTeamAbsentMode: FullTeamAbsentModeEnum.default('forfeit'),
+  enablePuttContest: z.boolean().default(false),
 });
 
 export const GolfLeagueSetupSchema = z

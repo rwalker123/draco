@@ -152,6 +152,7 @@ export class GolfMatchService {
       teeid: data.teeId ? BigInt(data.teeId) : null,
       matchstatus: 0,
       matchtype: data.matchType ?? 0,
+      weeknumber: data.weekNumber ?? null,
       comment: data.comment ?? '',
     });
 
@@ -224,6 +225,10 @@ export class GolfMatchService {
 
     if (data.matchStatus !== undefined) {
       updateData.matchstatus = data.matchStatus;
+    }
+
+    if (data.weekNumber !== undefined) {
+      updateData.weeknumber = data.weekNumber;
     }
 
     if (data.comment !== undefined) {

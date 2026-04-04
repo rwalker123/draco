@@ -1,5 +1,5 @@
 import { GolfScoreType, GolfScoreWithDetailsType } from '@draco/shared-schemas';
-import { golfcourse, golfteeinformation } from '#prisma/client';
+import { golfcourse, golfteeinformation, golfscore } from '#prisma/client';
 import {
   GolfScoreWithDetails,
   GolfMatchScoreWithDetails,
@@ -46,6 +46,10 @@ export class GolfScoreResponseFormatter {
       );
     }
 
+    const putts = this.extractPutts(score);
+    const fairwaysHit = this.extractFairways(score);
+    const greensInRegulation = this.extractGir(score);
+
     return {
       id: score.id.toString(),
       courseId: score.courseid.toString(),
@@ -58,6 +62,9 @@ export class GolfScoreResponseFormatter {
       startIndex: score.startindex ?? undefined,
       startIndex9: score.startindex9 ?? undefined,
       holeScores,
+      ...(putts && { putts }),
+      ...(fairwaysHit && { fairwaysHit }),
+      ...(greensInRegulation && { greensInRegulation }),
     };
   }
 
@@ -93,9 +100,23 @@ export class GolfScoreResponseFormatter {
       teeInfo.distancehole18,
     ];
 
+    const putts = this.extractPutts(score);
+    const fairwaysHit = this.extractFairways(score);
+    const greensInRegulation = this.extractGir(score);
+
     return {
       ...baseScore,
       isAbsent: score.isabsent ?? false,
+      ...(putts && {
+        totalPutts: putts.filter((p): p is number => p !== null).reduce((a, b) => a + b, 0),
+      }),
+      ...(fairwaysHit && {
+        fairwaysHitCount: fairwaysHit.filter((f) => f === true).length,
+        fairwaysEligible: fairwaysHit.filter((f) => f !== null).length,
+      }),
+      ...(greensInRegulation && {
+        girCount: greensInRegulation.filter((g) => g === true).length,
+      }),
       player: {
         id: score.golfer.contact.id.toString(),
         firstName: score.golfer.contact.firstname,
@@ -217,6 +238,10 @@ export class GolfScoreResponseFormatter {
       }
     }
 
+    const putts = this.extractPutts(score);
+    const fairwaysHit = this.extractFairways(score);
+    const greensInRegulation = this.extractGir(score);
+
     return {
       id: score.id.toString(),
       courseId: score.courseid.toString(),
@@ -247,6 +272,9 @@ export class GolfScoreResponseFormatter {
         score.totalsonly && score.holesplayed >= 18 && score.holescrore10 > 0
           ? score.holescrore10
           : undefined,
+      ...(putts && { putts }),
+      ...(fairwaysHit && { fairwaysHit }),
+      ...(greensInRegulation && { greensInRegulation }),
     };
   }
 
@@ -338,6 +366,10 @@ export class GolfScoreResponseFormatter {
       }
     }
 
+    const putts = this.extractPutts(score);
+    const fairwaysHit = this.extractFairways(score);
+    const greensInRegulation = this.extractGir(score);
+
     return {
       id: score.id.toString(),
       courseId: score.courseid.toString(),
@@ -368,7 +400,85 @@ export class GolfScoreResponseFormatter {
         score.totalsonly && score.holesplayed >= 18 && score.holescrore10 > 0
           ? score.holescrore10
           : undefined,
+      ...(putts && { putts }),
+      ...(fairwaysHit && { fairwaysHit }),
+      ...(greensInRegulation && { greensInRegulation }),
     };
+  }
+
+  private static extractPutts(score: golfscore): (number | null)[] | undefined {
+    const putts = [
+      score.putts1,
+      score.putts2,
+      score.putts3,
+      score.putts4,
+      score.putts5,
+      score.putts6,
+      score.putts7,
+      score.putts8,
+      score.putts9,
+      score.putts10,
+      score.putts11,
+      score.putts12,
+      score.putts13,
+      score.putts14,
+      score.putts15,
+      score.putts16,
+      score.putts17,
+      score.putts18,
+    ];
+    if (putts.every((p) => p === null)) return undefined;
+    return putts;
+  }
+
+  private static extractFairways(score: golfscore): (boolean | null)[] | undefined {
+    const fairways = [
+      score.fairway1,
+      score.fairway2,
+      score.fairway3,
+      score.fairway4,
+      score.fairway5,
+      score.fairway6,
+      score.fairway7,
+      score.fairway8,
+      score.fairway9,
+      score.fairway10,
+      score.fairway11,
+      score.fairway12,
+      score.fairway13,
+      score.fairway14,
+      score.fairway15,
+      score.fairway16,
+      score.fairway17,
+      score.fairway18,
+    ];
+    if (fairways.every((f) => f === null)) return undefined;
+    return fairways;
+  }
+
+  private static extractGir(score: golfscore): (boolean | null)[] | undefined {
+    const gir = [
+      score.gir1,
+      score.gir2,
+      score.gir3,
+      score.gir4,
+      score.gir5,
+      score.gir6,
+      score.gir7,
+      score.gir8,
+      score.gir9,
+      score.gir10,
+      score.gir11,
+      score.gir12,
+      score.gir13,
+      score.gir14,
+      score.gir15,
+      score.gir16,
+      score.gir17,
+      score.gir18,
+    ];
+    if (gir.every((g) => g === null)) return undefined;
+    return gir;
   }
 
   private static calculateDifferential(score: GolfScoreWithDetails, gender: Gender = 'M'): number {

@@ -2,6 +2,37 @@
 
 A comprehensive sports management application for baseball and golf leagues, teams, players, games, and sports-related activities with a focus on real-time updates and user-friendly interfaces.
 
+## Table of Contents
+
+- [Features](#-features)
+- [Architecture](#-architecture)
+  - [Technology Stack](#technology-stack)
+  - [Infrastructure & External Services](#infrastructure--external-services)
+  - [Project Structure](#project-structure)
+- [Quick Start](#-quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Variables](#environment-variables)
+- [API Documentation](#-api-documentation)
+  - [Key API Endpoints](#key-api-endpoints)
+- [Development](#-development)
+  - [Available Scripts](#available-scripts)
+  - [Database Management](#database-management)
+- [LocalStack Setup (S3 Testing)](#-localstack-setup-s3-testing)
+- [Security](#-security)
+- [Testing](#-testing)
+- [Deployment](#-deployment)
+  - [Production Build](#production-build)
+  - [Docker](#docker)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
+- [pnpm Reference Guide](#-pnpm-reference-guide)
+  - [npm → pnpm Command Cheat Sheet](#npm--pnpm-command-cheat-sheet)
+  - [Workspace Filtering](#workspace-filtering)
+- [Security & Secret Detection](#-security--secret-detection)
+- [Structured Registration & Linking Logs](#-structured-registration--linking-logs)
+
 ## 🏆 Features
 
 - **Multi-Sport Support**: Baseball and golf league management

@@ -44,6 +44,7 @@ const golfMatchSchema = z
     teeId: z.string().nullable().optional(),
     comment: z.string().max(255, 'Comment must be 255 characters or fewer').default(''),
     matchType: z.number().int().min(0).max(2).default(0),
+    weekNumber: z.number().int().min(1).max(52).nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.team1Id === data.team2Id) {
@@ -142,6 +143,7 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
           teeId: selectedGame.teeId ?? null,
           comment: selectedGame.comment ?? '',
           matchType: selectedGame.gameType ?? 0,
+          weekNumber: selectedGame.golfExtras?.weekNumber ?? null,
         }
       : {
           leagueSeasonId: defaultLeagueSeasonId ?? leagues[0]?.id ?? '',
@@ -153,6 +155,7 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
           teeId: null,
           comment: '',
           matchType: 0,
+          weekNumber: null,
         };
 
   const formResolver = zodResolver(golfMatchSchema) as Resolver<
@@ -257,6 +260,7 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
           teeId: data.teeId,
           comment: '',
           matchType: 0,
+          weekNumber: data.weekNumber,
         });
         return;
       }
@@ -463,21 +467,43 @@ const GolfMatchDialogInner: React.FC<GameDialogProps> = ({
                     />
                   </Box>
 
-                  <Controller
-                    name="matchType"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.matchType}>
-                        <InputLabel>Match Type</InputLabel>
-                        <Select {...field} label="Match Type" disabled={!canEditSchedule}>
-                          <MenuItem value={0}>Regular Season</MenuItem>
-                          <MenuItem value={1}>Playoff</MenuItem>
-                          <MenuItem value={2}>Practice</MenuItem>
-                        </Select>
-                        <FormHelperText>{errors.matchType?.message}</FormHelperText>
-                      </FormControl>
-                    )}
-                  />
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Controller
+                      name="matchType"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl fullWidth error={!!errors.matchType}>
+                          <InputLabel>Match Type</InputLabel>
+                          <Select {...field} label="Match Type" disabled={!canEditSchedule}>
+                            <MenuItem value={0}>Regular Season</MenuItem>
+                            <MenuItem value={1}>Playoff</MenuItem>
+                            <MenuItem value={2}>Practice</MenuItem>
+                          </Select>
+                          <FormHelperText>{errors.matchType?.message}</FormHelperText>
+                        </FormControl>
+                      )}
+                    />
+                    <Controller
+                      name="weekNumber"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          type="number"
+                          label="Week Number"
+                          size="small"
+                          value={field.value ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            field.onChange(val === '' ? null : parseInt(val, 10));
+                          }}
+                          inputProps={{ min: 1, max: 52 }}
+                          helperText="Groups matches for skins and stats"
+                          disabled={!canEditSchedule}
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </Box>
 
                   <Controller
                     name="comment"

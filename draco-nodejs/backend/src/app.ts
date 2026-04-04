@@ -58,6 +58,7 @@ import golfScoresRouter from './routes/golf-scores.js';
 import golfHandicapsRouter from './routes/golf-handicaps.js';
 import golfStandingsRouter from './routes/golf-standings.js';
 import golfStatsRouter from './routes/golf-stats.js';
+import golfClosestToPinRouter from './routes/golf-closest-to-pin.js';
 import golfPlayerScoresRouter from './routes/golf-player-scores.js';
 import contactsGolfRouter from './routes/contacts-golf.js';
 import externalCoursesRouter from './routes/external-courses.js';
@@ -318,6 +319,7 @@ app.use('/api/accounts/:accountId/golf/scores', golfScoresRouter);
 app.use('/api/accounts/:accountId/golf/handicaps', golfHandicapsRouter);
 app.use('/api/accounts/:accountId/golf/standings', golfStandingsRouter);
 app.use('/api/accounts/:accountId/golf/stats', golfStatsRouter);
+app.use('/api/accounts/:accountId/golf/closest-to-pin', golfClosestToPinRouter);
 app.use('/api/accounts/:accountId/golf/player/:contactId/scores', golfPlayerScoresRouter);
 app.use('/api/contacts/:contactId/golf', contactsGolfRouter);
 // Global error handler

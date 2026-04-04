@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, CircularProgress } from '@mui/material';
+import { Container, Typography, Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import GroupsIcon from '@mui/icons-material/Groups';
 import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import { getAccountSeason } from '@draco/shared-api-client';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import { AdminBreadcrumbs } from '../../../../../../../components/admin';
 import AdminSubItemCard from '../../../../../../../components/admin/AdminSubItemCard';
 import { useApiClient } from '../../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../../utils/apiResult';
+import { RegenerateStatsDialog } from '../../../../../../../components/golf/dialogs/RegenerateStatsDialog';
 
 interface GolfFlightsAdminPageProps {
   accountId: string;
@@ -21,6 +23,8 @@ const GolfFlightsAdminPage: React.FC<GolfFlightsAdminPageProps> = ({ accountId, 
   const [leagueSeasonId, setLeagueSeasonId] = useState<string>('');
   const [seasonName, setSeasonName] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const apiClient = useApiClient();
 
   useEffect(() => {
@@ -112,8 +116,42 @@ const GolfFlightsAdminPage: React.FC<GolfFlightsAdminPageProps> = ({ accountId, 
               />
             </Grid>
           )}
+          {leagueSeasonId && (
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+              <AdminSubItemCard
+                title="Regenerate Stats"
+                description="Recalculate GIR, assign week numbers, and recalculate match points"
+                icon={<SettingsBackupRestoreIcon />}
+                onClick={() => setRegenerateDialogOpen(true)}
+              />
+            </Grid>
+          )}
         </Grid>
       </Container>
+
+      <RegenerateStatsDialog
+        open={regenerateDialogOpen}
+        onClose={() => setRegenerateDialogOpen(false)}
+        onSuccess={setSuccessMessage}
+        accountId={accountId}
+        leagueSeasonId={leagueSeasonId}
+      />
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={8000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSuccessMessage(null)}
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </main>
   );
 };
