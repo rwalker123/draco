@@ -29,17 +29,20 @@ import {
   Edit as EditIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
 import type { WorkoutSummaryType } from '@draco/shared-schemas';
 import { deleteWorkout, listWorkouts } from '../../services/workoutService';
 import ConfirmationDialog from '../common/ConfirmationDialog';
 import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 import { WorkoutDetailsDialog } from './dialogs/WorkoutDetailsDialog';
 import ButtonBase from '@mui/material/ButtonBase';
-import { listAccountFields } from '@draco/shared-api-client';
+import { exportWorkoutRegistrations, listAccountFields } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import { downloadBlob } from '../../utils/downloadUtils';
 import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
 
 interface WorkoutRegistrationsAccordionProps {
@@ -106,6 +109,8 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   refreshKey = 0,
 }) => {
   const { token } = useAuth();
+  const { hasPermission } = useRole();
+  const canManageWorkouts = hasPermission('workout.manage', { accountId });
   const apiClient = useApiClient();
   const [workouts, setWorkouts] = useState<WorkoutSummaryType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,6 +130,9 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     fallbackField: FieldDetails | null;
   }>({ open: false, fieldId: null, fallbackField: null });
   const [fields, setFields] = useState<Record<string, FieldDetails>>({});
+  const [exportingWorkoutIds, setExportingWorkoutIds] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -269,6 +277,55 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     setFieldDialogState({ open: false, fieldId: null, fallbackField: null });
   };
 
+  const getFileNameFromContentDisposition = (header: string | null): string | null => {
+    if (!header) return null;
+    const utf8Match = header.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+    if (utf8Match) {
+      try {
+        return decodeURIComponent(utf8Match[1].trim());
+      } catch {
+        return utf8Match[1].trim();
+      }
+    }
+    const quotedMatch = header.match(/filename\s*=\s*"([^"]+)"/i);
+    if (quotedMatch) return quotedMatch[1];
+    const bareMatch = header.match(/filename\s*=\s*([^;]+)/i);
+    if (bareMatch) return bareMatch[1].trim();
+    return null;
+  };
+
+  const handleExportRegistrations = async (workout: WorkoutSummaryType) => {
+    setExportingWorkoutIds((prev) => {
+      const next = new Set(prev);
+      next.add(workout.id);
+      return next;
+    });
+    try {
+      const result = await exportWorkoutRegistrations({
+        client: apiClient,
+        path: { accountId, workoutId: workout.id },
+        parseAs: 'blob',
+        throwOnError: false,
+      });
+      const blob = unwrapApiResult(result, 'Failed to export registrations') as Blob;
+      const fileName =
+        getFileNameFromContentDisposition(
+          result.response?.headers.get('Content-Disposition') ?? null,
+        ) ?? 'workout-registrations.csv';
+      downloadBlob(blob, fileName);
+    } catch (err) {
+      console.error('Error exporting registrations:', err);
+      showErrorMessage(err instanceof Error ? err.message : 'Failed to export registrations');
+    } finally {
+      setExportingWorkoutIds((prev) => {
+        if (!prev.has(workout.id)) return prev;
+        const next = new Set(prev);
+        next.delete(workout.id);
+        return next;
+      });
+    }
+  };
+
   const confirmDelete = async () => {
     if (!workoutToDelete) {
       return;
@@ -369,6 +426,36 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                   </Tooltip>
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  {canManageWorkouts && (
+                    <Tooltip
+                      title={
+                        (workout.registrationCount ?? 0) === 0
+                          ? 'No registrations to export'
+                          : 'Export registrations'
+                      }
+                    >
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="Export registrations"
+                          disabled={
+                            (workout.registrationCount ?? 0) === 0 ||
+                            exportingWorkoutIds.has(workout.id)
+                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleExportRegistrations(workout);
+                          }}
+                        >
+                          {exportingWorkoutIds.has(workout.id) ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <FileDownloadIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Preview workout">
                     <IconButton
                       size="small"

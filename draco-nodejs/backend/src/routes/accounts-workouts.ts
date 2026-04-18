@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import contentDisposition from 'content-disposition';
 import {
   WorkoutListQuerySchema,
   WorkoutRegistrationsQuerySchema,
@@ -18,6 +19,7 @@ import { ValidationError } from '../utils/customErrors.js';
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const service = ServiceFactory.getWorkoutService();
+const csvExportService = ServiceFactory.getCsvExportService();
 
 const rateLimitHandler: NonNullable<Parameters<typeof rateLimit>[0]>['handler'] = (req, res) => {
   const rateLimitInfo = (req as Request & { rateLimit?: { resetTime?: Date } }).rateLimit;
@@ -342,6 +344,31 @@ router.get(
     return service.listRegistrations(accountId, workoutId, query.limit).then((registrations) => {
       res.json(registrations);
     });
+  }),
+);
+
+router.get(
+  '/:accountId/workouts/:workoutId/registrations/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('workout.manage'),
+  asyncHandler(async (req, res) => {
+    const { accountId } = extractAccountParams(req.params);
+    const { workoutId } = extractBigIntParams(req.params, 'workoutId');
+    const workout = await service.getWorkout(accountId, workoutId);
+    const result = await csvExportService.exportWorkoutRegistrations(
+      accountId,
+      workoutId,
+      workout.workoutDesc,
+      new Date(workout.workoutDate),
+    );
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
   }),
 );
 
