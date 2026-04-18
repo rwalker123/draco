@@ -17,6 +17,12 @@ import {
   TeeRatings,
   calculateTotalPar,
 } from '../utils/whsCalculator.js';
+import {
+  extractFairways,
+  extractGirs,
+  extractHoleScores,
+  extractPutts,
+} from '../utils/golfScoreFields.js';
 
 export class GolfScoreResponseFormatter {
   static format(score: GolfScoreWithDetails): GolfScoreType {
@@ -407,76 +413,19 @@ export class GolfScoreResponseFormatter {
   }
 
   private static extractPutts(score: golfscore): (number | null)[] | undefined {
-    const putts = [
-      score.putts1,
-      score.putts2,
-      score.putts3,
-      score.putts4,
-      score.putts5,
-      score.putts6,
-      score.putts7,
-      score.putts8,
-      score.putts9,
-      score.putts10,
-      score.putts11,
-      score.putts12,
-      score.putts13,
-      score.putts14,
-      score.putts15,
-      score.putts16,
-      score.putts17,
-      score.putts18,
-    ];
+    const putts = extractPutts(score);
     if (putts.every((p) => p === null)) return undefined;
     return putts;
   }
 
   private static extractFairways(score: golfscore): (boolean | null)[] | undefined {
-    const fairways = [
-      score.fairway1,
-      score.fairway2,
-      score.fairway3,
-      score.fairway4,
-      score.fairway5,
-      score.fairway6,
-      score.fairway7,
-      score.fairway8,
-      score.fairway9,
-      score.fairway10,
-      score.fairway11,
-      score.fairway12,
-      score.fairway13,
-      score.fairway14,
-      score.fairway15,
-      score.fairway16,
-      score.fairway17,
-      score.fairway18,
-    ];
+    const fairways = extractFairways(score);
     if (fairways.every((f) => f === null)) return undefined;
     return fairways;
   }
 
   private static extractGir(score: golfscore): (boolean | null)[] | undefined {
-    const gir = [
-      score.gir1,
-      score.gir2,
-      score.gir3,
-      score.gir4,
-      score.gir5,
-      score.gir6,
-      score.gir7,
-      score.gir8,
-      score.gir9,
-      score.gir10,
-      score.gir11,
-      score.gir12,
-      score.gir13,
-      score.gir14,
-      score.gir15,
-      score.gir16,
-      score.gir17,
-      score.gir18,
-    ];
+    const gir = extractGirs(score);
     if (gir.every((g) => g === null)) return undefined;
     return gir;
   }
@@ -496,38 +445,8 @@ export class GolfScoreResponseFormatter {
     if (!score.totalsonly && (score.holesplayed === 18 || score.holesplayed === 9)) {
       const is9Hole = score.holesplayed === 9;
 
-      const holeScores = is9Hole
-        ? [
-            score.holescrore1,
-            score.holescrore2,
-            score.holescrore3,
-            score.holescrore4,
-            score.holescrore5,
-            score.holescrore6,
-            score.holescrore7,
-            score.holescrore8,
-            score.holescrore9,
-          ]
-        : [
-            score.holescrore1,
-            score.holescrore2,
-            score.holescrore3,
-            score.holescrore4,
-            score.holescrore5,
-            score.holescrore6,
-            score.holescrore7,
-            score.holescrore8,
-            score.holescrore9,
-            score.holescrore10,
-            score.holescrore11,
-            score.holescrore12,
-            score.holescrore13,
-            score.holescrore14,
-            score.holescrore15,
-            score.holescrore16,
-            score.holescrore17,
-            score.holescrore18,
-          ];
+      const allHoleScores = extractHoleScores(score);
+      const holeScores = is9Hole ? allHoleScores.slice(0, 9) : allHoleScores;
 
       const allHolePars = getHolePars(score.golfcourse, gender);
       const allHoleHandicapIndexes = getHoleHandicapIndexes(score.golfcourse, gender);

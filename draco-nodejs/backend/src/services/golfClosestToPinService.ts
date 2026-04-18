@@ -62,8 +62,12 @@ export class GolfClosestToPinService {
       throw new NotFoundError('Golf course not found');
     }
 
-    const mensPar = course[`menspar${data.holeNumber}` as keyof typeof course] as number;
-    const womansPar = course[`womanspar${data.holeNumber}` as keyof typeof course] as number;
+    const mensPar = course[`menspar${data.holeNumber}` as keyof typeof course];
+    const womansPar = course[`womanspar${data.holeNumber}` as keyof typeof course];
+
+    if (typeof mensPar !== 'number' && typeof womansPar !== 'number') {
+      throw new ValidationError(`Hole ${data.holeNumber} is not configured on this course`);
+    }
 
     if (mensPar !== 3 && womansPar !== 3) {
       throw new ValidationError(`Hole ${data.holeNumber} is not a par 3`);

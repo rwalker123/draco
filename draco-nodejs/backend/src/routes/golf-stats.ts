@@ -16,23 +16,26 @@ function parseScoreType(value: unknown): 'actual' | 'net' {
   return 'actual';
 }
 
-function parsePositiveInt(value: unknown, defaultValue: number): number {
+function parsePositiveInt(value: unknown, defaultValue: number, max: number): number {
   if (value === undefined || value === null || value === '') return defaultValue;
   const parsed = parseInt(String(value), 10);
-  if (isNaN(parsed) || parsed < 1) {
+  if (isNaN(parsed) || parsed < 1 || parsed > max) {
     throw new ValidationError(`Invalid numeric parameter: ${String(value)}`);
   }
   return parsed;
 }
 
-function parseOptionalPositiveInt(value: unknown): number | undefined {
+function parseOptionalPositiveInt(value: unknown, max: number): number | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   const parsed = parseInt(String(value), 10);
-  if (isNaN(parsed) || parsed < 1) {
+  if (isNaN(parsed) || parsed < 1 || parsed > max) {
     throw new ValidationError(`Invalid numeric parameter: ${String(value)}`);
   }
   return parsed;
 }
+
+const MAX_LEADERBOARD_LIMIT = 100;
+const MAX_WEEK_NUMBER = 52;
 
 const router = Router({ mergeParams: true });
 const golfStatsService = ServiceFactory.getGolfStatsService();
@@ -58,7 +61,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { flightId } = extractBigIntParams(req.params, 'flightId');
     const type = parseScoreType(req.query.type);
-    const limit = parsePositiveInt(req.query.limit, 10);
+    const limit = parsePositiveInt(req.query.limit, 10, MAX_LEADERBOARD_LIMIT);
     const lowScores = await golfStatsService.getLowScoreLeaders(flightId, type, limit);
     res.json(lowScores);
   }),
@@ -70,7 +73,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { flightId } = extractBigIntParams(req.params, 'flightId');
-    const limit = parsePositiveInt(req.query.limit, 20);
+    const limit = parsePositiveInt(req.query.limit, 20, MAX_LEADERBOARD_LIMIT);
     const averages = await golfStatsService.getScoringAverages(flightId, limit);
     res.json(averages);
   }),
@@ -83,7 +86,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { flightId } = extractBigIntParams(req.params, 'flightId');
     const type = parseScoreType(req.query.type);
-    const weekNumber = parseOptionalPositiveInt(req.query.weekNumber);
+    const weekNumber = parseOptionalPositiveInt(req.query.weekNumber, MAX_WEEK_NUMBER);
     const skins =
       type === 'net'
         ? await golfStatsService.calculateNetSkinsLeaders(flightId, weekNumber)
@@ -109,7 +112,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { flightId } = extractBigIntParams(req.params, 'flightId');
-    const weekNumber = parseOptionalPositiveInt(req.query.weekNumber);
+    const weekNumber = parseOptionalPositiveInt(req.query.weekNumber, MAX_WEEK_NUMBER);
     const results = await golfStatsService.getPuttContestResults(flightId, weekNumber);
     res.json(results);
   }),

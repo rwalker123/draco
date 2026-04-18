@@ -91,13 +91,13 @@ const createMockTeamSeason = (id: bigint, name: string) => ({
   teamid: 1n,
 });
 
-const createHoleScoreFields = (scorePerHole: number): Record<string, number> => {
-  const fields: Record<string, number> = {};
+const createHoleScoreFields = (scorePerHole: number): Record<string, number | boolean | null> => {
+  const fields: Record<string, number | boolean | null> = {};
   for (let i = 1; i <= 18; i++) {
     fields[`holescrore${i}`] = scorePerHole;
-    fields[`putts${i}`] = null as unknown as number;
-    fields[`fairway${i}`] = null as unknown as number;
-    fields[`gir${i}`] = null as unknown as number;
+    fields[`putts${i}`] = null;
+    fields[`fairway${i}`] = null;
+    fields[`gir${i}`] = null;
   }
   return fields;
 };
@@ -217,34 +217,109 @@ describe('GolfStatsService', () => {
   const calculateHandicapIndex = vi.fn().mockResolvedValue(null);
   const calculateCourseHandicap = vi.fn().mockReturnValue({ courseHandicap: 0 });
 
-  const mockMatchRepo = {
+  const mockMatchRepo: IGolfMatchRepository = {
+    findByIdWithLeague: vi.fn(),
+    findBySeasonId: vi.fn(),
+    findBySeasonIdWithDateRange: vi.fn(),
     findByFlightId,
     findByLeagueSeasonId: findByFlightId,
+    findById: vi.fn(),
     findByIdWithScores,
+    findUpcoming: vi.fn(),
+    findCompleted: vi.fn(),
+    findByTeam: vi.fn(),
+    findByDate: vi.fn(),
+    create: vi.fn(),
     update: matchUpdate,
-  } as unknown as IGolfMatchRepository;
+    delete: vi.fn(),
+    updateStatus: vi.fn(),
+    updateTee: vi.fn(),
+    hasScores: vi.fn(),
+    seasonHasLeagueSeasons: vi.fn(),
+    changeMatchSeason: vi.fn(),
+    updatePoints: vi.fn(),
+  };
 
-  const mockScoreRepo = {
+  const mockScoreRepo: IGolfScoreRepository = {
+    findById: vi.fn(),
+    findByGolferId: vi.fn(),
+    findAllByGolferId: vi.fn(),
+    findByGolferIdBeforeDate: vi.fn(),
+    findByMatchId: vi.fn(),
     findByMatchIds,
+    findByTeamAndMatch: vi.fn(),
+    create: vi.fn(),
     update: scoreUpdate,
-  } as unknown as IGolfScoreRepository;
+    delete: vi.fn(),
+    createMatchScore: vi.fn(),
+    deleteMatchScores: vi.fn(),
+    deleteMatchScoresForTeam: vi.fn(),
+    getPlayerScoresForSeason: vi.fn(),
+    getPlayerLeagueScores: vi.fn(),
+    calculateDifferential: vi.fn(),
+    submitMatchScoresTransactional: vi.fn(),
+  };
 
-  const mockFlightRepo = {
+  const mockFlightRepo: IGolfFlightRepository = {
+    findBySeasonId: vi.fn(),
     findById: flightFindById,
-  } as unknown as IGolfFlightRepository;
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    getPlayerCountForFlight: vi.fn(),
+    flightNameExistsInSeason: vi.fn(),
+    seasonHasFlights: vi.fn(),
+    findByLeagueAndSeason: vi.fn(),
+  };
 
-  const mockTeamRepo = {
+  const mockTeamRepo: IGolfTeamRepository = {
+    findBySeasonId: vi.fn(),
     findByFlightId: teamFindByFlightId,
-  } as unknown as IGolfTeamRepository;
+    findById: vi.fn(),
+    findByIdWithRoster: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    hasMatches: vi.fn(),
+    hasRosterEntries: vi.fn(),
+    findByTeamAndLeagueSeason: vi.fn(),
+  };
 
-  const mockRosterRepo = {
+  const mockRosterRepo: IGolfRosterRepository = {
     findByTeamSeasonId,
-  } as unknown as IGolfRosterRepository;
+    findById: vi.fn(),
+    findByIds: vi.fn(),
+    findByGolferAndTeam: vi.fn(),
+    findSubstitutesForLeague: vi.fn(),
+    findGolferByContactId: vi.fn(),
+    findGolfersByIds: vi.fn(),
+    findOrCreateGolfer: vi.fn(),
+    createRosterEntry: vi.fn(),
+    createLeagueSub: vi.fn(),
+    updateRosterEntry: vi.fn(),
+    updateGolfer: vi.fn(),
+    updateLeagueSub: vi.fn(),
+    deleteRosterEntry: vi.fn(),
+    deleteLeagueSub: vi.fn(),
+    findAvailableContacts: vi.fn(),
+    contactExistsInAccount: vi.fn(),
+    createContact: vi.fn(),
+    hasMatchScores: vi.fn(),
+    findLeagueSubById: vi.fn(),
+    findLeagueSubByGolferAndSeason: vi.fn(),
+    findLeagueSubByGolferAndLeagueSeason: vi.fn(),
+    leagueSeasonExists: vi.fn(),
+    moveSubToRoster: vi.fn(),
+    moveRosterToSub: vi.fn(),
+  };
 
-  const mockHandicapService = {
+  const mockHandicapService: Pick<
+    GolfHandicapService,
+    'calculateHandicapIndex' | 'calculateCourseHandicap'
+  > = {
     calculateHandicapIndex,
     calculateCourseHandicap,
-  } as unknown as GolfHandicapService;
+  };
 
   beforeEach(() => {
     vi.resetAllMocks();

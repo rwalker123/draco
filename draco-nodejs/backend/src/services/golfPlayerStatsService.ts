@@ -1,4 +1,3 @@
-import { golfscore } from '#prisma/client';
 import {
   GolfPlayerDetailedStatsType,
   GolfScoreTypeCountsType,
@@ -12,6 +11,12 @@ import {
   GolfScoreWithDetails,
 } from '../repositories/interfaces/IGolfScoreRepository.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
+import {
+  extractFairways,
+  extractGirs,
+  extractHoleScores,
+  extractPutts,
+} from '../utils/golfScoreFields.js';
 import { ServiceFactory } from './serviceFactory.js';
 
 export class GolfPlayerStatsService {
@@ -83,7 +88,7 @@ export class GolfPlayerStatsService {
     const allHolePars: number[] = [];
 
     for (const score of scores) {
-      const holeScores = this.extractHoleScores(score);
+      const holeScores = extractHoleScores(score);
       const holePars = this.extractCoursePars(score);
       allHoleScores.push(...holeScores);
       allHolePars.push(...holePars);
@@ -179,7 +184,7 @@ export class GolfPlayerStatsService {
     const roundPutts: number[] = [];
 
     for (const score of scores) {
-      const putts = this.extractPutts(score);
+      const putts = extractPutts(score);
       const hasPuttsData = putts.some((p) => p !== null);
       if (!hasPuttsData) continue;
 
@@ -204,7 +209,7 @@ export class GolfPlayerStatsService {
     const roundPercentages: number[] = [];
 
     for (const score of scores) {
-      const fairways = this.extractFairways(score);
+      const fairways = extractFairways(score);
       const hasFairwayData = fairways.some((f) => f !== null);
       if (!hasFairwayData) continue;
 
@@ -238,7 +243,7 @@ export class GolfPlayerStatsService {
     const roundPercentages: number[] = [];
 
     for (const score of scores) {
-      const girs = this.extractGirs(score);
+      const girs = extractGirs(score);
       const hasGirData = girs.some((g) => g !== null);
       if (!hasGirData) continue;
 
@@ -274,8 +279,8 @@ export class GolfPlayerStatsService {
     let missedGirTotal = 0;
 
     for (const score of scores) {
-      const girs = this.extractGirs(score);
-      const holeScores = this.extractHoleScores(score);
+      const girs = extractGirs(score);
+      const holeScores = extractHoleScores(score);
 
       for (let i = 0; i < girs.length; i++) {
         if (girs[i] === null) continue;
@@ -305,7 +310,7 @@ export class GolfPlayerStatsService {
     const par5Scores: number[] = [];
 
     for (const score of scores) {
-      const holeScores = this.extractHoleScores(score);
+      const holeScores = extractHoleScores(score);
 
       for (let i = 0; i < holeScores.length; i++) {
         const par = getParForHole(score, i);
@@ -369,98 +374,6 @@ export class GolfPlayerStatsService {
     return (course[parKey] as number) ?? 4;
   }
 
-  private extractHoleScores(score: golfscore): number[] {
-    return [
-      score.holescrore1,
-      score.holescrore2,
-      score.holescrore3,
-      score.holescrore4,
-      score.holescrore5,
-      score.holescrore6,
-      score.holescrore7,
-      score.holescrore8,
-      score.holescrore9,
-      score.holescrore10,
-      score.holescrore11,
-      score.holescrore12,
-      score.holescrore13,
-      score.holescrore14,
-      score.holescrore15,
-      score.holescrore16,
-      score.holescrore17,
-      score.holescrore18,
-    ];
-  }
-
-  private extractPutts(score: golfscore): (number | null)[] {
-    return [
-      score.putts1,
-      score.putts2,
-      score.putts3,
-      score.putts4,
-      score.putts5,
-      score.putts6,
-      score.putts7,
-      score.putts8,
-      score.putts9,
-      score.putts10,
-      score.putts11,
-      score.putts12,
-      score.putts13,
-      score.putts14,
-      score.putts15,
-      score.putts16,
-      score.putts17,
-      score.putts18,
-    ];
-  }
-
-  private extractFairways(score: golfscore): (boolean | null)[] {
-    return [
-      score.fairway1,
-      score.fairway2,
-      score.fairway3,
-      score.fairway4,
-      score.fairway5,
-      score.fairway6,
-      score.fairway7,
-      score.fairway8,
-      score.fairway9,
-      score.fairway10,
-      score.fairway11,
-      score.fairway12,
-      score.fairway13,
-      score.fairway14,
-      score.fairway15,
-      score.fairway16,
-      score.fairway17,
-      score.fairway18,
-    ];
-  }
-
-  private extractGirs(score: golfscore): (boolean | null)[] {
-    return [
-      score.gir1,
-      score.gir2,
-      score.gir3,
-      score.gir4,
-      score.gir5,
-      score.gir6,
-      score.gir7,
-      score.gir8,
-      score.gir9,
-      score.gir10,
-      score.gir11,
-      score.gir12,
-      score.gir13,
-      score.gir14,
-      score.gir15,
-      score.gir16,
-      score.gir17,
-      score.gir18,
-    ];
-  }
-
   private extractCoursePars(score: GolfScoreWithDetails): number[] {
     return Array.from({ length: 18 }, (_, i) => this.getParForHole(score, i));
   }
@@ -472,7 +385,7 @@ export class GolfPlayerStatsService {
     let max = 0;
 
     for (const score of scores) {
-      const holeScores = this.extractHoleScores(score);
+      const holeScores = extractHoleScores(score);
       let count = 0;
 
       for (let i = 0; i < holeScores.length; i++) {
