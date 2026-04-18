@@ -32,6 +32,7 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
 import type { WorkoutSummaryType } from '@draco/shared-schemas';
 import { deleteWorkout, listWorkouts } from '../../services/workoutService';
 import ConfirmationDialog from '../common/ConfirmationDialog';
@@ -108,6 +109,8 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
   refreshKey = 0,
 }) => {
   const { token } = useAuth();
+  const { hasPermission } = useRole();
+  const canManageWorkouts = hasPermission('workout.manage', { accountId });
   const apiClient = useApiClient();
   const [workouts, setWorkouts] = useState<WorkoutSummaryType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +130,9 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     fallbackField: FieldDetails | null;
   }>({ open: false, fieldId: null, fallbackField: null });
   const [fields, setFields] = useState<Record<string, FieldDetails>>({});
-  const [exportingWorkoutId, setExportingWorkoutId] = useState<string | null>(null);
+  const [exportingWorkoutIds, setExportingWorkoutIds] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -272,14 +277,29 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     setFieldDialogState({ open: false, fieldId: null, fallbackField: null });
   };
 
-  const buildExportFileName = (workout: WorkoutSummaryType): string => {
-    const sanitized = workout.workoutDesc.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
-    const datePart = new Date(workout.workoutDate).toISOString().slice(0, 10);
-    return `${sanitized}-${datePart}-registrations.csv`;
+  const getFileNameFromContentDisposition = (header: string | null): string | null => {
+    if (!header) return null;
+    const utf8Match = header.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+    if (utf8Match) {
+      try {
+        return decodeURIComponent(utf8Match[1].trim());
+      } catch {
+        return utf8Match[1].trim();
+      }
+    }
+    const quotedMatch = header.match(/filename\s*=\s*"([^"]+)"/i);
+    if (quotedMatch) return quotedMatch[1];
+    const bareMatch = header.match(/filename\s*=\s*([^;]+)/i);
+    if (bareMatch) return bareMatch[1].trim();
+    return null;
   };
 
   const handleExportRegistrations = async (workout: WorkoutSummaryType) => {
-    setExportingWorkoutId(workout.id);
+    setExportingWorkoutIds((prev) => {
+      const next = new Set(prev);
+      next.add(workout.id);
+      return next;
+    });
     try {
       const result = await exportWorkoutRegistrations({
         client: apiClient,
@@ -288,12 +308,21 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
         throwOnError: false,
       });
       const blob = unwrapApiResult(result, 'Failed to export registrations') as Blob;
-      downloadBlob(blob, buildExportFileName(workout));
+      const fileName =
+        getFileNameFromContentDisposition(
+          result.response?.headers.get('Content-Disposition') ?? null,
+        ) ?? 'workout-registrations.csv';
+      downloadBlob(blob, fileName);
     } catch (err) {
       console.error('Error exporting registrations:', err);
       showErrorMessage(err instanceof Error ? err.message : 'Failed to export registrations');
     } finally {
-      setExportingWorkoutId(null);
+      setExportingWorkoutIds((prev) => {
+        if (!prev.has(workout.id)) return prev;
+        const next = new Set(prev);
+        next.delete(workout.id);
+        return next;
+      });
     }
   };
 
@@ -397,33 +426,36 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                   </Tooltip>
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <Tooltip
-                    title={
-                      (workout.registrationCount ?? 0) === 0
-                        ? 'No registrations to export'
-                        : 'Export registrations'
-                    }
-                  >
-                    <span>
-                      <IconButton
-                        size="small"
-                        disabled={
-                          (workout.registrationCount ?? 0) === 0 ||
-                          exportingWorkoutId === workout.id
-                        }
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleExportRegistrations(workout);
-                        }}
-                      >
-                        {exportingWorkoutId === workout.id ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          <FileDownloadIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                    </span>
-                  </Tooltip>
+                  {canManageWorkouts && (
+                    <Tooltip
+                      title={
+                        (workout.registrationCount ?? 0) === 0
+                          ? 'No registrations to export'
+                          : 'Export registrations'
+                      }
+                    >
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="Export registrations"
+                          disabled={
+                            (workout.registrationCount ?? 0) === 0 ||
+                            exportingWorkoutIds.has(workout.id)
+                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleExportRegistrations(workout);
+                          }}
+                        >
+                          {exportingWorkoutIds.has(workout.id) ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <FileDownloadIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Preview workout">
                     <IconButton
                       size="small"

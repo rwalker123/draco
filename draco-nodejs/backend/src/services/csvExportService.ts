@@ -181,7 +181,7 @@ export class CsvExportService {
     const registrations = await this.workoutRepository.listRegistrations(
       accountId,
       workoutId,
-      MAX_EXPORT_ROWS,
+      MAX_EXPORT_ROWS + 1,
     );
     this.checkExportLimit(registrations.length, 'workout registrations', workoutDesc);
     const rows = this.mapWorkoutRegistrationsToExportRows(registrations);
@@ -207,7 +207,7 @@ export class CsvExportService {
     return data.map((registration) => ({
       name: registration.name,
       email: registration.email,
-      age: String(registration.age),
+      age: registration.age != null ? String(registration.age) : '',
       phone1: registration.phone1 ?? '',
       phone2: registration.phone2 ?? '',
       phone3: registration.phone3 ?? '',
