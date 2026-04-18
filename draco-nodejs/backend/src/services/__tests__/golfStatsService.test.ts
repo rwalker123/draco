@@ -209,7 +209,7 @@ describe('GolfStatsService', () => {
   const findByFlightId = vi.fn();
   const findByIdWithScores = vi.fn();
   const matchUpdate = vi.fn().mockResolvedValue({});
-  const findByMatchId = vi.fn();
+  const findByMatchIds = vi.fn();
   const scoreUpdate = vi.fn().mockResolvedValue({});
   const flightFindById = vi.fn();
   const teamFindByFlightId = vi.fn();
@@ -225,7 +225,7 @@ describe('GolfStatsService', () => {
   } as unknown as IGolfMatchRepository;
 
   const mockScoreRepo = {
-    findByMatchId,
+    findByMatchIds,
     update: scoreUpdate,
   } as unknown as IGolfScoreRepository;
 
@@ -457,10 +457,9 @@ describe('GolfStatsService', () => {
       const match = createMockMatch(1n, 1);
       const score = createMockGolfScore(1n, 1n, 101n, 'Alice', 'Smith', 72, 3);
       const msEntry = createMockMatchScoreEntry(1n, score, createMockTeamSeason(1n, 'Team A'));
-      const matchWithScores = createMockMatchWithScores(match, [msEntry]);
 
       findByFlightId.mockResolvedValue([match]);
-      findByIdWithScores.mockResolvedValue(matchWithScores);
+      findByMatchIds.mockResolvedValue(new Map([[match.id, [msEntry]]]));
 
       const result = await service.getScoreTypeLeaders(1n);
 
@@ -490,10 +489,9 @@ describe('GolfStatsService', () => {
         absentScore,
         createMockTeamSeason(1n, 'Team A'),
       );
-      const matchWithScores = createMockMatchWithScores(match, [msEntry as never]);
 
       findByFlightId.mockResolvedValue([match]);
-      findByIdWithScores.mockResolvedValue(matchWithScores);
+      findByMatchIds.mockResolvedValue(new Map([[match.id, [msEntry] as never]]));
 
       const result = await service.getScoreTypeLeaders(1n);
 
@@ -522,7 +520,7 @@ describe('GolfStatsService', () => {
       const score = createMockGolfScore(1n, 1n, 101n, 'Alice', 'Smith', 72, 4, 3);
 
       findByFlightId.mockResolvedValue([match]);
-      findByMatchId.mockResolvedValue([{ id: 1n, golfscore: score }]);
+      findByMatchIds.mockResolvedValue(new Map([[match.id, [{ id: 1n, golfscore: score }]]]));
 
       const result = await service.getPuttContestResults(1n);
 
@@ -539,7 +537,7 @@ describe('GolfStatsService', () => {
       const score = createMockGolfScore(1n, 1n, 101n, 'Alice', 'Smith', 72, 4, 2);
 
       findByFlightId.mockResolvedValue([match]);
-      findByMatchId.mockResolvedValue([{ id: 1n, golfscore: score }]);
+      findByMatchIds.mockResolvedValue(new Map([[match.id, [{ id: 1n, golfscore: score }]]]));
 
       const result = await service.getPuttContestResults(1n);
 
@@ -556,9 +554,12 @@ describe('GolfStatsService', () => {
       const score2 = createMockGolfScore(2n, 2n, 102n, 'Bob', 'Jones', 80, 4, 3);
 
       findByFlightId.mockResolvedValue([match1, match2]);
-      findByMatchId
-        .mockResolvedValueOnce([{ id: 1n, golfscore: score1 }])
-        .mockResolvedValueOnce([{ id: 2n, golfscore: score2 }]);
+      findByMatchIds.mockResolvedValue(
+        new Map([
+          [match1.id, [{ id: 1n, golfscore: score1 }]],
+          [match2.id, [{ id: 2n, golfscore: score2 }]],
+        ]),
+      );
 
       const result = await service.getPuttContestResults(1n, 1);
 
@@ -583,7 +584,7 @@ describe('GolfStatsService', () => {
       };
 
       findByFlightId.mockResolvedValue([match]);
-      findByMatchId.mockResolvedValue([{ id: 1n, golfscore: absentScore }]);
+      findByMatchIds.mockResolvedValue(new Map([[match.id, [{ id: 1n, golfscore: absentScore }]]]));
 
       const result = await service.getPuttContestResults(1n);
 
@@ -598,7 +599,7 @@ describe('GolfStatsService', () => {
       const score = createMockGolfScore(1n, 1n, 101n, 'Alice', 'Smith', 72, 4, 3);
 
       findByFlightId.mockResolvedValue([match]);
-      findByMatchId.mockResolvedValue([{ id: 1n, golfscore: score }]);
+      findByMatchIds.mockResolvedValue(new Map([[match.id, [{ id: 1n, golfscore: score }]]]));
 
       const result = await service.getPuttContestResults(1n);
 
@@ -733,10 +734,11 @@ describe('GolfStatsService', () => {
         const score2 = createMockGolfScoreWithPutts(2n, 5, 2, 4);
 
         findByFlightId.mockResolvedValue([match]);
-        findByMatchId.mockResolvedValue([
-          createMatchScoreEntry(1n, score1),
-          createMatchScoreEntry(2n, score2),
-        ]);
+        findByMatchIds.mockResolvedValue(
+          new Map([
+            [match.id, [createMatchScoreEntry(1n, score1), createMatchScoreEntry(2n, score2)]],
+          ]),
+        );
 
         await service.regenerateStats(1n, {
           regenerateGir: true,
@@ -760,7 +762,7 @@ describe('GolfStatsService', () => {
         const score = createMockGolfScoreWithPutts(1n, 4, null, 4);
 
         findByFlightId.mockResolvedValue([match]);
-        findByMatchId.mockResolvedValue([createMatchScoreEntry(1n, score)]);
+        findByMatchIds.mockResolvedValue(new Map([[match.id, [createMatchScoreEntry(1n, score)]]]));
 
         await service.regenerateStats(1n, {
           regenerateGir: true,
@@ -778,7 +780,7 @@ describe('GolfStatsService', () => {
         const score = { ...createMockGolfScoreWithPutts(1n, 4, 2, 4), isabsent: true };
 
         findByFlightId.mockResolvedValue([match]);
-        findByMatchId.mockResolvedValue([createMatchScoreEntry(1n, score)]);
+        findByMatchIds.mockResolvedValue(new Map([[match.id, [createMatchScoreEntry(1n, score)]]]));
 
         await service.regenerateStats(1n, {
           regenerateGir: true,
@@ -797,10 +799,11 @@ describe('GolfStatsService', () => {
         const score2 = createMockGolfScoreWithPutts(2n, 5, 2, 4);
 
         findByFlightId.mockResolvedValue([match]);
-        findByMatchId.mockResolvedValue([
-          createMatchScoreEntry(1n, score1),
-          createMatchScoreEntry(2n, score2),
-        ]);
+        findByMatchIds.mockResolvedValue(
+          new Map([
+            [match.id, [createMatchScoreEntry(1n, score1), createMatchScoreEntry(2n, score2)]],
+          ]),
+        );
 
         const result = await service.regenerateStats(1n, {
           regenerateGir: true,
@@ -1030,7 +1033,7 @@ describe('GolfStatsService', () => {
         const score = createMockGolfScoreWithPutts(1n, 4, 2, 4);
 
         findByFlightId.mockResolvedValue([match]);
-        findByMatchId.mockResolvedValue([createMatchScoreEntry(1n, score)]);
+        findByMatchIds.mockResolvedValue(new Map([[match.id, [createMatchScoreEntry(1n, score)]]]));
 
         const result = await service.regenerateStats(1n, {
           regenerateGir: true,
@@ -1050,7 +1053,7 @@ describe('GolfStatsService', () => {
         const score = createMockGolfScoreWithPutts(1n, 4, 2, 4);
 
         findByFlightId.mockResolvedValue([match]);
-        findByMatchId.mockResolvedValue([createMatchScoreEntry(1n, score)]);
+        findByMatchIds.mockResolvedValue(new Map([[match.id, [createMatchScoreEntry(1n, score)]]]));
 
         const result = await service.regenerateStats(1n, {
           regenerateGir: false,

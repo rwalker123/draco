@@ -198,18 +198,20 @@ export class GolfStatsService {
       }
     >();
 
+    const matchIds = completedMatches.map((m) => m.id);
+    const scoresByMatchId = await this.scoreRepository.findByMatchIds(matchIds);
+
     for (const match of completedMatches) {
-      const matchWithScores = await this.matchRepository.findByIdWithScores(match.id);
-      if (!matchWithScores) continue;
+      const matchScores = scoresByMatchId.get(match.id) ?? [];
 
-      const course = matchWithScores.golfcourse;
-      if (!course) continue;
-
-      for (const ms of matchWithScores.golfmatchscores) {
+      for (const ms of matchScores) {
         if (ms.golfscore.isabsent) continue;
 
         const score = ms.golfscore;
-        const contact = ms.golfer.contact;
+        const course = score.golfcourse;
+        if (!course) continue;
+
+        const contact = score.golfer.contact;
         const contactIdStr = contact.id.toString();
 
         if (!playerCounts.has(contactIdStr)) {
@@ -226,7 +228,7 @@ export class GolfStatsService {
         }
 
         const counts = playerCounts.get(contactIdStr)!;
-        const isFemale = ms.golfer.gender === 'F';
+        const isFemale = score.golfer.gender === 'F';
 
         HOLE_FIELDS.forEach((field, index) => {
           const holeScore = score[field] as number;
@@ -313,10 +315,15 @@ export class GolfStatsService {
 
     const entries: GolfPuttContestEntryType[] = [];
 
-    for (const match of completedMatches) {
-      if (filterWeekNumber !== undefined && match.weeknumber !== filterWeekNumber) continue;
+    const filteredMatches =
+      filterWeekNumber !== undefined
+        ? completedMatches.filter((m) => m.weeknumber === filterWeekNumber)
+        : completedMatches;
+    const matchIds = filteredMatches.map((m) => m.id);
+    const scoresByMatchId = await this.scoreRepository.findByMatchIds(matchIds);
 
-      const matchScores = await this.scoreRepository.findByMatchId(match.id);
+    for (const match of filteredMatches) {
+      const matchScores = scoresByMatchId.get(match.id) ?? [];
 
       for (const ms of matchScores) {
         if (ms.golfscore.isabsent) continue;
@@ -373,8 +380,11 @@ export class GolfStatsService {
       }
     }
 
+    const matchIds = completedMatches.map((m) => m.id);
+    const scoresByMatchId = await this.scoreRepository.findByMatchIds(matchIds);
+
     for (const match of completedMatches) {
-      const matchScores = await this.scoreRepository.findByMatchId(match.id);
+      const matchScores = scoresByMatchId.get(match.id) ?? [];
 
       for (const ms of matchScores) {
         if (ms.golfscore.isabsent) continue;
@@ -954,8 +964,11 @@ export class GolfStatsService {
 
     let updatedCount = 0;
 
+    const matchIds = completedMatches.map((m) => m.id);
+    const scoresByMatchId = await this.scoreRepository.findByMatchIds(matchIds);
+
     for (const match of completedMatches) {
-      const matchScores = await this.scoreRepository.findByMatchId(match.id);
+      const matchScores = scoresByMatchId.get(match.id) ?? [];
 
       for (const ms of matchScores) {
         const score = ms.golfscore;
