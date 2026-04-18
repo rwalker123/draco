@@ -82,31 +82,59 @@ function ClosestToPinEntryForm({
       return;
     }
 
+    const validatedEntries: { holeNumber: number; contactId: string; distance: number }[] = [];
     for (const entry of filledEntries) {
       const distanceValue = parseFloat(entry.distance);
       if (isNaN(distanceValue) || distanceValue < 0) {
         setError(`Invalid distance for hole ${entry.holeNumber}`);
         return;
       }
-    }
-
-    for (const entry of filledEntries) {
-      const distanceValue = parseFloat(entry.distance);
-
-      const result = await createEntry(matchId, {
+      validatedEntries.push({
         holeNumber: entry.holeNumber,
         contactId: entry.contactId,
         distance: distanceValue,
+      });
+    }
+
+    const succeededHoles: number[] = [];
+    const failedHoles: { holeNumber: number; error: string }[] = [];
+
+    for (const entry of validatedEntries) {
+      const result = await createEntry(matchId, {
+        holeNumber: entry.holeNumber,
+        contactId: entry.contactId,
+        distance: entry.distance,
         unit: 'ft',
       });
 
-      if (!result.success) {
-        setError(result.error);
-        return;
+      if (result.success) {
+        succeededHoles.push(entry.holeNumber);
+      } else {
+        failedHoles.push({ holeNumber: entry.holeNumber, error: result.error });
       }
     }
 
-    onSuccess?.();
+    if (succeededHoles.length > 0) {
+      setHoleStates((prev) =>
+        prev.map((state) =>
+          succeededHoles.includes(state.holeNumber)
+            ? { ...state, contactId: '', distance: '' }
+            : state,
+        ),
+      );
+      onSuccess?.();
+    }
+
+    if (failedHoles.length > 0) {
+      const failedList = failedHoles
+        .map(({ holeNumber, error: holeError }) => `hole ${holeNumber} (${holeError})`)
+        .join(', ');
+      const savedNote =
+        succeededHoles.length > 0 ? ` Saved holes: ${succeededHoles.join(', ')}.` : '';
+      setError(`Failed to save ${failedList}.${savedNote}`);
+      return;
+    }
+
     onClose();
   };
 

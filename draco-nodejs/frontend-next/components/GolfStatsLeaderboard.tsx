@@ -321,7 +321,7 @@ export default function GolfStatsLeaderboard({
                 )}
                 <TableBody>
                   {rows.map((entry, index) => (
-                    <TableRow key={`${entry.contactId}-${index}`} sx={getBodyRowSx(index)}>
+                    <TableRow key={entry.contactId} sx={getBodyRowSx(index)}>
                       <TableCell sx={{ color: 'text.primary' }}>
                         {renderPlayerName(entry.contactId, entry.firstName, entry.lastName)}
                       </TableCell>

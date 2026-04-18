@@ -383,6 +383,18 @@ export class GolfStatsService {
     const matchIds = completedMatches.map((m) => m.id);
     const scoresByMatchId = await this.scoreRepository.findByMatchIds(matchIds);
 
+    const uniqueGolferIds = new Set<bigint>();
+    for (const match of completedMatches) {
+      const matchScores = scoresByMatchId.get(match.id) ?? [];
+      for (const ms of matchScores) {
+        if (ms.golfscore.isabsent) continue;
+        if (playerDataMap.has(ms.golfscore.golferid.toString())) {
+          uniqueGolferIds.add(ms.golfscore.golferid);
+        }
+      }
+    }
+    const handicapIndexByGolferId = await this.fetchHandicapIndexMap(uniqueGolferIds);
+
     for (const match of completedMatches) {
       const matchScores = scoresByMatchId.get(match.id) ?? [];
 
@@ -396,9 +408,7 @@ export class GolfStatsService {
           const score = ms.golfscore.totalscore;
           playerData.scores.push(score);
 
-          const handicapIndex = await this.handicapService.calculateHandicapIndex(
-            ms.golfscore.golferid,
-          );
+          const handicapIndex = handicapIndexByGolferId.get(golferIdStr) ?? null;
           if (handicapIndex !== null) {
             const isFemale = ms.golfscore.golfer.gender === 'F';
             const teeInfo = ms.golfscore.golfteeinformation;
@@ -686,6 +696,19 @@ export class GolfStatsService {
       .sort((a, b) => b.skinsWon - a.skinsWon);
   }
 
+  private async fetchHandicapIndexMap(
+    golferIds: Iterable<bigint>,
+  ): Promise<Map<string, number | null>> {
+    const ids = Array.from(new Set(golferIds));
+    const entries = await Promise.all(
+      ids.map(
+        async (id) =>
+          [id.toString(), await this.handicapService.calculateHandicapIndex(id)] as const,
+      ),
+    );
+    return new Map(entries);
+  }
+
   private async buildNetScorePool(
     matchesWithScores: NonNullable<
       Awaited<ReturnType<IGolfMatchRepository['findByIdWithScores']>>
@@ -712,6 +735,16 @@ export class GolfStatsService {
         netScores: Map<number, number>;
       }
     >();
+
+    const uniqueGolferIds = new Set<bigint>();
+    for (const matchWithScores of matchesWithScores) {
+      if (!matchWithScores.golfcourse || !matchWithScores.golfteeinformation) continue;
+      for (const ms of matchWithScores.golfmatchscores) {
+        if (ms.golfscore.isabsent) continue;
+        uniqueGolferIds.add(ms.golfscore.golferid);
+      }
+    }
+    const handicapIndexByGolferId = await this.fetchHandicapIndexMap(uniqueGolferIds);
 
     for (const matchWithScores of matchesWithScores) {
       const course = matchWithScores.golfcourse;
@@ -753,7 +786,7 @@ export class GolfStatsService {
           (field) => course[field as keyof typeof course] as number,
         );
 
-        const handicapIndex = await this.handicapService.calculateHandicapIndex(score.golferid);
+        const handicapIndex = handicapIndexByGolferId.get(score.golferid.toString()) ?? null;
 
         let courseHandicap = 0;
         if (handicapIndex !== null) {

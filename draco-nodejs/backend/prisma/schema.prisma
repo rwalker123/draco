@@ -940,6 +940,8 @@ model golfclosesttopin {
 
   @@unique([matchid, holeno], map: "uq_golfclosesttopin_match_hole")
   @@index([matchid], map: "idx_golfclosesttopin_match")
+  @@index([contactid], map: "idx_golfclosesttopin_contact")
+  @@index([enteredby], map: "idx_golfclosesttopin_enteredby")
 }
 
 model golfmatchscores {
