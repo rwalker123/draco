@@ -933,6 +933,57 @@ export const registerWorkoutsEndpoints = ({ registry, schemaRefs }: RegisterCont
     },
   });
 
+  // GET /api/accounts/{accountId}/workouts/{workoutId}/registrations/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/workouts/{workoutId}/registrations/export',
+    operationId: 'exportWorkoutRegistrations',
+    summary: 'Export workout registrations',
+    description: 'Export registrations for a workout to a CSV file.',
+    tags: ['Workouts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'workoutId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'CSV file export',
+        content: {
+          'text/csv': {
+            schema: { type: 'string', format: 'binary' },
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Access denied',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Workout not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
   // GET /api/accounts/{accountId}/workouts/{workoutId}/registrations
   registry.registerPath({
     method: 'get',

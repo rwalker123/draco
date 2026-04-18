@@ -108,6 +108,34 @@ export interface ContactExportRow {
   roles: string;
 }
 
+export interface WorkoutRegistrationExportRow {
+  name: string;
+  email: string;
+  age: string;
+  phone1: string;
+  phone2: string;
+  phone3: string;
+  phone4: string;
+  positions: string;
+  isManager: string;
+  whereHeard: string;
+  dateRegistered: string;
+}
+
+export const WORKOUT_REGISTRATION_EXPORT_HEADERS: CsvHeader<WorkoutRegistrationExportRow>[] = [
+  { key: 'name', header: 'Name' },
+  { key: 'email', header: 'Email' },
+  { key: 'age', header: 'Age' },
+  { key: 'phone1', header: 'Phone 1' },
+  { key: 'phone2', header: 'Phone 2' },
+  { key: 'phone3', header: 'Phone 3' },
+  { key: 'phone4', header: 'Phone 4' },
+  { key: 'positions', header: 'Positions' },
+  { key: 'isManager', header: 'Is Manager' },
+  { key: 'whereHeard', header: 'Where Heard' },
+  { key: 'dateRegistered', header: 'Date Registered' },
+];
+
 export const CONTACT_EXPORT_HEADERS: CsvHeader<ContactExportRow>[] = [
   { key: 'lastName', header: 'Last Name' },
   { key: 'firstName', header: 'First Name' },

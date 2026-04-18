@@ -157,6 +157,7 @@ if (process.env.NODE_ENV !== 'test') {
           .catch((error) => callback(error as Error));
       },
       credentials: true,
+      exposedHeaders: ['Content-Disposition'],
     }),
   );
 }
