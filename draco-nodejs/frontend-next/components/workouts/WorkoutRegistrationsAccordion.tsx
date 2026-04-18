@@ -29,6 +29,7 @@ import {
   Edit as EditIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
+  FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import type { WorkoutSummaryType } from '@draco/shared-schemas';
@@ -37,9 +38,10 @@ import ConfirmationDialog from '../common/ConfirmationDialog';
 import { UI_TIMEOUTS } from '../../constants/timeoutConstants';
 import { WorkoutDetailsDialog } from './dialogs/WorkoutDetailsDialog';
 import ButtonBase from '@mui/material/ButtonBase';
-import { listAccountFields } from '@draco/shared-api-client';
+import { exportWorkoutRegistrations, listAccountFields } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
 import { unwrapApiResult } from '../../utils/apiResult';
+import { downloadBlob } from '../../utils/downloadUtils';
 import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
 
 interface WorkoutRegistrationsAccordionProps {
@@ -125,6 +127,7 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     fallbackField: FieldDetails | null;
   }>({ open: false, fieldId: null, fallbackField: null });
   const [fields, setFields] = useState<Record<string, FieldDetails>>({});
+  const [exportingWorkoutId, setExportingWorkoutId] = useState<string | null>(null);
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -269,6 +272,31 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
     setFieldDialogState({ open: false, fieldId: null, fallbackField: null });
   };
 
+  const buildExportFileName = (workout: WorkoutSummaryType): string => {
+    const sanitized = workout.workoutDesc.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+    const datePart = new Date(workout.workoutDate).toISOString().slice(0, 10);
+    return `${sanitized}-${datePart}-registrations.csv`;
+  };
+
+  const handleExportRegistrations = async (workout: WorkoutSummaryType) => {
+    setExportingWorkoutId(workout.id);
+    try {
+      const result = await exportWorkoutRegistrations({
+        client: apiClient,
+        path: { accountId, workoutId: workout.id },
+        parseAs: 'blob',
+        throwOnError: false,
+      });
+      const blob = unwrapApiResult(result, 'Failed to export registrations') as Blob;
+      downloadBlob(blob, buildExportFileName(workout));
+    } catch (err) {
+      console.error('Error exporting registrations:', err);
+      showErrorMessage(err instanceof Error ? err.message : 'Failed to export registrations');
+    } finally {
+      setExportingWorkoutId(null);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!workoutToDelete) {
       return;
@@ -369,6 +397,33 @@ export const WorkoutRegistrationsAccordion: React.FC<WorkoutRegistrationsAccordi
                   </Tooltip>
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <Tooltip
+                    title={
+                      (workout.registrationCount ?? 0) === 0
+                        ? 'No registrations to export'
+                        : 'Export registrations'
+                    }
+                  >
+                    <span>
+                      <IconButton
+                        size="small"
+                        disabled={
+                          (workout.registrationCount ?? 0) === 0 ||
+                          exportingWorkoutId === workout.id
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleExportRegistrations(workout);
+                        }}
+                      >
+                        {exportingWorkoutId === workout.id ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <FileDownloadIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                   <Tooltip title="Preview workout">
                     <IconButton
                       size="small"

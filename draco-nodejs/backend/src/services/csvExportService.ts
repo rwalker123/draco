@@ -5,10 +5,12 @@ import {
   ContactExportOptions,
 } from '../repositories/interfaces/IContactRepository.js';
 import { IRoleRepository } from '../repositories/interfaces/IRoleRepository.js';
+import { IWorkoutRepository } from '../repositories/interfaces/IWorkoutRepository.js';
 import {
   dbRosterExportData,
   dbManagerExportData,
   dbContactExportData,
+  dbWorkoutRegistration,
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
@@ -16,9 +18,11 @@ import {
   RosterExportRow,
   ManagerExportRow,
   ContactExportRow,
+  WorkoutRegistrationExportRow,
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
   CONTACT_EXPORT_HEADERS,
+  WORKOUT_REGISTRATION_EXPORT_HEADERS,
 } from '../utils/csvGenerator.js';
 import { PayloadTooLargeError } from '../utils/customErrors.js';
 
@@ -35,6 +39,7 @@ export class CsvExportService {
     private readonly managerRepository: IManagerRepository,
     private readonly contactRepository?: IContactRepository,
     private readonly roleRepository?: IRoleRepository,
+    private readonly workoutRepository?: IWorkoutRepository,
   ) {}
 
   async exportTeamRoster(
@@ -161,6 +166,57 @@ export class CsvExportService {
       buffer,
       fileName: `${sanitizedName}-users.csv`,
     };
+  }
+
+  async exportWorkoutRegistrations(
+    accountId: bigint,
+    workoutId: bigint,
+    workoutDesc: string,
+    workoutDate: Date,
+  ): Promise<CsvExportResult> {
+    if (!this.workoutRepository) {
+      throw new Error('Workout repository is required for workout registration exports');
+    }
+    const startTime = Date.now();
+    const registrations = await this.workoutRepository.listRegistrations(
+      accountId,
+      workoutId,
+      MAX_EXPORT_ROWS,
+    );
+    this.checkExportLimit(registrations.length, 'workout registrations', workoutDesc);
+    const rows = this.mapWorkoutRegistrationsToExportRows(registrations);
+    const buffer = await generateCsv(rows, WORKOUT_REGISTRATION_EXPORT_HEADERS);
+    const sanitizedName = this.sanitizeFileName(workoutDesc);
+    const datePart = workoutDate.toISOString().slice(0, 10);
+    this.logExportMetrics(
+      'workout registrations',
+      workoutDesc,
+      rows.length,
+      buffer.length,
+      startTime,
+    );
+    return {
+      buffer,
+      fileName: `${sanitizedName}-${datePart}-registrations.csv`,
+    };
+  }
+
+  private mapWorkoutRegistrationsToExportRows(
+    data: dbWorkoutRegistration[],
+  ): WorkoutRegistrationExportRow[] {
+    return data.map((registration) => ({
+      name: registration.name,
+      email: registration.email,
+      age: String(registration.age),
+      phone1: registration.phone1 ?? '',
+      phone2: registration.phone2 ?? '',
+      phone3: registration.phone3 ?? '',
+      phone4: registration.phone4 ?? '',
+      positions: registration.positions ?? '',
+      isManager: registration.ismanager ? 'Yes' : 'No',
+      whereHeard: registration.whereheard ?? '',
+      dateRegistered: registration.dateregistered ? registration.dateregistered.toISOString() : '',
+    }));
   }
 
   private mapRosterToExportRows(data: dbRosterExportData[], seasonId: bigint): RosterExportRow[] {

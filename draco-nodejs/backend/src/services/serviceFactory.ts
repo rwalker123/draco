@@ -1046,11 +1046,13 @@ export class ServiceFactory {
       const managerRepository = RepositoryFactory.getManagerRepository();
       const contactRepository = RepositoryFactory.getContactRepository();
       const roleRepository = RepositoryFactory.getRoleRepository();
+      const workoutRepository = RepositoryFactory.getWorkoutRepository();
       this.csvExportService = new CsvExportService(
         rosterRepository,
         managerRepository,
         contactRepository,
         roleRepository,
+        workoutRepository,
       );
     }
     return this.csvExportService;
