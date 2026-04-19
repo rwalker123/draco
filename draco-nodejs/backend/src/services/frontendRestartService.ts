@@ -2,15 +2,33 @@ import { getNextBackupTime } from './backupService.js';
 
 const RAILWAY_API_ENDPOINT = 'https://backboard.railway.com/graphql/v2';
 
-const RESTART_MUTATION = `
-  mutation serviceInstanceRestart($serviceId: String!, $environmentId: String!) {
-    serviceInstanceRestart(serviceId: $serviceId, environmentId: $environmentId)
+const LATEST_DEPLOYMENT_QUERY = `
+  query LatestDeployment($input: DeploymentListInput!) {
+    deployments(input: $input, first: 1) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
   }
 `;
 
-interface RailwayGraphQLResponse {
-  data?: unknown;
+const RESTART_MUTATION = `
+  mutation RestartDeployment($id: String!) {
+    deploymentRestart(id: $id)
+  }
+`;
+
+interface RailwayGraphQLResponse<T = unknown> {
+  data?: T;
   errors?: Array<{ message: string }>;
+}
+
+interface LatestDeploymentData {
+  deployments: {
+    edges: Array<{ node: { id: string } }>;
+  };
 }
 
 export class FrontendRestartService {
@@ -55,16 +73,51 @@ export class FrontendRestartService {
 
     console.log('🔄 Triggering frontend restart via Railway API...');
 
+    const deploymentId = await this.fetchLatestDeploymentId(token, serviceId, environmentId);
+    await this.restartDeployment(token, deploymentId);
+
+    console.log('🔄 Frontend restart triggered successfully');
+  }
+
+  private async fetchLatestDeploymentId(
+    token: string,
+    serviceId: string,
+    environmentId: string,
+  ): Promise<string> {
+    const result = await this.callRailway<LatestDeploymentData>(token, LATEST_DEPLOYMENT_QUERY, {
+      input: {
+        serviceId,
+        environmentId,
+        status: { in: ['SUCCESS'] },
+      },
+    });
+
+    const deploymentId = result.data?.deployments.edges[0]?.node.id;
+    if (!deploymentId) {
+      throw new Error(
+        `No successful deployment found for service ${serviceId} in environment ${environmentId}`,
+      );
+    }
+
+    return deploymentId;
+  }
+
+  private async restartDeployment(token: string, deploymentId: string): Promise<void> {
+    await this.callRailway(token, RESTART_MUTATION, { id: deploymentId });
+  }
+
+  private async callRailway<T>(
+    token: string,
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<RailwayGraphQLResponse<T>> {
     const response = await fetch(RAILWAY_API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Project-Access-Token': token,
       },
-      body: JSON.stringify({
-        query: RESTART_MUTATION,
-        variables: { serviceId, environmentId },
-      }),
+      body: JSON.stringify({ query, variables }),
     });
 
     if (!response.ok) {
@@ -74,7 +127,7 @@ export class FrontendRestartService {
       );
     }
 
-    const result = (await response.json()) as RailwayGraphQLResponse;
+    const result = (await response.json()) as RailwayGraphQLResponse<T>;
 
     if (result.errors && result.errors.length > 0) {
       throw new Error(
@@ -82,7 +135,7 @@ export class FrontendRestartService {
       );
     }
 
-    console.log('🔄 Frontend restart triggered successfully');
+    return result;
   }
 
   private hasRequiredConfig(): boolean {

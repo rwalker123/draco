@@ -27,29 +27,56 @@ describe('FrontendRestartService', () => {
     vi.restoreAllMocks();
   });
 
+  const mockDeploymentLookup = (deploymentId: string | null) => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          deployments: {
+            edges: deploymentId ? [{ node: { id: deploymentId } }] : [],
+          },
+        },
+      }),
+    });
+  };
+
+  const mockRestartSuccess = () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { deploymentRestart: true } }),
+    });
+  };
+
   describe('restartFrontend', () => {
-    it('sends a GraphQL mutation with Project-Access-Token header', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: { serviceInstanceRestart: true } }),
-      });
+    it('fetches the latest deployment and restarts it', async () => {
+      mockDeploymentLookup('deployment-789');
+      mockRestartSuccess();
 
       const service = new FrontendRestartService();
       await service.restartFrontend();
 
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      const [url, init] = fetchMock.mock.calls[0];
-      expect(url).toBe('https://backboard.railway.com/graphql/v2');
-      expect(init.method).toBe('POST');
-      expect(init.headers['Project-Access-Token']).toBe('test-token');
-      expect(init.headers['Content-Type']).toBe('application/json');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const body = JSON.parse(init.body);
-      expect(body.query).toContain('serviceInstanceRestart');
-      expect(body.variables).toEqual({
-        serviceId: 'service-123',
-        environmentId: 'env-456',
+      const [lookupUrl, lookupInit] = fetchMock.mock.calls[0];
+      expect(lookupUrl).toBe('https://backboard.railway.com/graphql/v2');
+      expect(lookupInit.method).toBe('POST');
+      expect(lookupInit.headers['Project-Access-Token']).toBe('test-token');
+      expect(lookupInit.headers['Content-Type']).toBe('application/json');
+
+      const lookupBody = JSON.parse(lookupInit.body);
+      expect(lookupBody.query).toContain('deployments');
+      expect(lookupBody.variables).toEqual({
+        input: {
+          serviceId: 'service-123',
+          environmentId: 'env-456',
+          status: { in: ['SUCCESS'] },
+        },
       });
+
+      const [, restartInit] = fetchMock.mock.calls[1];
+      const restartBody = JSON.parse(restartInit.body);
+      expect(restartBody.query).toContain('deploymentRestart');
+      expect(restartBody.variables).toEqual({ id: 'deployment-789' });
     });
 
     it('throws when required env vars are missing', async () => {
@@ -59,6 +86,16 @@ describe('FrontendRestartService', () => {
       await expect(service.restartFrontend()).rejects.toThrow(
         /RAILWAY_API_TOKEN.*FRONTEND_SERVICE_ID.*RAILWAY_ENVIRONMENT_ID/,
       );
+    });
+
+    it('throws when no successful deployment is found', async () => {
+      mockDeploymentLookup(null);
+
+      const service = new FrontendRestartService();
+      await expect(service.restartFrontend()).rejects.toThrow(
+        /No successful deployment found for service service-123/,
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('throws when the API returns a non-OK response', async () => {
@@ -81,6 +118,18 @@ describe('FrontendRestartService', () => {
 
       const service = new FrontendRestartService();
       await expect(service.restartFrontend()).rejects.toThrow(/Service not found/);
+    });
+
+    it('throws when the restart mutation itself fails', async () => {
+      mockDeploymentLookup('deployment-789');
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ errors: [{ message: 'Deployment not restartable' }] }),
+      });
+
+      const service = new FrontendRestartService();
+      await expect(service.restartFrontend()).rejects.toThrow(/Deployment not restartable/);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -124,10 +173,8 @@ describe('FrontendRestartService', () => {
     });
 
     it('re-schedules after a successful restart', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: { serviceInstanceRestart: true } }),
-      });
+      mockDeploymentLookup('deployment-789');
+      mockRestartSuccess();
 
       const service = new FrontendRestartService();
       service.start();
