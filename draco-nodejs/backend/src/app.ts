@@ -81,6 +81,10 @@ cleanupService.start();
 const backupService = ServiceFactory.getBackupService();
 backupService.start();
 
+// Start frontend restart service
+const frontendRestartService = ServiceFactory.getFrontendRestartService();
+frontendRestartService.start();
+
 if (socialIngestionConfig.enabled) {
   const socialIngestionService = ServiceFactory.getSocialIngestionService();
   socialIngestionService.start();

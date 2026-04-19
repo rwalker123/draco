@@ -4,6 +4,7 @@ import { PlayerClassifiedService } from './player-classified/playerClassifiedSer
 import { CleanupService } from './cleanupService.js';
 import { BackupService } from './backupService.js';
 import type { IBackupService } from '../interfaces/backupInterfaces.js';
+import { FrontendRestartService } from './frontendRestartService.js';
 import { RouteProtection } from '../middleware/routeProtection.js';
 import { RosterService } from './rosterService.js';
 import { ContactService } from './contactService.js';
@@ -124,6 +125,7 @@ export class ServiceFactory {
   private static accessService: PlayerClassifiedAccessService;
   private static cleanupService: ICleanupService;
   private static backupService: IBackupService;
+  private static frontendRestartService: FrontendRestartService;
   private static routeProtection: RouteProtection;
   private static rosterService: RosterService;
   private static contactService: ContactService;
@@ -616,6 +618,14 @@ export class ServiceFactory {
     }
 
     return this.backupService;
+  }
+
+  static getFrontendRestartService(): FrontendRestartService {
+    if (!this.frontendRestartService) {
+      this.frontendRestartService = new FrontendRestartService();
+    }
+
+    return this.frontendRestartService;
   }
 
   static getTwitterIntegrationService(): TwitterIntegrationService {
