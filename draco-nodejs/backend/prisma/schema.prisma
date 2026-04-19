@@ -235,6 +235,7 @@ model aspnetusers {
   individualliveholescores_entered      individualliveholescore[]
   baseballlivescoringsessions_started   baseballlivescoringsession[]
   baseballliveinningscores_entered      baseballliveinningscore[]
+  golfclosesttopin_entered              golfclosesttopin[]
 }
 
 model accountdiscordsettings {
@@ -596,6 +597,7 @@ model contacts {
   teamseasonmanager                                                            teamseasonmanager[]
   voteanswers                                                                  voteanswers[]
   sent_emails                                                                  emails[]                   @relation("EmailSenderContact")
+  golfclosesttopin                                                             golfclosesttopin[]
 
   @@unique([lastname, firstname, middlename, creatoraccountid])
 }
@@ -843,6 +845,7 @@ model golfleaguesetup {
   absentplayerpenalty                                Int           @default(0)
   fullteamabsentmode                                 Int           @default(0)
   handicapstrokemethod                               String        @default("full") @db.VarChar(20)
+  enableputtcontest                                  Boolean       @default(false)
   accounts                                           accounts      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_accounts")
   leagueseason                                       leagueseason? @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_leagueseason")
   contacts_golfleaguesetup_presidentidTocontacts     contacts?     @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: SetNull, map: "fk_golfleaguesetup_contacts")
@@ -864,6 +867,7 @@ model golfmatch {
   team2                                    BigInt
   leagueid                                 BigInt
   matchdate                                DateTime            @db.Timestamptz(6)
+  weeknumber                               Int?
   courseid                                 BigInt?
   teeid                                    BigInt?
   matchstatus                              Int
@@ -887,7 +891,10 @@ model golfmatch {
   teamsseason_golfmatch_team2Toteamsseason teamsseason         @relation("golfmatch_team2Toteamsseason", fields: [team2], references: [id], onDelete: Cascade, map: "fk_golfmatch_teams")
   teamsseason_golfmatch_team1Toteamsseason teamsseason         @relation("golfmatch_team1Toteamsseason", fields: [team1], references: [id], onDelete: Cascade, map: "fk_golfmatch_teamsseason")
   golfmatchscores                          golfmatchscores[]
+  golfclosesttopin                         golfclosesttopin[]
   livescoringsession                       livescoringsession?
+
+  @@index([leagueid, weeknumber], map: "idx_golfmatch_league_week")
 }
 
 model golfer {
@@ -916,6 +923,25 @@ model golfleaguesub {
   leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_golfleaguesub_leagueseason")
 
   @@unique([golferid, leagueseasonid], map: "uq_golfleaguesub_golfer_season")
+}
+
+model golfclosesttopin {
+  id         BigInt      @id @default(autoincrement())
+  matchid    BigInt
+  holeno     Int
+  contactid  BigInt
+  distance   Float
+  unit       String      @default("ft") @db.VarChar(5)
+  enteredby  String      @db.VarChar(128)
+  enteredat  DateTime    @default(now()) @db.Timestamptz(6)
+  golfmatch  golfmatch   @relation(fields: [matchid], references: [id], onDelete: Cascade, map: "fk_golfclosesttopin_golfmatch")
+  contacts   contacts    @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfclosesttopin_contacts")
+  aspnetusers aspnetusers @relation(fields: [enteredby], references: [id], onDelete: Cascade, map: "fk_golfclosesttopin_aspnetusers")
+
+  @@unique([matchid, holeno], map: "uq_golfclosesttopin_match_hole")
+  @@index([matchid], map: "idx_golfclosesttopin_match")
+  @@index([contactid], map: "idx_golfclosesttopin_contact")
+  @@index([enteredby], map: "idx_golfclosesttopin_enteredby")
 }
 
 model golfmatchscores {
@@ -976,6 +1002,60 @@ model golfscore {
   startindex9        Float?
   isabsent           Boolean            @default(false)
   golferid           BigInt
+  putts1             Int?
+  putts2             Int?
+  putts3             Int?
+  putts4             Int?
+  putts5             Int?
+  putts6             Int?
+  putts7             Int?
+  putts8             Int?
+  putts9             Int?
+  putts10            Int?
+  putts11            Int?
+  putts12            Int?
+  putts13            Int?
+  putts14            Int?
+  putts15            Int?
+  putts16            Int?
+  putts17            Int?
+  putts18            Int?
+  fairway1           Boolean?
+  fairway2           Boolean?
+  fairway3           Boolean?
+  fairway4           Boolean?
+  fairway5           Boolean?
+  fairway6           Boolean?
+  fairway7           Boolean?
+  fairway8           Boolean?
+  fairway9           Boolean?
+  fairway10          Boolean?
+  fairway11          Boolean?
+  fairway12          Boolean?
+  fairway13          Boolean?
+  fairway14          Boolean?
+  fairway15          Boolean?
+  fairway16          Boolean?
+  fairway17          Boolean?
+  fairway18          Boolean?
+  gir1               Boolean?
+  gir2               Boolean?
+  gir3               Boolean?
+  gir4               Boolean?
+  gir5               Boolean?
+  gir6               Boolean?
+  gir7               Boolean?
+  gir8               Boolean?
+  gir9               Boolean?
+  gir10              Boolean?
+  gir11              Boolean?
+  gir12              Boolean?
+  gir13              Boolean?
+  gir14              Boolean?
+  gir15              Boolean?
+  gir16              Boolean?
+  gir17              Boolean?
+  gir18              Boolean?
   golferstatsvalue   golferstatsvalue[]
   golfmatchscores    golfmatchscores[]
   golfer             golfer             @relation(fields: [golferid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfer")

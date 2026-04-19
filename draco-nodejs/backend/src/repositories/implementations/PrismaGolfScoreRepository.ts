@@ -26,6 +26,7 @@ const matchScoreWithDetailsInclude = {
   golfscore: {
     include: scoreWithDetailsInclude,
   },
+  teamsseason: true,
 };
 
 export class PrismaGolfScoreRepository implements IGolfScoreRepository {

@@ -138,6 +138,8 @@ describe('GolfMatchService', () => {
       findBySeasonId: vi.fn(),
       findBySeasonIdWithDateRange: vi.fn(),
       findByFlightId: vi.fn(),
+      findByLeagueSeasonId: vi.fn(),
+      findByIdWithLeague: vi.fn(),
       findById: vi.fn(async (matchId: bigint) => {
         return matches.find((m) => m.id === matchId) ?? null;
       }),

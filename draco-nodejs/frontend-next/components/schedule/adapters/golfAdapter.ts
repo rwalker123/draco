@@ -104,6 +104,7 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
       visitorPoints: match.team2Points,
       homeNetScore: match.team1NetScore,
       visitorNetScore: match.team2NetScore,
+      weekNumber: match.weekNumber ?? undefined,
     },
   };
 }

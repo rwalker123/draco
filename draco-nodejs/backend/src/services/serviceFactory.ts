@@ -102,6 +102,8 @@ import { GolfHandicapService } from './golfHandicapService.js';
 import { GolfStandingsService } from './golfStandingsService.js';
 import { GolfLeagueMatchScoringService } from './golfLeagueMatchScoringService.js';
 import { GolfStatsService } from './golfStatsService.js';
+import { GolfPlayerStatsService } from './golfPlayerStatsService.js';
+import { GolfClosestToPinService } from './golfClosestToPinService.js';
 import { ExternalCourseSearchService } from './externalCourseSearchService.js';
 import { CsvExportService } from './csvExportService.js';
 import { GolferService } from './golferService.js';
@@ -201,6 +203,8 @@ export class ServiceFactory {
   private static golfStandingsService: GolfStandingsService;
   private static golfLeagueMatchScoringService: GolfLeagueMatchScoringService;
   private static golfStatsService: GolfStatsService;
+  private static golfPlayerStatsService: GolfPlayerStatsService;
+  private static golfClosestToPinService: GolfClosestToPinService;
   private static externalCourseSearchService: ExternalCourseSearchService;
   private static csvExportService: CsvExportService;
   private static golferService: GolferService;
@@ -1031,6 +1035,20 @@ export class ServiceFactory {
       this.golfStatsService = new GolfStatsService();
     }
     return this.golfStatsService;
+  }
+
+  static getGolfPlayerStatsService(): GolfPlayerStatsService {
+    if (!this.golfPlayerStatsService) {
+      this.golfPlayerStatsService = new GolfPlayerStatsService();
+    }
+    return this.golfPlayerStatsService;
+  }
+
+  static getGolfClosestToPinService(): GolfClosestToPinService {
+    if (!this.golfClosestToPinService) {
+      this.golfClosestToPinService = new GolfClosestToPinService();
+    }
+    return this.golfClosestToPinService;
   }
 
   static getExternalCourseSearchService(): ExternalCourseSearchService {

@@ -16,6 +16,7 @@ import InformationWidget from '@/components/information/InformationWidget';
 import GolfStandings from '@/components/GolfStandings';
 import GolfMatchesWidget from '@/components/GolfMatchesWidget';
 import GolfHandicapLeaderboard from '@/components/GolfHandicapLeaderboard';
+import GolfStatsLeaderboard from '@/components/GolfStatsLeaderboard';
 
 const GolfLeagueAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
@@ -228,6 +229,14 @@ const GolfLeagueAccountHome: React.FC = () => {
                 accountId={accountIdStr}
                 seasonId={currentSeason.id}
                 title="Handicap Leaderboard"
+              />
+            )}
+
+            {user && currentSeason && accountIdStr && (
+              <GolfStatsLeaderboard
+                accountId={accountIdStr}
+                seasonId={currentSeason.id}
+                title="Stats Leaderboard"
               />
             )}
 

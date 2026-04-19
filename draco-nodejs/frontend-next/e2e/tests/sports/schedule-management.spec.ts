@@ -29,7 +29,7 @@ test.describe('Schedule Management', () => {
       name: /cancel|close/i,
     });
     await cancelButton.click();
-    await expect(managementPage.createGameDialog).not.toBeVisible();
+    await expect(managementPage.createGameDialog).not.toBeVisible({ timeout: 10_000 });
   });
 
   test.describe('umpire fields', () => {

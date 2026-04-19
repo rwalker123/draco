@@ -1,4 +1,4 @@
-import { golfteeinformation } from '#prisma/client';
+import { golfscore, golfteeinformation } from '#prisma/client';
 import {
   IGolfMatchRepository,
   GolfMatchScoreEntry,
@@ -25,6 +25,7 @@ import {
   normalizeGender,
   type Gender,
 } from '../utils/whsCalculator.js';
+import { extractHoleScores } from '../utils/golfScoreFields.js';
 
 export interface IndividualMatchResult {
   team1Points: number;
@@ -944,50 +945,8 @@ export class GolfLeagueMatchScoringService {
     };
   }
 
-  private extractHoleScores(
-    score: {
-      holescrore1: number;
-      holescrore2: number;
-      holescrore3: number;
-      holescrore4: number;
-      holescrore5: number;
-      holescrore6: number;
-      holescrore7: number;
-      holescrore8: number;
-      holescrore9: number;
-      holescrore10: number;
-      holescrore11: number;
-      holescrore12: number;
-      holescrore13: number;
-      holescrore14: number;
-      holescrore15: number;
-      holescrore16: number;
-      holescrore17: number;
-      holescrore18: number;
-    },
-    holesPlayed: 9 | 18,
-  ): number[] {
-    const allScores = [
-      score.holescrore1,
-      score.holescrore2,
-      score.holescrore3,
-      score.holescrore4,
-      score.holescrore5,
-      score.holescrore6,
-      score.holescrore7,
-      score.holescrore8,
-      score.holescrore9,
-      score.holescrore10,
-      score.holescrore11,
-      score.holescrore12,
-      score.holescrore13,
-      score.holescrore14,
-      score.holescrore15,
-      score.holescrore16,
-      score.holescrore17,
-      score.holescrore18,
-    ];
-    return allScores.slice(0, holesPlayed);
+  private extractHoleScores(score: golfscore, holesPlayed: 9 | 18): number[] {
+    return extractHoleScores(score).slice(0, holesPlayed);
   }
 
   private calculatePar(

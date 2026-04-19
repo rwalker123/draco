@@ -30,6 +30,7 @@ import {
   calculateAverageScore,
   applyExceptionalScoreReduction,
   getRatingsForGender,
+  getHolePars,
   TeeRatings,
   ScoreForAverage,
 } from '../utils/whsCalculator.js';
@@ -176,6 +177,13 @@ export class GolferService {
     const holeScores = scoreData.holeScores ?? [];
     const totalScore = scoreData.totalScore ?? holeScores.reduce((sum, score) => sum + score, 0);
 
+    const gender = normalizeGender(golfer.gender);
+    const coursePars = getHolePars(courseWithTees, gender);
+    const computedGir = this.computeGirFromPutts(holeScores, scoreData.putts, coursePars);
+
+    const putts = scoreData.putts;
+    const fairwaysHit = scoreData.fairwaysHit;
+
     const createData = {
       courseid: BigInt(scoreData.courseId),
       golferid: golfer.id,
@@ -202,6 +210,47 @@ export class GolferService {
       holescrore16: holeScores[15] ?? 0,
       holescrore17: holeScores[16] ?? 0,
       holescrore18: holeScores[17] ?? 0,
+      ...(putts && {
+        putts1: putts[0] ?? null,
+        putts2: putts[1] ?? null,
+        putts3: putts[2] ?? null,
+        putts4: putts[3] ?? null,
+        putts5: putts[4] ?? null,
+        putts6: putts[5] ?? null,
+        putts7: putts[6] ?? null,
+        putts8: putts[7] ?? null,
+        putts9: putts[8] ?? null,
+        putts10: putts[9] ?? null,
+        putts11: putts[10] ?? null,
+        putts12: putts[11] ?? null,
+        putts13: putts[12] ?? null,
+        putts14: putts[13] ?? null,
+        putts15: putts[14] ?? null,
+        putts16: putts[15] ?? null,
+        putts17: putts[16] ?? null,
+        putts18: putts[17] ?? null,
+      }),
+      ...(fairwaysHit && {
+        fairway1: fairwaysHit[0] ?? null,
+        fairway2: fairwaysHit[1] ?? null,
+        fairway3: fairwaysHit[2] ?? null,
+        fairway4: fairwaysHit[3] ?? null,
+        fairway5: fairwaysHit[4] ?? null,
+        fairway6: fairwaysHit[5] ?? null,
+        fairway7: fairwaysHit[6] ?? null,
+        fairway8: fairwaysHit[7] ?? null,
+        fairway9: fairwaysHit[8] ?? null,
+        fairway10: fairwaysHit[9] ?? null,
+        fairway11: fairwaysHit[10] ?? null,
+        fairway12: fairwaysHit[11] ?? null,
+        fairway13: fairwaysHit[12] ?? null,
+        fairway14: fairwaysHit[13] ?? null,
+        fairway15: fairwaysHit[14] ?? null,
+        fairway16: fairwaysHit[15] ?? null,
+        fairway17: fairwaysHit[16] ?? null,
+        fairway18: fairwaysHit[17] ?? null,
+      }),
+      ...computedGir,
     };
 
     const createdScore = await this.golfScoreRepository.create(createData);
@@ -239,7 +288,7 @@ export class GolferService {
     scoreId: bigint,
     updateData: UpdateGolfScoreType,
   ): Promise<GolfScoreWithDetailsType> {
-    const { existingScore } = await this.verifyScoreOwnership(accountId, scoreId);
+    const { existingScore, golfer } = await this.verifyScoreOwnership(accountId, scoreId);
 
     if (updateData.courseId) {
       const courseWithTees = await this.golfCourseRepository.findByIdWithTees(
@@ -313,6 +362,124 @@ export class GolferService {
       repoUpdateData.holescrore16 = holeScores[15] ?? 0;
       repoUpdateData.holescrore17 = holeScores[16] ?? 0;
       repoUpdateData.holescrore18 = holeScores[17] ?? 0;
+    }
+
+    if (updateData.putts !== undefined) {
+      const p = updateData.putts;
+      repoUpdateData.putts1 = p[0] ?? null;
+      repoUpdateData.putts2 = p[1] ?? null;
+      repoUpdateData.putts3 = p[2] ?? null;
+      repoUpdateData.putts4 = p[3] ?? null;
+      repoUpdateData.putts5 = p[4] ?? null;
+      repoUpdateData.putts6 = p[5] ?? null;
+      repoUpdateData.putts7 = p[6] ?? null;
+      repoUpdateData.putts8 = p[7] ?? null;
+      repoUpdateData.putts9 = p[8] ?? null;
+      repoUpdateData.putts10 = p[9] ?? null;
+      repoUpdateData.putts11 = p[10] ?? null;
+      repoUpdateData.putts12 = p[11] ?? null;
+      repoUpdateData.putts13 = p[12] ?? null;
+      repoUpdateData.putts14 = p[13] ?? null;
+      repoUpdateData.putts15 = p[14] ?? null;
+      repoUpdateData.putts16 = p[15] ?? null;
+      repoUpdateData.putts17 = p[16] ?? null;
+      repoUpdateData.putts18 = p[17] ?? null;
+    }
+
+    if (updateData.fairwaysHit !== undefined) {
+      const fw = updateData.fairwaysHit;
+      repoUpdateData.fairway1 = fw[0] ?? null;
+      repoUpdateData.fairway2 = fw[1] ?? null;
+      repoUpdateData.fairway3 = fw[2] ?? null;
+      repoUpdateData.fairway4 = fw[3] ?? null;
+      repoUpdateData.fairway5 = fw[4] ?? null;
+      repoUpdateData.fairway6 = fw[5] ?? null;
+      repoUpdateData.fairway7 = fw[6] ?? null;
+      repoUpdateData.fairway8 = fw[7] ?? null;
+      repoUpdateData.fairway9 = fw[8] ?? null;
+      repoUpdateData.fairway10 = fw[9] ?? null;
+      repoUpdateData.fairway11 = fw[10] ?? null;
+      repoUpdateData.fairway12 = fw[11] ?? null;
+      repoUpdateData.fairway13 = fw[12] ?? null;
+      repoUpdateData.fairway14 = fw[13] ?? null;
+      repoUpdateData.fairway15 = fw[14] ?? null;
+      repoUpdateData.fairway16 = fw[15] ?? null;
+      repoUpdateData.fairway17 = fw[16] ?? null;
+      repoUpdateData.fairway18 = fw[17] ?? null;
+    }
+
+    if (holeScores !== undefined || updateData.putts !== undefined) {
+      const effectiveCourseId = updateData.courseId
+        ? BigInt(updateData.courseId)
+        : existingScore.courseid;
+      const courseForGir = await this.golfCourseRepository.findByIdWithTees(effectiveCourseId);
+      if (courseForGir) {
+        const gender = normalizeGender(golfer.gender);
+        const coursePars = getHolePars(courseForGir, gender);
+        const effectiveHoleScores = holeScores ?? [
+          existingScore.holescrore1,
+          existingScore.holescrore2,
+          existingScore.holescrore3,
+          existingScore.holescrore4,
+          existingScore.holescrore5,
+          existingScore.holescrore6,
+          existingScore.holescrore7,
+          existingScore.holescrore8,
+          existingScore.holescrore9,
+          existingScore.holescrore10,
+          existingScore.holescrore11,
+          existingScore.holescrore12,
+          existingScore.holescrore13,
+          existingScore.holescrore14,
+          existingScore.holescrore15,
+          existingScore.holescrore16,
+          existingScore.holescrore17,
+          existingScore.holescrore18,
+        ];
+        const effectivePutts = updateData.putts ?? [
+          existingScore.putts1,
+          existingScore.putts2,
+          existingScore.putts3,
+          existingScore.putts4,
+          existingScore.putts5,
+          existingScore.putts6,
+          existingScore.putts7,
+          existingScore.putts8,
+          existingScore.putts9,
+          existingScore.putts10,
+          existingScore.putts11,
+          existingScore.putts12,
+          existingScore.putts13,
+          existingScore.putts14,
+          existingScore.putts15,
+          existingScore.putts16,
+          existingScore.putts17,
+          existingScore.putts18,
+        ];
+        const computedGir = this.computeGirFromPutts(
+          effectiveHoleScores,
+          effectivePutts,
+          coursePars,
+        );
+        repoUpdateData.gir1 = computedGir['gir1'];
+        repoUpdateData.gir2 = computedGir['gir2'];
+        repoUpdateData.gir3 = computedGir['gir3'];
+        repoUpdateData.gir4 = computedGir['gir4'];
+        repoUpdateData.gir5 = computedGir['gir5'];
+        repoUpdateData.gir6 = computedGir['gir6'];
+        repoUpdateData.gir7 = computedGir['gir7'];
+        repoUpdateData.gir8 = computedGir['gir8'];
+        repoUpdateData.gir9 = computedGir['gir9'];
+        repoUpdateData.gir10 = computedGir['gir10'];
+        repoUpdateData.gir11 = computedGir['gir11'];
+        repoUpdateData.gir12 = computedGir['gir12'];
+        repoUpdateData.gir13 = computedGir['gir13'];
+        repoUpdateData.gir14 = computedGir['gir14'];
+        repoUpdateData.gir15 = computedGir['gir15'];
+        repoUpdateData.gir16 = computedGir['gir16'];
+        repoUpdateData.gir17 = computedGir['gir17'];
+        repoUpdateData.gir18 = computedGir['gir18'];
+      }
     }
 
     await this.golfScoreRepository.update(scoreId, repoUpdateData);
@@ -394,6 +561,25 @@ export class GolferService {
       console.error('Failed to fetch golfer for individual account:', error);
       return null;
     }
+  }
+
+  private computeGirFromPutts(
+    holeScores: number[],
+    putts: (number | null)[] | undefined,
+    coursePars: number[],
+  ): Record<string, boolean | null> {
+    const result: Record<string, boolean | null> = {};
+    for (let i = 0; i < 18; i++) {
+      const score = holeScores[i];
+      const putt = putts?.[i];
+      const par = coursePars[i];
+      if (putt === null || putt === undefined || !score || !par) {
+        result[`gir${i + 1}`] = null;
+      } else {
+        result[`gir${i + 1}`] = score - putt <= par - 2;
+      }
+    }
+    return result;
   }
 
   private async verifyScoreOwnership(

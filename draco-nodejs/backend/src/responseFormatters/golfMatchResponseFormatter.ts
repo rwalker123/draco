@@ -29,6 +29,7 @@ export class GolfMatchResponseFormatter {
         : undefined,
       matchStatus: match.matchstatus,
       matchType: match.matchtype,
+      weekNumber: match.weeknumber ?? undefined,
       comment: match.comment || undefined,
       team1Points: match.team1points ?? undefined,
       team2Points: match.team2points ?? undefined,

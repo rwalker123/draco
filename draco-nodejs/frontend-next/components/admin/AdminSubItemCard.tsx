@@ -11,13 +11,12 @@ export interface AdminSubItemMetric {
   status?: 'default' | 'warning' | 'success' | 'error';
 }
 
-interface AdminSubItemCardProps {
+type AdminSubItemCardProps = {
   title: string;
   description: string;
   icon: React.ReactNode;
-  href: string;
   metrics?: AdminSubItemMetric[];
-}
+} & ({ href: string; onClick?: never } | { onClick: () => void; href?: never });
 
 const statusColorMap = {
   default: 'default',
@@ -31,13 +30,18 @@ const AdminSubItemCard: React.FC<AdminSubItemCardProps> = ({
   description,
   icon,
   href,
+  onClick,
   metrics = [],
 }) => {
   const router = useRouter();
   const theme = useTheme();
 
   const handleClick = () => {
-    router.push(href);
+    if (onClick) {
+      onClick();
+    } else if (href) {
+      router.push(href);
+    }
   };
 
   return (

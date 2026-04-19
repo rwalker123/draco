@@ -21,6 +21,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import {
   Add as AddIcon,
+  BarChart as BarChartIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
@@ -453,14 +454,24 @@ const GolfFlightManagement: React.FC<GolfFlightManagementProps> = ({
         )}
       </AccordionDetails>
       <AccordionActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-        <Button
-          component={Link}
-          href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${flight.id}/substitutes`}
-          startIcon={<PersonOffIcon />}
-          size="small"
-        >
-          Substitutes
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            component={Link}
+            href={`/account/${accountId}/seasons/${seasonId}/golf/leagues/${flight.id}/substitutes`}
+            startIcon={<PersonOffIcon />}
+            size="small"
+          >
+            Substitutes
+          </Button>
+          <Button
+            component={Link}
+            href={`/account/${accountId}/seasons/${seasonId}/golf/flights/${flight.id}/stats?name=${encodeURIComponent(flight.name)}`}
+            startIcon={<BarChartIcon />}
+            size="small"
+          >
+            Stats
+          </Button>
+        </Box>
         <Button startIcon={<AddIcon />} onClick={() => handleCreateTeam(flight)}>
           Create Team
         </Button>

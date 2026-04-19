@@ -88,6 +88,7 @@ export class GolfLeagueResponseFormatter {
       absentPlayerMode: this.mapAbsentPlayerMode(setup.absentplayermode),
       absentPlayerPenalty: setup.absentplayerpenalty,
       fullTeamAbsentMode: this.mapFullTeamAbsentMode(setup.fullteamabsentmode),
+      enablePuttContest: setup.enableputtcontest,
     };
   }
 

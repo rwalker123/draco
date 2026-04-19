@@ -7,6 +7,9 @@ import { GolfPlayerSchema } from './golfRoster.js';
 extendZodWithOpenApi(z);
 
 const holeScoreSchema = z.number().int().min(1).max(20);
+const holePuttSchema = z.number().int().min(0).max(10).nullable();
+const holeFairwaySchema = z.boolean().nullable();
+const holeGirSchema = z.boolean().nullable();
 
 const pastOrTodayDateSchema = z.string().refine(
   (val) => {
@@ -53,6 +56,9 @@ export const GolfScoreSchema = z
     startIndex: z.number().nullable().optional(),
     startIndex9: z.number().nullable().optional(),
     holeScores: z.array(holeScoreSchema).min(9).max(18),
+    putts: z.array(holePuttSchema).max(18).optional(),
+    fairwaysHit: z.array(holeFairwaySchema).max(18).optional(),
+    greensInRegulation: z.array(holeGirSchema).max(18).optional(),
   })
   .openapi({
     title: 'GolfScore',
@@ -71,6 +77,10 @@ export const GolfScoreWithDetailsSchema = GolfScoreSchema.extend({
   courseName: z.string().optional(),
   courseCity: z.string().nullable().optional(),
   courseState: z.string().nullable().optional(),
+  totalPutts: z.number().int().optional(),
+  fairwaysHitCount: z.number().int().optional(),
+  fairwaysEligible: z.number().int().optional(),
+  girCount: z.number().int().optional(),
 }).openapi({
   title: 'GolfScoreWithDetails',
   description: 'Golf score with player, tee, and course details',
@@ -87,6 +97,8 @@ export const CreateGolfScoreSchema = z
     frontNineScore: z.number().int().min(9).max(100).optional(),
     backNineScore: z.number().int().min(9).max(100).optional(),
     holeScores: z.array(holeScoreSchema).min(9).max(18).optional(),
+    putts: z.array(holePuttSchema).max(18).optional(),
+    fairwaysHit: z.array(holeFairwaySchema).max(18).optional(),
   })
   .refine(
     (data) => {
@@ -146,6 +158,8 @@ export const UpdateGolfScoreSchema = z
     totalsOnly: z.boolean().optional(),
     totalScore: z.number().int().min(18).max(200).optional(),
     holeScores: z.array(holeScoreSchema).min(9).max(18).optional(),
+    putts: z.array(holePuttSchema).max(18).optional(),
+    fairwaysHit: z.array(holeFairwaySchema).max(18).optional(),
   })
   .openapi({
     title: 'UpdateGolfScore',
