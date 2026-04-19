@@ -143,6 +143,20 @@ describe('FrontendRestartService', () => {
       service.stop();
     });
 
+    it('schedules restart for today 03:30 when starting between 03:00 and 03:30 local time', () => {
+      process.env.FRONTEND_RESTART_TIMEZONE = 'UTC';
+      vi.setSystemTime(new Date('2026-04-18T03:15:00Z'));
+
+      const service = new FrontendRestartService();
+      service.start();
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Frontend restart scheduled for 2026-04-18T03:30:00.000Z'),
+      );
+
+      service.stop();
+    });
+
     it('re-schedules even when the restart API call fails', async () => {
       fetchMock.mockResolvedValue({
         ok: false,

@@ -93,10 +93,15 @@ export class FrontendRestartService {
     );
   }
 
+  private getNextRestartTime(now: Date): Date {
+    const shiftedNow = new Date(now.getTime() - this.restartMinuteOffsetMs);
+    const base = getNextBackupTime(shiftedNow, this.restartHour, this.timezone);
+    return new Date(base.getTime() + this.restartMinuteOffsetMs);
+  }
+
   private scheduleNextRestart(): void {
     const now = new Date();
-    const base = getNextBackupTime(now, this.restartHour, this.timezone);
-    const nextRestart = new Date(base.getTime() + this.restartMinuteOffsetMs);
+    const nextRestart = this.getNextRestartTime(now);
     const delay = nextRestart.getTime() - now.getTime();
 
     this.scheduledTimeout = setTimeout(() => {
