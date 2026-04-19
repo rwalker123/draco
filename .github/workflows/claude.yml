@@ -44,11 +44,11 @@ jobs:
           prompt: |
             Please help with the request in the comment that tagged you.
 
-            Use the repository's CLAUDE.md files for guidance on architecture, style, and conventions:
-            - Root: CLAUDE.md - Repository-wide guidelines
-            - Backend: draco-nodejs/backend/CLAUDE.md - Backend patterns
-            - Frontend: draco-nodejs/frontend-next/CLAUDE.md - Frontend patterns
-            - Shared: draco-nodejs/shared/CLAUDE.md - Shared schemas
+            Use the repository's AGENTS.md files for guidance on architecture, style, and conventions:
+            - Root: AGENTS.md - Repository-wide guidelines
+            - Backend: draco-nodejs/backend/AGENTS.md - Backend patterns
+            - Frontend: draco-nodejs/frontend-next/AGENTS.md - Frontend patterns
+            - Shared: draco-nodejs/shared/AGENTS.md - Shared schemas
 
           # Optional: Add claude_args to customize behavior and configuration
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md

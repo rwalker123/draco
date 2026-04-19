@@ -1,6 +1,6 @@
 # Backend Reference - Draco Sports Manager
 
-This document contains detailed examples, diagrams, tools, and deployment configurations for the Draco Sports Manager backend. For essential patterns and rules, see [CLAUDE.md](./CLAUDE.md).
+This document contains detailed examples, diagrams, tools, and deployment configurations for the Draco Sports Manager backend. For essential patterns and rules, see [AGENTS.md](./AGENTS.md).
 
 ## Table of Contents
 1. [Architecture Diagrams](#architecture-diagrams)

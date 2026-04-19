@@ -1,6 +1,6 @@
 # Frontend Reference - ezRecSports
 
-This document contains detailed examples, diagrams, full code implementations, and comprehensive patterns for the ezRecSports frontend. For essential patterns and rules, see [CLAUDE.md](./CLAUDE.md).
+This document contains detailed examples, diagrams, full code implementations, and comprehensive patterns for the ezRecSports frontend. For essential patterns and rules, see [AGENTS.md](./AGENTS.md).
 
 ## Table of Contents
 1. [Architecture Diagrams](#architecture-diagrams)
