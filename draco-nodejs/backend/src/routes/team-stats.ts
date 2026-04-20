@@ -2,6 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import { ValidationError } from '../utils/customErrors.js';
 import {
   RecentGamesQuerySchema,
   RecentGamesType,
@@ -11,6 +13,7 @@ import {
 const router = Router({ mergeParams: true });
 const teamStatsService = ServiceFactory.getTeamStatsService();
 const teamService = ServiceFactory.getTeamService();
+const scheduleService = ServiceFactory.getScheduleService();
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/record
@@ -57,6 +60,53 @@ router.get(
         includeUpcoming: upcoming,
         includeRecent: recent,
         limit: limit,
+      },
+    );
+
+    res.json(response);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/schedule
+ * Get the full season schedule for a team season with optional date and recap filters
+ */
+router.get(
+  '/:teamSeasonId/schedule',
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+    const { startDate, endDate, hasRecap } = req.query;
+
+    await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
+
+    const paginationParams = PaginationHelper.parseParams(req.query);
+
+    const parsedStartDate = startDate ? new Date(String(startDate)) : undefined;
+    const parsedEndDate = endDate ? new Date(String(endDate)) : undefined;
+
+    if (parsedStartDate && Number.isNaN(parsedStartDate.getTime())) {
+      throw new ValidationError('Invalid startDate');
+    }
+
+    if (parsedEndDate && Number.isNaN(parsedEndDate.getTime())) {
+      throw new ValidationError('Invalid endDate');
+    }
+
+    const includeRecaps = String(hasRecap) === 'true';
+
+    const response = await scheduleService.listSeasonGames(
+      seasonId,
+      {
+        page: paginationParams.page,
+        limit: paginationParams.limit,
+        skip: paginationParams.skip,
+        sortOrder: paginationParams.sortOrder,
+      },
+      {
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        teamId: teamSeasonId,
+        hasRecap: includeRecaps ? true : undefined,
       },
     );
 

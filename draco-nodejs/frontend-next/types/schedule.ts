@@ -6,6 +6,8 @@ export interface Game {
   gameDate: string;
   homeTeamId: string;
   visitorTeamId: string;
+  homeTeamName?: string;
+  visitorTeamName?: string;
   homeScore: number;
   visitorScore: number;
   comment: string;
