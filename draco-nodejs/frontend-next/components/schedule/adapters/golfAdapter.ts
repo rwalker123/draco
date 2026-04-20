@@ -112,10 +112,12 @@ function mapGolfMatchToGame(match: GolfMatch): Game {
 async function loadLocations({
   accountId,
   apiClient,
+  signal,
 }: LoadLocationsParams): Promise<ScheduleLocation[]> {
   const result = await listGolfLeagueCourses({
     client: apiClient,
     path: { accountId },
+    signal,
     throwOnError: false,
   });
 

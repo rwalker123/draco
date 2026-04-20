@@ -3,6 +3,7 @@ import {
   listAccountUmpires,
   listSeasonGames,
   listSeasonLeagueSeasons,
+  listTeamSeasonSchedule,
   createGame,
   updateGame,
   deleteGame,
@@ -20,21 +21,27 @@ import type {
   LoadTeamsParams,
   LoadTeamsResult,
   LoadGamesParams,
+  LoadTeamGamesParams,
+  LoadTeamGameDateRangeParams,
+  TeamGameDateRange,
   CreateGameParams,
   UpdateGameParams,
   DeleteGameParams,
 } from '../types/sportAdapter';
 import type { Game } from '@/types/schedule';
+import { sortGamesAscending } from '../hooks/scheduleDateHelpers';
 import GameDialog from '../dialogs/GameDialog';
 import GameResultsDialog from '../dialogs/GameResultsDialog';
 
 async function loadLocations({
   accountId,
   apiClient,
+  signal,
 }: LoadLocationsParams): Promise<ScheduleLocation[]> {
   const result = await listAccountFields({
     client: apiClient,
     path: { accountId },
+    signal,
     throwOnError: false,
   });
 
@@ -122,11 +129,88 @@ async function loadGames({
     page += 1;
   }
 
-  return Array.from(aggregated.values()).sort((a, b) => {
-    const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
-    if (diff !== 0) return diff;
-    return a.id.localeCompare(b.id);
-  });
+  return Array.from(aggregated.values()).sort(sortGamesAscending);
+}
+
+async function loadTeamGames({
+  accountId,
+  seasonId,
+  teamSeasonId,
+  startDate,
+  endDate,
+  apiClient,
+  signal,
+}: LoadTeamGamesParams): Promise<Game[]> {
+  const aggregated = new Map<string, Game>();
+  let page = 1;
+
+  while (true) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    const result = await listTeamSeasonSchedule({
+      client: apiClient,
+      path: { accountId, seasonId, teamSeasonId },
+      query: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        sortOrder: 'asc',
+        page,
+        limit: API_PAGE_LIMIT,
+      },
+      signal,
+      throwOnError: false,
+    });
+
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    const data = unwrapApiResult(result, 'Failed to load team schedule');
+    const mappedGames = data.games.map(mapGameResponseToScheduleGame);
+
+    mappedGames.forEach((game) => {
+      aggregated.set(game.id, game);
+    });
+
+    const { total, limit } = data.pagination;
+    if (limit === 0 || page * limit >= total) {
+      break;
+    }
+    page += 1;
+  }
+
+  return Array.from(aggregated.values()).sort(sortGamesAscending);
+}
+
+async function loadTeamGameDateRange({
+  accountId,
+  seasonId,
+  teamSeasonId,
+  apiClient,
+  signal,
+}: LoadTeamGameDateRangeParams): Promise<TeamGameDateRange> {
+  const fetchBoundary = async (sortOrder: 'asc' | 'desc'): Promise<Date | null> => {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    const result = await listTeamSeasonSchedule({
+      client: apiClient,
+      path: { accountId, seasonId, teamSeasonId },
+      query: { page: 1, limit: 1, sortOrder },
+      signal,
+      throwOnError: false,
+    });
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    const data = unwrapApiResult(result, 'Failed to load team schedule range');
+    const game = data.games[0];
+    return game ? new Date(game.gameDate) : null;
+  };
+
+  const [earliest, latest] = await Promise.all([fetchBoundary('asc'), fetchBoundary('desc')]);
+  return { earliest, latest };
 }
 
 async function createGameOperation({
@@ -227,6 +311,8 @@ export const baseballAdapter: SportScheduleAdapter = {
   loadOfficials,
   loadTeams,
   loadGames,
+  loadTeamGames,
+  loadTeamGameDateRange,
 
   createGame: createGameOperation,
   updateGame: updateGameOperation,

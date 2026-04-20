@@ -31,9 +31,33 @@ export interface LoadGamesParams {
   apiClient: Client;
 }
 
+export interface LoadTeamGamesParams {
+  accountId: string;
+  seasonId: string;
+  teamSeasonId: string;
+  startDate: Date;
+  endDate: Date;
+  apiClient: Client;
+  signal?: AbortSignal;
+}
+
+export interface LoadTeamGameDateRangeParams {
+  accountId: string;
+  seasonId: string;
+  teamSeasonId: string;
+  apiClient: Client;
+  signal?: AbortSignal;
+}
+
+export interface TeamGameDateRange {
+  earliest: Date | null;
+  latest: Date | null;
+}
+
 export interface LoadLocationsParams {
   accountId: string;
   apiClient: Client;
+  signal?: AbortSignal;
 }
 
 export interface LoadOfficialsParams {
@@ -128,6 +152,8 @@ export interface SportScheduleAdapter {
   loadOfficials?: (params: LoadOfficialsParams) => Promise<ScheduleOfficial[]>;
   loadTeams?: (params: LoadTeamsParams) => Promise<LoadTeamsResult>;
   loadGames: (params: LoadGamesParams) => Promise<Game[]>;
+  loadTeamGames?: (params: LoadTeamGamesParams) => Promise<Game[]>;
+  loadTeamGameDateRange?: (params: LoadTeamGameDateRangeParams) => Promise<TeamGameDateRange>;
 
   createGame: (params: CreateGameParams) => Promise<Game>;
   updateGame: (params: UpdateGameParams) => Promise<Game>;

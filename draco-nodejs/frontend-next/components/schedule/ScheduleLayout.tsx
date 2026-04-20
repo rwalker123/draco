@@ -66,6 +66,8 @@ export interface ScheduleLayoutProps {
   onFeedbackClose: () => void;
   recapError?: string | null;
   onRecapErrorClose?: () => void;
+  showLeagueTeamFilters?: boolean;
+  summaryContent?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -109,6 +111,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   onFeedbackClose,
   recapError,
   onRecapErrorClose,
+  showLeagueTeamFilters = true,
+  summaryContent,
   children,
 }) => {
   if (loadingStaticData) {
@@ -143,6 +147,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
         <Container maxWidth={false} sx={{ py: 4 }}>
           {breadcrumbs}
           <AdPlacement />
+
+          {summaryContent}
 
           <Paper
             elevation={1}
@@ -188,56 +194,60 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
                 ))}
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
-                <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
-                  League:
-                </Typography>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
-                  <Select
-                    value={filterLeagueSeasonId}
-                    onChange={(e) => {
-                      const leagueId = e.target.value;
-                      setFilterLeagueSeasonId(leagueId);
-                      if (!leagueId) {
-                        clearLeagueTeams();
-                      }
-                    }}
-                    displayEmpty
-                  >
-                    <MenuItem value="">
-                      <em>All Leagues</em>
-                    </MenuItem>
-                    {leagues.map((league) => (
-                      <MenuItem key={league.id} value={league.id}>
-                        {league.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
+              {showLeagueTeamFilters ? (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+                    <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
+                      League:
+                    </Typography>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                      <Select
+                        value={filterLeagueSeasonId}
+                        onChange={(e) => {
+                          const leagueId = e.target.value;
+                          setFilterLeagueSeasonId(leagueId);
+                          if (!leagueId) {
+                            clearLeagueTeams();
+                          }
+                        }}
+                        displayEmpty
+                      >
+                        <MenuItem value="">
+                          <em>All Leagues</em>
+                        </MenuItem>
+                        {leagues.map((league) => (
+                          <MenuItem key={league.id} value={league.id}>
+                            {league.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
-                  Team:
-                </Typography>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
-                  <Select
-                    value={filterTeamSeasonId}
-                    onChange={(e) => setFilterTeamSeasonId(e.target.value)}
-                    displayEmpty
-                    disabled={!filterLeagueSeasonId}
-                  >
-                    <MenuItem value="">
-                      <em>All Teams</em>
-                    </MenuItem>
-                    {leagueTeams.map((team) => (
-                      <MenuItem key={team.id} value={team.id}>
-                        {team.name ?? 'Unknown Team'}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
+                      Team:
+                    </Typography>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                      <Select
+                        value={filterTeamSeasonId}
+                        onChange={(e) => setFilterTeamSeasonId(e.target.value)}
+                        displayEmpty
+                        disabled={!filterLeagueSeasonId}
+                      >
+                        <MenuItem value="">
+                          <em>All Teams</em>
+                        </MenuItem>
+                        {leagueTeams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name ?? 'Unknown Team'}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </>
+              ) : null}
             </Box>
           </WidgetShell>
 

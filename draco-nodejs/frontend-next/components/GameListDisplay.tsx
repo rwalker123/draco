@@ -38,6 +38,7 @@ export interface GameListDisplayProps {
   onStartLiveScoring?: (game: Game) => void;
   onWatchLiveScoring?: (game: Game) => void;
   accountId?: string;
+  headerAction?: React.ReactNode;
 }
 
 const GameListDisplay: React.FC<GameListDisplayProps> = ({
@@ -56,6 +57,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   onStartLiveScoring,
   onWatchLiveScoring,
   accountId,
+  headerAction,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -116,23 +118,33 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
           p: 4,
         }}
       >
-        {sections.map((section) => (
+        {sections.map((section, sectionIndex) => (
           <Box key={section.title} mb={1.5}>
-            <Typography
-              variant="h5"
-              gutterBottom
+            <Box
               sx={{
-                fontWeight: 'bold',
-                color: 'text.primary',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1,
+                justifyContent: 'space-between',
+                gap: 2,
                 mb: 3,
               }}
             >
-              <EventIcon color="action" />
-              {section.title}
-            </Typography>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 'bold',
+                  color: 'text.primary',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  m: 0,
+                }}
+              >
+                <EventIcon color="action" />
+                {section.title}
+              </Typography>
+              {sectionIndex === 0 && headerAction ? headerAction : null}
+            </Box>
             {section.games.length > 0 ? (
               <Box sx={{ position: 'relative', width: '100%' }}>
                 {/* Navigation Buttons - Only show for horizontal layout */}

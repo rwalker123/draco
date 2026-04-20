@@ -52,6 +52,8 @@ import InformationWidget from '@/components/information/InformationWidget';
 import TeamForumWidget from '@/components/team/TeamForumWidget';
 import CommunityChatsWidget from '@/components/social/CommunityChatsWidget';
 import Link from '@mui/material/Link';
+import NextLink from 'next/link';
+import Button from '@mui/material/Button';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 import { useCurrentSeason } from '../../../../../../../hooks/useCurrentSeason';
 
@@ -526,12 +528,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     <main className="min-h-screen bg-background">
       {/* Account Header with Team Information */}
       <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ position: 'relative' }}
-        >
+        <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box sx={{ flex: 1, textAlign: 'center' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
@@ -784,6 +781,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     onEditRecap={handleOpenEditRecap}
                     onViewRecap={handleOpenViewRecap}
                     timeZone={timeZone}
+                    headerAction={
+                      <Button
+                        component={NextLink}
+                        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Full Schedule
+                      </Button>
+                    }
                   />
                 </>
               )
