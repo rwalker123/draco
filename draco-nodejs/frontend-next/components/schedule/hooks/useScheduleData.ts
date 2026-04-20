@@ -490,7 +490,11 @@ export const useScheduleData = ({
         }
 
         try {
-          const loadedLocations = await adapter.loadLocations({ accountId, apiClient });
+          const loadedLocations = await adapter.loadLocations({
+            accountId,
+            apiClient,
+            signal: controller.signal,
+          });
           if (controller.signal.aborted) return;
           setLocations(loadedLocations);
         } catch (locationsError) {

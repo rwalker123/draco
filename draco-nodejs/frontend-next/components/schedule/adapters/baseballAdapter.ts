@@ -35,10 +35,12 @@ import GameResultsDialog from '../dialogs/GameResultsDialog';
 async function loadLocations({
   accountId,
   apiClient,
+  signal,
 }: LoadLocationsParams): Promise<ScheduleLocation[]> {
   const result = await listAccountFields({
     client: apiClient,
     path: { accountId },
+    signal,
     throwOnError: false,
   });
 

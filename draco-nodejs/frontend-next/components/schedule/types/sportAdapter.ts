@@ -57,6 +57,7 @@ export interface TeamGameDateRange {
 export interface LoadLocationsParams {
   accountId: string;
   apiClient: Client;
+  signal?: AbortSignal;
 }
 
 export interface LoadOfficialsParams {
