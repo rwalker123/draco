@@ -53,6 +53,13 @@ interface UseTeamSeasonSummaryReturn {
 const NO_FIELD_KEY = '__no_field__';
 const NO_FIELD_LABEL = 'No Field / TBD';
 
+const normalizeFieldId = (value?: string | null): string | undefined => {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+  return undefined;
+};
+
 const isPlayedStatus = (status: number): boolean => {
   return (
     status === GameStatus.Completed ||
@@ -105,7 +112,8 @@ const buildSummary = (games: Game[], timeZone: string): SeasonSummary => {
       totalScheduled += 1;
     }
 
-    const fieldKey = game.field?.id ?? game.fieldId ?? NO_FIELD_KEY;
+    const fieldKey =
+      normalizeFieldId(game.field?.id) ?? normalizeFieldId(game.fieldId) ?? NO_FIELD_KEY;
     const fieldName =
       game.field?.name ||
       game.field?.shortName ||

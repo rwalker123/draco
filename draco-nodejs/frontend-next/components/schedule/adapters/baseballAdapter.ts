@@ -29,6 +29,7 @@ import type {
   DeleteGameParams,
 } from '../types/sportAdapter';
 import type { Game } from '@/types/schedule';
+import { sortGamesAscending } from '../hooks/scheduleDateHelpers';
 import GameDialog from '../dialogs/GameDialog';
 import GameResultsDialog from '../dialogs/GameResultsDialog';
 
@@ -128,11 +129,7 @@ async function loadGames({
     page += 1;
   }
 
-  return Array.from(aggregated.values()).sort((a, b) => {
-    const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
-    if (diff !== 0) return diff;
-    return a.id.localeCompare(b.id);
-  });
+  return Array.from(aggregated.values()).sort(sortGamesAscending);
 }
 
 async function loadTeamGames({
@@ -183,11 +180,7 @@ async function loadTeamGames({
     page += 1;
   }
 
-  return Array.from(aggregated.values()).sort((a, b) => {
-    const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
-    if (diff !== 0) return diff;
-    return a.id.localeCompare(b.id);
-  });
+  return Array.from(aggregated.values()).sort(sortGamesAscending);
 }
 
 async function loadTeamGameDateRange({
