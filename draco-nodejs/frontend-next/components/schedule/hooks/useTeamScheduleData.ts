@@ -17,6 +17,8 @@ import {
   getMonthRangeForKey,
 } from './scheduleDateHelpers';
 
+const EMPTY_OFFICIALS: ScheduleOfficial[] = [];
+
 interface UseTeamScheduleDataProps {
   accountId: string;
   seasonId: string;
@@ -65,7 +67,7 @@ export const useTeamScheduleData = ({
   onErrorRef.current = onError;
 
   const [locations, setLocations] = useState<ScheduleLocation[]>([]);
-  const [officials] = useState<ScheduleOfficial[]>([]);
+  const officials = EMPTY_OFFICIALS;
 
   const [games, setGames] = useState<Game[]>([]);
   const gamesCacheRef = useRef<Map<string, Game[]>>(new Map());
@@ -197,6 +199,7 @@ export const useTeamScheduleData = ({
     }
 
     const controller = new AbortController();
+    const requestCache = gamesRequestCacheRef.current;
     const { startDate: rangeStart, endDate: rangeEnd } = computeDateRange(filterType, filterDate);
 
     const runLoadGamesData = async () => {
@@ -267,6 +270,7 @@ export const useTeamScheduleData = ({
 
     return () => {
       controller.abort();
+      requestCache.clear();
     };
   }, [
     authLoading,
