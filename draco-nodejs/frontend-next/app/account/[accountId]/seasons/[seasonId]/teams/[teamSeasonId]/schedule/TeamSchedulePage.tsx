@@ -22,6 +22,8 @@ import {
   FilterType,
   ViewMode,
 } from '../../../../../../../../components/schedule';
+import { useTeamSeasonSummary } from '../../../../../../../../components/schedule/hooks/useTeamSeasonSummary';
+import SeasonSummaryWidget from '../../../../../../../../components/schedule/SeasonSummaryWidget';
 import { isGolfLeagueAccountType } from '../../../../../../../../utils/accountTypeUtils';
 
 interface TeamSchedulePageProps {
@@ -158,6 +160,17 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     setFilterDate: updateFilterDate,
   });
 
+  const { summary: seasonSummary, loading: loadingSeasonSummary } = useTeamSeasonSummary({
+    accountId,
+    seasonId,
+    teamSeasonId,
+    accountType,
+    earliestGameDate,
+    latestGameDate,
+    timeZone,
+    onError: setError,
+  });
+
   const { canEditRecap } = useSchedulePermissions({ accountId, teamSeasonId });
 
   const convertGameToGameCardDataWithTeams = (game: Game): GameCardData => {
@@ -260,6 +273,13 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       recapError={recapError}
       onRecapErrorClose={clearRecapError}
       showLeagueTeamFilters={false}
+      summaryContent={
+        <SeasonSummaryWidget
+          summary={seasonSummary}
+          loading={loadingSeasonSummary}
+          ready={!loadingDateRange}
+        />
+      }
     >
       <GameDialog
         open={viewDialogOpen}

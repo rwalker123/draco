@@ -67,6 +67,7 @@ export interface ScheduleLayoutProps {
   recapError?: string | null;
   onRecapErrorClose?: () => void;
   showLeagueTeamFilters?: boolean;
+  summaryContent?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -111,6 +112,7 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   recapError,
   onRecapErrorClose,
   showLeagueTeamFilters = true,
+  summaryContent,
   children,
 }) => {
   if (loadingStaticData) {
@@ -145,6 +147,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
         <Container maxWidth={false} sx={{ py: 4 }}>
           {breadcrumbs}
           <AdPlacement />
+
+          {summaryContent}
 
           <Paper
             elevation={1}
