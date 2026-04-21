@@ -148,10 +148,10 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
         </AccountPageHeader>
 
         <Container maxWidth={false} sx={{ py: 4 }}>
-          {breadcrumbs}
           <Box sx={{ mb: 3 }}>
             <AdPlacement />
           </Box>
+          {breadcrumbs}
 
           {summaryContent}
 
