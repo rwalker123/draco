@@ -28,6 +28,7 @@ export interface ScheduleLayoutProps {
   accountId: string;
   title: string;
   subtitle?: string;
+  titleExtra?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
   seasonName: string | null;
   filteredGames: Game[];
@@ -75,6 +76,7 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   accountId,
   title,
   subtitle,
+  titleExtra,
   breadcrumbs,
   seasonName,
   filteredGames,
@@ -134,6 +136,7 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
           >
             {title}
           </Typography>
+          {titleExtra}
           {subtitle ? (
             <Typography
               variant="body1"
@@ -146,7 +149,9 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
 
         <Container maxWidth={false} sx={{ py: 4 }}>
           {breadcrumbs}
-          <AdPlacement />
+          <Box sx={{ mb: 3 }}>
+            <AdPlacement />
+          </Box>
 
           {summaryContent}
 
