@@ -233,7 +233,7 @@ const TeamSponsorManagement: React.FC<TeamSponsorManagementProps> = ({
             color="inherit"
             href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`}
           >
-            Team Page
+            Team Overview
           </MuiLink>
           <Typography color="text.primary">Sponsor Management</Typography>
         </Breadcrumbs>

@@ -1433,7 +1433,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
               color="inherit"
               sx={{ fontWeight: 500, ml: 3 }}
             >
-              {teamHeaderData?.teamName ?? 'Team'}
+              Team Overview
             </MuiLink>
             <Typography color="text.primary" sx={{ fontWeight: 500 }}>
               Statistics
