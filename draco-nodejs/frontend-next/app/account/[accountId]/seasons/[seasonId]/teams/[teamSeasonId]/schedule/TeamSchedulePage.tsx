@@ -2,7 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { useMediaQuery } from '@mui/material';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Container from '@mui/material/Container';
+import Link from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
+import NextLink from 'next/link';
 import { getTeamSeasonDetails as apiGetTeamSeasonDetails } from '@draco/shared-api-client';
 import type { TeamSeasonRecordType } from '@draco/shared-schemas';
 import { useAuth } from '../../../../../../../../context/AuthContext';
@@ -233,12 +238,34 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
 
   const isResolvingInitialDate = filterDate === undefined;
 
+  const teamHomeHref = `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`;
+
   return (
     <ScheduleLayout
       accountId={accountId}
       title={teamName ?? 'Team Schedule'}
-      subtitle="Full Season Schedule"
-      seasonName={seasonName}
+      titleExtra={
+        seasonName ? (
+          <Typography
+            variant="body1"
+            sx={{ mt: 1, textAlign: 'center', color: 'text.secondary', fontWeight: 'normal' }}
+          >
+            {seasonName} Season
+          </Typography>
+        ) : null
+      }
+      subtitle="Schedule"
+      breadcrumbs={
+        <Box sx={{ mb: 2 }}>
+          <Breadcrumbs aria-label="breadcrumb">
+            <Link component={NextLink} underline="hover" color="inherit" href={teamHomeHref}>
+              Team Overview
+            </Link>
+            <Typography color="text.primary">Schedule</Typography>
+          </Breadcrumbs>
+        </Box>
+      }
+      seasonName={null}
       filteredGames={filteredGames}
       teams={[]}
       locations={locations}
