@@ -80,11 +80,11 @@ Once approved, three things happen simultaneously:
 ### Stage 4 — Recruitment
 This is the longest stage. It runs from launch up to a league-configured roster deadline (typically well before opening day). During this stage:
 
-- Players who already have site accounts can click **"I'm interested"** on the ad. This places them in the manager's **Interest** list.
+- Players who already have site accounts can click **"I'm interested"** on the ad. This places them in the manager's **Interested** list.
 - The manager can invite specific players by email from the site.
 - The league can trigger periodic social-media recruitment posts ("Team X still needs 3 players — next practice Saturday").
 - The manager sends updates, practice invitations, and check-in emails from the dashboard.
-- The manager schedules their own practices or informal workouts as they see fit. The platform should help with this — announcing practice dates and locations to the interest/committed list, collecting RSVPs, and sending reminders — though the exact shape of that help is a follow-up to decide (see Section 12).
+- The manager schedules their own practices or informal workouts as they see fit. The platform should help with this — announcing practice dates and locations to the interested/committed list, collecting RSVPs, and sending reminders — though the exact shape of that help is a follow-up to decide (see Section 12).
 
 Players move through three commitment stages, which the manager controls:
 
@@ -114,7 +114,7 @@ The biggest risk in team formation is that interest decays. A player who signs u
 
 - **Templated emails**, which the manager can edit but not forget to send:
   - Welcome email when a player expresses interest.
-  - Weekly or bi-weekly "here is where we stand" updates during recruitment.
+  - Weekly or every other week (every two weeks) "here is where we stand" updates during recruitment.
   - Practice announcements and reminders (for manager-scheduled practices or informal workouts).
   - Commitment check-ins every 2–3 weeks ("are you still planning to play?").
   - Optional workout-day reminders if the team is attending the league's official workout.
