@@ -72894,7 +72894,6 @@
                     "status": {
                       "type": "string",
                       "enum": [
-                        "scheduled",
                         "sending"
                       ]
                     }

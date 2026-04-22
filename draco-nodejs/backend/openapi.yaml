@@ -49071,7 +49071,6 @@ paths:
                   status:
                     type: string
                     enum:
-                      - scheduled
                       - sending
                 required:
                   - emailId

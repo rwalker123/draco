@@ -1895,7 +1895,7 @@ model emails {
   @@index([account_id, status])
   @@index([scheduled_send_at])
   @@index([sender_contact_id])
-  @@index([account_id, team_season_id, created_at(sort: Desc)])
+  @@index([account_id, team_season_id, created_at(sort: Desc)], map: "idx_emails_account_team_season_created")
 }
 
 model email_templates {

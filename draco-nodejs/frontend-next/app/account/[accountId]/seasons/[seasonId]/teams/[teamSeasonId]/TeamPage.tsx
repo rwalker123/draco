@@ -484,11 +484,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRoleInAccount('AccountAdmin', accountId) ||
     hasRoleInTeam('TeamAdmin', teamSeasonId);
 
-  const canSendTeamCommunications = hasPermission('team.communications.send', {
-    accountId,
-    seasonId,
-    teamId: teamSeasonId,
-  });
+  const canSendTeamCommunications =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
 
   const canManageInformationMessages =
     hasRole('Administrator') ||

@@ -437,6 +437,26 @@ describe('Team emails routes', () => {
       expect(res.body).toEqual({ emailId: '77', status: 'sending' });
     });
 
+    it('rejects compose when EnableTeamEmail setting is false', async () => {
+      accountSettingsServiceMock.getAccountSettings.mockResolvedValue([
+        {
+          definition: { key: 'EnableTeamEmail' },
+          effectiveValue: false,
+          value: false,
+        },
+      ]);
+
+      const { error } = await runRoute('post', '/:teamSeasonId/emails/compose', {
+        params: { teamSeasonId: TEAM_A_ID },
+        headers: { authorization: 'Bearer token' },
+        body: baseComposeBody,
+      });
+
+      expect(error).toBeInstanceOf(AuthorizationError);
+      expect((error as AuthorizationError).message).toContain('Team email is disabled');
+      expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
+    });
+
     it('rejects managersOnly in team emails', async () => {
       const { error } = await runRoute('post', '/:teamSeasonId/emails/compose', {
         params: { teamSeasonId: TEAM_A_ID },
@@ -492,7 +512,7 @@ describe('Team emails routes', () => {
   describe('GET /:teamSeasonId/emails/history', () => {
     it('returns only team A emails when requesting team A history', async () => {
       const teamAEmails = {
-        items: [{ id: '100', teamSeasonId: TEAM_A_ID }],
+        emails: [{ id: '100', teamSeasonId: TEAM_A_ID }],
         pagination: { page: 1, limit: 20, total: 1, hasNext: false, hasPrev: false },
       };
       emailServiceMock.listTeamEmails.mockResolvedValue(teamAEmails);
@@ -519,6 +539,24 @@ describe('Team emails routes', () => {
       });
 
       expect(error).toBeInstanceOf(AuthorizationError);
+    });
+
+    it('rejects history request when EnableTeamEmail setting is false', async () => {
+      accountSettingsServiceMock.getAccountSettings.mockResolvedValue([
+        {
+          definition: { key: 'EnableTeamEmail' },
+          effectiveValue: false,
+          value: false,
+        },
+      ]);
+
+      const { error } = await runRoute('get', '/:teamSeasonId/emails/history', {
+        params: { teamSeasonId: TEAM_A_ID },
+        headers: { authorization: 'Bearer token' },
+      });
+
+      expect(error).toBeInstanceOf(AuthorizationError);
+      expect(emailServiceMock.listTeamEmails).not.toHaveBeenCalled();
     });
   });
 

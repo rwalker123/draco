@@ -767,7 +767,20 @@ export const EmailComposeProvider: React.FC<EmailComposeProviderProps> = ({
         dispatch({ type: 'SET_SENDING', payload: { isSending: true, progress: 50 } });
 
         let emailId: string;
-        if (state.config.scope === 'team' && state.config.seasonId && state.config.teamSeasonId) {
+        if (state.config.scope === 'team') {
+          if (!state.config.seasonId || !state.config.teamSeasonId) {
+            dispatch({
+              type: 'ADD_ERROR',
+              payload: {
+                field: 'recipients',
+                message:
+                  'Team email is missing the season or team context. Please refresh the page and try again.',
+                severity: 'error',
+              },
+            });
+            return Promise.reject(new Error('Team scope missing seasonId or teamSeasonId'));
+          }
+
           emailId = await emailServiceRef.current!.composeTeamEmail(
             accountId,
             state.config.seasonId,

@@ -80,7 +80,7 @@ export const registerTeamEmailsEndpoints = ({ registry, schemaRefs, z }: Registe
           'application/json': {
             schema: z.object({
               emailId: z.string(),
-              status: z.enum(['scheduled', 'sending']),
+              status: z.literal('sending'),
             }),
           },
         },

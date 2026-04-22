@@ -139,7 +139,7 @@ router.post(
 
     res.status(201).json({
       emailId: emailId.toString(),
-      status: request.scheduledSend ? 'scheduled' : 'sending',
+      status: 'sending',
     });
   }),
 );
