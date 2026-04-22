@@ -4886,6 +4886,7 @@ components:
                   - ShowIdentification
                   - TrackGamesPlayed
                   - ShowRosterCard
+                  - EnableTeamEmail
                   - ShowUserInfoOnRosterPage
                   - ShowContactInfo
                   - EditContactInfo
@@ -4955,6 +4956,7 @@ components:
                         - ShowIdentification
                         - TrackGamesPlayed
                         - ShowRosterCard
+                        - EnableTeamEmail
                         - ShowUserInfoOnRosterPage
                         - ShowContactInfo
                         - EditContactInfo
@@ -5060,6 +5062,7 @@ components:
                 - ShowIdentification
                 - TrackGamesPlayed
                 - ShowRosterCard
+                - EnableTeamEmail
                 - ShowUserInfoOnRosterPage
                 - ShowContactInfo
                 - EditContactInfo
@@ -5129,6 +5132,7 @@ components:
                       - ShowIdentification
                       - TrackGamesPlayed
                       - ShowRosterCard
+                      - EnableTeamEmail
                       - ShowUserInfoOnRosterPage
                       - ShowContactInfo
                       - EditContactInfo
@@ -5237,6 +5241,7 @@ components:
         - ShowIdentification
         - TrackGamesPlayed
         - ShowRosterCard
+        - EnableTeamEmail
         - ShowUserInfoOnRosterPage
         - ShowContactInfo
         - EditContactInfo
@@ -27748,6 +27753,7 @@ paths:
               - ShowIdentification
               - TrackGamesPlayed
               - ShowRosterCard
+              - EnableTeamEmail
               - ShowUserInfoOnRosterPage
               - ShowContactInfo
               - EditContactInfo
@@ -49015,6 +49021,296 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/emails/compose:
+    post:
+      summary: Compose and send a team email
+      description: Sends an email scoped to a specific team season. Attachments and
+        non-team recipient groups are rejected.
+      operationId: composeTeamEmail
+      tags:
+        - Team Emails
+      security:
+        - bearerAuth: []
+      parameters: &a33
+        - &a34
+          name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - &a35
+          name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - &a36
+          name: teamSeasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailSend"
+      responses:
+        "201":
+          description: Email created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  emailId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - sending
+                required:
+                  - emailId
+                  - status
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/emails/roster-contacts:
+    get:
+      summary: List team roster contacts
+      description: Returns active roster contacts for the team available as email
+        recipients.
+      operationId: getTeamRosterContacts
+      tags:
+        - Team Emails
+      security:
+        - bearerAuth: []
+      parameters: *a33
+      responses:
+        "200":
+          description: List of roster contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    email:
+                      type: string
+                      nullable: true
+                    hasValidEmail:
+                      type: boolean
+                    isManager:
+                      type: boolean
+                  required:
+                    - id
+                    - firstName
+                    - lastName
+                    - email
+                    - hasValidEmail
+                    - isManager
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/emails/history:
+    get:
+      summary: List team email history
+      description: Returns paginated email history for a team season with optional
+        status filtering.
+      operationId: listTeamEmails
+      tags:
+        - Team Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a34
+        - *a35
+        - *a36
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - sending
+              - sent
+              - failed
+              - scheduled
+              - partial
+      responses:
+        "200":
+          description: Paginated list of team emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailListPaged"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/emails/history/{emailId}:
+    get:
+      summary: Get team email detail
+      description: Returns delivery status, body, recipients, and attachments for a
+        team email.
+      operationId: getTeamEmail
+      tags:
+        - Team Emails
+      security:
+        - bearerAuth: []
+      parameters:
+        - *a34
+        - *a35
+        - *a36
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Team email detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailDetail"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/games:
     get:
       summary: List completed games for stat entry
@@ -49024,23 +49320,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a34
+        - &a38
           name: accountId
           in: path
           required: true
-          schema: &a33
+          schema: &a37
             type: string
             format: number
-        - &a35
+        - &a39
           name: seasonId
           in: path
           required: true
-          schema: *a33
-        - &a36
+          schema: *a37
+        - &a40
           name: teamSeasonId
           in: path
           required: true
-          schema: *a33
+          schema: *a37
       responses:
         "200":
           description: Completed games retrieved.
@@ -49086,14 +49382,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - &a37
+        - *a38
+        - *a39
+        - *a40
+        - &a41
           name: gameId
           in: path
           required: true
-          schema: *a33
+          schema: *a37
       responses:
         "200":
           description: Batting stats retrieved.
@@ -49138,10 +49434,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
+        - *a38
+        - *a39
+        - *a40
+        - *a41
       requestBody:
         required: true
         content:
@@ -49199,15 +49495,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
-        - &a38
+        - *a38
+        - *a39
+        - *a40
+        - *a41
+        - &a42
           name: statId
           in: path
           required: true
-          schema: *a33
+          schema: *a37
       requestBody:
         required: true
         content:
@@ -49258,11 +49554,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
         - *a38
+        - *a39
+        - *a40
+        - *a41
+        - *a42
       responses:
         "204":
           description: Batting stat deleted.
@@ -49304,10 +49600,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
+        - *a38
+        - *a39
+        - *a40
+        - *a41
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -49352,10 +49648,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
+        - *a38
+        - *a39
+        - *a40
+        - *a41
       requestBody:
         required: true
         content:
@@ -49413,11 +49709,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
         - *a38
+        - *a39
+        - *a40
+        - *a41
+        - *a42
       requestBody:
         required: true
         content:
@@ -49468,11 +49764,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
         - *a38
+        - *a39
+        - *a40
+        - *a41
+        - *a42
       responses:
         "204":
           description: Pitching stat deleted.
@@ -49514,10 +49810,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
+        - *a38
+        - *a39
+        - *a40
+        - *a41
       responses:
         "200":
           description: Attendance retrieved.
@@ -49562,10 +49858,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a34
-        - *a35
-        - *a36
-        - *a37
+        - *a38
+        - *a39
+        - *a40
+        - *a41
       requestBody:
         required: true
         content:
@@ -50915,7 +51211,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a39
+        - &a43
           name: accountId
           in: path
           required: true
@@ -50940,7 +51236,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a39
+        - *a43
       requestBody:
         content:
           application/json:
@@ -50979,8 +51275,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a39
-        - &a40
+        - *a43
+        - &a44
           name: messageId
           in: path
           required: true
@@ -51009,8 +51305,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a39
-        - *a40
+        - *a43
+        - *a44
       requestBody:
         content:
           application/json:
@@ -51056,8 +51352,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a39
-        - *a40
+        - *a43
+        - *a44
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -51088,8 +51384,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a39
-        - &a41
+        - *a43
+        - &a45
           name: teamSeasonId
           in: path
           required: true
@@ -51118,8 +51414,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a39
-        - *a41
+        - *a43
+        - *a45
       requestBody:
         content:
           application/json:
@@ -51164,9 +51460,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a39
-        - *a41
-        - *a40
+        - *a43
+        - *a45
+        - *a44
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -51189,9 +51485,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a39
-        - *a41
-        - *a40
+        - *a43
+        - *a45
+        - *a44
       requestBody:
         content:
           application/json:
@@ -51237,9 +51533,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a39
-        - *a41
-        - *a40
+        - *a43
+        - *a45
+        - *a44
       responses:
         "204":
           description: Team welcome message deleted successfully.

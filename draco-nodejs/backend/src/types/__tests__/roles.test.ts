@@ -7,4 +7,17 @@ describe('ROLE_PERMISSIONS', () => {
 
     expect(teamAdminPermissions).toContain('team.photos.manage');
   });
+
+  it('grants Team Admins team communications send permission', () => {
+    const teamAdminPermissions = ROLE_PERMISSIONS[RoleNamesType.TEAM_ADMIN]?.permissions ?? [];
+
+    expect(teamAdminPermissions).toContain('team.communications.send');
+  });
+
+  it('grants Account Admins team communications send permission', () => {
+    const accountAdminPermissions =
+      ROLE_PERMISSIONS[RoleNamesType.ACCOUNT_ADMIN]?.permissions ?? [];
+
+    expect(accountAdminPermissions).toContain('team.communications.send');
+  });
 });

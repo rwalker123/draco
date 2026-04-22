@@ -39,11 +39,13 @@ import { GroupContact } from '../../../services/emailRecipientService';
 import { EmailAttachment } from '../../../types/emails/attachments';
 import { EmailComposeRequest } from '../../../types/emails/email';
 import PageSectionHeader from '../../common/PageSectionHeader';
+import type { EmailComposeConfig } from '../../../types/emails/compose';
 
 interface EmailComposePageProps {
   accountId: string;
   seasonId?: string;
   initialData?: Partial<EmailComposeRequest>;
+  config?: Partial<EmailComposeConfig>;
   onSendComplete?: (emailId: string) => void;
   onCancel?: () => void;
   loading?: boolean;
@@ -78,7 +80,7 @@ interface ComponentState {
  * Internal compose page component (wrapped with providers)
  */
 const EmailComposePageInternal: React.FC<
-  Omit<EmailComposePageProps, 'initialData' | 'onSendComplete' | 'onCancel'> & {
+  Omit<EmailComposePageProps, 'initialData' | 'onSendComplete' | 'onCancel' | 'config'> & {
     onSendComplete?: (emailId: string) => void;
     editorRef?: React.RefObject<RichTextEditorHandle | null>;
   }
@@ -420,25 +422,27 @@ const EmailComposePageInternal: React.FC<
             }}
           >
             <Stack spacing={3}>
-              {/* Compose Header */}
-              <ComposeHeader
-                showFromField={!isMobile}
-                showRecipientCount={true}
-                showValidationErrors={true}
-                compact={isMobile}
-                onRecipientSelectionClick={handleAdvancedRecipientOpen}
-                onCancelClick={handleCancelClick}
-                onEditGroup={handleEditGroup}
-                loading={loading}
-              />
+              {state.config.renderRecipientPanel ? (
+                state.config.renderRecipientPanel(state.config)
+              ) : (
+                <ComposeHeader
+                  showFromField={!isMobile}
+                  showRecipientCount={true}
+                  showValidationErrors={true}
+                  compact={isMobile}
+                  onRecipientSelectionClick={
+                    state.config.allowAdvancedRecipients !== false
+                      ? handleAdvancedRecipientOpen
+                      : undefined
+                  }
+                  onCancelClick={handleCancelClick}
+                  onEditGroup={handleEditGroup}
+                  loading={loading}
+                />
+              )}
 
               {/* Content Editor */}
               <Box sx={{ flex: 1, minHeight: 300 }}>
-                {/* 
-                    Key prop forces React to remount RichTextEditor when template changes.
-                    This is necessary because RichTextEditor only reads initialValue on mount,
-                    so without this key, template content wouldn't populate when users select templates.
-                  */}
                 <RichTextEditor
                   key={`editor-${state.resetCounter}-${state.selectedTemplate?.id || 'no-template'}`}
                   ref={editorRef}
@@ -449,30 +453,31 @@ const EmailComposePageInternal: React.FC<
                 />
               </Box>
 
-              {/* Enhanced File Upload */}
-              <Box>
-                <PageSectionHeader title="File Attachments" gutterBottom />
+              {state.config.allowAttachments !== false && (
+                <Box>
+                  <PageSectionHeader title="File Attachments" gutterBottom />
 
-                <ErrorBoundary
-                  fallback={
-                    <Alert severity="error" sx={{ mt: 2 }}>
-                      File upload component failed to load. Please refresh the page to try again.
-                    </Alert>
-                  }
-                  onError={(error) => {
-                    console.error('FileUploadComponent error:', error);
-                    showNotification('File upload component failed to load', 'error');
-                  }}
-                >
-                  <FileUploadComponent
-                    accountId={accountId}
-                    onAttachmentsChange={handleAttachmentsChange}
-                    showPreview={true}
-                    compact={isMobile}
-                    disabled={state.isSending}
-                  />
-                </ErrorBoundary>
-              </Box>
+                  <ErrorBoundary
+                    fallback={
+                      <Alert severity="error" sx={{ mt: 2 }}>
+                        File upload component failed to load. Please refresh the page to try again.
+                      </Alert>
+                    }
+                    onError={(error) => {
+                      console.error('FileUploadComponent error:', error);
+                      showNotification('File upload component failed to load', 'error');
+                    }}
+                  >
+                    <FileUploadComponent
+                      accountId={accountId}
+                      onAttachmentsChange={handleAttachmentsChange}
+                      showPreview={true}
+                      compact={isMobile}
+                      disabled={state.isSending}
+                    />
+                  </ErrorBoundary>
+                </Box>
+              )}
             </Stack>
           </Box>
         </Box>
@@ -494,7 +499,7 @@ const EmailComposePageInternal: React.FC<
         }}
       >
         <ComposeActions
-          onScheduleClick={handleScheduleOpen}
+          onScheduleClick={state.config.allowScheduling !== false ? handleScheduleOpen : undefined}
           compact={isMobile}
           onBeforeSend={syncEditorContent}
           editorRef={editorRef}
@@ -516,44 +521,46 @@ const EmailComposePageInternal: React.FC<
         </Box>
       )}
 
-      {/* Schedule Dialog */}
-      <ScheduleDialog
-        open={dialogState.scheduleDialogOpen}
-        onClose={handleScheduleClose}
-        onSchedule={handleScheduleComplete}
-      />
-
-      {/* Advanced Recipient Dialog */}
-      <ErrorBoundary
-        onError={(error) => {
-          console.error('AdvancedRecipientDialog error:', error);
-          setComponentState((prev) => ({
-            ...prev,
-            errors: { ...prev.errors, contacts: 'Advanced recipient dialog failed' },
-          }));
-          showNotification('Advanced recipient dialog failed to load', 'error');
-          setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: false }));
-        }}
-      >
-        <AdvancedRecipientDialog
-          key={`recipient-dialog-${dialogState.advancedRecipientDialogKey}`}
-          open={dialogState.advancedRecipientDialogOpen}
-          onClose={handleAdvancedRecipientClose}
-          onApply={handleRecipientSelectionChange}
-          accountId={accountId}
-          seasonId={seasonId}
-          loading={loading}
-          error={componentState.errors.teams || componentState.errors.roles}
-          onRetry={handleRetry}
-          initialSelectedGroups={state.recipientState?.selectedGroups}
-          initialWorkoutRecipients={state.recipientState?.selectedWorkoutRecipients}
-          initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
-          initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
-          initialUmpireRecipients={state.recipientState?.selectedUmpireRecipients}
-          initialIndividualContactDetails={state.recipientState?.individualContactDetails}
-          preloadedHierarchicalData={hierarchicalData}
+      {state.config.allowScheduling !== false && (
+        <ScheduleDialog
+          open={dialogState.scheduleDialogOpen}
+          onClose={handleScheduleClose}
+          onSchedule={handleScheduleComplete}
         />
-      </ErrorBoundary>
+      )}
+
+      {state.config.allowAdvancedRecipients !== false && !state.config.renderRecipientPanel && (
+        <ErrorBoundary
+          onError={(error) => {
+            console.error('AdvancedRecipientDialog error:', error);
+            setComponentState((prev) => ({
+              ...prev,
+              errors: { ...prev.errors, contacts: 'Advanced recipient dialog failed' },
+            }));
+            showNotification('Advanced recipient dialog failed to load', 'error');
+            setDialogState((prev) => ({ ...prev, advancedRecipientDialogOpen: false }));
+          }}
+        >
+          <AdvancedRecipientDialog
+            key={`recipient-dialog-${dialogState.advancedRecipientDialogKey}`}
+            open={dialogState.advancedRecipientDialogOpen}
+            onClose={handleAdvancedRecipientClose}
+            onApply={handleRecipientSelectionChange}
+            accountId={accountId}
+            seasonId={seasonId}
+            loading={loading}
+            error={componentState.errors.teams || componentState.errors.roles}
+            onRetry={handleRetry}
+            initialSelectedGroups={state.recipientState?.selectedGroups}
+            initialWorkoutRecipients={state.recipientState?.selectedWorkoutRecipients}
+            initialWorkoutManagersOnly={state.recipientState?.workoutManagersOnly}
+            initialTeamsWantedRecipients={state.recipientState?.selectedTeamsWantedRecipients}
+            initialUmpireRecipients={state.recipientState?.selectedUmpireRecipients}
+            initialIndividualContactDetails={state.recipientState?.individualContactDetails}
+            preloadedHierarchicalData={hierarchicalData}
+          />
+        </ErrorBoundary>
+      )}
 
       {/* Cancel Confirmation Dialog */}
       <ConfirmationDialog
@@ -591,12 +598,12 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   accountId,
   seasonId,
   initialData,
+  config,
   onSendComplete,
   loading = false,
   error = null,
   onRetry,
 }) => {
-  // Editor ref to access content - shared between provider and internal component
   const editorRef = useRef<RichTextEditorHandle | null>(null);
 
   const handleProviderSendComplete = (emailId: string) => {
@@ -608,11 +615,13 @@ export const EmailComposePage: React.FC<EmailComposePageProps> = ({
   const handleProviderError = (error: Error) => {
     console.error('Compose error:', error);
   };
+
   return (
     <EmailComposeProvider
       accountId={accountId}
       seasonId={seasonId}
       initialData={initialData}
+      config={config}
       onSendComplete={handleProviderSendComplete}
       onError={handleProviderError}
       editorRef={editorRef}

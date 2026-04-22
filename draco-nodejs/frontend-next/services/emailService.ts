@@ -3,8 +3,11 @@
 
 import {
   composeAccountEmail as apiComposeAccountEmail,
+  composeTeamEmail as apiComposeTeamEmail,
   listAccountEmails as apiListAccountEmails,
+  listTeamEmails as apiListTeamEmails,
   getAccountEmail as apiGetAccountEmail,
+  getTeamEmail as apiGetTeamEmail,
   createEmailTemplate as apiCreateEmailTemplate,
   listEmailTemplates as apiListEmailTemplates,
   getEmailTemplate as apiGetEmailTemplate,
@@ -266,9 +269,6 @@ export class EmailService {
     const payload = buildComposePayload(request);
 
     if (files?.length) {
-      // Use direct client call for multipart form data with files.
-      // formDataBodySerializer doesn't handle nested objects (they become "[object Object]"),
-      // so we JSON stringify the recipients field explicitly.
       const multipartBody: ComposeEmailMultipartBody = {
         ...payload,
         recipients: JSON.stringify(payload.recipients),
@@ -298,6 +298,25 @@ export class EmailService {
     return data.emailId;
   }
 
+  async composeTeamEmail(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    request: EmailComposeRequest,
+  ): Promise<string> {
+    const payload = buildComposePayload(request);
+
+    const result = await apiComposeTeamEmail({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      body: payload,
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to send team email');
+    return data.emailId;
+  }
+
   async listEmails(
     accountId: string,
     page = 1,
@@ -319,6 +338,31 @@ export class EmailService {
     return mapListResponse(accountId, data as EmailListPagedType);
   }
 
+  async listTeamEmails(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    page = 1,
+    limit = 25,
+    status?: EmailStatus,
+    signal?: AbortSignal,
+  ): Promise<EmailListResponse> {
+    const result = await apiListTeamEmails({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      query: {
+        page,
+        limit,
+        status,
+      },
+      signal,
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to load team emails');
+    return mapListResponse(accountId, data as EmailListPagedType);
+  }
+
   async getEmail(accountId: string, emailId: string, signal?: AbortSignal): Promise<EmailRecord> {
     const result = await apiGetAccountEmail({
       client: this.client,
@@ -328,6 +372,24 @@ export class EmailService {
     });
 
     const data = unwrapApiResult(result, 'Failed to load email details') as EmailDetailType;
+    return mapEmailDetail(accountId, data);
+  }
+
+  async getTeamEmail(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    emailId: string,
+    signal?: AbortSignal,
+  ): Promise<EmailRecord> {
+    const result = await apiGetTeamEmail({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId, emailId },
+      signal,
+      throwOnError: false,
+    });
+
+    const data = unwrapApiResult(result, 'Failed to load team email details') as EmailDetailType;
     return mapEmailDetail(accountId, data);
   }
 

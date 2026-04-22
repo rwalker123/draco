@@ -11,6 +11,8 @@ import PrintIcon from '@mui/icons-material/Print';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import YouTubeIcon from '@mui/icons-material/YouTube';
+import EmailIcon from '@mui/icons-material/Email';
+import HistoryIcon from '@mui/icons-material/History';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 import { useAuth } from '../../context/AuthContext';
@@ -33,6 +35,8 @@ interface TeamAdminPanelProps {
   youtubeHref?: string;
   teamsWantedHref?: string;
   isHistoricalSeason?: boolean;
+  emailComposeHref?: string;
+  emailHistoryHref?: string;
 }
 
 const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
@@ -52,6 +56,8 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   youtubeHref,
   teamsWantedHref,
   isHistoricalSeason = false,
+  emailComposeHref,
+  emailHistoryHref,
 }) => {
   const shouldShowClassifiedsLink =
     showPlayerClassifiedsLink && (!!playerClassifiedsHref || !!onPostPlayersWanted);
@@ -62,6 +68,8 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     canManageInformationMessages && informationMessagesHref,
   );
   const shouldShowYouTubeLink = Boolean(youtubeHref);
+  const shouldShowEmailComposeLink = Boolean(emailComposeHref);
+  const shouldShowEmailHistoryLink = Boolean(emailHistoryHref);
   const { token } = useAuth();
   const [teamsWantedCount, setTeamsWantedCount] = React.useState<number | null>(null);
   const [teamsWantedCountError, setTeamsWantedCountError] = React.useState(false);
@@ -120,6 +128,153 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     return 'Players looking for teams';
   })();
 
+  const operationsButtons: React.ReactNode[] = [];
+  if (shouldShowStatEntryLink) {
+    operationsButtons.push(
+      <Button
+        key="statistics"
+        variant="contained"
+        color="primary"
+        startIcon={<BarChartIcon />}
+        component={Link}
+        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
+      >
+        Enter Statistics
+      </Button>,
+    );
+  }
+  if (shouldShowEmailComposeLink) {
+    operationsButtons.push(
+      <AccountOptional
+        key="email-compose"
+        accountId={accountId}
+        componentId="team.emailCompose.button"
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<EmailIcon />}
+          component={Link}
+          href={emailComposeHref!}
+        >
+          Email Team
+        </Button>
+      </AccountOptional>,
+    );
+  }
+  operationsButtons.push(
+    <AccountOptional key="roster-card" accountId={accountId} componentId="team.printableRosterCard">
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<PrintIcon />}
+        component={Link}
+        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster-card`}
+      >
+        Printable Roster Card
+      </Button>
+    </AccountOptional>,
+  );
+
+  const communicationsButtons: React.ReactNode[] = [];
+  if (shouldShowAnnouncementsLink) {
+    communicationsButtons.push(
+      <Button
+        key="announcements"
+        variant="contained"
+        color="primary"
+        startIcon={<CampaignIcon />}
+        component={Link}
+        href={announcementsHref!}
+      >
+        Announcements
+      </Button>,
+    );
+  }
+  if (shouldShowInformationMessagesLink) {
+    communicationsButtons.push(
+      <Button
+        key="information"
+        variant="contained"
+        color="primary"
+        startIcon={<InfoOutlinedIcon />}
+        component={Link}
+        href={informationMessagesHref!}
+      >
+        Information
+      </Button>,
+    );
+  }
+  if (shouldShowEmailHistoryLink) {
+    communicationsButtons.push(
+      <AccountOptional
+        key="email-history"
+        accountId={accountId}
+        componentId="team.emailHistory.button"
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<HistoryIcon />}
+          component={Link}
+          href={emailHistoryHref!}
+        >
+          Email History
+        </Button>
+      </AccountOptional>,
+    );
+  }
+
+  const contentButtons: React.ReactNode[] = [];
+  if (shouldShowYouTubeLink) {
+    contentButtons.push(
+      <Button
+        key="youtube"
+        variant="contained"
+        color="primary"
+        startIcon={<YouTubeIcon />}
+        component={Link}
+        href={youtubeHref!}
+      >
+        YouTube
+      </Button>,
+    );
+  }
+  if (shouldShowHandoutsLink) {
+    contentButtons.push(
+      <Button
+        key="handouts"
+        variant="contained"
+        color="primary"
+        startIcon={<DescriptionIcon />}
+        component={Link}
+        href={handoutsHref!}
+      >
+        Handouts
+      </Button>,
+    );
+  }
+  if (canManageSponsors) {
+    contentButtons.push(
+      <Button
+        key="sponsors"
+        variant="contained"
+        color="primary"
+        startIcon={<HandshakeIcon />}
+        component={Link}
+        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
+      >
+        Sponsors
+      </Button>,
+    );
+  }
+
+  const buttonGroups = [
+    { title: 'Team Operations', buttons: operationsButtons },
+    { title: 'Communications', buttons: communicationsButtons },
+    { title: 'Content & Resources', buttons: contentButtons },
+  ].filter((group) => group.buttons.length > 0);
+
   return (
     <WidgetShell
       title="Team Management"
@@ -135,100 +290,22 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
         </Typography>
       ) : (
         <>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 2,
-            }}
-          >
-            <Stack
-              direction="row"
-              spacing={1}
-              useFlexGap
-              sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}
-            >
-              {canManageSponsors && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<HandshakeIcon />}
-                  component={Link}
-                  href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/sponsors/manage`}
+          <Stack spacing={2.5}>
+            {buttonGroups.map((group) => (
+              <Box key={group.title}>
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 1, fontWeight: 600, letterSpacing: 0.8 }}
                 >
-                  Sponsors
-                </Button>
-              )}
-              {shouldShowStatEntryLink && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<BarChartIcon />}
-                  component={Link}
-                  href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
-                >
-                  Statistics
-                </Button>
-              )}
-              {shouldShowAnnouncementsLink && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<CampaignIcon />}
-                  component={Link}
-                  href={announcementsHref!}
-                >
-                  Announcements
-                </Button>
-              )}
-              {shouldShowInformationMessagesLink && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<InfoOutlinedIcon />}
-                  component={Link}
-                  href={informationMessagesHref!}
-                >
-                  Information
-                </Button>
-              )}
-              {shouldShowYouTubeLink && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<YouTubeIcon />}
-                  component={Link}
-                  href={youtubeHref!}
-                >
-                  YouTube
-                </Button>
-              )}
-              {shouldShowHandoutsLink && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<DescriptionIcon />}
-                  component={Link}
-                  href={handoutsHref!}
-                >
-                  Handouts
-                </Button>
-              )}
-              <AccountOptional accountId={accountId} componentId="team.printableRosterCard">
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<PrintIcon />}
-                  component={Link}
-                  href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster-card`}
-                >
-                  Printable Roster Card
-                </Button>
-              </AccountOptional>
-            </Stack>
-          </Box>
+                  {group.title}
+                </Typography>
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                  {group.buttons}
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
           {shouldShowClassifiedsLink && (
             <Stack direction="column" spacing={2} useFlexGap sx={{ width: '100%', mt: 3 }}>
               <AccountOptional accountId={accountId} componentId="team.playerClassified.cta">

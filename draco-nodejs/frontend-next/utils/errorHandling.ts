@@ -79,6 +79,31 @@ export function createEmailRecipientError(
   };
 }
 
+export function isAbortError(error: unknown): boolean {
+  if (!error) return false;
+
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    if (error.name === 'AbortError') return true;
+  }
+
+  if (error instanceof Error) {
+    if (error.name === 'AbortError') return true;
+
+    const message = error.message || '';
+    if (/signal is aborted|aborted without reason|the operation was aborted/i.test(message)) {
+      return true;
+    }
+
+    const cause = (error as { cause?: unknown }).cause;
+    if (cause && cause !== error && isAbortError(cause)) return true;
+
+    const details = (error as { details?: unknown }).details;
+    if (details && details !== error && isAbortError(details)) return true;
+  }
+
+  return false;
+}
+
 /**
  * Transforms various error types into standardized EmailRecipientError
  */
@@ -327,6 +352,10 @@ export async function withRetry<T>(
     try {
       return await operation();
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
       lastError = normalizeError(error);
 
       // Don't retry if not retryable or max attempts reached
@@ -358,7 +387,9 @@ export async function safeAsync<T>(
     return { success: true, data };
   } catch (error) {
     const normalizedError = normalizeError(error, context);
-    logError(normalizedError, 'safeAsync operation');
+    if (!isAbortError(error)) {
+      logError(normalizedError, 'safeAsync operation');
+    }
     return { success: false, error: normalizedError };
   }
 }
@@ -372,7 +403,9 @@ export function safe<T>(operation: () => T, context?: EmailRecipientError['conte
     return { success: true, data };
   } catch (error) {
     const normalizedError = normalizeError(error, context);
-    logError(normalizedError, 'safe operation');
+    if (!isAbortError(error)) {
+      logError(normalizedError, 'safe operation');
+    }
     return { success: false, error: normalizedError };
   }
 }

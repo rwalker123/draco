@@ -41,6 +41,7 @@ import adminAnalyticsRouter from './routes/admin-analytics.js';
 import adminGolfCoursesRouter from './routes/admin-golf-courses.js';
 import alertsRouter from './routes/alerts.js';
 import emailsRouter from './routes/emails.js';
+import teamEmailsRouter from './routes/team-emails.js';
 import webhookRouter from './routes/webhook-routes.js';
 import cleanupRouter from './routes/cleanup.js';
 import rolesRouter from './routes/roles.js';
@@ -297,6 +298,7 @@ app.use('/api/accounts/:accountId/seasons/:seasonId/managers', seasonManagersRou
 app.use('/api/accounts/:accountId/seasons/:seasonId', exportsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter);
 app.use('/api', emailsRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamEmailsRouter);
 app.use('/api/webhooks', webhookRouter);
 app.use('/api/accounts', accountsRouter);
 app.use('/api/roles', rolesRouter);

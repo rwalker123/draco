@@ -484,6 +484,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRoleInAccount('AccountAdmin', accountId) ||
     hasRoleInTeam('TeamAdmin', teamSeasonId);
 
+  const canSendTeamCommunications =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId);
+
   const canManageInformationMessages =
     hasRole('Administrator') ||
     hasRoleInAccount('AccountAdmin', accountId) ||
@@ -608,6 +613,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 canManageInformationMessages={canManageInformationMessages}
                 informationMessagesHref={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/information-messages/manage`}
                 youtubeHref={youtubeManagementHref}
+                emailComposeHref={
+                  canSendTeamCommunications
+                    ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/communications/compose`
+                    : undefined
+                }
+                emailHistoryHref={
+                  canSendTeamCommunications
+                    ? `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/communications/history`
+                    : undefined
+                }
               />
             )}
 

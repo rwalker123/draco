@@ -94,6 +94,7 @@ interface SenderContext {
 interface ComposeEmailOptions {
   isSystemEmail?: boolean;
   attachmentFiles?: Express.Multer.File[];
+  teamSeasonId?: bigint;
 }
 
 interface EmailSendToAddressesRequest {
@@ -542,6 +543,7 @@ export class EmailService {
       sender_contact_name: senderContext.displayName,
       reply_to_email: senderContext.replyTo,
       from_name_override: senderContext.displayName,
+      team_season_id: options?.teamSeasonId ?? null,
     });
 
     // Upload attachments if provided (during compose with multipart form data)
@@ -784,6 +786,39 @@ export class EmailService {
     const paginationInfo = PaginationHelper.createMeta(pagination.page, pagination.limit, total);
 
     return EmailResponseFormatter.formatEmailList(emails, paginationInfo);
+  }
+
+  async listTeamEmails(
+    accountId: bigint,
+    teamSeasonId: bigint,
+    paginationParams: PagingType,
+    status?: string,
+  ): Promise<EmailListPagedType> {
+    const pagination = {
+      page: paginationParams.page,
+      limit: Math.min(paginationParams.limit, 100),
+      offset: paginationParams.skip,
+    };
+
+    const { emails, total } = await this.emailRepository.listTeamEmails(accountId, teamSeasonId, {
+      skip: pagination.offset,
+      take: pagination.limit,
+      status,
+    });
+
+    const paginationInfo = PaginationHelper.createMeta(pagination.page, pagination.limit, total);
+
+    return EmailResponseFormatter.formatEmailList(emails, paginationInfo);
+  }
+
+  async getTeamEmail(accountId: bigint, teamSeasonId: bigint, emailId: bigint) {
+    const email = await this.emailRepository.getTeamEmailDetails(accountId, teamSeasonId, emailId);
+
+    if (!email) {
+      throw new NotFoundError('Email not found');
+    }
+
+    return EmailResponseFormatter.formatEmailDetail(email);
   }
 
   async deleteEmail(accountId: bigint, emailId: bigint): Promise<void> {

@@ -1977,6 +1977,7 @@ export type dbCreateEmailInput = {
   sender_contact_name?: string | null;
   reply_to_email?: string | null;
   from_name_override?: string | null;
+  team_season_id?: bigint | null;
 };
 
 export type dbCreateEmailRecipientInput = {

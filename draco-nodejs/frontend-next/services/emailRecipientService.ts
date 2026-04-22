@@ -30,6 +30,7 @@ import {
   listSeasonTeams,
   listSeasonManagers,
   getTeamRosterMembers,
+  getTeamRosterContacts as apiGetTeamRosterContacts,
   searchContacts as apiSearchContacts,
   getGroupContacts as apiGetGroupContacts,
 } from '@draco/shared-api-client';
@@ -848,6 +849,71 @@ export class EmailRecipientService {
     );
   }
 
+  async fetchTeamRosterContacts(
+    accountId: string,
+    token: string | null,
+    seasonId: string,
+    teamSeasonId: string,
+    signal?: AbortSignal,
+  ): AsyncResult<GroupContact[]> {
+    if (!accountId || accountId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Account ID is required',
+          { context: { operation: 'fetch_team_roster_contacts' } },
+        ),
+      };
+    }
+
+    if (!seasonId || seasonId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Season ID is required',
+          { context: { operation: 'fetch_team_roster_contacts', accountId } },
+        ),
+      };
+    }
+
+    if (!teamSeasonId || teamSeasonId.trim() === '') {
+      return {
+        success: false,
+        error: createEmailRecipientError(
+          EmailRecipientErrorCode.INVALID_DATA,
+          'Team season ID is required',
+          { context: { operation: 'fetch_team_roster_contacts', accountId, seasonId } },
+        ),
+      };
+    }
+
+    const headersResult = this.getHeaders(token);
+    if (!headersResult.success) {
+      return { success: false, error: headersResult.error };
+    }
+
+    return this.executeRequest(
+      async () => {
+        const apiClient = createApiClient({ token: token || undefined });
+        const result = await apiGetTeamRosterContacts({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          signal,
+          throwOnError: false,
+        });
+
+        const data = unwrapApiResult(result, 'Failed to fetch team roster contacts');
+        return data as GroupContact[];
+      },
+      {
+        operation: 'fetch_team_roster_contacts',
+        additionalData: { endpoint: 'openapi:getTeamRosterContacts' },
+      },
+    );
+  }
+
   async fetchGroupContacts(
     accountId: string,
     token: string | null,
@@ -935,4 +1001,15 @@ export interface GroupContact {
  */
 export const createEmailRecipientService = (): EmailRecipientService => {
   return new EmailRecipientService();
+};
+
+export const fetchTeamRosterContacts = (
+  accountId: string,
+  token: string | null,
+  seasonId: string,
+  teamSeasonId: string,
+  options: { signal?: AbortSignal } = {},
+): AsyncResult<GroupContact[]> => {
+  const service = new EmailRecipientService();
+  return service.fetchTeamRosterContacts(accountId, token, seasonId, teamSeasonId, options.signal);
 };

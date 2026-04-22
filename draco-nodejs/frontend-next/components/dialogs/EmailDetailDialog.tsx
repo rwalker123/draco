@@ -49,6 +49,9 @@ interface EmailDetailDialogProps {
   email: EmailRecord | null;
   onClose: () => void;
   onError?: (error: string) => void;
+  scope?: 'account' | 'team';
+  seasonId?: string;
+  teamSeasonId?: string;
 }
 
 const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
@@ -57,6 +60,9 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
   email,
   onClose,
   onError,
+  scope = 'account',
+  seasonId,
+  teamSeasonId,
 }) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
@@ -93,7 +99,16 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
       try {
         setLoading(true);
         setError(null);
-        const result = await emailService.getEmail(accountId, email.id, controller.signal);
+        const result =
+          scope === 'team' && seasonId && teamSeasonId
+            ? await emailService.getTeamEmail(
+                accountId,
+                seasonId,
+                teamSeasonId,
+                email.id,
+                controller.signal,
+              )
+            : await emailService.getEmail(accountId, email.id, controller.signal);
         if (controller.signal.aborted) {
           return;
         }
@@ -119,7 +134,7 @@ const EmailDetailDialog: React.FC<EmailDetailDialogProps> = ({
     return () => {
       controller.abort();
     };
-  }, [open, email, accountId, emailService, onError, retryCounter]);
+  }, [open, email, accountId, emailService, onError, retryCounter, scope, seasonId, teamSeasonId]);
 
   const handleRetry = () => {
     if (!email) {

@@ -1,7 +1,4 @@
-/**
- * Email composition type definitions
- */
-
+import type { ReactNode } from 'react';
 import type {
   RecipientSelectionState,
   RecipientSelectionTab,
@@ -129,6 +126,15 @@ export interface EmailComposeConfig {
   maxAttachments: number;
   maxAttachmentSize: number;
   maxRecipients: number;
+
+  scope?: 'account' | 'team';
+  allowAttachments?: boolean;
+  allowAdvancedRecipients?: boolean;
+  allowScheduling?: boolean;
+  teamSeasonId?: string;
+  seasonId?: string;
+
+  renderRecipientPanel?: (config: EmailComposeConfig) => ReactNode;
 }
 
 /**
@@ -241,8 +247,12 @@ export const DEFAULT_COMPOSE_CONFIG: EmailComposeConfig = {
   enableKeyboardShortcuts: true,
   enableRealTimeValidation: true,
   maxAttachments: 10,
-  maxAttachmentSize: 25 * 1024 * 1024, // 25MB
+  maxAttachmentSize: 25 * 1024 * 1024,
   maxRecipients: 500,
+  scope: 'account',
+  allowAttachments: true,
+  allowAdvancedRecipients: true,
+  allowScheduling: true,
 };
 
 /**
