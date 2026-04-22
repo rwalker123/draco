@@ -39,7 +39,7 @@ interface RoleContext {
 }
 
 // Cache keys for sessionStorage
-const ROLE_METADATA_CLIENT_VERSION = '1.7.0';
+const ROLE_METADATA_CLIENT_VERSION = '1.8.0';
 const ROLE_METADATA_CACHE_KEY = `draco_role_metadata_${ROLE_METADATA_CLIENT_VERSION}`;
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);

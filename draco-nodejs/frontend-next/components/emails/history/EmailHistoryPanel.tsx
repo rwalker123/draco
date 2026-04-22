@@ -42,14 +42,14 @@ import {
 import BouncedContactsPanel from '../bounced/BouncedContactsPanel';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
-import { listAccountEmails } from '@draco/shared-api-client';
-import { EmailListPagedType } from '@draco/shared-schemas';
+import { createEmailService } from '../../../services/emailService';
 import { unwrapApiResult } from '../../../utils/apiResult';
 import type { EmailRecord, EmailStatus } from '../../../types/emails/email';
 import { formatDateTime } from '../../../utils/dateUtils';
 import { MetricCard, StatusChip, formatRate } from './EmailHistoryShared';
 import EmailDetailDialog from '../../dialogs/EmailDetailDialog';
 import DeleteEmailDialog from '../../dialogs/DeleteEmailDialog';
+import { listAccountEmails } from '@draco/shared-api-client';
 
 type StatusFilter = 'all' | EmailStatus;
 
@@ -67,12 +67,18 @@ interface EmailHistoryPanelProps {
   accountId: string;
   showHeader?: boolean;
   showBouncedAddresses?: boolean;
+  scope?: 'account' | 'team';
+  seasonId?: string;
+  teamSeasonId?: string;
 }
 
 const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
   accountId,
   showHeader = true,
   showBouncedAddresses = false,
+  scope = 'account',
+  seasonId,
+  teamSeasonId,
 }) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
@@ -83,9 +89,12 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
   const [actionError, setActionError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [paginationInfo, setPaginationInfo] = useState<
-    (EmailListPagedType['pagination'] & { totalPages: number }) | null
-  >(null);
+  const [paginationInfo, setPaginationInfo] = useState<{
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -96,6 +105,7 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
 
   useEffect(() => {
     if (!accountId || !token) return;
+    if (scope === 'team' && (!seasonId || !teamSeasonId)) return;
 
     const controller = new AbortController();
 
@@ -106,48 +116,72 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
         setActionError(null);
 
         const statusQuery = statusFilter === 'all' ? undefined : statusFilter;
-        const result = await listAccountEmails({
-          client: apiClient,
-          path: { accountId },
-          query: {
+
+        if (scope === 'team' && seasonId && teamSeasonId) {
+          const service = createEmailService(token, apiClient);
+          const response = await service.listTeamEmails(
+            accountId,
+            seasonId,
+            teamSeasonId,
             page,
-            limit: pageSize,
-            status: statusQuery,
-          },
-          throwOnError: false,
-          signal: controller.signal,
-        });
+            pageSize,
+            statusQuery,
+            controller.signal,
+          );
 
-        if (controller.signal.aborted) return;
+          if (controller.signal.aborted) return;
 
-        const data = unwrapApiResult(result, 'Failed to load email history');
+          setEmails(response.emails);
+          setPaginationInfo({
+            total: response.pagination.total,
+            page: response.pagination.page,
+            limit: response.pagination.limit,
+            totalPages: response.pagination.totalPages,
+          });
+        } else {
+          const result = await listAccountEmails({
+            client: apiClient,
+            path: { accountId },
+            query: {
+              page,
+              limit: pageSize,
+              status: statusQuery,
+            },
+            throwOnError: false,
+            signal: controller.signal,
+          });
 
-        const transformedEmails: EmailRecord[] = data.emails.map((email) => ({
-          id: email.id,
-          accountId,
-          createdByUserId: email.createdBy ?? undefined,
-          subject: email.subject,
-          bodyHtml: '',
-          templateId: email.templateName ?? undefined,
-          status: email.status as EmailStatus,
-          createdAt: new Date(email.createdAt),
-          sentAt: email.sentAt ? new Date(email.sentAt) : undefined,
-          totalRecipients: email.totalRecipients,
-          successfulDeliveries: email.successfulDeliveries,
-          failedDeliveries: email.failedDeliveries,
-          bounceCount: 0,
-          openCount: email.openCount,
-          clickCount: email.clickCount,
-          skippedCount: email.skippedCount,
-        }));
+          if (controller.signal.aborted) return;
 
-        const paginationWithTotalPages = {
-          ...data.pagination,
-          totalPages: Math.ceil(data.pagination.total / data.pagination.limit),
-        };
+          const data = unwrapApiResult(result, 'Failed to load email history');
 
-        setEmails(transformedEmails);
-        setPaginationInfo(paginationWithTotalPages);
+          const transformedEmails: EmailRecord[] = data.emails.map((email) => ({
+            id: email.id,
+            accountId,
+            createdByUserId: email.createdBy ?? undefined,
+            subject: email.subject,
+            bodyHtml: '',
+            templateId: email.templateName ?? undefined,
+            status: email.status as EmailStatus,
+            createdAt: new Date(email.createdAt),
+            sentAt: email.sentAt ? new Date(email.sentAt) : undefined,
+            totalRecipients: email.totalRecipients,
+            successfulDeliveries: email.successfulDeliveries,
+            failedDeliveries: email.failedDeliveries,
+            bounceCount: 0,
+            openCount: email.openCount,
+            clickCount: email.clickCount,
+            skippedCount: email.skippedCount,
+          }));
+
+          const paginationWithTotalPages = {
+            ...data.pagination,
+            totalPages: Math.ceil(data.pagination.total / data.pagination.limit),
+          };
+
+          setEmails(transformedEmails);
+          setPaginationInfo(paginationWithTotalPages);
+        }
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load email history:', err);
@@ -164,7 +198,18 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
     return () => {
       controller.abort();
     };
-  }, [accountId, token, apiClient, page, pageSize, statusFilter, refreshKey]);
+  }, [
+    accountId,
+    token,
+    apiClient,
+    page,
+    pageSize,
+    statusFilter,
+    refreshKey,
+    scope,
+    seasonId,
+    teamSeasonId,
+  ]);
 
   useEffect(() => {
     if (paginationInfo && page > paginationInfo.totalPages && paginationInfo.totalPages > 0) {
@@ -521,6 +566,9 @@ const EmailHistoryPanel: React.FC<EmailHistoryPanelProps> = ({
         email={selectedEmail}
         onClose={handleCloseDetail}
         onError={setActionError}
+        scope={scope}
+        seasonId={seasonId}
+        teamSeasonId={teamSeasonId}
       />
       <DeleteEmailDialog
         open={Boolean(emailPendingDelete)}

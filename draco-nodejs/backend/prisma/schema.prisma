@@ -1765,6 +1765,7 @@ model teamsseason {
   discordmessages                                    discordmessages[]
   socialliveevents                                   socialliveevents[]
   schedulerteamseasonexclusions                      schedulerteamseasonexclusions[]
+  emails                                             emails[]
   divisionseason                                     divisionseason?     @relation(fields: [divisionseasonid], references: [id], map: "fk_teamsseason_divisionseasonid")
   leagueseason                                       leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
   teams                                              teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")
@@ -1882,16 +1883,19 @@ model emails {
   open_count            Int                 @default(0)
   click_count           Int                 @default(0)
   skipped_count         Int                 @default(0)
+  team_season_id        BigInt?
   attachments           email_attachments[]
   recipients            email_recipients[]
   accounts              accounts            @relation(fields: [account_id], references: [id], onDelete: Cascade)
   created_by            aspnetusers?        @relation("EmailCreatedBy", fields: [created_by_user_id], references: [id])
   template              email_templates?    @relation(fields: [template_id], references: [id])
   sender_contact        contacts?           @relation("EmailSenderContact", fields: [sender_contact_id], references: [id], onDelete: SetNull)
+  team_season           teamsseason?        @relation(fields: [team_season_id], references: [id], onDelete: SetNull)
 
   @@index([account_id, status])
   @@index([scheduled_send_at])
   @@index([sender_contact_id])
+  @@index([account_id, team_season_id, created_at(sort: Desc)])
 }
 
 model email_templates {

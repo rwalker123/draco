@@ -93,6 +93,7 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
 
   const validation = validateComposeData(state, state.config);
   const canSend = validation.isValid && !state.isSending && !state.isLoading;
+  const schedulingEnabled = state.config.allowScheduling !== false;
 
   // Get recipient count
   const recipientCount = state.recipientState?.totalRecipients || 0;
@@ -123,7 +124,7 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
       >
         {/* Primary Send Actions */}
         <Stack direction="row" spacing={1}>
-          {/* Send Button with Dropdown */}
+          {/* Send Button — dropdown arrow only shown when scheduling is enabled */}
           <ButtonGroup variant="contained" disabled={!canSend}>
             <Button
               startIcon={<SendIcon />}
@@ -134,13 +135,15 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
               {state.isScheduled ? 'Schedule' : 'Send'}
               {recipientCount > 0 && ` (${recipientCount})`}
             </Button>
-            <Button
-              size={compact ? 'small' : 'medium'}
-              onClick={handleSendMenuOpen}
-              disabled={!canSend}
-            >
-              <ArrowDownIcon />
-            </Button>
+            {schedulingEnabled && (
+              <Button
+                size={compact ? 'small' : 'medium'}
+                onClick={handleSendMenuOpen}
+                disabled={!canSend}
+              >
+                <ArrowDownIcon />
+              </Button>
+            )}
           </ButtonGroup>
         </Stack>
 
@@ -148,42 +151,48 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
         <Stack direction="row" spacing={1} alignItems="center" />
       </Stack>
 
-      {/* Send Options Menu */}
-      <Menu anchorEl={sendMenuAnchor} open={Boolean(sendMenuAnchor)} onClose={handleSendMenuClose}>
-        <MenuItem
-          onClick={() => {
-            handleSend();
-            handleSendMenuClose();
-          }}
+      {/* Send Options Menu — only rendered when scheduling is enabled */}
+      {schedulingEnabled && (
+        <Menu
+          anchorEl={sendMenuAnchor}
+          open={Boolean(sendMenuAnchor)}
+          onClose={handleSendMenuClose}
         >
-          <ListItemIcon>
-            <SendIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>
-            Send Now
-            <Typography variant="caption" display="block" color="text.secondary">
-              Send immediately to {recipientCount} recipient{recipientCount !== 1 ? 's' : ''}
-            </Typography>
-          </ListItemText>
-        </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleSend();
+              handleSendMenuClose();
+            }}
+          >
+            <ListItemIcon>
+              <SendIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>
+              Send Now
+              <Typography variant="caption" display="block" color="text.secondary">
+                Send immediately to {recipientCount} recipient{recipientCount !== 1 ? 's' : ''}
+              </Typography>
+            </ListItemText>
+          </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            handleSchedule();
-            handleSendMenuClose();
-          }}
-        >
-          <ListItemIcon>
-            <ScheduleIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>
-            Schedule for Later
-            <Typography variant="caption" display="block" color="text.secondary">
-              Choose a specific date and time
-            </Typography>
-          </ListItemText>
-        </MenuItem>
-      </Menu>
+          <MenuItem
+            onClick={() => {
+              handleSchedule();
+              handleSendMenuClose();
+            }}
+          >
+            <ListItemIcon>
+              <ScheduleIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>
+              Schedule for Later
+              <Typography variant="caption" display="block" color="text.secondary">
+                Choose a specific date and time
+              </Typography>
+            </ListItemText>
+          </MenuItem>
+        </Menu>
+      )}
 
       {/* General Validation Errors - Field-specific errors are shown next to their controls */}
       {!validation.isValid && validation.errors.some((error) => error.field === 'general') && (

@@ -13,6 +13,7 @@ import {
   dbCreateEmailRecipientInput,
   dbEmailUpdateData,
   dbEmailListOptions,
+  dbTeamEmailListOptions,
   dbEmailRecipientUpdateData,
   dbEmailRecipientBulkUpdateData,
   dbRecipientStatusCount,
@@ -37,6 +38,7 @@ export class PrismaEmailRepository implements IEmailRepository {
         sender_contact_name: data.sender_contact_name ?? null,
         reply_to_email: data.reply_to_email ?? null,
         from_name_override: data.from_name_override ?? null,
+        team_season_id: data.team_season_id ?? null,
       },
       select: {
         id: true,
@@ -398,6 +400,91 @@ export class PrismaEmailRepository implements IEmailRepository {
       where: {
         id: emailId,
         account_id: accountId,
+      },
+    });
+  }
+
+  async listTeamEmails(
+    accountId: bigint,
+    teamSeasonId: bigint,
+    options: dbTeamEmailListOptions,
+  ): Promise<{ emails: dbEmailSummary[]; total: number }> {
+    const where: Prisma.emailsWhereInput = {
+      account_id: accountId,
+      team_season_id: teamSeasonId,
+    };
+
+    if (options.status) {
+      where.status = options.status;
+    }
+
+    const [emails, total] = await Promise.all([
+      this.prisma.emails.findMany({
+        where,
+        select: {
+          id: true,
+          subject: true,
+          status: true,
+          created_at: true,
+          sent_at: true,
+          total_recipients: true,
+          successful_deliveries: true,
+          failed_deliveries: true,
+          open_count: true,
+          click_count: true,
+          skipped_count: true,
+          sender_contact_name: true,
+          reply_to_email: true,
+          created_by: {
+            select: {
+              username: true,
+            },
+          },
+          template: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: { created_at: 'desc' },
+        skip: options.skip,
+        take: options.take,
+      }),
+      this.prisma.emails.count({ where }),
+    ]);
+
+    return { emails, total };
+  }
+
+  async getTeamEmailDetails(
+    accountId: bigint,
+    teamSeasonId: bigint,
+    emailId: bigint,
+  ): Promise<dbEmailDetails | null> {
+    return this.prisma.emails.findFirst({
+      where: {
+        id: emailId,
+        account_id: accountId,
+        team_season_id: teamSeasonId,
+      },
+      include: {
+        created_by: {
+          select: {
+            username: true,
+          },
+        },
+        template: true,
+        recipients: {
+          include: {
+            contact: {
+              select: {
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
+        attachments: true,
       },
     });
   }
