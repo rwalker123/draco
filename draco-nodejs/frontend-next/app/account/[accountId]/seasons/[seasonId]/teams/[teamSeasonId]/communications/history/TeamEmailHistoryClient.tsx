@@ -5,7 +5,10 @@ import TeamEmailHistoryPage from './TeamEmailHistoryPage';
 
 export default function TeamEmailHistoryClient() {
   return (
-    <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary>
+    <ProtectedRoute
+      requiredRole={['Administrator', 'AccountAdmin', 'TeamAdmin']}
+      checkAccountBoundary
+    >
       <TeamEmailHistoryPage />
     </ProtectedRoute>
   );

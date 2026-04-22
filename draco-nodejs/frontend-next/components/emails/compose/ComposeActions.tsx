@@ -95,12 +95,10 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
   const canSend = validation.isValid && !state.isSending && !state.isLoading;
   const schedulingEnabled = state.config.allowScheduling !== false;
 
-  // Get recipient count
   const recipientCount = state.recipientState?.totalRecipients || 0;
 
   return (
     <Box>
-      {/* Send Progress */}
       {state.isSending && (
         <Box sx={{ mb: 2 }}>
           <LinearProgress
@@ -115,16 +113,13 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
         </Box>
       )}
 
-      {/* Main Actions */}
       <Stack
         direction={compact ? 'column' : 'row'}
         spacing={2}
         alignItems={compact ? 'stretch' : 'center'}
         justifyContent="space-between"
       >
-        {/* Primary Send Actions */}
         <Stack direction="row" spacing={1}>
-          {/* Send Button — dropdown arrow only shown when scheduling is enabled */}
           <ButtonGroup variant="contained" disabled={!canSend}>
             <Button
               startIcon={<SendIcon />}
@@ -147,11 +142,9 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
           </ButtonGroup>
         </Stack>
 
-        {/* Secondary Actions */}
         <Stack direction="row" spacing={1} alignItems="center" />
       </Stack>
 
-      {/* Send Options Menu — only rendered when scheduling is enabled */}
       {schedulingEnabled && (
         <Menu
           anchorEl={sendMenuAnchor}
@@ -194,7 +187,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
         </Menu>
       )}
 
-      {/* General Validation Errors - Field-specific errors are shown next to their controls */}
       {!validation.isValid && validation.errors.some((error) => error.field === 'general') && (
         <Stack spacing={1} sx={{ mt: 1 }}>
           {validation.errors
@@ -218,7 +210,6 @@ const ComposeActionsComponent: React.FC<ComposeActionsProps> = ({
         </Stack>
       )}
 
-      {/* Empty Content Warning Dialog */}
       <Dialog
         open={showEmptyContentWarning}
         onClose={() => setShowEmptyContentWarning(false)}

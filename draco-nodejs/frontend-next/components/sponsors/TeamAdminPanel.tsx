@@ -16,7 +16,6 @@ import HistoryIcon from '@mui/icons-material/History';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 import { useAuth } from '../../context/AuthContext';
-import { useAccountSettings } from '../../hooks/useAccountSettings';
 import { playerClassifiedService } from '../../services/playerClassifiedService';
 
 interface TeamAdminPanelProps {
@@ -69,14 +68,8 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
     canManageInformationMessages && informationMessagesHref,
   );
   const shouldShowYouTubeLink = Boolean(youtubeHref);
-  const { settings: accountSettings } = useAccountSettings(accountId);
-  const teamEmailSetting = accountSettings?.find(
-    (setting) => setting.definition.key === 'EnableTeamEmail',
-  );
-  const isTeamEmailEnabled =
-    (teamEmailSetting?.effectiveValue ?? teamEmailSetting?.value ?? true) === true;
-  const shouldShowEmailComposeLink = Boolean(emailComposeHref) && isTeamEmailEnabled;
-  const shouldShowEmailHistoryLink = Boolean(emailHistoryHref) && isTeamEmailEnabled;
+  const shouldShowEmailComposeLink = Boolean(emailComposeHref);
+  const shouldShowEmailHistoryLink = Boolean(emailHistoryHref);
   const { token } = useAuth();
   const [teamsWantedCount, setTeamsWantedCount] = React.useState<number | null>(null);
   const [teamsWantedCountError, setTeamsWantedCountError] = React.useState(false);
@@ -152,16 +145,21 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   }
   if (shouldShowEmailComposeLink) {
     operationsButtons.push(
-      <Button
+      <AccountOptional
         key="email-compose"
-        variant="contained"
-        color="primary"
-        startIcon={<EmailIcon />}
-        component={Link}
-        href={emailComposeHref!}
+        accountId={accountId}
+        componentId="team.emailCompose.button"
       >
-        Email Team
-      </Button>,
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<EmailIcon />}
+          component={Link}
+          href={emailComposeHref!}
+        >
+          Email Team
+        </Button>
+      </AccountOptional>,
     );
   }
   operationsButtons.push(
@@ -209,16 +207,21 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   }
   if (shouldShowEmailHistoryLink) {
     communicationsButtons.push(
-      <Button
+      <AccountOptional
         key="email-history"
-        variant="contained"
-        color="primary"
-        startIcon={<HistoryIcon />}
-        component={Link}
-        href={emailHistoryHref!}
+        accountId={accountId}
+        componentId="team.emailHistory.button"
       >
-        Email History
-      </Button>,
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<HistoryIcon />}
+          component={Link}
+          href={emailHistoryHref!}
+        >
+          Email History
+        </Button>
+      </AccountOptional>,
     );
   }
 

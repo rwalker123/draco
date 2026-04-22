@@ -422,7 +422,6 @@ const EmailComposePageInternal: React.FC<
             }}
           >
             <Stack spacing={3}>
-              {/* Recipient Panel — custom slot or default advanced-recipient UI */}
               {state.config.renderRecipientPanel ? (
                 state.config.renderRecipientPanel(state.config)
               ) : (
@@ -454,7 +453,6 @@ const EmailComposePageInternal: React.FC<
                 />
               </Box>
 
-              {/* File Attachments — hidden when allowAttachments is false */}
               {state.config.allowAttachments !== false && (
                 <Box>
                   <PageSectionHeader title="File Attachments" gutterBottom />
@@ -523,7 +521,6 @@ const EmailComposePageInternal: React.FC<
         </Box>
       )}
 
-      {/* Schedule Dialog — only rendered when scheduling is enabled */}
       {state.config.allowScheduling !== false && (
         <ScheduleDialog
           open={dialogState.scheduleDialogOpen}
@@ -532,7 +529,6 @@ const EmailComposePageInternal: React.FC<
         />
       )}
 
-      {/* Advanced Recipient Dialog — only rendered when the default recipient UI is active */}
       {state.config.allowAdvancedRecipients !== false && !state.config.renderRecipientPanel && (
         <ErrorBoundary
           onError={(error) => {

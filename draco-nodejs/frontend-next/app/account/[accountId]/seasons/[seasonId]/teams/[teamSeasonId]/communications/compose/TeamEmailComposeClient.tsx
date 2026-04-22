@@ -5,7 +5,10 @@ import TeamEmailComposePage from './TeamEmailComposePage';
 
 export default function TeamEmailComposeClient() {
   return (
-    <ProtectedRoute requiredRole={['AccountAdmin', 'TeamAdmin']} checkAccountBoundary>
+    <ProtectedRoute
+      requiredRole={['Administrator', 'AccountAdmin', 'TeamAdmin']}
+      checkAccountBoundary
+    >
       <TeamEmailComposePage />
     </ProtectedRoute>
   );

@@ -12,7 +12,6 @@ import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction
 const router = Router({ mergeParams: true });
 const emailService = ServiceFactory.getEmailService();
 const routeProtection = ServiceFactory.getRouteProtection();
-const roleService = ServiceFactory.getRoleService();
 const accountSettingsService = ServiceFactory.getAccountSettingsService();
 
 async function ensureTeamEmailEnabled(accountId: bigint): Promise<void> {
@@ -24,9 +23,36 @@ async function ensureTeamEmailEnabled(accountId: bigint): Promise<void> {
   }
 }
 
+async function validateTeamContactMembership(
+  accountId: bigint,
+  seasonId: bigint,
+  teamSeasonId: bigint,
+  contactIds: string[],
+): Promise<void> {
+  const rosterContacts = await emailService.getGroupContacts(
+    accountId,
+    seasonId,
+    'team',
+    teamSeasonId.toString(),
+    false,
+  );
+
+  const rosterIds = new Set(rosterContacts.map((contact) => contact.id));
+
+  for (const contactId of contactIds) {
+    if (!rosterIds.has(contactId)) {
+      throw new ValidationError(`Recipient contact ${contactId} is not on the team roster`);
+    }
+  }
+}
+
 function validateTeamScopePayload(body: EmailSendType, teamSeasonId: string): void {
   if (body.attachments && body.attachments.length > 0) {
     throw new ValidationError('Attachments are not supported for team emails');
+  }
+
+  if (body.scheduledSend) {
+    throw new ValidationError('Scheduling is not supported for team emails');
   }
 
   const { recipients } = body;
@@ -81,20 +107,11 @@ router.post(
   routeProtection.enforceTeamBoundary(),
   routeProtection.requirePermission('team.communications.send'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, teamSeasonId } = extractTeamParams(req.params);
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
     const userId = req.user?.id;
 
     if (!userId) {
       throw new ValidationError('User ID is required');
-    }
-
-    const hasTeamPermission = await roleService.hasPermission(userId, 'team.communications.send', {
-      accountId,
-      teamId: teamSeasonId,
-    });
-
-    if (!hasTeamPermission) {
-      throw new AuthorizationError('You do not have permission to send emails for this team');
     }
 
     await ensureTeamEmailEnabled(accountId);
@@ -105,6 +122,15 @@ router.post(
 
     if (request.recipients.seasonSelection) {
       request.recipients.seasonSelection.managersOnly = false;
+    }
+
+    if (request.recipients.contacts && request.recipients.contacts.length > 0) {
+      await validateTeamContactMembership(
+        accountId,
+        seasonId,
+        teamSeasonId,
+        request.recipients.contacts,
+      );
     }
 
     const emailId = await emailService.composeAndSendEmailFromUser(accountId, userId, request, {

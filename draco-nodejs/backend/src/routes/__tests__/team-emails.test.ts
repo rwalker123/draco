@@ -45,6 +45,10 @@ const createRouteProtectionMock = () => {
         next(new AuthorizationError('Access denied'));
         return;
       }
+      if (req.headers['x-deny-permission']) {
+        next(new AuthorizationError('Permission denied'));
+        return;
+      }
       next();
     };
 
@@ -74,8 +78,8 @@ const emailServiceMock = {
   getTeamEmail: vi.fn(),
 };
 
-const roleServiceMock = {
-  hasPermission: vi.fn(),
+const accountSettingsServiceMock = {
+  getAccountSettings: vi.fn(),
 };
 
 let app: Express;
@@ -105,7 +109,9 @@ describe('Team emails routes', () => {
       createRouteProtectionMock() as never,
     );
     vi.spyOn(ServiceFactory, 'getEmailService').mockReturnValue(emailServiceMock as never);
-    vi.spyOn(ServiceFactory, 'getRoleService').mockReturnValue(roleServiceMock as never);
+    vi.spyOn(ServiceFactory, 'getAccountSettingsService').mockReturnValue(
+      accountSettingsServiceMock as never,
+    );
 
     const routerModule = await import('../team-emails.js');
     router = routerModule.default;
@@ -134,12 +140,18 @@ describe('Team emails routes', () => {
         (fn as ReturnType<typeof vi.fn>).mockReset();
       }
     });
-    Object.values(roleServiceMock).forEach((fn) => {
+    Object.values(accountSettingsServiceMock).forEach((fn) => {
       if (typeof fn === 'function') {
         (fn as ReturnType<typeof vi.fn>).mockReset();
       }
     });
-    roleServiceMock.hasPermission.mockResolvedValue(true);
+    accountSettingsServiceMock.getAccountSettings.mockResolvedValue([
+      {
+        definition: { key: 'EnableTeamEmail' },
+        effectiveValue: true,
+        value: true,
+      },
+    ]);
   });
 
   afterAll(() => {
@@ -173,7 +185,7 @@ describe('Team emails routes', () => {
     const handlers: Array<(req: Request, res: Response, next: NextFunction) => unknown> =
       layer.route.stack.map((stack: any) => stack.handle);
 
-    const req = {
+    const reqPartial: Partial<Request> = {
       method: method.toUpperCase(),
       params: {
         accountId: ACCOUNT_ID,
@@ -183,39 +195,35 @@ describe('Team emails routes', () => {
       body,
       query,
       headers,
-      get(headerName: string) {
+      get: ((headerName: string) => {
         const key = headerName.toLowerCase();
         return headers[headerName] ?? headers[key];
-      },
-    } as unknown as Request;
-
-    type MockResponse = Response & {
-      body: unknown;
-      statusCode: number;
-      headers: Record<string, unknown>;
+      }) as Request['get'],
     };
+    const req = reqPartial as Request;
 
-    const res = {
+    interface MockResponseExtras {
+      body?: unknown;
+    }
+    type MockResponse = Response & MockResponseExtras;
+
+    const resPartial: Partial<Response> & MockResponseExtras = {
       statusCode: 200,
-      headers: {} as Record<string, unknown>,
-      body: undefined as unknown,
+      body: undefined,
       status(code: number) {
-        (this as MockResponse).statusCode = code;
-        return this;
+        resPartial.statusCode = code;
+        return res;
       },
       json(payload: unknown) {
-        (this as MockResponse).body = payload;
-        return this;
+        resPartial.body = payload;
+        return res;
       },
       send(payload: unknown) {
-        (this as MockResponse).body = payload;
-        return this;
+        resPartial.body = payload;
+        return res;
       },
-      set(field: string, value: unknown) {
-        (this as MockResponse).headers[field] = value;
-        return this;
-      },
-    } as unknown as MockResponse;
+    };
+    const res = resPartial as MockResponse;
 
     let lastError: unknown = null;
 
@@ -235,18 +243,18 @@ describe('Team emails routes', () => {
         const next: NextFunction = (err?: unknown) => settle(err);
 
         const originalJson = res.json.bind(res);
-        (res as any).json = (payload: unknown) => {
+        res.json = ((payload: unknown) => {
           const r = originalJson(payload);
           settle();
           return r;
-        };
+        }) as Response['json'];
 
         const originalSend = res.send.bind(res);
-        (res as any).send = (payload: unknown) => {
+        res.send = ((payload: unknown) => {
           const r = originalSend(payload);
           settle();
           return r;
-        };
+        }) as Response['send'];
 
         try {
           const ret = handler(req, res, next);
@@ -275,11 +283,6 @@ describe('Team emails routes', () => {
       });
 
       expect(lastPermissionRequested).toBe('team.communications.send');
-      expect(roleServiceMock.hasPermission).toHaveBeenCalledWith(
-        expect.any(String),
-        'team.communications.send',
-        expect.objectContaining({ teamId: BigInt(TEAM_A_ID) }),
-      );
       expect(emailServiceMock.composeAndSendEmailFromUser).toHaveBeenCalledWith(
         BigInt(ACCOUNT_ID),
         expect.any(String),
@@ -291,11 +294,9 @@ describe('Team emails routes', () => {
     });
 
     it('cross-team rejection: team admin for team A cannot compose against team B URL', async () => {
-      roleServiceMock.hasPermission.mockResolvedValue(false);
-
       const { error } = await runRoute('post', '/:teamSeasonId/emails/compose', {
         params: { teamSeasonId: TEAM_B_ID },
-        headers: { authorization: 'Bearer token' },
+        headers: { authorization: 'Bearer token', 'x-deny-permission': '1' },
         body: { ...baseComposeBody, recipients: { seasonSelection: { teams: [TEAM_B_ID] } } },
       });
 
@@ -362,6 +363,78 @@ describe('Team emails routes', () => {
 
       expect(error).toBeInstanceOf(ValidationError);
       expect((error as ValidationError).message).toContain('does not match the route team');
+    });
+
+    it('rejects scheduledSend in team emails', async () => {
+      const { error } = await runRoute('post', '/:teamSeasonId/emails/compose', {
+        params: { teamSeasonId: TEAM_A_ID },
+        headers: { authorization: 'Bearer token' },
+        body: {
+          ...baseComposeBody,
+          scheduledSend: new Date('2030-01-01T00:00:00Z').toISOString(),
+        },
+      });
+
+      expect(error).toBeInstanceOf(ValidationError);
+      expect((error as ValidationError).message).toContain('Scheduling is not supported');
+    });
+
+    it('rejects individual contacts that are not on the team roster', async () => {
+      emailServiceMock.getGroupContacts.mockResolvedValue([
+        {
+          id: '11',
+          firstName: 'Roster',
+          lastName: 'Member',
+          email: 'r@x.com',
+          hasValidEmail: true,
+          isManager: false,
+        },
+      ]);
+
+      const { error } = await runRoute('post', '/:teamSeasonId/emails/compose', {
+        params: { teamSeasonId: TEAM_A_ID },
+        headers: { authorization: 'Bearer token' },
+        body: {
+          subject: 'Test',
+          body: '<p>Hello</p>',
+          recipients: {
+            contacts: ['999'],
+          },
+        },
+      });
+
+      expect(error).toBeInstanceOf(ValidationError);
+      expect((error as ValidationError).message).toContain('not on the team roster');
+    });
+
+    it('allows individual contacts that are on the team roster', async () => {
+      emailServiceMock.getGroupContacts.mockResolvedValue([
+        {
+          id: '11',
+          firstName: 'Roster',
+          lastName: 'Member',
+          email: 'r@x.com',
+          hasValidEmail: true,
+          isManager: false,
+        },
+      ]);
+      emailServiceMock.composeAndSendEmailFromUser.mockResolvedValue(77n);
+
+      const { res, error } = await runRoute('post', '/:teamSeasonId/emails/compose', {
+        params: { teamSeasonId: TEAM_A_ID },
+        headers: { authorization: 'Bearer token' },
+        body: {
+          subject: 'Test',
+          body: '<p>Hello</p>',
+          recipients: {
+            contacts: ['11'],
+          },
+        },
+      });
+
+      expect(error).toBeNull();
+      expect(res.statusCode).toBe(201);
+      expect(res.body).toEqual({ emailId: '77', status: 'sending' });
     });
 
     it('rejects managersOnly in team emails', async () => {

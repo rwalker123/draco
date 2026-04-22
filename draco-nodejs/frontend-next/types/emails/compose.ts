@@ -127,7 +127,6 @@ export interface EmailComposeConfig {
   maxAttachmentSize: number;
   maxRecipients: number;
 
-  // Scope flags — all default to account-level behaviour when absent
   scope?: 'account' | 'team';
   allowAttachments?: boolean;
   allowAdvancedRecipients?: boolean;
@@ -135,7 +134,6 @@ export interface EmailComposeConfig {
   teamSeasonId?: string;
   seasonId?: string;
 
-  // Recipient panel render slot — when provided, replaces the default recipient UI
   renderRecipientPanel?: (config: EmailComposeConfig) => ReactNode;
 }
 

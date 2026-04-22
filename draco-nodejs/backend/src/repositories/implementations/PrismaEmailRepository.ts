@@ -13,7 +13,6 @@ import {
   dbCreateEmailRecipientInput,
   dbEmailUpdateData,
   dbEmailListOptions,
-  dbTeamEmailListOptions,
   dbEmailRecipientUpdateData,
   dbEmailRecipientBulkUpdateData,
   dbRecipientStatusCount,
@@ -407,7 +406,7 @@ export class PrismaEmailRepository implements IEmailRepository {
   async listTeamEmails(
     accountId: bigint,
     teamSeasonId: bigint,
-    options: dbTeamEmailListOptions,
+    options: dbEmailListOptions,
   ): Promise<{ emails: dbEmailSummary[]; total: number }> {
     const where: Prisma.emailsWhereInput = {
       account_id: accountId,

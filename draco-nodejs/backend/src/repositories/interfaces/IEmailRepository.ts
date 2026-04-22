@@ -11,7 +11,6 @@ import {
   dbCreateEmailRecipientInput,
   dbEmailUpdateData,
   dbEmailListOptions,
-  dbTeamEmailListOptions,
   dbEmailRecipientUpdateData,
   dbEmailRecipientBulkUpdateData,
   dbRecipientStatusCount,
@@ -31,7 +30,7 @@ export interface IEmailRepository {
   listTeamEmails(
     accountId: bigint,
     teamSeasonId: bigint,
-    options: dbTeamEmailListOptions,
+    options: dbEmailListOptions,
   ): Promise<{ emails: dbEmailSummary[]; total: number }>;
   getTeamEmailDetails(
     accountId: bigint,

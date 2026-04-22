@@ -2012,12 +2012,6 @@ export type dbEmailListOptions = {
   status?: string;
 };
 
-export type dbTeamEmailListOptions = {
-  skip: number;
-  take: number;
-  status?: string;
-};
-
 export type dbEmailRecipientUpdateData = {
   status?: string;
   sent_at?: Date | null;
