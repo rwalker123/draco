@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
 export class UserManagementPage {
@@ -23,7 +24,8 @@ export class UserManagementPage {
 
   async goto(accountId: string) {
     await this.page.goto(`/account/${accountId}/users`);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
+    await expect(this.heading).toBeVisible({ timeout: 15_000 });
   }
 
   async search(term: string) {

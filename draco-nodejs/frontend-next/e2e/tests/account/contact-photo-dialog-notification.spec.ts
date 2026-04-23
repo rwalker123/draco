@@ -14,7 +14,8 @@ test.describe('ContactPhotoUploadDialog - Notification State', () => {
     teamSeasonId: string,
   ) {
     await page.goto(`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('heading', { name: /roster/i })).toBeVisible({ timeout: 15_000 });
   }
 
   async function tryOpenPhotoDialog(page: import('@playwright/test').Page): Promise<boolean> {

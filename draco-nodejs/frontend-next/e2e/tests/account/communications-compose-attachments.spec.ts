@@ -21,7 +21,10 @@ test.describe('Communications Compose - Attachments', () => {
 
     await page.goto(`/account/${accountId}/communications/compose`);
 
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('heading', { name: /Compose Email/i })).toBeVisible({
+      timeout: 30000,
+    });
     await page.waitForTimeout(3000);
 
     const attachmentArea = page.getByText(/drag.*drop|browse.*files|attach/i);
@@ -51,7 +54,10 @@ test.describe('Communications Compose - Attachments', () => {
     });
 
     await page.goto(`/account/${accountId}/communications/compose`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('heading', { name: /Compose Email/i })).toBeVisible({
+      timeout: 30000,
+    });
     await page.waitForTimeout(2000);
 
     const fileInput = page.locator('input[type="file"]');
@@ -103,7 +109,10 @@ test.describe('Communications Compose - Attachments', () => {
     });
 
     await page.goto(`/account/${accountId}/communications/compose`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('heading', { name: /Compose Email/i })).toBeVisible({
+      timeout: 30000,
+    });
     await page.waitForTimeout(2000);
 
     const fileInput = page.locator('input[type="file"]');

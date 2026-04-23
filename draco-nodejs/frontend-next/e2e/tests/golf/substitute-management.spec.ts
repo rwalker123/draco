@@ -7,7 +7,6 @@ test.describe('Golf Substitute Management', () => {
     await page.goto(
       `/account/${substituteData.accountId}/seasons/${substituteData.seasonId}/golf/leagues/${substituteData.leagueSeasonId}/substitutes`,
     );
-    await page.waitForLoadState('networkidle');
 
     const table = page.locator('table');
     await table.waitFor({ state: 'visible', timeout: 10000 });
@@ -25,7 +24,6 @@ test.describe('Golf Substitute Management', () => {
     await page.goto(
       `/account/${substituteData.accountId}/seasons/${substituteData.seasonId}/golf/leagues/${substituteData.leagueSeasonId}/substitutes`,
     );
-    await page.waitForLoadState('networkidle');
 
     const table = page.locator('table');
     await table.waitFor({ state: 'visible', timeout: 10000 });
@@ -94,7 +92,6 @@ test.describe('Golf Substitute Management', () => {
     await page.goto(
       `/account/${substituteData.accountId}/seasons/${substituteData.seasonId}/golf/leagues/${substituteData.leagueSeasonId}/substitutes`,
     );
-    await page.waitForLoadState('networkidle');
 
     const table = page.locator('table');
     await table.waitFor({ state: 'visible', timeout: 10000 });
@@ -179,7 +176,6 @@ test.describe('Golf Substitute Management', () => {
     await page.goto(
       `/account/${substituteData.accountId}/seasons/${substituteData.seasonId}/golf/leagues/${substituteData.leagueSeasonId}/substitutes`,
     );
-    await page.waitForLoadState('networkidle');
 
     const table = page.locator('table');
     await table.waitFor({ state: 'visible', timeout: 10000 });

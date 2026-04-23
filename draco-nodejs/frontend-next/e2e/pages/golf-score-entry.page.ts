@@ -5,7 +5,7 @@ export class GolfScoreEntryPage {
 
   async goto(accountId: string) {
     await this.page.goto(`/account/${accountId}/schedule-management`);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   private gameCard(team1Name: string): Locator {
@@ -19,7 +19,6 @@ export class GolfScoreEntryPage {
     await btn.scrollIntoViewIfNeeded();
     await btn.click({ force: true });
     await this.page.getByTestId('score-entry-dialog').waitFor({ state: 'visible' });
-    await this.page.waitForLoadState('networkidle');
     await this.dialog()
       .locator('.MuiAccordion-root')
       .first()

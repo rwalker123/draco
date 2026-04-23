@@ -32,6 +32,11 @@ import {
   createGolfClosestToPin,
   deleteGolfClosestToPin,
   getGolfCourse,
+  createContact,
+  signPlayer,
+  deletePlayer,
+  deleteSeasonTeam,
+  deleteAccountTeam,
 } from '@draco/shared-api-client';
 import type {
   League,
@@ -53,6 +58,8 @@ import type {
   GolfClosestToPinEntry,
   CreateGolfClosestToPin,
   GolfCourseWithTees,
+  Contact,
+  RosterMember,
 } from '@draco/shared-api-client';
 
 export function createE2EApiClient(baseUrl: string, token: string) {
@@ -469,5 +476,83 @@ export class ApiHelper {
     });
     if (error || !data) throw new Error(`getCourse failed: ${JSON.stringify(error)}`);
     return data;
+  }
+
+  async createAccountContact(
+    accountId: string,
+    data: { firstName: string; lastName: string; email?: string },
+  ): Promise<Contact> {
+    const { data: contact, error } = await createContact({
+      client: this.client,
+      path: { accountId },
+      body: data,
+    });
+    if (error || !contact) throw new Error(`createContact failed: ${JSON.stringify(error)}`);
+    return contact;
+  }
+
+  async createBaseballTeam(
+    accountId: string,
+    seasonId: string,
+    leagueSeasonId: string,
+    data: { name: string },
+  ): Promise<TeamSeason> {
+    const { data: team, error } = await createLeagueSeasonTeam({
+      client: this.client,
+      path: { accountId, seasonId, leagueSeasonId },
+      body: data,
+    });
+    if (error || !team) throw new Error(`createBaseballTeam failed: ${JSON.stringify(error)}`);
+    return team;
+  }
+
+  async signContactToRoster(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    contactId: string,
+  ): Promise<RosterMember> {
+    const { data: member, error } = await signPlayer({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      body: {
+        player: {
+          submittedDriversLicense: false,
+          firstYear: new Date().getFullYear(),
+          contact: { id: contactId },
+        },
+      },
+    });
+    if (error || !member) throw new Error(`signContactToRoster failed: ${JSON.stringify(error)}`);
+    return member;
+  }
+
+  async deleteRosterMember(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    rosterMemberId: string,
+  ): Promise<void> {
+    const { error, response } = await deletePlayer({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId, rosterMemberId },
+    });
+    if (error) throw new ApiError('deleteRosterMember', response.status, error);
+  }
+
+  async deleteSeasonTeam(accountId: string, seasonId: string, teamSeasonId: string): Promise<void> {
+    const { error, response } = await deleteSeasonTeam({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+    });
+    if (error) throw new ApiError('deleteSeasonTeam', response.status, error);
+  }
+
+  async deleteTeamDefinition(accountId: string, teamId: string): Promise<void> {
+    const { error, response } = await deleteAccountTeam({
+      client: this.client,
+      path: { accountId, teamId },
+    });
+    if (error) throw new ApiError('deleteTeamDefinition', response.status, error);
   }
 }
