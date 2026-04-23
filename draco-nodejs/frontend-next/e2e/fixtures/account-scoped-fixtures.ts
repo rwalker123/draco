@@ -1,4 +1,4 @@
-import { test as base } from './base-fixtures';
+import { test as base, getRequiredE2eTestAccountId } from './base-fixtures';
 import { ApiHelper, tryCleanup } from '../helpers/api';
 import { getJwtToken, BASE_URL } from '../helpers/auth';
 import { appendCleanupLog } from '../helpers/cleanupLog';
@@ -16,7 +16,7 @@ async function createAccountScopedData(
   workerIndex: number,
 ): Promise<AccountScopedData> {
   const api = new ApiHelper(baseURL, getJwtToken());
-  const accountId = process.env.E2E_TEST_ACCOUNT_ID!;
+  const accountId = getRequiredE2eTestAccountId();
   const suffix = `${Date.now() % 10_000_000}w${workerIndex}`;
 
   const league = await api.createLeague(accountId, { name: `E2E Lg ${suffix}` });

@@ -9,7 +9,7 @@ From the repo root:
 ```bash
 pnpm frontend:e2e                    # full suite
 pnpm frontend:e2e:last-failed        # rerun only the last-failed tests
-pnpm frontend:e2e:reap               # delete orphaned E2E-* rows older than 24h (localhost only)
+pnpm frontend:e2e:reap               # delete orphaned E2E-* rows in E2E_TEST_ACCOUNT_ID (localhost only)
 pnpm frontend:e2e -- <spec> --project=chromium --workers=4   # scope to one file or project
 ```
 
@@ -127,11 +127,11 @@ Follow the shape of `golf-substitute-fixtures.ts`:
 ## Cleanup & orphan recovery
 
 - Each worker's cleanup runs in reverse FK order via `tryCleanup`, and errors are written to `e2e/.results/cleanup-errors-*.log` — check these logs if the DB accumulates `E2E` rows over time.
-- To reap stale orphans (older than 24h):
+- To reap orphaned E2E rows in the dedicated test account:
   ```bash
   pnpm frontend:e2e:reap
   ```
-  The script refuses to run unless `DATABASE_URL` matches `postgresql://<user>@localhost/...` (no password, no remote host). Do **not** weaken this check.
+  The script deletes every `E2E`-named row scoped to `E2E_TEST_ACCOUNT_ID` (no time cutoff), so don't run it while another E2E run is in-flight against the same account. It refuses to start unless `DATABASE_URL` matches `postgresql://<user>@localhost/...` (no password, no remote host) and `E2E_TEST_ACCOUNT_ID` is a numeric account id. Do **not** weaken these checks.
 
 ## Global auth setup
 
