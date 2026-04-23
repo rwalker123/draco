@@ -16,7 +16,7 @@ test.describe('Mobile rendering', () => {
 
     await page.goto(`/account/${accountId}`);
     await expect(page.locator('body')).toBeVisible();
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('main')).toBeVisible({ timeout: 15_000 });
 
     expect(
       consoleErrors,

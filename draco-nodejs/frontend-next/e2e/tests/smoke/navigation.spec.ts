@@ -37,9 +37,9 @@ test.describe('Unauthenticated Public Page', () => {
     const context = await browser.newContext({ storageState: undefined });
     const page = await context.newPage();
     await page.goto('/account/1');
-    await page.waitForLoadState('networkidle');
     const signInButton = page.getByRole('button', { name: 'Sign In' });
     const menuButton = page.getByRole('button', { name: 'menu' });
+    await expect(signInButton.or(menuButton)).toBeVisible({ timeout: 15_000 });
     if (await menuButton.isVisible()) {
       await menuButton.click();
       await expect(page.getByText('Sign In').first()).toBeVisible({ timeout: 5_000 });

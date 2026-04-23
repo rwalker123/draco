@@ -298,6 +298,15 @@ const MyComponent = () => {
 
 **Reference implementations:** `components/ThemeSwitcher.tsx`, `theme.ts`
 
+## E2E Test Fixtures
+
+Two test accounts are used to isolate read-only seed data from write-heavy fixture data:
+
+- `E2E_ACCOUNT_ID=1` — Shared read-only seed account. Tests that only read data (smoke tests, photo gallery, hall of fame, social hub) run against this account. **Do not mutate it.**
+- `E2E_TEST_ACCOUNT_ID=29` — Per-worker write-fixture account. Write-heavy tests create a fresh league, season, and team under this account each Playwright worker, then delete them in teardown.
+
+The admin user in `.env.e2e` holds `AccountAdmin` role on both accounts. Worker fixtures follow the `golf-substitute-fixtures.ts` pattern with `{ scope: 'worker' }`, a unique `suffix` derived from `workerIndex + Date.now()`, and cleanup logged via `e2e/helpers/cleanupLog.ts`.
+
 ---
 
 # Frontend Architecture

@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import type { Page, Locator } from '@playwright/test';
 
 export class LeaguePlayerProfilePage {
@@ -14,7 +15,8 @@ export class LeaguePlayerProfilePage {
   async goto(accountId: string, seasonId: string, contactId: string, playerName: string) {
     const url = `/account/${accountId}/seasons/${seasonId}/golf/players/${contactId}?name=${encodeURIComponent(playerName)}`;
     await this.page.goto(url);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
+    await expect(this.scoresHeading).toBeVisible({ timeout: 15_000 });
   }
 
   getScoreItems() {

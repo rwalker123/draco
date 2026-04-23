@@ -40,6 +40,8 @@
     "frontend:type-check": "pnpm --filter @draco/frontend-next type-check",
     "frontend:e2e": "pnpm --filter @draco/frontend-next e2e",
     "frontend:e2e:ui": "pnpm --filter @draco/frontend-next e2e:ui",
+    "frontend:e2e:last-failed": "pnpm --filter @draco/frontend-next e2e:last-failed",
+    "frontend:e2e:reap": "pnpm --filter @draco/frontend-next e2e:reap",
     "dev": "concurrently \"pnpm --filter @draco/backend dev\" \"pnpm --filter @draco/frontend-next dev\"",
     "dev:debug": "concurrently \"pnpm --filter @draco/backend dev:debug\" \"pnpm --filter @draco/frontend-next dev\"",
     "build": "pnpm --filter @draco/shared-schemas build && pnpm run sync:api && pnpm --filter @draco/backend build && pnpm --filter @draco/frontend-next build",

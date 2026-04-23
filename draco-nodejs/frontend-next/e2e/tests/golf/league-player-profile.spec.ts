@@ -32,10 +32,9 @@ test.describe('Golf League Player Profile', () => {
   test('navigates back when clicking back button', async ({ page, golfData }) => {
     const leaderboardUrl = `/account/${golfData.accountId}/seasons/${golfData.seasonId}/golf`;
     await page.goto(leaderboardUrl);
-    await page.waitForLoadState('networkidle');
     const profileUrl = `/account/${golfData.accountId}/seasons/${golfData.seasonId}/golf/players/${golfData.player1ContactId}?name=${encodeURIComponent(golfData.player1Name)}`;
     await page.goto(profileUrl);
-    await page.waitForLoadState('networkidle');
+    await expect(profilePage.scoresHeading).toBeVisible({ timeout: 15_000 });
     await profilePage.backButton.click();
     await expect(page).not.toHaveURL(profileUrl, { timeout: 10_000 });
   });
@@ -43,12 +42,13 @@ test.describe('Golf League Player Profile', () => {
   test('maintains auth state after page refresh', async ({ page, golfData }) => {
     const url = `/account/${golfData.accountId}/seasons/${golfData.seasonId}/golf/players/${golfData.player1ContactId}?name=${encodeURIComponent(golfData.player1Name)}`;
     await page.goto(url);
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { name: 'League Match Scores' })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByRole('button', { name: 'Sign In' })).not.toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('heading', { name: 'League Match Scores' })).toBeVisible({
-      timeout: 15000,
+      timeout: 15_000,
     });
   });
 });
