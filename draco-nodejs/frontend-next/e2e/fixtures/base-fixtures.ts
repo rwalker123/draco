@@ -15,10 +15,15 @@ export const test = base.extend<DracoFixtures>({
 });
 
 export function getRequiredE2eTestAccountId(): string {
-  const accountId = process.env.E2E_TEST_ACCOUNT_ID;
-  if (!accountId || accountId.trim() === '') {
+  const accountId = process.env.E2E_TEST_ACCOUNT_ID?.trim() ?? '';
+  if (accountId === '') {
     throw new Error(
       'E2E_TEST_ACCOUNT_ID must be set to a non-empty account id for write-scoped Playwright fixtures.',
+    );
+  }
+  if (!/^\d+$/.test(accountId)) {
+    throw new Error(
+      'E2E_TEST_ACCOUNT_ID must be set to a numeric account id for write-scoped Playwright fixtures.',
     );
   }
   return accountId;
