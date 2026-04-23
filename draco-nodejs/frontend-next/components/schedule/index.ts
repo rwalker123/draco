@@ -1,6 +1,7 @@
 // Hooks
 export { useScheduleData } from './hooks/useScheduleData';
 export { useTeamScheduleData } from './hooks/useTeamScheduleData';
+export { useSeasonLeagueTeams } from './hooks/useSeasonLeagueTeams';
 export { useScheduleFilters } from './hooks/useScheduleFilters';
 export { useGameManagement } from './hooks/useGameManagement';
 

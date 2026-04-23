@@ -272,6 +272,7 @@ async function loadTeams({
   accountId,
   seasonId,
   apiClient,
+  signal,
 }: LoadTeamsParams): Promise<LoadTeamsResult> {
   const result = await listSeasonLeagueSeasons({
     client: apiClient,
@@ -280,6 +281,7 @@ async function loadTeams({
       includeTeams: true,
       includeUnassignedTeams: false,
     },
+    signal,
     throwOnError: false,
   });
 

@@ -23,6 +23,7 @@ import {
   ScheduleLayout,
   useScheduleFilters,
   useTeamScheduleData,
+  useSeasonLeagueTeams,
   Game,
   FilterType,
   ViewMode,
@@ -135,6 +136,15 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     filterDate,
     onError: setError,
   });
+
+  const { leagues: seasonLeagues, leagueTeamsCache: seasonLeagueTeamsCache } = useSeasonLeagueTeams(
+    {
+      accountId,
+      seasonId,
+      accountType,
+      onError: setError,
+    },
+  );
 
   const updateFilterDate = (date: Date) => {
     setFilterDate(date);
@@ -314,9 +324,9 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
         accountId={accountId}
         timeZone={timeZone}
         selectedGame={selectedGame}
-        leagues={[]}
+        leagues={seasonLeagues}
         locations={locations}
-        leagueTeamsCache={new Map()}
+        leagueTeamsCache={seasonLeagueTeamsCache}
         canEditSchedule={false}
         onClose={handleViewDialogClose}
         onSuccess={() => {}}
