@@ -18,8 +18,6 @@ interface UseSeasonLeagueTeamsReturn {
   loading: boolean;
 }
 
-const EMPTY_CACHE: Map<string, TeamSeasonType[]> = new Map();
-
 export const useSeasonLeagueTeams = ({
   accountId,
   seasonId,
@@ -34,8 +32,9 @@ export const useSeasonLeagueTeams = ({
   onErrorRef.current = onError;
 
   const [leagues, setLeagues] = useState<League[]>([]);
-  const [leagueTeamsCache, setLeagueTeamsCache] =
-    useState<Map<string, TeamSeasonType[]>>(EMPTY_CACHE);
+  const [leagueTeamsCache, setLeagueTeamsCache] = useState<Map<string, TeamSeasonType[]>>(
+    () => new Map(),
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -45,7 +44,7 @@ export const useSeasonLeagueTeams = ({
 
     if (!adapter.loadTeams) {
       setLeagues([]);
-      setLeagueTeamsCache(EMPTY_CACHE);
+      setLeagueTeamsCache(new Map());
       setLoading(false);
       return;
     }
@@ -70,7 +69,7 @@ export const useSeasonLeagueTeams = ({
         if (err instanceof DOMException && err.name === 'AbortError') return;
         console.warn('Failed to load season league teams:', err);
         setLeagues([]);
-        setLeagueTeamsCache(EMPTY_CACHE);
+        setLeagueTeamsCache(new Map());
         onErrorRef.current?.('Unable to load team data for this season.');
       } finally {
         if (!controller.signal.aborted) {

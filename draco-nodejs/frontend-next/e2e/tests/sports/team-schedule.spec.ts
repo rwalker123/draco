@@ -24,14 +24,20 @@ test.describe('Team Schedule - Game Details Dialog', () => {
   test('clicking a game opens the Game Details dialog with real team names', async ({ page }) => {
     test.setTimeout(45_000);
 
-    await teamSchedulePage.monthButton.click().catch(() => {});
+    const monthButtonCount = await teamSchedulePage.monthButton.count();
+    if (monthButtonCount > 0) {
+      await expect(teamSchedulePage.monthButton).toBeVisible();
+      await expect(teamSchedulePage.monthButton).toBeEnabled();
+      await teamSchedulePage.monthButton.click();
+    }
 
     const firstCard = teamSchedulePage.gameCards.first();
     const noGamesText = page.getByText(/no games found/i).first();
-    await Promise.race([
-      firstCard.waitFor({ state: 'visible', timeout: 15_000 }),
-      noGamesText.waitFor({ state: 'visible', timeout: 15_000 }),
-    ]).catch(() => {});
+    await expect(async () => {
+      const hasVisibleCard = await firstCard.isVisible().catch(() => false);
+      const hasVisibleEmptyState = await noGamesText.isVisible().catch(() => false);
+      expect(hasVisibleCard || hasVisibleEmptyState).toBe(true);
+    }).toPass({ timeout: 15_000 });
 
     const cardCount = await teamSchedulePage.gameCards.count();
     test.skip(cardCount === 0, 'No games visible for this team/season');
