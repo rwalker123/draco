@@ -39,6 +39,9 @@ export const useSeasonLeagueTeams = ({
 
   useEffect(() => {
     if (authLoading || !accountId || !seasonId) {
+      setLeagues([]);
+      setLeagueTeamsCache(new Map());
+      setLoading(false);
       return;
     }
 
