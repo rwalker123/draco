@@ -69,6 +69,7 @@ export interface LoadTeamsParams {
   accountId: string;
   seasonId: string;
   apiClient: Client;
+  signal?: AbortSignal;
 }
 
 export interface LoadTeamsResult {

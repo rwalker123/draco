@@ -429,6 +429,7 @@ const GameCard: React.FC<GameCardProps> = ({
 
   return (
     <Card
+      data-testid="game-card"
       variant="outlined"
       sx={{
         mb: layout === 'vertical' ? 2 : 0,
