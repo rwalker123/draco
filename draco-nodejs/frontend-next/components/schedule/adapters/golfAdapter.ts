@@ -142,7 +142,12 @@ async function loadGames({
   startDate,
   endDate,
   apiClient,
+  signal,
 }: LoadGamesParams): Promise<Game[]> {
+  if (signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+
   const result = await listGolfMatchesForSeason({
     client: apiClient,
     path: { accountId, seasonId },
@@ -150,8 +155,13 @@ async function loadGames({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
     },
+    signal,
     throwOnError: false,
   });
+
+  if (signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
 
   const matches = unwrapApiResult(result, 'Failed to load matches');
 

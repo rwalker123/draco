@@ -482,6 +482,7 @@ export const useScheduleData = ({
                 endDate: end,
                 apiClient,
                 mode,
+                signal: controller.signal,
               });
 
               gamesCacheRef.current.set(monthKey, loadedGames);

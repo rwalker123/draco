@@ -32,6 +32,7 @@ export interface LoadGamesParams {
   endDate: Date;
   apiClient: Client;
   mode?: ScheduleAccessMode;
+  signal?: AbortSignal;
 }
 
 export interface LoadTeamGamesParams {

@@ -99,6 +99,7 @@ async function loadGames({
   endDate,
   apiClient,
   mode = 'public',
+  signal,
 }: LoadGamesParams): Promise<Game[]> {
   const aggregated = new Map<string, Game>();
   let page = 1;
@@ -114,6 +115,7 @@ async function loadGames({
         page: currentPage,
         limit: API_PAGE_LIMIT,
       },
+      signal,
       throwOnError: false as const,
     };
 
@@ -123,7 +125,15 @@ async function loadGames({
   };
 
   while (true) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
     const result = await fetchPage(page);
+
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
 
     const data = unwrapApiResult(result, 'Failed to load games');
     const mappedGames = data.games.map(mapGameResponseToScheduleGame);
