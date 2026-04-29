@@ -33,4 +33,9 @@ export interface ISeasonsRepository {
     sourceSeason: dbSeasonCopySource,
     newSeasonName: string,
   ): Promise<dbSeasonWithLeagues>;
+  updateScheduleVisibility(
+    accountId: bigint,
+    seasonId: bigint,
+    scheduleVisible: boolean,
+  ): Promise<dbSeason>;
 }

@@ -123,6 +123,7 @@ export class TeamResponseFormatter {
         id: teamSeason.leagueseason?.season?.id?.toString() || 'unknown',
         name: teamSeason.leagueseason?.season?.name || 'Unknown Season',
         accountId: accountId.toString(),
+        scheduleVisible: teamSeason.leagueseason?.season?.schedulevisible ?? true,
       },
       record: {
         w: record.wins,

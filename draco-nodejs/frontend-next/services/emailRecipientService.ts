@@ -681,6 +681,7 @@ export class EmailRecipientService {
           id: seasonId,
           name: '',
           accountId,
+          scheduleVisible: true,
         };
 
         return mapped.leagueSeasons;

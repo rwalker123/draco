@@ -135,7 +135,13 @@ const makeAccountGame = (
       leagueid: 1n,
       seasonid: 2n,
       league: { id: 1n, accountid: 42n, name: 'Test League', active: true },
-      season: { id: 2n, name: 'Test Season', accountid: 42n, currentseason: false },
+      season: {
+        id: 2n,
+        name: 'Test Season',
+        accountid: 42n,
+        currentseason: false,
+        schedulevisible: true,
+      },
     },
   }) as dbScheduleGameForAccount;
 
@@ -162,7 +168,13 @@ const makeGameWithDetails = (id: bigint): dbScheduleGameWithDetails =>
       leagueid: 1n,
       seasonid: 2n,
       league: { id: 1n, accountid: 42n, name: 'Test League', active: true },
-      season: { id: 2n, name: 'Test Season', accountid: 42n, currentseason: false },
+      season: {
+        id: 2n,
+        name: 'Test Season',
+        accountid: 42n,
+        currentseason: false,
+        schedulevisible: true,
+      },
     },
     _count: { gamerecap: 0 },
   }) as dbScheduleGameWithDetails;

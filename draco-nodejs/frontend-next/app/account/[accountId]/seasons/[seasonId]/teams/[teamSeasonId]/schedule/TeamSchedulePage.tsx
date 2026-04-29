@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useMediaQuery } from '@mui/material';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Container from '@mui/material/Container';
 import Link from '@mui/material/Link';
@@ -30,7 +29,12 @@ import {
 } from '../../../../../../../../components/schedule';
 import { useTeamSeasonSummary } from '../../../../../../../../components/schedule/hooks/useTeamSeasonSummary';
 import SeasonSummaryWidget from '../../../../../../../../components/schedule/SeasonSummaryWidget';
+import usePrintAction from '../../../../../../../../components/print/usePrintAction';
+import SchedulePrintView from '../../../../../../../../components/schedule/SchedulePrintView';
+import Button from '@mui/material/Button';
+import PrintIcon from '@mui/icons-material/Print';
 import { isGolfLeagueAccountType } from '../../../../../../../../utils/accountTypeUtils';
+import Stack from '@mui/material/Stack';
 
 interface TeamSchedulePageProps {
   accountId: string;
@@ -175,7 +179,11 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     setFilterDate: updateFilterDate,
   });
 
-  const { summary: seasonSummary, loading: loadingSeasonSummary } = useTeamSeasonSummary({
+  const {
+    summary: seasonSummary,
+    loading: loadingSeasonSummary,
+    games: summaryGames,
+  } = useTeamSeasonSummary({
     accountId,
     seasonId,
     teamSeasonId,
@@ -215,6 +223,10 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     seasonId,
     fetchRecap: fetchRecapForTeam,
   });
+
+  const { triggerPrint } = usePrintAction();
+
+  const printTitle = [teamName ?? 'Team', seasonName ?? ''].filter(Boolean).join(' — ');
 
   const handleViewModeChange = (mode: ViewMode) => {
     setManualViewMode(mode === defaultViewMode ? null : mode);
@@ -266,14 +278,28 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       }
       subtitle="Schedule"
       breadcrumbs={
-        <Box sx={{ mb: 2 }}>
+        <Stack
+          direction="row"
+          alignItems="flex-start"
+          justifyContent="space-between"
+          sx={{ mb: 2 }}
+        >
           <Breadcrumbs aria-label="breadcrumb">
             <Link component={NextLink} underline="hover" color="inherit" href={teamHomeHref}>
               Team Overview
             </Link>
             <Typography color="text.primary">Schedule</Typography>
           </Breadcrumbs>
-        </Box>
+          <Button
+            className="print-hidden"
+            variant="outlined"
+            size="small"
+            startIcon={<PrintIcon />}
+            onClick={triggerPrint}
+          >
+            Print
+          </Button>
+        </Stack>
       }
       seasonName={null}
       filteredGames={filteredGames}
@@ -315,6 +341,8 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
           summary={seasonSummary}
           loading={loadingSeasonSummary}
           ready={!loadingDateRange}
+          games={summaryGames}
+          timeZone={timeZone}
         />
       }
     >
@@ -334,6 +362,13 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       />
 
       {recapDialogs}
+
+      <SchedulePrintView
+        games={summaryGames}
+        title={printTitle}
+        subtitle="Full Season Schedule"
+        timeZone={timeZone}
+      />
     </ScheduleLayout>
   );
 };

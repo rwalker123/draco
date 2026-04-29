@@ -21,6 +21,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
         leagueseason: {
           select: {
             id: true,
@@ -69,6 +70,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
         leagueseason: {
           select: {
             id: true,
@@ -116,6 +118,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
       },
     });
   }
@@ -135,6 +138,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
       },
     });
   }
@@ -146,6 +150,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
       },
     });
   }
@@ -158,6 +163,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
       },
     });
   }
@@ -169,6 +175,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         id: true,
         name: true,
         accountid: true,
+        schedulevisible: true,
       },
     });
   }
@@ -182,6 +189,12 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
     }
     return await this.prisma.season.findUnique({
       where: { id: currentSeason.seasonid },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+        schedulevisible: true,
+      },
     });
   }
 
@@ -452,6 +465,7 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
           id: true,
           name: true,
           accountid: true,
+          schedulevisible: true,
           leagueseason: {
             select: {
               id: true,
@@ -504,6 +518,31 @@ export class PrismaSeasonsRepository implements ISeasonsRepository {
         creatoraccountid: accountId,
       },
     });
+  }
+
+  async updateScheduleVisibility(
+    accountId: bigint,
+    seasonId: bigint,
+    scheduleVisible: boolean,
+  ): Promise<dbSeason> {
+    const { count } = await this.prisma.season.updateMany({
+      where: { id: seasonId, accountid: accountId },
+      data: { schedulevisible: scheduleVisible },
+    });
+
+    if (count === 0) {
+      throw new Error(`Season ${seasonId} not found for account ${accountId}`);
+    }
+
+    return this.prisma.season.findFirst({
+      where: { id: seasonId, accountid: accountId },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+        schedulevisible: true,
+      },
+    }) as Promise<dbSeason>;
   }
 
   async findSeasonParticipants(accountId: bigint, seasonId: bigint): Promise<dbContactEmailOnly[]> {

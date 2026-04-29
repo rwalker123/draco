@@ -1,0 +1,1 @@
+ALTER TABLE season ADD COLUMN schedulevisible BOOLEAN NOT NULL DEFAULT true;

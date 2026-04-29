@@ -2,6 +2,7 @@ import {
   LeagueSeasonWithDivisionType,
   SeasonParticipantCountDataType,
   SeasonType,
+  UpdateScheduleVisibilityType,
 } from '@draco/shared-schemas';
 import { dbLeagueSeasonBasic, dbSeason, dbSeasonWithLeagues } from '../repositories/index.js';
 
@@ -30,6 +31,7 @@ export class SeasonResponseFormatter {
       name: season.name,
       accountId: season.accountid.toString(),
       isCurrent,
+      scheduleVisible: season.schedulevisible,
       leagues: season.leagueseason.map((leagueSeason) => {
         const baseLeague = {
           id: leagueSeason.id.toString(),
@@ -63,6 +65,7 @@ export class SeasonResponseFormatter {
       id: season.id.toString(),
       name: season.name,
       accountId: season.accountid.toString(),
+      scheduleVisible: season.schedulevisible,
     };
 
     if (typeof options?.isCurrent === 'boolean') {
@@ -70,6 +73,10 @@ export class SeasonResponseFormatter {
     }
 
     return result;
+  }
+
+  static formatScheduleVisibility(season: dbSeason): UpdateScheduleVisibilityType {
+    return { scheduleVisible: season.schedulevisible };
   }
 
   static formatSeasonWithLeagueBasics(

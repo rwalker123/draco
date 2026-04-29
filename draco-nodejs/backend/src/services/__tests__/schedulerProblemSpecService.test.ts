@@ -48,6 +48,7 @@ class SeasonsRepositoryStub implements ISeasonsRepository {
   findSeasonParticipants = vi.fn<ISeasonsRepository['findSeasonParticipants']>();
   findSeasonForCopy = vi.fn<ISeasonsRepository['findSeasonForCopy']>();
   copySeasonStructure = vi.fn<ISeasonsRepository['copySeasonStructure']>();
+  updateScheduleVisibility = vi.fn<ISeasonsRepository['updateScheduleVisibility']>();
 }
 
 class SchedulerFieldAvailabilityRulesRepositoryStub implements ISchedulerFieldAvailabilityRulesRepository {
@@ -124,6 +125,7 @@ const makeSeason = (): dbSeason => ({
   id: seasonId,
   name: 'Test Season',
   accountid: accountId,
+  schedulevisible: true,
 });
 
 const makeSeasonWindowConfig = (

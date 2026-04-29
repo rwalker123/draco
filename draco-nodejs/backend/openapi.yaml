@@ -1583,10 +1583,20 @@ components:
           example: "12345"
         isCurrent:
           type: boolean
+        scheduleVisible:
+          type: boolean
       required:
         - id
         - name
         - accountId
+        - scheduleVisible
+    UpdateScheduleVisibility:
+      type: object
+      properties:
+        scheduleVisible:
+          type: boolean
+      required:
+        - scheduleVisible
     CurrentSeasonResponse:
       anyOf:
         - type: object
@@ -1605,10 +1615,13 @@ components:
               example: "12345"
             isCurrent:
               type: boolean
+            scheduleVisible:
+              type: boolean
           required:
             - id
             - name
             - accountId
+            - scheduleVisible
         - type: object
           properties:
             id:
@@ -1624,6 +1637,8 @@ components:
               pattern: ^\d+$
               example: "12345"
             isCurrent:
+              type: boolean
+            scheduleVisible:
               type: boolean
             leagues:
               type: array
@@ -1684,6 +1699,7 @@ components:
             - id
             - name
             - accountId
+            - scheduleVisible
             - leagues
     SeasonCopyResponse:
       type: object
@@ -1701,6 +1717,8 @@ components:
           pattern: ^\d+$
           example: "12345"
         isCurrent:
+          type: boolean
+        scheduleVisible:
           type: boolean
         leagues:
           type: array
@@ -1761,6 +1779,7 @@ components:
         - id
         - name
         - accountId
+        - scheduleVisible
         - leagues
     SeasonParticipantCountData:
       type: object
@@ -2218,10 +2237,13 @@ components:
               example: "12345"
             isCurrent:
               type: boolean
+            scheduleVisible:
+              type: boolean
           required:
             - id
             - name
             - accountId
+            - scheduleVisible
         league:
           type: object
           properties:
@@ -2284,10 +2306,13 @@ components:
               example: "12345"
             isCurrent:
               type: boolean
+            scheduleVisible:
+              type: boolean
           required:
             - id
             - name
             - accountId
+            - scheduleVisible
         team:
           type: object
           properties:
@@ -2332,10 +2357,13 @@ components:
               example: "12345"
             isCurrent:
               type: boolean
+            scheduleVisible:
+              type: boolean
           required:
             - id
             - name
             - accountId
+            - scheduleVisible
         team:
           type: object
           properties:
@@ -7067,10 +7095,13 @@ components:
               example: "12345"
             isCurrent:
               type: boolean
+            scheduleVisible:
+              type: boolean
           required:
             - id
             - name
             - accountId
+            - scheduleVisible
         league:
           type: object
           properties:
@@ -11042,10 +11073,13 @@ components:
                     example: "12345"
                   isCurrent:
                     type: boolean
+                  scheduleVisible:
+                    type: boolean
                 required:
                   - id
                   - name
                   - accountId
+                  - scheduleVisible
               league:
                 type: object
                 properties:
@@ -11166,6 +11200,8 @@ components:
           example: "12345"
         isCurrent:
           type: boolean
+        scheduleVisible:
+          type: boolean
         leagues:
           type: array
           items:
@@ -11225,6 +11261,7 @@ components:
         - id
         - name
         - accountId
+        - scheduleVisible
         - leagues
     LeagueSeasonWithDivisionTeamsAndUnassigned:
       type: object
@@ -11354,10 +11391,13 @@ components:
                           example: "12345"
                         isCurrent:
                           type: boolean
+                        scheduleVisible:
+                          type: boolean
                       required:
                         - id
                         - name
                         - accountId
+                        - scheduleVisible
                     league:
                       type: object
                       properties:
@@ -11463,10 +11503,13 @@ components:
                     example: "12345"
                   isCurrent:
                     type: boolean
+                  scheduleVisible:
+                    type: boolean
                 required:
                   - id
                   - name
                   - accountId
+                  - scheduleVisible
               league:
                 type: object
                 properties:
@@ -11539,10 +11582,13 @@ components:
               example: "12345"
             isCurrent:
               type: boolean
+            scheduleVisible:
+              type: boolean
           required:
             - id
             - name
             - accountId
+            - scheduleVisible
         leagueSeasons:
           type: array
           items:
@@ -11673,10 +11719,13 @@ components:
                                 example: "12345"
                               isCurrent:
                                 type: boolean
+                              scheduleVisible:
+                                type: boolean
                             required:
                               - id
                               - name
                               - accountId
+                              - scheduleVisible
                           league:
                             type: object
                             properties:
@@ -11782,10 +11831,13 @@ components:
                           example: "12345"
                         isCurrent:
                           type: boolean
+                        scheduleVisible:
+                          type: boolean
                       required:
                         - id
                         - name
                         - accountId
+                        - scheduleVisible
                     league:
                       type: object
                       properties:
@@ -46127,6 +46179,65 @@ paths:
                 $ref: "#/components/schemas/NotFoundError"
         "500":
           description: Unexpected error while retrieving the participant count.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/schedule-visibility:
+    patch:
+      operationId: updateSeasonScheduleVisibility
+      summary: Update season schedule visibility
+      description: Set whether the public schedule for the season is visible to
+        unauthenticated users.
+      tags:
+        - Seasons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateScheduleVisibility"
+      responses:
+        "200":
+          description: Schedule visibility updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateScheduleVisibility"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Season not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Unexpected error.
           content:
             application/json:
               schema:

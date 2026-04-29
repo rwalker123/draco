@@ -12,6 +12,7 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
     SeasonParticipantCountDataSchemaRef,
     CurrentSeasonResponseSchemaRef,
     SeasonSchemaRef,
+    UpdateScheduleVisibilitySchemaRef,
     UpsertSeasonSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
@@ -717,6 +718,91 @@ export const registerSeasonEndpoints = ({ registry, schemaRefs, z }: RegisterCon
       },
       500: {
         description: 'Unexpected error while retrieving the participant count.',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+  /**
+   * PATCH /api/accounts/:accountId/seasons/:seasonId/schedule-visibility
+   * Toggle whether the public schedule for the season is visible.
+   */
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/schedule-visibility',
+    operationId: 'updateSeasonScheduleVisibility',
+    summary: 'Update season schedule visibility',
+    description:
+      'Set whether the public schedule for the season is visible to unauthenticated users.',
+    tags: ['Seasons'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateScheduleVisibilitySchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Schedule visibility updated successfully.',
+        content: {
+          'application/json': {
+            schema: UpdateScheduleVisibilitySchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required.',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions.',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Season not found.',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected error.',
         content: {
           'application/json': {
             schema: InternalServerErrorSchemaRef,

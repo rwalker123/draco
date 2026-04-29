@@ -1,16 +1,19 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Fab } from '@mui/material';
+import { Box, Button, Fab, FormControlLabel, Switch, useMediaQuery } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import PrintIcon from '@mui/icons-material/Print';
 import { useRole } from '../../../../context/RoleContext';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { useAccountTimezone, useAccount } from '../../../../context/AccountContext';
+import { useApiClient } from '../../../../hooks/useApiClient';
+import { updateSeasonScheduleVisibility } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../../../utils/apiResult';
 import { GameCardData } from '../../../../components/GameCard';
 import { getGameSummary } from '../../../../lib/utils';
 import { convertGameToGameCardData } from '../../../../utils/gameTransformers';
 import { useGameRecapFlow } from '../../../../hooks/useGameRecapFlow';
-import { useMediaQuery } from '@mui/material';
 import {
   useScheduleData,
   useScheduleFilters,
@@ -24,6 +27,10 @@ import {
 } from '../../../../components/schedule';
 import { SeasonSchedulerAdapter } from '../../../../components/scheduler/SeasonSchedulerAdapter';
 import { AdminBreadcrumbs } from '../../../../components/admin';
+import { getFilteredScheduleSummary } from '../../../../components/schedule/utils/getFilteredScheduleSummary';
+import SeasonSummaryWidget from '../../../../components/schedule/SeasonSummaryWidget';
+import usePrintAction from '../../../../components/print/usePrintAction';
+import SchedulePrintView from '../../../../components/schedule/SchedulePrintView';
 
 interface ScheduleManagementProps {
   accountId: string;
@@ -34,10 +41,18 @@ const CALENDAR_VIEW_BREAKPOINT = 900;
 const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) => {
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
   const { token } = useAuth();
-  const { currentSeasonId, currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
+  const {
+    currentSeasonId,
+    currentSeasonName,
+    currentSeasonScheduleVisible,
+    fetchCurrentSeason,
+    refetchCurrentSeason,
+  } = useCurrentSeason(accountId);
   const timeZone = useAccountTimezone();
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
+  const apiClient = useApiClient();
+  const [visibilityPending, setVisibilityPending] = useState(false);
 
   useEffect(() => {
     if (accountId) {
@@ -74,6 +89,28 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setFeedback({ severity: 'error', message });
     } else {
       setFeedback((prev) => (prev?.severity === 'error' ? null : prev));
+    }
+  };
+
+  const handleVisibilityToggle = async () => {
+    if (!currentSeasonId || visibilityPending) {
+      return;
+    }
+
+    setVisibilityPending(true);
+    try {
+      const result = await updateSeasonScheduleVisibility({
+        client: apiClient,
+        path: { accountId, seasonId: currentSeasonId },
+        body: { scheduleVisible: !currentSeasonScheduleVisible },
+        throwOnError: false,
+      });
+      unwrapApiResult(result, 'Failed to update schedule visibility');
+      await refetchCurrentSeason();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update schedule visibility');
+    } finally {
+      setVisibilityPending(false);
     }
   };
 
@@ -123,6 +160,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const leagueTeams = filterLeagueSeasonId
     ? (leagueTeamsCache.get(filterLeagueSeasonId) ?? [])
     : [];
+
+  const filteredSummary = getFilteredScheduleSummary({
+    games: filteredGames,
+    timeZone,
+    teamSeasonId: filterTeamSeasonId || undefined,
+    ready: !loadingStaticData,
+  });
 
   const {
     createDialogOpen,
@@ -263,6 +307,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     onRecapSaved: handleRecapSaved,
   });
 
+  const { triggerPrint } = usePrintAction();
+
+  const printTitle = currentSeasonName ? `Schedule — ${currentSeasonName}` : 'Schedule';
+
   const handleViewModeChange = (mode: ViewMode) => {
     setManualViewMode(mode === defaultViewMode ? null : mode);
   };
@@ -273,11 +321,36 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       title="Schedule Management"
       subtitle="Create, edit, and manage game schedules for your organization."
       breadcrumbs={
-        <AdminBreadcrumbs
-          accountId={accountId}
-          category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
-          currentPage="Schedule Management"
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <AdminBreadcrumbs
+            accountId={accountId}
+            category={{ name: 'Season', href: `/account/${accountId}/admin/season` }}
+            currentPage="Schedule Management"
+          />
+          <Box
+            className="print-hidden"
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+          >
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={currentSeasonScheduleVisible ?? false}
+                  onChange={handleVisibilityToggle}
+                  disabled={visibilityPending || currentSeasonId === null}
+                />
+              }
+              label="Schedule visible to public"
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PrintIcon />}
+              onClick={triggerPrint}
+            >
+              Print
+            </Button>
+          </Box>
+        </Box>
       }
       seasonName={currentSeasonName}
       filteredGames={filteredGames}
@@ -315,6 +388,15 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       onFeedbackClose={handleFeedbackClose}
       recapError={recapError}
       onRecapErrorClose={clearRecapError}
+      summaryContent={
+        <SeasonSummaryWidget
+          summary={filteredSummary}
+          loading={false}
+          ready={!loadingStaticData}
+          games={filteredGames}
+          timeZone={timeZone}
+        />
+      }
     >
       <SeasonSchedulerAdapter
         accountId={accountId}
@@ -419,6 +501,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       />
 
       {recapDialogs}
+
+      <SchedulePrintView games={filteredGames} title={printTitle} timeZone={timeZone} />
 
       <Fab
         color="primary"

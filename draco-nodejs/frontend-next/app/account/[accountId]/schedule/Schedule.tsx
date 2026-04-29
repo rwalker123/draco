@@ -18,6 +18,12 @@ import {
 } from '../../../../components/schedule';
 import { isGolfLeagueAccountType } from '../../../../utils/accountTypeUtils';
 import GolfScorecardDialog from '../../../../components/golf/GolfScorecardDialog';
+import usePrintAction from '../../../../components/print/usePrintAction';
+import SchedulePrintView from '../../../../components/schedule/SchedulePrintView';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import PrintIcon from '@mui/icons-material/Print';
 
 interface ScheduleProps {
   accountId: string;
@@ -27,7 +33,8 @@ const CALENDAR_VIEW_BREAKPOINT = 900;
 
 const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { token } = useAuth();
-  const { currentSeasonName, fetchCurrentSeason } = useCurrentSeason(accountId);
+  const { currentSeasonName, currentSeasonScheduleVisible, fetchCurrentSeason } =
+    useCurrentSeason(accountId);
   const timeZone = useAccountTimezone();
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
@@ -144,6 +151,10 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     getTeamName: (_game, teamId) => getTeamName(teamId),
   });
 
+  const { triggerPrint } = usePrintAction();
+
+  const printTitle = currentSeasonName ? `${currentSeasonName} Schedule` : 'Schedule';
+
   const handleViewModeChange = (mode: ViewMode) => {
     setManualViewMode(mode === defaultViewMode ? null : mode);
   };
@@ -166,11 +177,34 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     setSelectedMatchId(null);
   };
 
+  const scheduleHiddenNotice =
+    !loadingGames && filteredGames.length === 0 && currentSeasonScheduleVisible === false ? (
+      <Box sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          The schedule has not been published yet. Please check back soon.
+        </Typography>
+      </Box>
+    ) : undefined;
+
   return (
     <ScheduleLayout
       accountId={accountId}
       title="Schedule"
       seasonName={currentSeasonName}
+      breadcrumbs={
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Button
+            className="print-hidden"
+            variant="outlined"
+            size="small"
+            startIcon={<PrintIcon />}
+            onClick={triggerPrint}
+          >
+            Print
+          </Button>
+        </Box>
+      }
+      summaryContent={scheduleHiddenNotice}
       filteredGames={filteredGames}
       teams={teams}
       locations={locations}
@@ -230,6 +264,8 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       )}
 
       {recapDialogs}
+
+      <SchedulePrintView games={filteredGames} title={printTitle} timeZone={timeZone} />
     </ScheduleLayout>
   );
 };

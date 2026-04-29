@@ -66,6 +66,7 @@ export class LeagueResponseFormatter {
           id: firstSeason.id.toString(),
           name: firstSeason.name,
           accountId: firstSeason.accountid.toString(),
+          scheduleVisible: firstSeason.schedulevisible,
         }
       : undefined;
 

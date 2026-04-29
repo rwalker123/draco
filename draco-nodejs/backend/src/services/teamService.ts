@@ -85,6 +85,7 @@ export class TeamService {
       id: currentSeason.id.toString(),
       name: currentSeason.name,
       accountId: accountId.toString(),
+      scheduleVisible: currentSeason.schedulevisible,
     };
 
     let formatted: TeamSeasonType[];

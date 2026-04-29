@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Box,
   Divider,
+  Link,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -19,11 +20,20 @@ import type {
   DayTypeCounts,
   StartTimeSummary,
 } from './hooks/useTeamSeasonSummary';
+import type { Game } from '@/types/schedule';
+import FieldDatesDialog from './FieldDatesDialog';
+
+interface SelectedField {
+  id: string | null;
+  name: string;
+}
 
 interface SeasonSummaryWidgetProps {
   summary: SeasonSummary | null;
   loading: boolean;
   ready: boolean;
+  games?: Game[];
+  timeZone?: string;
 }
 
 const MAX_FIELD_NAME_LENGTH = 40;
@@ -145,7 +155,112 @@ const SubCard: React.FC<SubCardProps> = ({ title, children }) => {
   );
 };
 
-const renderFields = (byField: FieldSummary[]): React.ReactNode => {
+const FIELD_COL_WIDTH = 64;
+
+interface FieldCountCellProps {
+  value: number;
+  color: string;
+}
+
+const FieldCountCell: React.FC<FieldCountCellProps> = ({ value, color }) => (
+  <Typography
+    variant="body2"
+    fontWeight={700}
+    color={color}
+    component="span"
+    sx={{ width: FIELD_COL_WIDTH, textAlign: 'right', flexShrink: 0 }}
+  >
+    {value}
+  </Typography>
+);
+
+interface FieldHeaderRowProps {
+  labels: [string, string, string];
+  tooltips: [string, string, string];
+}
+
+const FieldHeaderRow: React.FC<FieldHeaderRowProps> = ({ labels, tooltips }) => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      display="flex"
+      alignItems="baseline"
+      justifyContent="space-between"
+      gap={1}
+      sx={{ pb: 0.5, mb: 0.25 }}
+    >
+      <Box sx={{ minWidth: 0, flex: 1 }} />
+      {labels.map((label, i) => (
+        <Typography
+          key={label}
+          variant="caption"
+          fontWeight={700}
+          color={theme.palette.widget.supportingText}
+          title={tooltips[i]}
+          sx={{ width: FIELD_COL_WIDTH, textAlign: 'right', flexShrink: 0 }}
+        >
+          {label}
+        </Typography>
+      ))}
+    </Box>
+  );
+};
+
+interface FieldRowProps {
+  field: FieldSummary;
+  onFieldClick?: (field: SelectedField) => void;
+}
+
+const FieldRow: React.FC<FieldRowProps> = ({ field, onFieldClick }) => {
+  const theme = useTheme();
+  const label = truncateFieldName(field.fieldName);
+
+  const nameCell = onFieldClick ? (
+    <Link
+      component="button"
+      variant="body2"
+      fontWeight={500}
+      color={theme.palette.text.primary}
+      underline="hover"
+      onClick={() => onFieldClick({ id: field.fieldId, name: field.fieldName })}
+      title={field.fieldName}
+      sx={{ textAlign: 'left', display: 'block', maxWidth: '100%' }}
+    >
+      {label}
+    </Link>
+  ) : (
+    <Typography
+      variant="body2"
+      fontWeight={500}
+      color={theme.palette.text.primary}
+      noWrap
+      title={field.fieldName}
+    >
+      {label}
+    </Typography>
+  );
+
+  return (
+    <Box
+      display="flex"
+      alignItems="baseline"
+      justifyContent="space-between"
+      gap={1}
+      sx={{ py: 0.5 }}
+    >
+      <Box sx={{ minWidth: 0, flex: 1 }}>{nameCell}</Box>
+      <FieldCountCell value={field.upcoming} color={theme.palette.text.primary} />
+      <FieldCountCell value={field.played} color={theme.palette.text.primary} />
+      <FieldCountCell value={field.notPlayed} color={theme.palette.text.primary} />
+    </Box>
+  );
+};
+
+const renderFields = (
+  byField: FieldSummary[],
+  onFieldClick?: (field: SelectedField) => void,
+): React.ReactNode => {
   if (byField.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -156,14 +271,12 @@ const renderFields = (byField: FieldSummary[]): React.ReactNode => {
 
   return (
     <>
+      <FieldHeaderRow
+        labels={['Up', 'Played', 'Not Played']}
+        tooltips={['Upcoming', 'Completed, Forfeit, Did Not Report', 'Postponed, Rainout']}
+      />
       {byField.map((field) => (
-        <SummaryRow
-          key={field.fieldId ?? '__no_field__'}
-          label={truncateFieldName(field.fieldName)}
-          tooltipLabel={field.fieldName}
-          played={field.played}
-          scheduled={field.scheduled}
-        />
+        <FieldRow key={field.fieldId ?? '__no_field__'} field={field} onFieldClick={onFieldClick} />
       ))}
     </>
   );
@@ -226,8 +339,88 @@ const renderStartTime = (byStartTime: StartTimeSummary[]): React.ReactNode => {
   );
 };
 
-const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({ summary, loading, ready }) => {
+interface HomeAwaySubCardProps {
+  homeAway: NonNullable<SeasonSummary['homeAway']>;
+}
+
+const HomeAwaySubCard: React.FC<HomeAwaySubCardProps> = ({ homeAway }) => {
   const theme = useTheme();
+
+  return (
+    <SubCard title="Home / Away">
+      <Box
+        display="flex"
+        alignItems="baseline"
+        justifyContent="space-between"
+        gap={1}
+        sx={{ py: 0.5 }}
+      >
+        <Typography variant="body2" fontWeight={500} color={theme.palette.text.primary}>
+          Home
+        </Typography>
+        <Box display="flex" alignItems="baseline" gap={1} sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="body2"
+            fontWeight={700}
+            color={theme.palette.text.primary}
+            component="span"
+          >
+            {homeAway.home}
+          </Typography>
+          {homeAway.played.home > 0 || homeAway.home - homeAway.played.home > 0 ? (
+            <Typography
+              variant="caption"
+              color={theme.palette.widget.supportingText}
+              component="span"
+            >
+              ({homeAway.played.home} played · {homeAway.home - homeAway.played.home} upcoming)
+            </Typography>
+          ) : null}
+        </Box>
+      </Box>
+      <Box
+        display="flex"
+        alignItems="baseline"
+        justifyContent="space-between"
+        gap={1}
+        sx={{ py: 0.5 }}
+      >
+        <Typography variant="body2" fontWeight={500} color={theme.palette.text.primary}>
+          Away
+        </Typography>
+        <Box display="flex" alignItems="baseline" gap={1} sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="body2"
+            fontWeight={700}
+            color={theme.palette.text.primary}
+            component="span"
+          >
+            {homeAway.away}
+          </Typography>
+          {homeAway.played.away > 0 || homeAway.away - homeAway.played.away > 0 ? (
+            <Typography
+              variant="caption"
+              color={theme.palette.widget.supportingText}
+              component="span"
+            >
+              ({homeAway.played.away} played · {homeAway.away - homeAway.played.away} upcoming)
+            </Typography>
+          ) : null}
+        </Box>
+      </Box>
+    </SubCard>
+  );
+};
+
+const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
+  summary,
+  loading,
+  ready,
+  games = [],
+  timeZone = 'UTC',
+}) => {
+  const theme = useTheme();
+  const [selectedField, setSelectedField] = useState<SelectedField | null>(null);
 
   if (!ready || loading || !summary || summary.totalGames === 0) {
     return null;
@@ -238,73 +431,101 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({ summary, load
       ? `${summary.totalGames} games · ${summary.totalPlayed} played · ${summary.totalScheduled} upcoming`
       : `${summary.totalGames} games`;
 
+  const hasGames = games.length > 0;
+  const onFieldClick = hasGames ? setSelectedField : undefined;
+
   return (
-    <WidgetShell accent="primary" disablePadding sx={{ mb: 3 }}>
-      <Accordion
-        disableGutters
-        elevation={0}
-        square
-        sx={{
-          backgroundColor: 'transparent',
-          '&:before': { display: 'none' },
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="season-summary-content"
-          id="season-summary-header"
+    <>
+      <WidgetShell accent="primary" disablePadding sx={{ mb: 3 }}>
+        <Accordion
+          disableGutters
+          elevation={0}
+          square
           sx={{
-            px: 3,
-            py: 1.5,
-            '& .MuiAccordionSummary-content': {
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 1,
-              my: 0,
-            },
+            backgroundColor: 'transparent',
+            '&:before': { display: 'none' },
           }}
         >
-          <Typography variant="h6" fontWeight={700} color={theme.palette.widget.headerText}>
-            Season Summary
-          </Typography>
-          <Typography variant="body2" color={theme.palette.widget.supportingText}>
-            {subtitle}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>
-          <Box
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="season-summary-content"
+            id="season-summary-header"
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: { xs: 2, md: 3 },
-              alignItems: 'stretch',
+              px: 3,
+              py: 1.5,
+              '& .MuiAccordionSummary-content': {
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                justifyContent: 'space-between',
+                gap: 1,
+                my: 0,
+              },
             }}
           >
-            <SubCard title="Fields">{renderFields(summary.byField)}</SubCard>
-            <Divider
-              orientation="vertical"
-              flexItem
+            <Typography variant="h6" fontWeight={700} color={theme.palette.widget.headerText}>
+              Season Summary
+            </Typography>
+            <Typography variant="body2" color={theme.palette.widget.supportingText}>
+              {subtitle}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>
+            <Box
               sx={{
-                display: { xs: 'none', md: 'block' },
-                borderColor: theme.palette.widget.border,
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: { xs: 2, md: 3 },
+                alignItems: 'stretch',
               }}
-            />
-            <SubCard title="Day of Week">{renderDayType(summary.byDayType)}</SubCard>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{
-                display: { xs: 'none', md: 'block' },
-                borderColor: theme.palette.widget.border,
-              }}
-            />
-            <SubCard title="Start Time">{renderStartTime(summary.byStartTime)}</SubCard>
-          </Box>
-        </AccordionDetails>
-      </Accordion>
-    </WidgetShell>
+            >
+              {summary.homeAway ? (
+                <>
+                  <HomeAwaySubCard homeAway={summary.homeAway} />
+                  <Divider
+                    orientation="vertical"
+                    flexItem
+                    sx={{
+                      display: { xs: 'none', md: 'block' },
+                      borderColor: theme.palette.widget.border,
+                    }}
+                  />
+                </>
+              ) : null}
+              <SubCard title="Fields">{renderFields(summary.byField, onFieldClick)}</SubCard>
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
+                  display: { xs: 'none', md: 'block' },
+                  borderColor: theme.palette.widget.border,
+                }}
+              />
+              <SubCard title="Day of Week">{renderDayType(summary.byDayType)}</SubCard>
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
+                  display: { xs: 'none', md: 'block' },
+                  borderColor: theme.palette.widget.border,
+                }}
+              />
+              <SubCard title="Start Time">{renderStartTime(summary.byStartTime)}</SubCard>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+      </WidgetShell>
+      {hasGames ? (
+        <FieldDatesDialog
+          open={selectedField !== null}
+          onClose={() => setSelectedField(null)}
+          fieldId={selectedField?.id ?? null}
+          fieldName={selectedField?.name ?? ''}
+          games={games}
+          timeZone={timeZone}
+        />
+      ) : null}
+    </>
   );
 };
 

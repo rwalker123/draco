@@ -94,6 +94,7 @@ function createMockFlight(overrides: Partial<GolfFlightWithDetails> = {}): GolfF
       enddate: new Date('2024-12-31'),
       isactive: true,
       iscurrent: true,
+      schedulevisible: true,
     } as season,
     ...overrides,
   } as GolfFlightWithDetails;

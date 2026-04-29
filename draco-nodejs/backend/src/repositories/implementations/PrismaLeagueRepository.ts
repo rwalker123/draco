@@ -31,6 +31,7 @@ const SEASON_SELECT = {
   id: true,
   name: true,
   accountid: true,
+  schedulevisible: true,
 } as const;
 
 const DIVISION_DEF_SELECT = {

@@ -12,6 +12,11 @@ export const SeasonNameSchema = z.object({
 export const SeasonSchema = SeasonNameSchema.extend({
   accountId: bigintToStringSchema,
   isCurrent: z.boolean().optional(),
+  scheduleVisible: z.boolean(),
+});
+
+export const UpdateScheduleVisibilitySchema = z.object({
+  scheduleVisible: z.boolean(),
 });
 
 export const UpsertSeasonSchema = SeasonNameSchema.omit({
@@ -40,3 +45,4 @@ export type CopySeasonDataType = z.infer<typeof CopySeasonDataSchema>;
 export type SetCurrentSeasonDataType = z.infer<typeof SetCurrentSeasonDataSchema>;
 export type SeasonParticipantCountDataType = z.infer<typeof SeasonParticipantCountDataSchema>;
 export type UpsertSeasonType = z.infer<typeof UpsertSeasonSchema>;
+export type UpdateScheduleVisibilityType = z.infer<typeof UpdateScheduleVisibilitySchema>;

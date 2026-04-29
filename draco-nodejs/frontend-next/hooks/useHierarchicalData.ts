@@ -44,15 +44,17 @@ export function useHierarchicalData(
         const data = unwrapApiResult(result, 'Failed to load hierarchical data');
         const mapped = mapLeagueSetup(data);
 
-        mapped.season = mapped.season ?? {
+        const resolvedSeason = mapped.season ?? {
           id: seasonId,
           name: 'Season',
           accountId,
+          scheduleVisible: true,
         };
+        mapped.season = resolvedSeason;
 
         const transformedData: HierarchicalSeason = {
-          id: mapped.season.id,
-          name: mapped.season.name || 'Season',
+          id: resolvedSeason.id,
+          name: resolvedSeason.name || 'Season',
           totalPlayers: 0,
           totalManagers: 0,
           leagues: mapped.leagueSeasons.map((league) => {

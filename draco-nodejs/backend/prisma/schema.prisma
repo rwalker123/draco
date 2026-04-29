@@ -1662,6 +1662,7 @@ model season {
   id                          BigInt                        @id @default(autoincrement())
   accountid                   BigInt
   name                        String                        @db.VarChar(25)
+  schedulevisible             Boolean                       @default(true)
   leagueseason                leagueseason[]
   playerseasonaffiliationdues playerseasonaffiliationdues[]
   socialfeeditems             socialfeeditems[]

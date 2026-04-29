@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { PaginationHelper } from '../utils/pagination.js';
@@ -20,6 +20,8 @@ import {
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const scheduleService = ServiceFactory.getScheduleService();
+const roleService = ServiceFactory.getRoleService();
+const seasonService = ServiceFactory.getSeasonService();
 
 const parseSeasonParams = (params: ParamsObject) => {
   try {
@@ -75,11 +77,32 @@ router.put(
  */
 router.get(
   '/',
+  optionalAuth,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { seasonId } = parseSeasonParams(req.params);
+    const { accountId, seasonId } = parseSeasonParams(req.params);
     const { startDate, endDate, teamId, hasRecap } = req.query;
 
     const paginationParams = PaginationHelper.parseParams(req.query);
+
+    const userId = req.user?.id;
+    const hasManagePermission = userId
+      ? await roleService.hasPermission(userId, 'account.games.manage', { accountId })
+      : false;
+
+    if (!hasManagePermission) {
+      const hidden = await seasonService.isScheduleHiddenForCurrentSeason(accountId, seasonId);
+      if (hidden) {
+        res.json({
+          games: [],
+          pagination: {
+            total: 0,
+            page: paginationParams.page,
+            limit: paginationParams.limit,
+          },
+        });
+        return;
+      }
+    }
 
     let parsedTeamId: bigint | undefined;
     if (teamId) {
