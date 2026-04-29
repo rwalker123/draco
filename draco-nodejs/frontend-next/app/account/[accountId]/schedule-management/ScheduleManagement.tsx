@@ -140,6 +140,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     filterType,
     filterDate,
     onError: setError,
+    mode: 'manage',
   });
 
   const {

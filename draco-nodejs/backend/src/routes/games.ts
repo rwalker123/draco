@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, optionalAuth } from '../middleware/authMiddleware.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { PaginationHelper } from '../utils/pagination.js';
@@ -20,7 +20,6 @@ import {
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const scheduleService = ServiceFactory.getScheduleService();
-const roleService = ServiceFactory.getRoleService();
 const seasonService = ServiceFactory.getSeasonService();
 
 const parseSeasonParams = (params: ParamsObject) => {
@@ -45,6 +44,42 @@ const parseGameOnlyParams = (params: ParamsObject) => {
   } catch {
     throw new ValidationError('Invalid gameId');
   }
+};
+
+const parseListGamesQuery = (req: Request) => {
+  const { startDate, endDate, teamId, hasRecap } = req.query;
+  const pagination = PaginationHelper.parseParams(req.query);
+
+  let parsedTeamId: bigint | undefined;
+  if (teamId) {
+    try {
+      parsedTeamId = BigInt(String(teamId));
+    } catch {
+      throw new ValidationError('Invalid teamId');
+    }
+  }
+
+  const parsedStartDate = startDate ? new Date(String(startDate)) : undefined;
+  const parsedEndDate = endDate ? new Date(String(endDate)) : undefined;
+
+  if (parsedStartDate && Number.isNaN(parsedStartDate.getTime())) {
+    throw new ValidationError('Invalid startDate');
+  }
+  if (parsedEndDate && Number.isNaN(parsedEndDate.getTime())) {
+    throw new ValidationError('Invalid endDate');
+  }
+
+  const includeRecaps = String(hasRecap) === 'true';
+
+  return {
+    pagination,
+    filters: {
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
+      teamId: parsedTeamId,
+      hasRecap: includeRecaps ? true : undefined,
+    },
+  };
 };
 
 /**
@@ -77,74 +112,73 @@ router.put(
  */
 router.get(
   '/',
-  optionalAuth,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = parseSeasonParams(req.params);
-    const { startDate, endDate, teamId, hasRecap } = req.query;
-
-    const paginationParams = PaginationHelper.parseParams(req.query);
 
     const season = await seasonService.findSeasonById(accountId, seasonId);
     if (!season) {
       throw new NotFoundError('Season not found');
     }
 
-    const userId = req.user?.id;
-    const hasManagePermission = userId
-      ? await roleService.hasPermission(userId, 'account.games.manage', { accountId })
-      : false;
+    const { pagination, filters } = parseListGamesQuery(req);
 
-    if (!hasManagePermission) {
-      const hidden = await seasonService.isScheduleHiddenForCurrentSeason(accountId, seasonId);
-      if (hidden) {
-        res.json({
-          games: [],
-          pagination: {
-            total: 0,
-            page: paginationParams.page,
-            limit: paginationParams.limit,
-          },
-        });
-        return;
-      }
+    const hidden = await seasonService.isScheduleHiddenForCurrentSeason(accountId, seasonId);
+    if (hidden) {
+      res.json({
+        games: [],
+        pagination: {
+          total: 0,
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
+      return;
     }
-
-    let parsedTeamId: bigint | undefined;
-    if (teamId) {
-      try {
-        parsedTeamId = BigInt(String(teamId));
-      } catch {
-        throw new ValidationError('Invalid teamId');
-      }
-    }
-
-    const parsedStartDate = startDate ? new Date(String(startDate)) : undefined;
-    const parsedEndDate = endDate ? new Date(String(endDate)) : undefined;
-
-    if (parsedStartDate && Number.isNaN(parsedStartDate.getTime())) {
-      throw new ValidationError('Invalid startDate');
-    }
-
-    if (parsedEndDate && Number.isNaN(parsedEndDate.getTime())) {
-      throw new ValidationError('Invalid endDate');
-    }
-
-    const includeRecaps = String(hasRecap) === 'true';
 
     const response = await scheduleService.listSeasonGames(
       seasonId,
       {
-        page: paginationParams.page,
-        limit: paginationParams.limit,
-        skip: paginationParams.skip,
-        sortOrder: paginationParams.sortOrder,
+        page: pagination.page,
+        limit: pagination.limit,
+        skip: pagination.skip,
+        sortOrder: pagination.sortOrder,
       },
+      filters,
+    );
+
+    res.json(response);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/games/manage
+ * List games for season-management UI. Requires account.games.manage and
+ * is not gated by the season's public-visibility toggle.
+ */
+router.get(
+  '/manage',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = parseSeasonParams(req.params);
+
+    const season = await seasonService.findSeasonById(accountId, seasonId);
+    if (!season) {
+      throw new NotFoundError('Season not found');
+    }
+
+    const { pagination, filters } = parseListGamesQuery(req);
+
+    const response = await scheduleService.listSeasonGames(
+      seasonId,
       {
-        startDate: parsedStartDate,
-        endDate: parsedEndDate,
-        teamId: parsedTeamId,
-        hasRecap: includeRecaps ? true : undefined,
+        page: pagination.page,
+        limit: pagination.limit,
+        skip: pagination.skip,
+        sortOrder: pagination.sortOrder,
       },
+      filters,
     );
 
     res.json(response);

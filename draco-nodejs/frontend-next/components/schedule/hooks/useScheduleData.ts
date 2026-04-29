@@ -22,6 +22,7 @@ import {
   getMonthRangeForKey,
   sortGamesAscending,
 } from './scheduleDateHelpers';
+import type { ScheduleAccessMode } from '../types/sportAdapter';
 
 interface UseScheduleDataProps {
   accountId: string;
@@ -29,6 +30,7 @@ interface UseScheduleDataProps {
   filterType: FilterType;
   filterDate: Date;
   onError?: (message: string) => void;
+  mode?: ScheduleAccessMode;
 }
 
 interface UseScheduleDataReturn {
@@ -100,6 +102,7 @@ export const useScheduleData = ({
   filterType,
   filterDate,
   onError,
+  mode = 'public',
 }: UseScheduleDataProps): UseScheduleDataReturn => {
   const { loading: authLoading } = useAuth();
   const apiClient = useApiClient();
@@ -262,6 +265,7 @@ export const useScheduleData = ({
               startDate: start,
               endDate: end,
               apiClient,
+              mode,
             });
 
             gamesCacheRef.current.set(monthKey, loadedGames);
@@ -477,6 +481,7 @@ export const useScheduleData = ({
                 startDate: start,
                 endDate: end,
                 apiClient,
+                mode,
               });
 
               gamesCacheRef.current.set(monthKey, loadedGames);
@@ -515,7 +520,7 @@ export const useScheduleData = ({
     return () => {
       controller.abort();
     };
-  }, [authLoading, accountId, apiClient, adapter, filterType, filterDate]);
+  }, [authLoading, accountId, apiClient, adapter, filterType, filterDate, mode]);
 
   const filteredGames = games;
 

@@ -71,10 +71,10 @@ const defaultGamesResponse = {
   pagination: { total: 1, page: 1, limit: 20 },
 };
 
-let app: Express;
-let router: Router;
+describe('games visibility', () => {
+  let app: Express;
+  let router: Router;
 
-describe('GET / (season games) - visibility guard', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret'; // pragma: allowlist secret
 
@@ -109,14 +109,6 @@ describe('GET / (season games) - visibility guard', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.resetAllMocks();
-    scheduleServiceMock.listSeasonGames.mockResolvedValue(defaultGamesResponse);
-    roleServiceMock.hasPermission.mockResolvedValue(false);
-    seasonServiceMock.findSeasonById.mockResolvedValue(defaultSeason);
-    seasonServiceMock.isScheduleHiddenForCurrentSeason.mockResolvedValue(false);
-  });
-
   afterAll(() => {
     vi.restoreAllMocks();
   });
@@ -135,6 +127,7 @@ describe('GET / (season games) - visibility guard', () => {
       hasManagePermission?: boolean;
       isHiddenCurrentSeason?: boolean;
       withAuth?: boolean;
+      routePath?: string;
     } = {},
   ) => {
     const {
@@ -142,6 +135,7 @@ describe('GET / (season games) - visibility guard', () => {
       hasManagePermission = false,
       isHiddenCurrentSeason = false,
       withAuth = true,
+      routePath = '/',
     } = options;
 
     roleServiceMock.hasPermission.mockResolvedValue(hasManagePermission);
@@ -149,11 +143,11 @@ describe('GET / (season games) - visibility guard', () => {
 
     const layer = (router.stack as RouteLayer[]).find(
       (stackLayer) =>
-        stackLayer.route && stackLayer.route.path === '/' && stackLayer.route.methods['get'],
+        stackLayer.route && stackLayer.route.path === routePath && stackLayer.route.methods['get'],
     );
 
     if (!layer?.route) {
-      throw new Error('Route GET / not found');
+      throw new Error(`Route GET ${routePath} not found`);
     }
 
     const handlers = layer.route.stack.map((s) => s.handle);
@@ -239,126 +233,163 @@ describe('GET / (season games) - visibility guard', () => {
     return { req, res, error: lastError };
   };
 
-  it('returns games when season is visible (current) and caller is unauthenticated', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: false,
-      isHiddenCurrentSeason: false,
+  describe('GET / (public season games)', () => {
+    beforeEach(() => {
+      vi.resetAllMocks();
+      scheduleServiceMock.listSeasonGames.mockResolvedValue(defaultGamesResponse);
+      roleServiceMock.hasPermission.mockResolvedValue(false);
+      seasonServiceMock.findSeasonById.mockResolvedValue(defaultSeason);
+      seasonServiceMock.isScheduleHiddenForCurrentSeason.mockResolvedValue(false);
     });
 
-    expect(res.body).toEqual(defaultGamesResponse);
-    expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
+    it('returns games when season is visible and caller is unauthenticated', async () => {
+      const { res } = await runGamesRoute({
+        withAuth: false,
+        isHiddenCurrentSeason: false,
+      });
+
+      expect(res.body).toEqual(defaultGamesResponse);
+      expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
+    });
+
+    it('returns empty games when current season is hidden and caller is unauthenticated', async () => {
+      const { res } = await runGamesRoute({
+        withAuth: false,
+        isHiddenCurrentSeason: true,
+      });
+
+      expect(res.body).toEqual({
+        games: [],
+        pagination: { total: 0, page: 1, limit: 50 },
+      });
+      expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
+    });
+
+    it('returns games when season is hidden but season is NOT current (historical access)', async () => {
+      const { res } = await runGamesRoute({
+        withAuth: false,
+        isHiddenCurrentSeason: false,
+      });
+
+      expect(res.body).toEqual(defaultGamesResponse);
+      expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
+    });
+
+    it('returns empty games when current season is hidden, even for an authenticated AccountAdmin', async () => {
+      const { res } = await runGamesRoute({
+        withAuth: true,
+        hasManagePermission: true,
+        isHiddenCurrentSeason: true,
+      });
+
+      expect(res.body).toEqual({
+        games: [],
+        pagination: { total: 0, page: 1, limit: 50 },
+      });
+      expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
+    });
+
+    it('does not consult roleService.hasPermission on the public route', async () => {
+      await runGamesRoute({
+        withAuth: true,
+        hasManagePermission: true,
+        isHiddenCurrentSeason: false,
+      });
+
+      expect(roleServiceMock.hasPermission).not.toHaveBeenCalled();
+    });
+
+    it('returns games when season is visible and authenticated caller hits the public route', async () => {
+      const { res } = await runGamesRoute({
+        withAuth: true,
+        isHiddenCurrentSeason: false,
+      });
+
+      expect(res.body).toEqual(defaultGamesResponse);
+      expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
+    });
+
+    it('returns 404 when seasonId does not belong to accountId', async () => {
+      seasonServiceMock.findSeasonById.mockResolvedValue(null);
+
+      const { res, error } = await runGamesRoute({
+        withAuth: true,
+        isHiddenCurrentSeason: false,
+      });
+
+      expect(error).toBeInstanceOf(NotFoundError);
+      expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
+      expect(res.body).toBeUndefined();
+    });
+
+    it('returns 404 for unauthenticated callers when seasonId belongs to another account', async () => {
+      seasonServiceMock.findSeasonById.mockResolvedValue(null);
+
+      const { error } = await runGamesRoute({
+        withAuth: false,
+      });
+
+      expect(error).toBeInstanceOf(NotFoundError);
+      expect(seasonServiceMock.isScheduleHiddenForCurrentSeason).not.toHaveBeenCalled();
+      expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
+    });
   });
 
-  it('returns empty games when current season is hidden and caller is unauthenticated', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: false,
-      isHiddenCurrentSeason: true,
+  describe('GET /manage (season games for management)', () => {
+    beforeEach(() => {
+      vi.resetAllMocks();
+      scheduleServiceMock.listSeasonGames.mockResolvedValue(defaultGamesResponse);
+      roleServiceMock.hasPermission.mockResolvedValue(true);
+      seasonServiceMock.findSeasonById.mockResolvedValue(defaultSeason);
+      seasonServiceMock.isScheduleHiddenForCurrentSeason.mockResolvedValue(false);
     });
 
-    expect(res.body).toEqual({
-      games: [],
-      pagination: { total: 0, page: 1, limit: 50 },
-    });
-    expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
-  });
+    it('returns games when current season is visible', async () => {
+      const { res } = await runGamesRoute({
+        routePath: '/manage',
+        withAuth: true,
+        hasManagePermission: true,
+        isHiddenCurrentSeason: false,
+      });
 
-  it('returns empty games when current season is hidden and authenticated non-admin calls without permission', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: true,
-      hasManagePermission: false,
-      isHiddenCurrentSeason: true,
+      expect(res.body).toEqual(defaultGamesResponse);
+      expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
     });
 
-    expect(res.body).toEqual({
-      games: [],
-      pagination: { total: 0, page: 1, limit: 50 },
-    });
-    expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
-  });
+    it('returns games when current season is hidden (visibility toggle does not gate management)', async () => {
+      const { res } = await runGamesRoute({
+        routePath: '/manage',
+        withAuth: true,
+        hasManagePermission: true,
+        isHiddenCurrentSeason: true,
+      });
 
-  it('returns games when season is hidden but season is NOT current (historical access)', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: false,
-      isHiddenCurrentSeason: false,
-    });
-
-    expect(res.body).toEqual(defaultGamesResponse);
-    expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
-  });
-
-  it('returns games when current season is hidden but AccountAdmin has account.games.manage', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: true,
-      hasManagePermission: true,
-      isHiddenCurrentSeason: true,
+      expect(res.body).toEqual(defaultGamesResponse);
+      expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
+      expect(seasonServiceMock.isScheduleHiddenForCurrentSeason).not.toHaveBeenCalled();
     });
 
-    expect(res.body).toEqual(defaultGamesResponse);
-    expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
-    expect(roleServiceMock.hasPermission).toHaveBeenCalledWith('user-1', 'account.games.manage', {
-      accountId: BigInt(ACCOUNT_ID),
-    });
-  });
+    it('rejects unauthenticated requests via authenticateToken', async () => {
+      const { error } = await runGamesRoute({
+        routePath: '/manage',
+        withAuth: false,
+      });
 
-  it('skips isScheduleHiddenForCurrentSeason entirely when caller has account.games.manage', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: true,
-      hasManagePermission: true,
-      isHiddenCurrentSeason: true,
+      expect(error).toBeInstanceOf(AuthorizationError);
+      expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
     });
 
-    expect(seasonServiceMock.isScheduleHiddenForCurrentSeason).not.toHaveBeenCalled();
-    expect(res.body).toEqual(defaultGamesResponse);
-  });
+    it('returns 404 when seasonId does not belong to accountId', async () => {
+      seasonServiceMock.findSeasonById.mockResolvedValue(null);
 
-  it('returns games when season is visible and authenticated admin calls', async () => {
-    const { res } = await runGamesRoute({
-      withAuth: true,
-      hasManagePermission: true,
-      isHiddenCurrentSeason: false,
+      const { error } = await runGamesRoute({
+        routePath: '/manage',
+        withAuth: true,
+        hasManagePermission: true,
+      });
+
+      expect(error).toBeInstanceOf(NotFoundError);
+      expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
     });
-
-    expect(res.body).toEqual(defaultGamesResponse);
-    expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
-  });
-
-  it('returns 404 (no games) when seasonId does not belong to accountId, regardless of permission', async () => {
-    seasonServiceMock.findSeasonById.mockResolvedValue(null);
-
-    const { res, error } = await runGamesRoute({
-      withAuth: true,
-      hasManagePermission: true,
-      isHiddenCurrentSeason: false,
-    });
-
-    expect(error).toBeInstanceOf(NotFoundError);
-    expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
-    expect(res.body).toBeUndefined();
-  });
-
-  it('returns 404 for unauthenticated callers when seasonId belongs to another account', async () => {
-    seasonServiceMock.findSeasonById.mockResolvedValue(null);
-
-    const { error } = await runGamesRoute({
-      withAuth: false,
-    });
-
-    expect(error).toBeInstanceOf(NotFoundError);
-    expect(seasonServiceMock.isScheduleHiddenForCurrentSeason).not.toHaveBeenCalled();
-    expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
-  });
-
-  it('checks permission using the authenticated userId from req.user', async () => {
-    const customUserId = 'admin-user-42';
-    roleServiceMock.hasPermission.mockResolvedValue(true);
-    seasonServiceMock.isScheduleHiddenForCurrentSeason.mockResolvedValue(true);
-
-    await runGamesRoute({ withAuth: true, userId: customUserId, hasManagePermission: true });
-
-    expect(roleServiceMock.hasPermission).toHaveBeenCalledWith(
-      customUserId,
-      'account.games.manage',
-      { accountId: BigInt(ACCOUNT_ID) },
-    );
   });
 });

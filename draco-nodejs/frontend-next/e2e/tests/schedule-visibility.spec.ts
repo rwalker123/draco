@@ -111,7 +111,7 @@ test.describe('Schedule Visibility Toggle', () => {
     await page.goto(`${BASE_URL}/account/${visibilityData.accountId}/schedule-management`);
     await page.waitForLoadState('networkidle');
 
-    const toggle = page.getByRole('checkbox', { name: /schedule visible to public/i });
+    const toggle = page.getByRole('switch', { name: /schedule visible to public/i });
     await expect(toggle).toBeVisible();
   });
 
@@ -141,7 +141,7 @@ test.describe('Schedule Visibility Toggle', () => {
     await page.goto(`${BASE_URL}/account/${visibilityData.accountId}/schedule-management`);
     await page.waitForLoadState('networkidle');
 
-    const toggle = page.getByRole('checkbox', { name: /schedule visible to public/i });
+    const toggle = page.getByRole('switch', { name: /schedule visible to public/i });
     await expect(toggle).toBeChecked();
 
     await toggle.click();
