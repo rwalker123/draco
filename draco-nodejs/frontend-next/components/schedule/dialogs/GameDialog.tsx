@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   Typography,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
+  TextField,
   CircularProgress,
   Stack,
-  FormHelperText,
+  createFilterOptions,
 } from '@mui/material';
 import { Controller, FormProvider, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
@@ -113,6 +111,11 @@ const createGameDialogSchema = (gameStatus: number, timeZone: string) =>
 
 type GameDialogSchema = ReturnType<typeof createGameDialogSchema>;
 export type GameDialogFormValues = z.infer<GameDialogSchema>;
+
+const leagueStartsWithFilter = createFilterOptions<{ id: string; name: string }>({
+  matchFrom: 'start',
+  stringify: (option) => option.name,
+});
 
 const buildInitialFormValues = (
   mode: 'create' | 'edit',
@@ -404,24 +407,37 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
               <Controller
                 name="leagueSeasonId"
                 control={control}
-                render={({ field, fieldState }) => (
-                  <FormControl
-                    fullWidth
-                    size="small"
-                    disabled={!canEditSchedule}
-                    error={!!fieldState.error}
-                  >
-                    <InputLabel>League</InputLabel>
-                    <Select {...field} label="League" value={field.value ?? ''}>
-                      {leagues.map((league) => (
-                        <MenuItem key={league.id} value={league.id}>
-                          {league.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <FormHelperText>{fieldState.error?.message}</FormHelperText>
-                  </FormControl>
-                )}
+                render={({ field, fieldState }) => {
+                  const selectedOption =
+                    leagues.find((league) => league.id === field.value) ?? null;
+                  return (
+                    <Autocomplete
+                      options={leagues}
+                      getOptionLabel={(option) => option.name}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      filterOptions={leagueStartsWithFilter}
+                      value={selectedOption}
+                      onChange={(_, option) => field.onChange(option?.id ?? '')}
+                      onBlur={field.onBlur}
+                      disabled={!canEditSchedule}
+                      autoHighlight
+                      autoSelect
+                      size="small"
+                      fullWidth
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          inputRef={field.ref}
+                          label="League"
+                          required
+                          autoFocus
+                          error={!!fieldState.error}
+                          helperText={fieldState.error?.message}
+                        />
+                      )}
+                    />
+                  );
+                }}
               />
             ) : (
               <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.secondary' }}>
