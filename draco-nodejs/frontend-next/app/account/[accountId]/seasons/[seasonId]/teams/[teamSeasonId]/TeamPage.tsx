@@ -104,6 +104,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const apiClient = useApiClient();
   const {
     currentSeasonId,
+    currentSeasonScheduleVisible,
     loading: currentSeasonLoading,
     fetchCurrentSeason,
   } = useCurrentSeason(accountId);
@@ -499,7 +500,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId) || hasRole('TeamAdmin');
 
   const upcomingSections = [{ title: 'Upcoming Games', games: upcomingGames }];
-  const hasUpcomingGames = upcomingGames.length > 0;
+  const scheduleHidden = isCurrentSeason && currentSeasonScheduleVisible === false;
+  const hasUpcomingGames = upcomingGames.length > 0 && !scheduleHidden;
 
   const completedSections = [{ title: 'Completed Games', games: completedGames }];
 

@@ -45,6 +45,7 @@ const ControlledOptionAutocomplete: React.FC<ControlledOptionAutocompleteProps> 
 }) => {
   const { control } = useFormContext<GameDialogFormValues>();
   const resolvedOptions = includeEmpty ? [NONE_OPTION, ...options] : options;
+  const disableClearable = required && !includeEmpty;
 
   return (
     <Controller
@@ -52,13 +53,18 @@ const ControlledOptionAutocomplete: React.FC<ControlledOptionAutocompleteProps> 
       control={control}
       render={({ field, fieldState }) => {
         const currentValue = field.value ?? '';
-        const selectedOption =
-          resolvedOptions.find((option) => option.id === currentValue) ??
-          (includeEmpty ? NONE_OPTION : null);
+        const knownOption = resolvedOptions.find((option) => option.id === currentValue);
+        const unknownOption: AutoOption | null =
+          !knownOption && currentValue ? { id: currentValue, label: 'Unknown' } : null;
+        const displayOptions = unknownOption
+          ? [unknownOption, ...resolvedOptions]
+          : resolvedOptions;
+        const selectedOption = knownOption ?? unknownOption ?? (includeEmpty ? NONE_OPTION : null);
+        const hasUnknownValue = Boolean(unknownOption);
 
         return (
           <Autocomplete
-            options={resolvedOptions}
+            options={displayOptions}
             getOptionLabel={(option) => option.label}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             filterOptions={startsWithFilter}
@@ -67,6 +73,7 @@ const ControlledOptionAutocomplete: React.FC<ControlledOptionAutocompleteProps> 
             onBlur={field.onBlur}
             autoHighlight
             autoSelect
+            disableClearable={disableClearable}
             fullWidth
             renderInput={(params) => (
               <TextField
@@ -74,8 +81,11 @@ const ControlledOptionAutocomplete: React.FC<ControlledOptionAutocompleteProps> 
                 inputRef={field.ref}
                 label={label}
                 required={required}
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message}
+                error={!!fieldState.error || hasUnknownValue}
+                helperText={
+                  fieldState.error?.message ??
+                  (hasUnknownValue ? 'Selection is no longer available' : undefined)
+                }
               />
             )}
           />

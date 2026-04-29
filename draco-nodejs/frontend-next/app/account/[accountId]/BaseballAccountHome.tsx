@@ -24,6 +24,7 @@ import {
 } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
+import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { unwrapApiResult } from '@/utils/apiResult';
 import {
   AccountSeasonWithStatusType,
@@ -80,6 +81,15 @@ const BaseballAccountHome: React.FC = () => {
     loading: membershipLoading,
     error: membershipError,
   } = useAccountMembership(accountIdStr);
+  const { currentSeasonScheduleVisible, fetchCurrentSeason } = useCurrentSeason(accountIdStr ?? '');
+
+  useEffect(() => {
+    if (accountIdStr) {
+      void fetchCurrentSeason();
+    }
+  }, [accountIdStr, fetchCurrentSeason]);
+
+  const scheduleHidden = currentSeasonScheduleVisible === false;
   const isAccountMember = isMember === true;
   const hasAccountContact = Boolean(isAccountMember);
   const canSubmitPhotos = Boolean(isAccountMember);
@@ -923,7 +933,7 @@ const BaseballAccountHome: React.FC = () => {
               <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />
             ) : null}
 
-            {currentSeason ? (
+            {currentSeason && !scheduleHidden ? (
               <TodayScoreboard
                 accountId={accountIdStr}
                 layout="vertical"
@@ -936,11 +946,11 @@ const BaseballAccountHome: React.FC = () => {
               />
             ) : null}
 
-            {currentSeason ? (
+            {currentSeason && !scheduleHidden ? (
               <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
             ) : null}
 
-            {currentSeason ? (
+            {currentSeason && !scheduleHidden ? (
               <YesterdayScoreboard
                 accountId={accountIdStr}
                 layout="vertical"

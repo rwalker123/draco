@@ -408,8 +408,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
                 name="leagueSeasonId"
                 control={control}
                 render={({ field, fieldState }) => {
-                  const selectedOption =
-                    leagues.find((league) => league.id === field.value) ?? null;
+                  const selectedOption = leagues.find((league) => league.id === field.value);
                   return (
                     <Autocomplete
                       options={leagues}
@@ -420,6 +419,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
                       onChange={(_, option) => field.onChange(option?.id ?? '')}
                       onBlur={field.onBlur}
                       disabled={!canEditSchedule}
+                      disableClearable
                       autoHighlight
                       autoSelect
                       size="small"
@@ -430,7 +430,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
                           inputRef={field.ref}
                           label="League"
                           required
-                          autoFocus
+                          autoFocus={canEditSchedule}
                           error={!!fieldState.error}
                           helperText={fieldState.error?.message}
                         />
