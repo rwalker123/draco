@@ -6,70 +6,122 @@ import { useApiClient } from './useApiClient';
 interface UseCurrentSeasonReturn {
   currentSeasonId: string | null;
   currentSeasonName: string | null;
+  currentSeasonScheduleVisible: boolean | null;
   loading: boolean;
   error: string | null;
   fetchCurrentSeason: () => Promise<string>;
+  refetchCurrentSeason: () => Promise<string>;
 }
 
-/**
- * Custom hook to fetch and manage current season data
- * Eliminates duplication of current season fetching logic across components
- */
 export const useCurrentSeason = (accountId: string): UseCurrentSeasonReturn => {
   const [currentSeasonId, setCurrentSeasonId] = useState<string | null>(null);
   const [currentSeasonName, setCurrentSeasonName] = useState<string | null>(null);
+  const [currentSeasonScheduleVisible, setCurrentSeasonScheduleVisible] = useState<boolean | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const apiClient = useApiClient();
+
   const fetchPromiseRef = useRef<Promise<string> | null>(null);
 
-  const fetchCurrentSeason = async (): Promise<string> => {
-    if (currentSeasonId) {
-      return currentSeasonId;
-    }
+  const depsRef = useRef({
+    accountId,
+    apiClient,
+    currentSeasonId,
+    setCurrentSeasonId,
+    setCurrentSeasonName,
+    setCurrentSeasonScheduleVisible,
+    setLoading,
+    setError,
+  });
+  depsRef.current = {
+    accountId,
+    apiClient,
+    currentSeasonId,
+    setCurrentSeasonId,
+    setCurrentSeasonName,
+    setCurrentSeasonScheduleVisible,
+    setLoading,
+    setError,
+  };
 
-    if (fetchPromiseRef.current) {
-      return fetchPromiseRef.current;
-    }
+  const [stableFns] = useState(() => {
+    const doFetch = async (): Promise<string> => {
+      const {
+        accountId: aid,
+        apiClient: client,
+        setCurrentSeasonId: setSeasonId,
+        setCurrentSeasonName: setSeasonName,
+        setCurrentSeasonScheduleVisible: setScheduleVisible,
+        setLoading: setLoad,
+        setError: setErr,
+      } = depsRef.current;
 
-    const request = (async () => {
       try {
-        setLoading(true);
-        setError(null);
+        setLoad(true);
+        setErr(null);
 
         const result = await getCurrentSeason({
-          client: apiClient,
-          path: { accountId },
+          client,
+          path: { accountId: aid },
           throwOnError: false,
         });
 
         const season = unwrapApiResult(result, 'Failed to load current season');
         const seasonId = season.id;
         const seasonName = season.name;
+        const scheduleVisible = season.scheduleVisible;
 
-        setCurrentSeasonId(seasonId);
-        setCurrentSeasonName(seasonName);
+        setSeasonId(seasonId);
+        setSeasonName(seasonName);
+        setScheduleVisible(scheduleVisible);
 
         return seasonId;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load current season';
-        setError(errorMessage);
+        setErr(errorMessage);
         throw new Error(errorMessage);
       } finally {
-        setLoading(false);
+        setLoad(false);
         fetchPromiseRef.current = null;
       }
-    })();
+    };
 
-    fetchPromiseRef.current = request;
-    return request;
-  };
+    const fetchCurrentSeason = (): Promise<string> => {
+      if (depsRef.current.currentSeasonId) {
+        return Promise.resolve(depsRef.current.currentSeasonId);
+      }
+
+      if (fetchPromiseRef.current) {
+        return fetchPromiseRef.current;
+      }
+
+      const request = doFetch();
+      fetchPromiseRef.current = request;
+      return request;
+    };
+
+    const refetchCurrentSeason = (): Promise<string> => {
+      if (fetchPromiseRef.current) {
+        return fetchPromiseRef.current;
+      }
+
+      const request = doFetch();
+      fetchPromiseRef.current = request;
+      return request;
+    };
+
+    return { fetchCurrentSeason, refetchCurrentSeason };
+  });
 
   return {
     currentSeasonId,
     currentSeasonName,
+    currentSeasonScheduleVisible,
     loading,
     error,
-    fetchCurrentSeason,
+    fetchCurrentSeason: stableFns.fetchCurrentSeason,
+    refetchCurrentSeason: stableFns.refetchCurrentSeason,
   };
 };

@@ -153,8 +153,6 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
           </Box>
           {breadcrumbs}
 
-          {summaryContent}
-
           <Paper
             elevation={1}
             sx={{
@@ -255,6 +253,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
               ) : null}
             </Box>
           </WidgetShell>
+
+          {summaryContent}
 
           {children}
 

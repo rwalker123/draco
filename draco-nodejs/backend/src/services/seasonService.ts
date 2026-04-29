@@ -3,6 +3,7 @@ import {
   LeagueSeasonWithDivisionType,
   SeasonParticipantCountDataType,
   SeasonType,
+  UpdateScheduleVisibilityType,
   UpsertSeasonType,
 } from '@draco/shared-schemas';
 import { ISeasonsRepository, RepositoryFactory } from '../repositories/index.js';
@@ -199,6 +200,48 @@ export class SeasonService {
     await this.seasonsRepository.deleteSeason(seasonId);
 
     return true;
+  }
+
+  async findSeasonById(accountId: bigint, seasonId: bigint): Promise<SeasonType | null> {
+    const season = await this.seasonsRepository.findSeasonById(accountId, seasonId);
+    if (!season) {
+      return null;
+    }
+    return SeasonResponseFormatter.formatSeason(season);
+  }
+
+  async isScheduleHiddenForCurrentSeason(accountId: bigint, seasonId: bigint): Promise<boolean> {
+    const [season, currentSeason] = await Promise.all([
+      this.seasonsRepository.findSeasonById(accountId, seasonId),
+      this.seasonsRepository.findCurrentSeason(accountId),
+    ]);
+
+    if (!season) {
+      return false;
+    }
+
+    const isCurrent = currentSeason?.id === seasonId;
+    return !season.schedulevisible && isCurrent;
+  }
+
+  async setScheduleVisibility(
+    accountId: bigint,
+    seasonId: bigint,
+    scheduleVisible: boolean,
+  ): Promise<UpdateScheduleVisibilityType> {
+    const season = await this.seasonsRepository.findSeasonById(accountId, seasonId);
+
+    if (!season) {
+      throw new NotFoundError('Season not found');
+    }
+
+    const updated = await this.seasonsRepository.updateScheduleVisibility(
+      accountId,
+      seasonId,
+      scheduleVisible,
+    );
+
+    return SeasonResponseFormatter.formatScheduleVisibility(updated);
   }
 
   async getSeasonParticipantCount(

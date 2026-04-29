@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { getSportAdapter } from '../adapters';
-import { Game, GameStatus } from '@/types/schedule';
-import { convertUTCToZonedDate } from '../../../utils/dateUtils';
+import { Game } from '@/types/schedule';
+import { buildScheduleSummary } from '../utils/buildScheduleSummary';
 
 export type StartTimeBucket = 'morning' | 'afternoon' | 'earlyEvening' | 'lateEvening' | 'night';
 
 export interface FieldSummary {
   fieldId: string | null;
   fieldName: string;
+  upcoming: number;
   played: number;
-  scheduled: number;
+  notPlayed: number;
 }
 
 export interface DayTypeCounts {
@@ -32,6 +33,7 @@ export interface SeasonSummary {
   byField: FieldSummary[];
   byDayType: { weekday: DayTypeCounts; weekend: DayTypeCounts };
   byStartTime: StartTimeSummary[];
+  homeAway?: { home: number; away: number; played: { home: number; away: number } };
 }
 
 interface UseTeamSeasonSummaryProps {
@@ -48,143 +50,8 @@ interface UseTeamSeasonSummaryProps {
 interface UseTeamSeasonSummaryReturn {
   summary: SeasonSummary | null;
   loading: boolean;
+  games: Game[];
 }
-
-const NO_FIELD_KEY = '__no_field__';
-const NO_FIELD_LABEL = 'No Field / TBD';
-
-const normalizeFieldId = (value?: string | null): string | undefined => {
-  if (typeof value === 'string' && value.trim().length > 0) {
-    return value;
-  }
-  return undefined;
-};
-
-const isPlayedStatus = (status: number): boolean => {
-  return (
-    status === GameStatus.Completed ||
-    status === GameStatus.Forfeit ||
-    status === GameStatus.DidNotReport
-  );
-};
-
-const isExcludedStatus = (status: number): boolean => {
-  return status === GameStatus.Rainout || status === GameStatus.Postponed;
-};
-
-const bucketForHour = (hour: number): StartTimeBucket => {
-  if (hour < 12) return 'morning';
-  if (hour < 16) return 'afternoon';
-  if (hour < 19) return 'earlyEvening';
-  if (hour < 22) return 'lateEvening';
-  return 'night';
-};
-
-const BUCKET_ORDER: StartTimeBucket[] = [
-  'morning',
-  'afternoon',
-  'earlyEvening',
-  'lateEvening',
-  'night',
-];
-
-const buildSummary = (games: Game[], timeZone: string): SeasonSummary => {
-  const fieldMap = new Map<string, FieldSummary>();
-  const dayType = {
-    weekday: { played: 0, scheduled: 0 } as DayTypeCounts,
-    weekend: { played: 0, scheduled: 0 } as DayTypeCounts,
-  };
-  const bucketMap = new Map<StartTimeBucket, StartTimeSummary>();
-
-  let totalPlayed = 0;
-  let totalScheduled = 0;
-
-  for (const game of games) {
-    if (isExcludedStatus(game.gameStatus)) {
-      continue;
-    }
-
-    const played = isPlayedStatus(game.gameStatus);
-
-    if (played) {
-      totalPlayed += 1;
-    } else {
-      totalScheduled += 1;
-    }
-
-    const fieldKey =
-      normalizeFieldId(game.field?.id) ?? normalizeFieldId(game.fieldId) ?? NO_FIELD_KEY;
-    const fieldName =
-      game.field?.name ||
-      game.field?.shortName ||
-      (fieldKey === NO_FIELD_KEY ? NO_FIELD_LABEL : '');
-
-    const existingField = fieldMap.get(fieldKey);
-    if (existingField) {
-      if (played) {
-        existingField.played += 1;
-      } else {
-        existingField.scheduled += 1;
-      }
-    } else {
-      fieldMap.set(fieldKey, {
-        fieldId: fieldKey === NO_FIELD_KEY ? null : fieldKey,
-        fieldName: fieldName || NO_FIELD_LABEL,
-        played: played ? 1 : 0,
-        scheduled: played ? 0 : 1,
-      });
-    }
-
-    const zoned = convertUTCToZonedDate(game.gameDate, timeZone);
-    if (!zoned) {
-      continue;
-    }
-
-    const day = zoned.getDay();
-    const isWeekend = day === 0 || day === 6;
-    const dayBucket = isWeekend ? dayType.weekend : dayType.weekday;
-    if (played) {
-      dayBucket.played += 1;
-    } else {
-      dayBucket.scheduled += 1;
-    }
-
-    const bucket = bucketForHour(zoned.getHours());
-    const existingBucket = bucketMap.get(bucket);
-    if (existingBucket) {
-      if (played) {
-        existingBucket.played += 1;
-      } else {
-        existingBucket.scheduled += 1;
-      }
-    } else {
-      bucketMap.set(bucket, {
-        bucket,
-        played: played ? 1 : 0,
-        scheduled: played ? 0 : 1,
-      });
-    }
-  }
-
-  const byField = Array.from(fieldMap.values()).sort((a, b) => {
-    const totalDiff = b.played + b.scheduled - (a.played + a.scheduled);
-    if (totalDiff !== 0) return totalDiff;
-    return a.fieldName.localeCompare(b.fieldName);
-  });
-
-  const byStartTime = BUCKET_ORDER.filter((bucket) => bucketMap.has(bucket)).map(
-    (bucket) => bucketMap.get(bucket)!,
-  );
-
-  return {
-    totalGames: totalPlayed + totalScheduled,
-    totalPlayed,
-    totalScheduled,
-    byField,
-    byDayType: dayType,
-    byStartTime,
-  };
-};
 
 const addDays = (date: Date, days: number): Date => {
   const next = new Date(date);
@@ -211,6 +78,7 @@ export const useTeamSeasonSummary = ({
 
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [games, setGames] = useState<Game[]>([]);
 
   const earliestTime = earliestGameDate ? earliestGameDate.getTime() : null;
   const latestTime = latestGameDate ? latestGameDate.getTime() : null;
@@ -221,12 +89,14 @@ export const useTeamSeasonSummary = ({
     }
 
     if (typeof adapter.loadTeamGames !== 'function') {
+      setGames([]);
       setSummary(null);
       setLoading(false);
       return;
     }
 
     if (earliestTime === null || latestTime === null) {
+      setGames([]);
       setSummary(null);
       setLoading(false);
       return;
@@ -240,7 +110,7 @@ export const useTeamSeasonSummary = ({
     const runLoadSummary = async () => {
       try {
         setLoading(true);
-        const games = await adapter.loadTeamGames!({
+        const loadedGames: Game[] = await adapter.loadTeamGames!({
           accountId,
           seasonId,
           teamSeasonId,
@@ -250,11 +120,13 @@ export const useTeamSeasonSummary = ({
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
-        setSummary(buildSummary(games, timeZone));
+        setGames(loadedGames);
+        setSummary(buildScheduleSummary(loadedGames, { timeZone, teamSeasonId }));
       } catch (err) {
         if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === 'AbortError') return;
         console.error('Failed to load team season summary:', err);
+        setGames([]);
         setSummary(null);
         onErrorRef.current?.('Unable to load season summary.');
       } finally {
@@ -281,5 +153,5 @@ export const useTeamSeasonSummary = ({
     timeZone,
   ]);
 
-  return { summary, loading };
+  return { summary, loading, games };
 };

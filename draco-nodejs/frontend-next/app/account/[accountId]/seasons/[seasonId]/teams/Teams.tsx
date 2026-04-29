@@ -54,7 +54,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
         const leagueData = unwrapApiResult(leagueResult, 'Failed to load teams data');
         const mapped = mapLeagueSetup(leagueData);
-        mapped.season = mapped.season ?? { id: seasonId, name: '', accountId };
+        mapped.season = mapped.season ?? {
+          id: seasonId,
+          name: '',
+          accountId,
+          scheduleVisible: true,
+        };
 
         setTeamsData(mapped);
       } catch (err) {

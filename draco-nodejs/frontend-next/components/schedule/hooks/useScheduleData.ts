@@ -125,6 +125,9 @@ export const useScheduleData = ({
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
 
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
   const { startDate, endDate } = computeDateRange(filterType, filterDate);
 
   useEffect(() => {
@@ -281,7 +284,7 @@ export const useScheduleData = ({
       lastRangeRef.current = { start: startDate.getTime(), end: endDate.getTime() };
     } catch (err) {
       console.error('Failed to load games:', err);
-      onError?.('Unable to load games. Please refresh the page.');
+      onErrorRef.current?.('Unable to load games. Please refresh the page.');
     } finally {
       setLoadingGames(false);
     }
@@ -415,7 +418,7 @@ export const useScheduleData = ({
       } catch (err: unknown) {
         if (controller.signal.aborted) return;
         console.error('Failed to load static data:', err);
-        onError?.('Unable to load schedule data. Please refresh the page.');
+        onErrorRef.current?.('Unable to load schedule data. Please refresh the page.');
       } finally {
         if (!controller.signal.aborted) {
           setLoadingStaticData(false);
@@ -428,7 +431,7 @@ export const useScheduleData = ({
     return () => {
       controller.abort();
     };
-  }, [authLoading, accountId, apiClient, adapter, onError]);
+  }, [authLoading, accountId, apiClient, adapter]);
 
   useEffect(() => {
     if (authLoading) {
@@ -499,7 +502,7 @@ export const useScheduleData = ({
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Failed to load games:', err);
-        onError?.('Unable to load games. Please refresh the page.');
+        onErrorRef.current?.('Unable to load games. Please refresh the page.');
       } finally {
         if (!controller.signal.aborted) {
           setLoadingGames(false);
@@ -512,7 +515,7 @@ export const useScheduleData = ({
     return () => {
       controller.abort();
     };
-  }, [authLoading, accountId, apiClient, adapter, filterType, filterDate, onError]);
+  }, [authLoading, accountId, apiClient, adapter, filterType, filterDate]);
 
   const filteredGames = games;
 

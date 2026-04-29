@@ -2114,12 +2114,27 @@
           },
           "isCurrent": {
             "type": "boolean"
+          },
+          "scheduleVisible": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "name",
-          "accountId"
+          "accountId",
+          "scheduleVisible"
+        ]
+      },
+      "UpdateScheduleVisibility": {
+        "type": "object",
+        "properties": {
+          "scheduleVisible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scheduleVisible"
         ]
       },
       "CurrentSeasonResponse": {
@@ -2144,12 +2159,16 @@
               },
               "isCurrent": {
                 "type": "boolean"
+              },
+              "scheduleVisible": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "accountId"
+              "accountId",
+              "scheduleVisible"
             ]
           },
           {
@@ -2171,6 +2190,9 @@
                 "example": "12345"
               },
               "isCurrent": {
+                "type": "boolean"
+              },
+              "scheduleVisible": {
                 "type": "boolean"
               },
               "leagues": {
@@ -2254,6 +2276,7 @@
               "id",
               "name",
               "accountId",
+              "scheduleVisible",
               "leagues"
             ]
           }
@@ -2278,6 +2301,9 @@
             "example": "12345"
           },
           "isCurrent": {
+            "type": "boolean"
+          },
+          "scheduleVisible": {
             "type": "boolean"
           },
           "leagues": {
@@ -2361,6 +2387,7 @@
           "id",
           "name",
           "accountId",
+          "scheduleVisible",
           "leagues"
         ]
       },
@@ -2970,12 +2997,16 @@
               },
               "isCurrent": {
                 "type": "boolean"
+              },
+              "scheduleVisible": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "accountId"
+              "accountId",
+              "scheduleVisible"
             ]
           },
           "league": {
@@ -3061,12 +3092,16 @@
               },
               "isCurrent": {
                 "type": "boolean"
+              },
+              "scheduleVisible": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "accountId"
+              "accountId",
+              "scheduleVisible"
             ]
           },
           "team": {
@@ -3127,12 +3162,16 @@
               },
               "isCurrent": {
                 "type": "boolean"
+              },
+              "scheduleVisible": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "accountId"
+              "accountId",
+              "scheduleVisible"
             ]
           },
           "team": {
@@ -9613,12 +9652,16 @@
               },
               "isCurrent": {
                 "type": "boolean"
+              },
+              "scheduleVisible": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "accountId"
+              "accountId",
+              "scheduleVisible"
             ]
           },
           "league": {
@@ -14800,12 +14843,16 @@
                     },
                     "isCurrent": {
                       "type": "boolean"
+                    },
+                    "scheduleVisible": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "id",
                     "name",
-                    "accountId"
+                    "accountId",
+                    "scheduleVisible"
                   ]
                 },
                 "league": {
@@ -14974,6 +15021,9 @@
           "isCurrent": {
             "type": "boolean"
           },
+          "scheduleVisible": {
+            "type": "boolean"
+          },
           "leagues": {
             "type": "array",
             "items": {
@@ -15055,6 +15105,7 @@
           "id",
           "name",
           "accountId",
+          "scheduleVisible",
           "leagues"
         ]
       },
@@ -15223,12 +15274,16 @@
                           },
                           "isCurrent": {
                             "type": "boolean"
+                          },
+                          "scheduleVisible": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
                           "name",
-                          "accountId"
+                          "accountId",
+                          "scheduleVisible"
                         ]
                       },
                       "league": {
@@ -15373,12 +15428,16 @@
                     },
                     "isCurrent": {
                       "type": "boolean"
+                    },
+                    "scheduleVisible": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "id",
                     "name",
-                    "accountId"
+                    "accountId",
+                    "scheduleVisible"
                   ]
                 },
                 "league": {
@@ -15479,12 +15538,16 @@
               },
               "isCurrent": {
                 "type": "boolean"
+              },
+              "scheduleVisible": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "accountId"
+              "accountId",
+              "scheduleVisible"
             ]
           },
           "leagueSeasons": {
@@ -15654,12 +15717,16 @@
                                 },
                                 "isCurrent": {
                                   "type": "boolean"
+                                },
+                                "scheduleVisible": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
                                 "id",
                                 "name",
-                                "accountId"
+                                "accountId",
+                                "scheduleVisible"
                               ]
                             },
                             "league": {
@@ -15804,12 +15871,16 @@
                           },
                           "isCurrent": {
                             "type": "boolean"
+                          },
+                          "scheduleVisible": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
                           "name",
-                          "accountId"
+                          "accountId",
+                          "scheduleVisible"
                         ]
                       },
                       "league": {
@@ -67989,6 +68060,102 @@
           },
           "500": {
             "description": "Unexpected error while retrieving the participant count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/schedule-visibility": {
+      "patch": {
+        "operationId": "updateSeasonScheduleVisibility",
+        "summary": "Update season schedule visibility",
+        "description": "Set whether the public schedule for the season is visible to unauthenticated users.",
+        "tags": [
+          "Seasons"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScheduleVisibility"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Schedule visibility updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateScheduleVisibility"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Season not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {

@@ -87,6 +87,7 @@ const createSeasonResponse = (name: string, id: string): LeagueSeasonWithDivisio
   name,
   accountId: '42',
   isCurrent: false,
+  scheduleVisible: true,
   leagues: [
     {
       id: `ls-${id}`,

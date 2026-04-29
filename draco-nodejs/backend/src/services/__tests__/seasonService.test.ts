@@ -36,6 +36,8 @@ class SeasonsRepositoryStub implements ISeasonsRepository {
   findSeasonForCopy = vi.fn<ISeasonsRepository['findSeasonForCopy']>();
 
   copySeasonStructure = vi.fn<ISeasonsRepository['copySeasonStructure']>();
+
+  updateScheduleVisibility = vi.fn<ISeasonsRepository['updateScheduleVisibility']>();
 }
 
 const accountId = 10n;
@@ -152,6 +154,7 @@ const createCopiedSeasonRecord = (): dbSeasonWithLeagues => ({
   id: 999n,
   name: 'Spring 2024 Copy',
   accountid: accountId,
+  schedulevisible: true,
   leagueseason: [
     {
       id: 123n,
@@ -206,6 +209,7 @@ describe('SeasonService.copySeason', () => {
       name: 'Spring 2024 Copy',
       accountId: accountId.toString(),
       isCurrent: false,
+      scheduleVisible: true,
       leagues: [
         {
           id: copiedSeasonRecord.leagueseason[0].id.toString(),
@@ -238,6 +242,7 @@ describe('SeasonService.copySeason', () => {
       id: 777n,
       name: 'Spring 2024 Copy',
       accountid: accountId,
+      schedulevisible: true,
     } satisfies dbSeason);
 
     await expect(service.copySeason(accountId, seasonId)).rejects.toBeInstanceOf(ConflictError);

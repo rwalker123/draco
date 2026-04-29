@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { UpsertSeasonSchema } from '@draco/shared-schemas';
+import { UpsertSeasonSchema, UpdateScheduleVisibilitySchema } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -105,6 +105,25 @@ router.post(
     const season = await seasonService.setCurrentSeason(accountId, seasonId);
 
     res.json(season);
+  }),
+);
+
+router.patch(
+  '/:seasonId/schedule-visibility',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+    const input = UpdateScheduleVisibilitySchema.parse(req.body);
+
+    const result = await seasonService.setScheduleVisibility(
+      accountId,
+      seasonId,
+      input.scheduleVisible,
+    );
+
+    res.json(result);
   }),
 );
 

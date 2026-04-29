@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { optionalAuth } from '../middleware/authMiddleware.js';
 import { extractTeamParams, ParamsObject } from '../utils/paramExtraction.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -14,6 +15,8 @@ const router = Router({ mergeParams: true });
 const teamStatsService = ServiceFactory.getTeamStatsService();
 const teamService = ServiceFactory.getTeamService();
 const scheduleService = ServiceFactory.getScheduleService();
+const roleService = ServiceFactory.getRoleService();
+const seasonService = ServiceFactory.getSeasonService();
 
 const parseTeamParams = (params: ParamsObject) => {
   try {
@@ -76,6 +79,7 @@ router.get(
  */
 router.get(
   '/:teamSeasonId/schedule',
+  optionalAuth,
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId } = parseTeamParams(req.params);
     const { startDate, endDate, hasRecap } = req.query;
@@ -83,6 +87,26 @@ router.get(
     await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
 
     const paginationParams = PaginationHelper.parseParams(req.query);
+
+    const userId = req.user?.id;
+    const hasManagePermission = userId
+      ? await roleService.hasPermission(userId, 'account.games.manage', { accountId })
+      : false;
+
+    if (!hasManagePermission) {
+      const hidden = await seasonService.isScheduleHiddenForCurrentSeason(accountId, seasonId);
+      if (hidden) {
+        res.json({
+          games: [],
+          pagination: {
+            total: 0,
+            page: paginationParams.page,
+            limit: paginationParams.limit,
+          },
+        });
+        return;
+      }
+    }
 
     const parsedStartDate = startDate ? new Date(String(startDate)) : undefined;
     const parsedEndDate = endDate ? new Date(String(endDate)) : undefined;

@@ -612,6 +612,7 @@ export type dbSeason = Prisma.seasonGetPayload<{
     id: true;
     name: true;
     accountid: true;
+    schedulevisible: true;
   };
 }>;
 
@@ -619,6 +620,7 @@ export interface dbSeasonWithLeagues {
   id: bigint;
   name: string;
   accountid: bigint;
+  schedulevisible: boolean;
   leagueseason: Array<{
     id: bigint;
     leagueid: bigint;
@@ -966,6 +968,7 @@ export type dbLeagueSeasonWithTeams = Prisma.leagueseasonGetPayload<{
         id: true;
         name: true;
         accountid: true;
+        schedulevisible: true;
       };
     };
     divisionseason: {
