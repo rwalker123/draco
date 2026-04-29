@@ -23,12 +23,16 @@ export interface ScheduleOfficial {
   email: string;
 }
 
+export type ScheduleAccessMode = 'public' | 'manage';
+
 export interface LoadGamesParams {
   accountId: string;
   seasonId: string;
   startDate: Date;
   endDate: Date;
   apiClient: Client;
+  mode?: ScheduleAccessMode;
+  signal?: AbortSignal;
 }
 
 export interface LoadTeamGamesParams {

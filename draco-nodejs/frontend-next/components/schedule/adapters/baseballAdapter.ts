@@ -2,6 +2,7 @@ import {
   listAccountFields,
   listAccountUmpires,
   listSeasonGames,
+  listSeasonGamesForManagement,
   listSeasonLeagueSeasons,
   listTeamSeasonSchedule,
   createGame,
@@ -97,23 +98,42 @@ async function loadGames({
   startDate,
   endDate,
   apiClient,
+  mode = 'public',
+  signal,
 }: LoadGamesParams): Promise<Game[]> {
   const aggregated = new Map<string, Game>();
   let page = 1;
 
-  while (true) {
-    const result = await listSeasonGames({
+  const fetchPage = (currentPage: number) => {
+    const requestOptions = {
       client: apiClient,
       path: { accountId, seasonId },
       query: {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        sortOrder: 'asc',
-        page,
+        sortOrder: 'asc' as const,
+        page: currentPage,
         limit: API_PAGE_LIMIT,
       },
-      throwOnError: false,
-    });
+      signal,
+      throwOnError: false as const,
+    };
+
+    return mode === 'manage'
+      ? listSeasonGamesForManagement(requestOptions)
+      : listSeasonGames(requestOptions);
+  };
+
+  while (true) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    const result = await fetchPage(page);
+
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
 
     const data = unwrapApiResult(result, 'Failed to load games');
     const mappedGames = data.games.map(mapGameResponseToScheduleGame);
