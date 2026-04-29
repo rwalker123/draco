@@ -10,7 +10,7 @@ import {
   extractSeasonParams,
   ParamsObject,
 } from '../utils/paramExtraction.js';
-import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
+import { ValidationError, AuthenticationError, NotFoundError } from '../utils/customErrors.js';
 import {
   UpdateGameResultsSchema,
   UpsertGameRecapSchema,
@@ -83,6 +83,11 @@ router.get(
     const { startDate, endDate, teamId, hasRecap } = req.query;
 
     const paginationParams = PaginationHelper.parseParams(req.query);
+
+    const season = await seasonService.findSeasonById(accountId, seasonId);
+    if (!season) {
+      throw new NotFoundError('Season not found');
+    }
 
     const userId = req.user?.id;
     const hasManagePermission = userId

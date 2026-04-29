@@ -219,6 +219,7 @@ const FieldRow: React.FC<FieldRowProps> = ({ field, onFieldClick }) => {
   const nameCell = onFieldClick ? (
     <Link
       component="button"
+      type="button"
       variant="body2"
       fontWeight={500}
       color={theme.palette.text.primary}

@@ -7,7 +7,7 @@ import express, {
 } from 'express';
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { ServiceFactory } from '../../services/serviceFactory.js';
-import { ValidationError, AuthorizationError } from '../../utils/customErrors.js';
+import { ValidationError, AuthorizationError, NotFoundError } from '../../utils/customErrors.js';
 
 vi.mock('../../middleware/authMiddleware.js', () => ({
   authenticateToken: (req: Request, _res: Response, next: NextFunction) => {
@@ -52,7 +52,15 @@ const roleServiceMock = {
 };
 
 const seasonServiceMock = {
+  findSeasonById: vi.fn(),
   isScheduleHiddenForCurrentSeason: vi.fn(),
+};
+
+const defaultSeason = {
+  id: '25',
+  name: 'Test Season',
+  accountId: '10',
+  scheduleVisible: true,
 };
 
 const ACCOUNT_ID = '10';
@@ -89,6 +97,10 @@ describe('GET / (season games) - visibility guard', () => {
         res.status(403).json({ message: err.message });
         return;
       }
+      if (err instanceof NotFoundError) {
+        res.status(404).json({ message: err.message });
+        return;
+      }
       if (err instanceof ValidationError) {
         res.status(400).json({ message: err.message });
         return;
@@ -101,6 +113,7 @@ describe('GET / (season games) - visibility guard', () => {
     vi.resetAllMocks();
     scheduleServiceMock.listSeasonGames.mockResolvedValue(defaultGamesResponse);
     roleServiceMock.hasPermission.mockResolvedValue(false);
+    seasonServiceMock.findSeasonById.mockResolvedValue(defaultSeason);
     seasonServiceMock.isScheduleHiddenForCurrentSeason.mockResolvedValue(false);
   });
 
@@ -307,6 +320,32 @@ describe('GET / (season games) - visibility guard', () => {
 
     expect(res.body).toEqual(defaultGamesResponse);
     expect(scheduleServiceMock.listSeasonGames).toHaveBeenCalled();
+  });
+
+  it('returns 404 (no games) when seasonId does not belong to accountId, regardless of permission', async () => {
+    seasonServiceMock.findSeasonById.mockResolvedValue(null);
+
+    const { res, error } = await runGamesRoute({
+      withAuth: true,
+      hasManagePermission: true,
+      isHiddenCurrentSeason: false,
+    });
+
+    expect(error).toBeInstanceOf(NotFoundError);
+    expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
+    expect(res.body).toBeUndefined();
+  });
+
+  it('returns 404 for unauthenticated callers when seasonId belongs to another account', async () => {
+    seasonServiceMock.findSeasonById.mockResolvedValue(null);
+
+    const { error } = await runGamesRoute({
+      withAuth: false,
+    });
+
+    expect(error).toBeInstanceOf(NotFoundError);
+    expect(seasonServiceMock.isScheduleHiddenForCurrentSeason).not.toHaveBeenCalled();
+    expect(scheduleServiceMock.listSeasonGames).not.toHaveBeenCalled();
   });
 
   it('checks permission using the authenticated userId from req.user', async () => {
