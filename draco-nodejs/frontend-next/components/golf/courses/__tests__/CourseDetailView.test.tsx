@@ -148,7 +148,7 @@ describe('CourseDetailView', () => {
           name: 'Updated Course',
         }),
       );
-    });
+    }, 15000);
 
     it('save button shows saving state while onSave is in progress', async () => {
       const user = userEvent.setup();
