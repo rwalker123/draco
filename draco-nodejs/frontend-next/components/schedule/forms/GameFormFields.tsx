@@ -1,25 +1,112 @@
 'use client';
 
 import React from 'react';
-import {
-  Box,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-} from '@mui/material';
+import { Autocomplete, Box, TextField, createFilterOptions } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { getReadOnlyInputProps, getReadOnlyDatePickerInputProps } from '../../../utils/formUtils';
 import { useGameFormContext } from '../contexts/GameFormContext';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, type FieldPath } from 'react-hook-form';
 import type { GameDialogFormValues } from '../dialogs/GameDialog';
+import { GameType } from '@/types/schedule';
 
 const EMPTY_LABEL = 'None';
+
+type AutoOption = { id: string; label: string };
+
+const NONE_OPTION: AutoOption = { id: '', label: EMPTY_LABEL };
+
+const startsWithFilter = createFilterOptions<AutoOption>({
+  matchFrom: 'start',
+  stringify: (option) => option.label,
+});
+
+type StringFieldName = Extract<
+  FieldPath<GameDialogFormValues>,
+  'homeTeamId' | 'visitorTeamId' | 'fieldId' | 'umpire1' | 'umpire2' | 'umpire3' | 'umpire4'
+>;
+
+interface ControlledOptionAutocompleteProps {
+  name: StringFieldName;
+  label: string;
+  options: AutoOption[];
+  required?: boolean;
+  includeEmpty?: boolean;
+}
+
+const ControlledOptionAutocomplete: React.FC<ControlledOptionAutocompleteProps> = ({
+  name,
+  label,
+  options,
+  required,
+  includeEmpty,
+}) => {
+  const { control } = useFormContext<GameDialogFormValues>();
+  const resolvedOptions = includeEmpty ? [NONE_OPTION, ...options] : options;
+  const disableClearable = required && !includeEmpty;
+
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => {
+        const currentValue = field.value ?? '';
+        const knownOption = resolvedOptions.find((option) => option.id === currentValue);
+        const unknownOption: AutoOption | null =
+          !knownOption && currentValue ? { id: currentValue, label: 'Unknown' } : null;
+        const displayOptions = unknownOption
+          ? [unknownOption, ...resolvedOptions]
+          : resolvedOptions;
+        const selectedOption = knownOption ?? unknownOption ?? (includeEmpty ? NONE_OPTION : null);
+        const hasUnknownValue = Boolean(unknownOption);
+
+        return (
+          <Autocomplete
+            options={displayOptions}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            filterOptions={startsWithFilter}
+            value={selectedOption}
+            onChange={(_, option) => field.onChange(option?.id ?? '')}
+            onBlur={field.onBlur}
+            autoHighlight
+            autoSelect
+            disableClearable={disableClearable}
+            fullWidth
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                inputRef={field.ref}
+                label={label}
+                required={required}
+                error={!!fieldState.error || hasUnknownValue}
+                helperText={
+                  fieldState.error?.message ??
+                  (hasUnknownValue ? 'Selection is no longer available' : undefined)
+                }
+              />
+            )}
+          />
+        );
+      }}
+    />
+  );
+};
+
+type GameTypeOption = { value: number; label: string };
+
+const GAME_TYPE_OPTIONS: GameTypeOption[] = [
+  { value: GameType.RegularSeason, label: 'Regular Season' },
+  { value: GameType.Playoff, label: 'Playoff' },
+  { value: GameType.Exhibition, label: 'Exhibition' },
+];
+
+const startsWithGameTypeFilter = createFilterOptions<GameTypeOption>({
+  matchFrom: 'start',
+  stringify: (option) => option.label,
+});
 
 const GameFormFields: React.FC = () => {
   const {
@@ -40,9 +127,30 @@ const GameFormFields: React.FC = () => {
     getTeamName,
     getFieldName,
     getGameTypeText,
+    selectedGame,
   } = useGameFormContext();
 
   const commentValue = watch('comment') ?? '';
+  const isEditMode = Boolean(selectedGame);
+
+  const teamOptions: AutoOption[] = leagueTeams.map((team) => ({
+    id: team.id,
+    label: team.name ?? 'Unknown Team',
+  }));
+  const fieldOptions: AutoOption[] = fields.map((fieldOption) => ({
+    id: fieldOption.id,
+    label: fieldOption.name,
+  }));
+  const buildUmpireOptions = (position: string, currentValue: string): AutoOption[] =>
+    getAvailableUmpires(position, currentValue).map((umpire) => ({
+      id: umpire.id,
+      label: `${umpire.firstName} ${umpire.lastName}`.trim(),
+    }));
+
+  const getUmpireLabel = (umpireId: string): string => {
+    const umpire = umpires.find((candidate) => candidate.id === umpireId);
+    return umpire ? `${umpire.firstName} ${umpire.lastName}`.trim() : 'Unknown';
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -62,6 +170,7 @@ const GameFormFields: React.FC = () => {
                   textField: {
                     fullWidth: true,
                     required: true,
+                    autoFocus: canEditSchedule && isEditMode,
                     error: !!errors.gameDate,
                     helperText: errors.gameDate?.message,
                     InputProps: !canEditSchedule ? getReadOnlyDatePickerInputProps() : undefined,
@@ -95,342 +204,216 @@ const GameFormFields: React.FC = () => {
 
         {/* Teams */}
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Controller
-            name="homeTeamId"
-            control={control}
-            render={({ field }) =>
-              canEditSchedule ? (
-                <FormControl fullWidth required error={!!errors.homeTeamId}>
-                  <InputLabel>Home Team</InputLabel>
-                  <Select {...field} label="Home Team">
-                    {leagueTeams.map((team) => (
-                      <MenuItem key={team.id} value={team.id}>
-                        {team.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>{errors.homeTeamId?.message}</FormHelperText>
-                </FormControl>
-              ) : (
+          {canEditSchedule ? (
+            <ControlledOptionAutocomplete
+              name="homeTeamId"
+              label="Home Team"
+              options={teamOptions}
+              required
+            />
+          ) : (
+            <Controller
+              name="homeTeamId"
+              control={control}
+              render={({ field }) => (
                 <TextField
                   fullWidth
                   label="Home Team"
                   value={getTeamName(field.value || '')}
                   InputProps={getReadOnlyInputProps()}
                 />
-              )
-            }
-          />
-          <Controller
-            name="visitorTeamId"
-            control={control}
-            render={({ field }) =>
-              canEditSchedule ? (
-                <FormControl fullWidth required error={!!errors.visitorTeamId}>
-                  <InputLabel>Visitor Team</InputLabel>
-                  <Select {...field} label="Visitor Team">
-                    {leagueTeams.map((team) => (
-                      <MenuItem key={team.id} value={team.id}>
-                        {team.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>{errors.visitorTeamId?.message}</FormHelperText>
-                </FormControl>
-              ) : (
+              )}
+            />
+          )}
+          {canEditSchedule ? (
+            <ControlledOptionAutocomplete
+              name="visitorTeamId"
+              label="Visitor Team"
+              options={teamOptions}
+              required
+            />
+          ) : (
+            <Controller
+              name="visitorTeamId"
+              control={control}
+              render={({ field }) => (
                 <TextField
                   fullWidth
                   label="Visitor Team"
                   value={getTeamName(field.value || '')}
                   InputProps={getReadOnlyInputProps()}
                 />
-              )
-            }
-          />
+              )}
+            />
+          )}
         </Box>
 
         {/* Field and Game Type */}
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Controller
-            name="fieldId"
-            control={control}
-            render={({ field }) =>
-              canEditSchedule ? (
-                <FormControl fullWidth error={!!errors.fieldId}>
-                  <InputLabel shrink>Field</InputLabel>
-                  <Select
-                    {...field}
-                    label="Field"
-                    displayEmpty
-                    value={field.value ?? ''}
-                    renderValue={(selected) => {
-                      if (!selected) {
-                        return EMPTY_LABEL;
-                      }
-                      const option = fields.find((item) => item.id === selected);
-                      return option?.name ?? 'Unknown';
-                    }}
-                  >
-                    <MenuItem value="">
-                      <em>{EMPTY_LABEL}</em>
-                    </MenuItem>
-                    {fields.map((fieldOption) => (
-                      <MenuItem key={fieldOption.id} value={fieldOption.id}>
-                        {fieldOption.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>{errors.fieldId?.message}</FormHelperText>
-                </FormControl>
-              ) : (
+          {canEditSchedule ? (
+            <ControlledOptionAutocomplete
+              name="fieldId"
+              label="Field"
+              options={fieldOptions}
+              includeEmpty
+            />
+          ) : (
+            <Controller
+              name="fieldId"
+              control={control}
+              render={({ field }) => (
                 <TextField
                   fullWidth
                   label="Field"
                   value={getFieldName(field.value || undefined)}
                   InputProps={getReadOnlyInputProps()}
                 />
-              )
-            }
-          />
-          <Controller
-            name="gameType"
-            control={control}
-            render={({ field }) =>
-              canEditSchedule ? (
-                <FormControl fullWidth error={!!errors.gameType}>
-                  <InputLabel>Game Type</InputLabel>
-                  <Select {...field} label="Game Type">
-                    <MenuItem value={0}>Regular Season</MenuItem>
-                    <MenuItem value={1}>Playoff</MenuItem>
-                    <MenuItem value={2}>Exhibition</MenuItem>
-                  </Select>
-                  <FormHelperText>{errors.gameType?.message}</FormHelperText>
-                </FormControl>
-              ) : (
+              )}
+            />
+          )}
+          {canEditSchedule ? (
+            <Controller
+              name="gameType"
+              control={control}
+              render={({ field, fieldState }) => {
+                const selectedOption =
+                  GAME_TYPE_OPTIONS.find((option) => option.value === field.value) ?? null;
+                return (
+                  <Autocomplete
+                    options={GAME_TYPE_OPTIONS}
+                    getOptionLabel={(option) => option.label}
+                    isOptionEqualToValue={(option, value) => option.value === value.value}
+                    filterOptions={startsWithGameTypeFilter}
+                    value={selectedOption}
+                    onChange={(_, option) =>
+                      field.onChange(option ? option.value : GameType.RegularSeason)
+                    }
+                    onBlur={field.onBlur}
+                    autoHighlight
+                    autoSelect
+                    fullWidth
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        inputRef={field.ref}
+                        label="Game Type"
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                      />
+                    )}
+                  />
+                );
+              }}
+            />
+          ) : (
+            <Controller
+              name="gameType"
+              control={control}
+              render={({ field }) => (
                 <TextField
                   fullWidth
                   label="Game Type"
                   value={getGameTypeText(field.value ?? '')}
                   InputProps={getReadOnlyInputProps()}
                 />
-              )
-            }
-          />
+              )}
+            />
+          )}
         </Box>
 
         {/* Umpires Row 1 */}
         {isAccountAdmin && hasOfficials && (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Controller
-              name="umpire1"
-              control={control}
-              render={({ field }) =>
-                canEditSchedule ? (
-                  <FormControl fullWidth error={!!errors.umpire1}>
-                    <InputLabel id="umpire1-label" shrink>
-                      Umpire 1
-                    </InputLabel>
-                    <Select
-                      {...field}
-                      labelId="umpire1-label"
-                      label="Umpire 1"
-                      displayEmpty
-                      value={field.value ?? ''}
-                      renderValue={(selected) => {
-                        if (!selected) {
-                          return EMPTY_LABEL;
-                        }
-                        const option = umpires.find((umpire) => umpire.id === selected);
-                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>{EMPTY_LABEL}</em>
-                      </MenuItem>
-                      {getAvailableUmpires('umpire1', field.value ?? '').map((umpire) => (
-                        <MenuItem key={umpire.id} value={umpire.id}>
-                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <FormHelperText>{errors.umpire1?.message}</FormHelperText>
-                  </FormControl>
-                ) : (
+            {canEditSchedule ? (
+              <ControlledOptionAutocomplete
+                name="umpire1"
+                label="Umpire 1"
+                options={buildUmpireOptions('umpire1', watch('umpire1') ?? '')}
+                includeEmpty
+              />
+            ) : (
+              <Controller
+                name="umpire1"
+                control={control}
+                render={({ field }) => (
                   <TextField
                     fullWidth
                     label="Umpire 1"
-                    value={
-                      field.value
-                        ? (() => {
-                            const u = umpires.find((u) => u.id === field.value);
-                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
-                          })()
-                        : EMPTY_LABEL
-                    }
+                    value={field.value ? getUmpireLabel(field.value) : EMPTY_LABEL}
                     InputProps={getReadOnlyInputProps()}
                   />
-                )
-              }
-            />
-            <Controller
-              name="umpire2"
-              control={control}
-              render={({ field }) =>
-                canEditSchedule ? (
-                  <FormControl fullWidth error={!!errors.umpire2}>
-                    <InputLabel id="umpire2-label" shrink>
-                      Umpire 2
-                    </InputLabel>
-                    <Select
-                      {...field}
-                      labelId="umpire2-label"
-                      label="Umpire 2"
-                      displayEmpty
-                      value={field.value ?? ''}
-                      renderValue={(selected) => {
-                        if (!selected) {
-                          return EMPTY_LABEL;
-                        }
-                        const option = umpires.find((umpire) => umpire.id === selected);
-                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>{EMPTY_LABEL}</em>
-                      </MenuItem>
-                      {getAvailableUmpires('umpire2', field.value ?? '').map((umpire) => (
-                        <MenuItem key={umpire.id} value={umpire.id}>
-                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <FormHelperText>{errors.umpire2?.message}</FormHelperText>
-                  </FormControl>
-                ) : (
+                )}
+              />
+            )}
+            {canEditSchedule ? (
+              <ControlledOptionAutocomplete
+                name="umpire2"
+                label="Umpire 2"
+                options={buildUmpireOptions('umpire2', watch('umpire2') ?? '')}
+                includeEmpty
+              />
+            ) : (
+              <Controller
+                name="umpire2"
+                control={control}
+                render={({ field }) => (
                   <TextField
                     fullWidth
                     label="Umpire 2"
-                    value={
-                      field.value
-                        ? (() => {
-                            const u = umpires.find((u) => u.id === field.value);
-                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
-                          })()
-                        : EMPTY_LABEL
-                    }
+                    value={field.value ? getUmpireLabel(field.value) : EMPTY_LABEL}
                     InputProps={getReadOnlyInputProps()}
                   />
-                )
-              }
-            />
+                )}
+              />
+            )}
           </Box>
         )}
 
         {/* Umpires Row 2 */}
         {isAccountAdmin && hasOfficials && (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Controller
-              name="umpire3"
-              control={control}
-              render={({ field }) =>
-                canEditSchedule ? (
-                  <FormControl fullWidth error={!!errors.umpire3}>
-                    <InputLabel id="umpire3-label" shrink>
-                      Umpire 3
-                    </InputLabel>
-                    <Select
-                      {...field}
-                      labelId="umpire3-label"
-                      label="Umpire 3"
-                      displayEmpty
-                      value={field.value ?? ''}
-                      renderValue={(selected) => {
-                        if (!selected) {
-                          return EMPTY_LABEL;
-                        }
-                        const option = umpires.find((umpire) => umpire.id === selected);
-                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>{EMPTY_LABEL}</em>
-                      </MenuItem>
-                      {getAvailableUmpires('umpire3', field.value ?? '').map((umpire) => (
-                        <MenuItem key={umpire.id} value={umpire.id}>
-                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <FormHelperText>{errors.umpire3?.message}</FormHelperText>
-                  </FormControl>
-                ) : (
+            {canEditSchedule ? (
+              <ControlledOptionAutocomplete
+                name="umpire3"
+                label="Umpire 3"
+                options={buildUmpireOptions('umpire3', watch('umpire3') ?? '')}
+                includeEmpty
+              />
+            ) : (
+              <Controller
+                name="umpire3"
+                control={control}
+                render={({ field }) => (
                   <TextField
                     fullWidth
                     label="Umpire 3"
-                    value={
-                      field.value
-                        ? (() => {
-                            const u = umpires.find((u) => u.id === field.value);
-                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
-                          })()
-                        : EMPTY_LABEL
-                    }
+                    value={field.value ? getUmpireLabel(field.value) : EMPTY_LABEL}
                     InputProps={getReadOnlyInputProps()}
                   />
-                )
-              }
-            />
-            <Controller
-              name="umpire4"
-              control={control}
-              render={({ field }) =>
-                canEditSchedule ? (
-                  <FormControl fullWidth error={!!errors.umpire4}>
-                    <InputLabel id="umpire4-label" shrink>
-                      Umpire 4
-                    </InputLabel>
-                    <Select
-                      {...field}
-                      labelId="umpire4-label"
-                      label="Umpire 4"
-                      displayEmpty
-                      value={field.value ?? ''}
-                      renderValue={(selected) => {
-                        if (!selected) {
-                          return EMPTY_LABEL;
-                        }
-                        const option = umpires.find((umpire) => umpire.id === selected);
-                        return option ? `${option.firstName} ${option.lastName}`.trim() : 'Unknown';
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>{EMPTY_LABEL}</em>
-                      </MenuItem>
-                      {getAvailableUmpires('umpire4', field.value ?? '').map((umpire) => (
-                        <MenuItem key={umpire.id} value={umpire.id}>
-                          {`${umpire.firstName} ${umpire.lastName}`.trim()}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <FormHelperText>{errors.umpire4?.message}</FormHelperText>
-                  </FormControl>
-                ) : (
+                )}
+              />
+            )}
+            {canEditSchedule ? (
+              <ControlledOptionAutocomplete
+                name="umpire4"
+                label="Umpire 4"
+                options={buildUmpireOptions('umpire4', watch('umpire4') ?? '')}
+                includeEmpty
+              />
+            ) : (
+              <Controller
+                name="umpire4"
+                control={control}
+                render={({ field }) => (
                   <TextField
                     fullWidth
                     label="Umpire 4"
-                    value={
-                      field.value
-                        ? (() => {
-                            const u = umpires.find((u) => u.id === field.value);
-                            return u ? `${u.firstName} ${u.lastName}`.trim() : 'Unknown';
-                          })()
-                        : EMPTY_LABEL
-                    }
+                    value={field.value ? getUmpireLabel(field.value) : EMPTY_LABEL}
                     InputProps={getReadOnlyInputProps()}
                   />
-                )
-              }
-            />
+                )}
+              />
+            )}
           </Box>
         )}
 
