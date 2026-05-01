@@ -492,7 +492,7 @@ export class ScheduleService {
 
     const createdGame = await this.scheduleRepository.createGame(createData);
 
-    return ScheduleResponseFormatter.formatGame(createdGame);
+    return this.formatGameWithTeamNames(createdGame);
   }
 
   async updateGame(
@@ -594,7 +594,7 @@ export class ScheduleService {
 
     const updatedGame = await this.scheduleRepository.updateGame(gameId, updateData);
 
-    return ScheduleResponseFormatter.formatGame(updatedGame);
+    return this.formatGameWithTeamNames(updatedGame);
   }
 
   async deleteGame(accountId: bigint, seasonId: bigint, gameId: bigint): Promise<boolean> {
@@ -691,6 +691,15 @@ export class ScheduleService {
       return null;
     }
     return BigInt(contact.id);
+  }
+
+  private async formatGameWithTeamNames(game: dbScheduleGameWithDetails): Promise<GameType> {
+    const teamNames = await this.scheduleRepository.getTeamNames([game.hteamid, game.vteamid]);
+
+    return ScheduleResponseFormatter.formatGame(game, {
+      homeTeamName: teamNames.get(game.hteamid.toString()),
+      visitorTeamName: teamNames.get(game.vteamid.toString()),
+    });
   }
 
   private parseGameDate(dateString: string): Date {
