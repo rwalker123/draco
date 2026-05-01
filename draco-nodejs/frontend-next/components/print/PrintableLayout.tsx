@@ -22,7 +22,12 @@ const PrintableLayout: React.FC<PrintableLayoutProps> = ({ children, title, subt
           body *:not(:has(.dr-print-root)):not(.dr-print-root):not(.dr-print-root *) {
             display: none !important;
           }
-          html, body { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+          html, body {
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body :has(.dr-print-root):not(.dr-print-root) {
             min-height: 0 !important;
             height: auto !important;
