@@ -8,21 +8,33 @@ test.describe('Team Schedule - Game Details Dialog', () => {
     }
   });
 
-  let teamSchedulePage: TeamSchedulePage;
-
-  test.beforeEach(async ({ page, accountId, seasonId, teamSeasonId }) => {
-    if (!seasonId || !teamSeasonId) return;
-    teamSchedulePage = new TeamSchedulePage(page);
+  test('schedule page loads', async ({ page, accountId, seasonId, teamSeasonId }) => {
+    const teamSchedulePage = new TeamSchedulePage(page);
     await teamSchedulePage.goto(accountId, seasonId, teamSeasonId);
-  });
-
-  test('schedule page loads', async () => {
     await expect(teamSchedulePage.mainContent).toBeVisible();
     await expect(teamSchedulePage.scheduleBreadcrumb).toBeVisible();
   });
 
-  test('clicking a game opens the Game Details dialog with real team names', async ({ page }) => {
+  test('clicking a game opens the Game Details dialog with real team names', async ({
+    page,
+    accountId,
+    seasonId,
+    teamSeasonId,
+  }) => {
     test.setTimeout(45_000);
+
+    const teamSchedulePage = new TeamSchedulePage(page);
+
+    const gamesResponsePromise = page.waitForResponse(
+      (resp) => {
+        const url = resp.url();
+        return /\/teams\/[^/]+\/schedule\?/.test(url) && url.includes('startDate=') && resp.ok();
+      },
+      { timeout: 30_000 },
+    );
+
+    await teamSchedulePage.goto(accountId, seasonId, teamSeasonId);
+    await gamesResponsePromise;
 
     const monthButtonCount = await teamSchedulePage.monthButton.count();
     if (monthButtonCount > 0) {
@@ -32,12 +44,8 @@ test.describe('Team Schedule - Game Details Dialog', () => {
     }
 
     const firstCard = teamSchedulePage.gameCards.first();
-    const noGamesText = page.getByText(/no games found/i).first();
-    await expect(async () => {
-      const hasVisibleCard = await firstCard.isVisible().catch(() => false);
-      const hasVisibleEmptyState = await noGamesText.isVisible().catch(() => false);
-      expect(hasVisibleCard || hasVisibleEmptyState).toBe(true);
-    }).toPass({ timeout: 15_000 });
+    const noGamesText = page.getByText(/^No games(?:$| found)/i).first();
+    await expect(firstCard.or(noGamesText)).toBeVisible({ timeout: 15_000 });
 
     const cardCount = await teamSchedulePage.gameCards.count();
     test.skip(cardCount === 0, 'No games visible for this team/season');

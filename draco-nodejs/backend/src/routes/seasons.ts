@@ -33,6 +33,7 @@ router.get(
       includeDivisions,
     });
 
+    res.setHeader('Cache-Control', 'no-store');
     res.json(season);
   }),
 );

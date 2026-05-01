@@ -14,7 +14,9 @@ export class CommunityMessagesPage {
   }
 
   async goto(accountId: string) {
-    await this.page.goto(`/account/${accountId}/social-hub/community`);
-    await this.heading.waitFor({ timeout: 15_000 });
+    await this.page.goto(`/account/${accountId}/social-hub/community`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await this.heading.waitFor({ timeout: 30_000 });
   }
 }

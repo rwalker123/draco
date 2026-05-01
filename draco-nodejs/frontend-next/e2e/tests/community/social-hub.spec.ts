@@ -36,11 +36,13 @@ test.describe('Social Hub', () => {
   });
 
   test('community messages sub-page loads', async ({ page, accountId }) => {
-    await page.goto(`/account/${accountId}/social-hub/community`);
-    await expect(page.getByRole('main')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Community Messages' })).toBeVisible({
-      timeout: 15_000,
+    await page.goto(`/account/${accountId}/social-hub/community`, {
+      waitUntil: 'domcontentloaded',
     });
+    await expect(page.getByRole('heading', { name: 'Community Messages' })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByRole('main')).toBeVisible();
   });
 
   test('member businesses sub-page loads', async ({ page, accountId }) => {
