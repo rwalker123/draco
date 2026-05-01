@@ -492,7 +492,15 @@ export class ScheduleService {
 
     const createdGame = await this.scheduleRepository.createGame(createData);
 
-    return ScheduleResponseFormatter.formatGame(createdGame);
+    const teamNames = await this.scheduleRepository.getTeamNames([
+      createdGame.hteamid,
+      createdGame.vteamid,
+    ]);
+
+    return ScheduleResponseFormatter.formatGame(createdGame, {
+      homeTeamName: teamNames.get(createdGame.hteamid.toString()),
+      visitorTeamName: teamNames.get(createdGame.vteamid.toString()),
+    });
   }
 
   async updateGame(
@@ -594,7 +602,15 @@ export class ScheduleService {
 
     const updatedGame = await this.scheduleRepository.updateGame(gameId, updateData);
 
-    return ScheduleResponseFormatter.formatGame(updatedGame);
+    const teamNames = await this.scheduleRepository.getTeamNames([
+      updatedGame.hteamid,
+      updatedGame.vteamid,
+    ]);
+
+    return ScheduleResponseFormatter.formatGame(updatedGame, {
+      homeTeamName: teamNames.get(updatedGame.hteamid.toString()),
+      visitorTeamName: teamNames.get(updatedGame.vteamid.toString()),
+    });
   }
 
   async deleteGame(accountId: bigint, seasonId: bigint, gameId: bigint): Promise<boolean> {
