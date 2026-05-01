@@ -46,7 +46,7 @@ test.describe('Team Schedule - Game Details Dialog', () => {
     }
 
     const firstCard = teamSchedulePage.gameCards.first();
-    const noGamesText = page.getByText(/^no games/i).first();
+    const noGamesText = page.getByText(/^No games(?:$| found)/i).first();
     await expect(firstCard.or(noGamesText)).toBeVisible({ timeout: 15_000 });
 
     const cardCount = await teamSchedulePage.gameCards.count();
