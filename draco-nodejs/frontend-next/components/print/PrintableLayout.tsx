@@ -19,14 +19,18 @@ const PrintableLayout: React.FC<PrintableLayoutProps> = ({ children, title, subt
             size: letter portrait;
             margin: 0.4in;
           }
-          body * { visibility: hidden !important; }
-          .dr-print-root, .dr-print-root * { visibility: visible !important; }
-          .dr-print-root {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+          body *:not(:has(.dr-print-root)):not(.dr-print-root):not(.dr-print-root *) {
+            display: none !important;
           }
+          html, body { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+          body :has(.dr-print-root):not(.dr-print-root) {
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+          }
+          .dr-print-root { display: block; width: 100%; }
           .print-hidden { display: none !important; }
           .dr-print-row { page-break-inside: avoid; }
         }
