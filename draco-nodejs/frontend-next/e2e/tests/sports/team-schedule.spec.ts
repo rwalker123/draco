@@ -9,7 +9,6 @@ test.describe('Team Schedule - Game Details Dialog', () => {
   });
 
   test('schedule page loads', async ({ page, accountId, seasonId, teamSeasonId }) => {
-    if (!seasonId || !teamSeasonId) return;
     const teamSchedulePage = new TeamSchedulePage(page);
     await teamSchedulePage.goto(accountId, seasonId, teamSeasonId);
     await expect(teamSchedulePage.mainContent).toBeVisible();
@@ -22,7 +21,6 @@ test.describe('Team Schedule - Game Details Dialog', () => {
     seasonId,
     teamSeasonId,
   }) => {
-    if (!seasonId || !teamSeasonId) return;
     test.setTimeout(45_000);
 
     const teamSchedulePage = new TeamSchedulePage(page);
