@@ -1,5 +1,7 @@
-import { test, expect } from '../fixtures/base-fixtures';
+import { test, expect, getRequiredE2eTestAccountId } from '../fixtures/base-fixtures';
 import { getJwtToken, BASE_URL } from '../helpers/auth';
+import { tryCleanup } from '../helpers/api';
+import { appendCleanupLog } from '../helpers/cleanupLog';
 import { getCurrentSeason, updateSeasonScheduleVisibility } from '@draco/shared-api-client';
 import { createClient, createConfig } from '@draco/shared-api-client/generated/client';
 
@@ -27,7 +29,7 @@ async function setScheduleVisible(accountId: string, seasonId: string, visible: 
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Schedule Visibility Toggle', () => {
-  const accountId = process.env.E2E_TEST_ACCOUNT_ID || '29';
+  const accountId = getRequiredE2eTestAccountId();
   let seasonId: string;
   let originalVisibility: boolean;
 
@@ -52,9 +54,10 @@ test.describe('Schedule Visibility Toggle', () => {
   });
 
   test.afterAll(async () => {
-    if (seasonId) {
-      await setScheduleVisible(accountId, seasonId, originalVisibility);
-    }
+    if (!seasonId) return;
+    const errors: string[] = [];
+    await tryCleanup(errors, () => setScheduleVisible(accountId, seasonId, originalVisibility));
+    appendCleanupLog('schedule-visibility cleanup', errors);
   });
 
   test.beforeEach(async () => {
@@ -62,8 +65,9 @@ test.describe('Schedule Visibility Toggle', () => {
   });
 
   test('admin sees schedule visibility toggle on management page', async ({ page }) => {
-    await page.goto(`${BASE_URL}/account/${accountId}/schedule-management`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`${BASE_URL}/account/${accountId}/schedule-management`, {
+      waitUntil: 'domcontentloaded',
+    });
 
     const toggle = page.getByRole('switch', { name: /schedule visible to public/i });
     await expect(toggle).toBeVisible();
@@ -72,8 +76,9 @@ test.describe('Schedule Visibility Toggle', () => {
   test('toggle off hides public schedule', async ({ page }) => {
     await setScheduleVisible(accountId, seasonId, false);
 
-    await page.goto(`${BASE_URL}/account/${accountId}/schedule`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`${BASE_URL}/account/${accountId}/schedule`, {
+      waitUntil: 'domcontentloaded',
+    });
 
     await expect(
       page.getByText('The schedule has not been published yet. Please check back soon.'),
@@ -83,8 +88,9 @@ test.describe('Schedule Visibility Toggle', () => {
   test('toggle on shows public schedule', async ({ page }) => {
     await setScheduleVisible(accountId, seasonId, true);
 
-    await page.goto(`${BASE_URL}/account/${accountId}/schedule`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`${BASE_URL}/account/${accountId}/schedule`, {
+      waitUntil: 'domcontentloaded',
+    });
 
     await expect(
       page.getByText('The schedule has not been published yet. Please check back soon.'),
@@ -92,8 +98,9 @@ test.describe('Schedule Visibility Toggle', () => {
   });
 
   test('admin can flip toggle via UI and state persists', async ({ page }) => {
-    await page.goto(`${BASE_URL}/account/${accountId}/schedule-management`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`${BASE_URL}/account/${accountId}/schedule-management`, {
+      waitUntil: 'domcontentloaded',
+    });
 
     const toggle = page.getByRole('switch', { name: /schedule visible to public/i });
     await expect(toggle).toBeChecked();
@@ -101,8 +108,7 @@ test.describe('Schedule Visibility Toggle', () => {
     await toggle.click();
     await expect(toggle).not.toBeChecked();
 
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(toggle).not.toBeChecked();
   });
 });
