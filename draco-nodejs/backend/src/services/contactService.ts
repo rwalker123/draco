@@ -206,11 +206,13 @@ export class ContactService {
   }
 
   /**
-   * Get contacts with their roles for a specific account and season
-   * Uses raw SQL for complex role context joins when includeRoles is true
-   * @param accountId - The account ID to get contacts for
-   * @param seasonId - The season ID for role context (optional, defaults to null for backward compatibility)
-   * @param options - Query options including includeRoles, searchQuery, and pagination
+   * Get contacts with their roles for a specific account and season.
+   * Uses raw SQL for complex role context joins when `includeRoles` is true.
+   *
+   * When `seasonId` is omitted or null and `includeRoles` is true, only
+   * account-level and global roles are resolved. Team and league roles are
+   * season-scoped and are excluded in this case (e.g., a freshly created
+   * account that has no current season yet).
    */
   async getContactsWithRoles(
     accountId: bigint,
@@ -223,16 +225,15 @@ export class ContactService {
       pagination.page = 1;
     }
 
-    // If roles are not requested, use the simple Prisma query
     if (!includeRoles) {
       return this.getContactsSimple(accountId, options);
     }
 
-    if (seasonId === undefined || seasonId === null) {
-      throw new ValidationError('seasonId is required when includeRoles is true');
-    }
-
-    const rows = await this.contactRepository.searchContactsWithRoles(accountId, options, seasonId);
+    const rows = await this.contactRepository.searchContactsWithRoles(
+      accountId,
+      options,
+      seasonId ?? null,
+    );
 
     // Transform the flat rows into the desired structure
     return ContactResponseFormatter.formatPagedContactRolesResponse(
