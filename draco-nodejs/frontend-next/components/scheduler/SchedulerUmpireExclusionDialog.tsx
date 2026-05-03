@@ -2,26 +2,20 @@
 
 import React, { useState } from 'react';
 import {
-  Box,
-  Button,
   Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControl,
   FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   TextField,
-  Typography,
 } from '@mui/material';
 import type {
   SchedulerUmpireExclusion,
   SchedulerUmpireExclusionUpsert,
 } from '@draco/shared-schemas';
 import { SchedulerUmpireExclusionUpsertSchema } from '@draco/shared-schemas';
+import { BaseSchedulerDialog } from './BaseSchedulerDialog';
 
 type UmpireOption = { id: string; name: string };
 
@@ -77,73 +71,59 @@ export const SchedulerUmpireExclusionDialog: React.FC<SchedulerUmpireExclusionDi
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          {error && (
-            <Typography variant="body2" color="error">
-              {error}
-            </Typography>
-          )}
-
-          <FormControl fullWidth size="small">
-            <InputLabel id="scheduler-umpire-exclusion-umpire">Umpire</InputLabel>
-            <Select
-              labelId="scheduler-umpire-exclusion-umpire"
-              label="Umpire"
-              value={umpireId}
-              onChange={(event) => setUmpireId(String(event.target.value))}
-            >
-              {umpires.map((umpire) => (
-                <MenuItem key={umpire.id} value={umpire.id}>
-                  {umpire.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <TextField
-            label="Start (UTC ISO)"
-            size="small"
-            value={startTime}
-            onChange={(event) => setStartTime(event.target.value)}
-            placeholder="2026-04-05T13:00:00Z"
-            helperText="Use ISO datetime (UTC)."
-          />
-          <TextField
-            label="End (UTC ISO)"
-            size="small"
-            value={endTime}
-            onChange={(event) => setEndTime(event.target.value)}
-            placeholder="2026-04-05T15:00:00Z"
-            helperText="Use ISO datetime (UTC)."
-          />
-
-          <TextField
-            label="Note (optional)"
-            size="small"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            inputProps={{ maxLength: 255 }}
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-            }
-            label="Enabled"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {mode === 'create' ? 'Create' : 'Save'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <BaseSchedulerDialog
+      open={open}
+      title={title}
+      mode={mode}
+      loading={loading}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      apiError={error}
+    >
+      <FormControl fullWidth size="small">
+        <InputLabel id="scheduler-umpire-exclusion-umpire">Umpire</InputLabel>
+        <Select
+          labelId="scheduler-umpire-exclusion-umpire"
+          label="Umpire"
+          value={umpireId}
+          onChange={(event) => setUmpireId(String(event.target.value))}
+        >
+          {umpires.map((umpire) => (
+            <MenuItem key={umpire.id} value={umpire.id}>
+              {umpire.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <TextField
+        label="Start (UTC ISO)"
+        size="small"
+        value={startTime}
+        onChange={(event) => setStartTime(event.target.value)}
+        placeholder="2026-04-05T13:00:00Z"
+        helperText="Use ISO datetime (UTC)."
+      />
+      <TextField
+        label="End (UTC ISO)"
+        size="small"
+        value={endTime}
+        onChange={(event) => setEndTime(event.target.value)}
+        placeholder="2026-04-05T15:00:00Z"
+        helperText="Use ISO datetime (UTC)."
+      />
+      <TextField
+        label="Note (optional)"
+        size="small"
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+        inputProps={{ maxLength: 255 }}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+        }
+        label="Enabled"
+      />
+    </BaseSchedulerDialog>
   );
 };

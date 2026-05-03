@@ -1,23 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Checkbox, FormControlLabel, TextField } from '@mui/material';
 import type {
   SchedulerSeasonExclusion,
   SchedulerSeasonExclusionUpsert,
 } from '@draco/shared-schemas';
 import { SchedulerSeasonExclusionUpsertSchema } from '@draco/shared-schemas';
+import { BaseSchedulerDialog } from './BaseSchedulerDialog';
 
 interface SchedulerSeasonExclusionDialogProps {
   open: boolean;
@@ -67,57 +57,44 @@ export const SchedulerSeasonExclusionDialog: React.FC<SchedulerSeasonExclusionDi
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          {error && (
-            <Typography variant="body2" color="error">
-              {error}
-            </Typography>
-          )}
-
-          <TextField
-            label="Start (UTC ISO)"
-            size="small"
-            value={startTime}
-            onChange={(event) => setStartTime(event.target.value)}
-            placeholder="2026-04-05T13:00:00Z"
-            helperText="Use ISO datetime (UTC)."
-          />
-          <TextField
-            label="End (UTC ISO)"
-            size="small"
-            value={endTime}
-            onChange={(event) => setEndTime(event.target.value)}
-            placeholder="2026-04-05T15:00:00Z"
-            helperText="Use ISO datetime (UTC)."
-          />
-
-          <TextField
-            label="Note (optional)"
-            size="small"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            inputProps={{ maxLength: 255 }}
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-            }
-            label="Enabled"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {mode === 'create' ? 'Create' : 'Save'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <BaseSchedulerDialog
+      open={open}
+      title={title}
+      mode={mode}
+      loading={loading}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      apiError={error}
+    >
+      <TextField
+        label="Start (UTC ISO)"
+        size="small"
+        value={startTime}
+        onChange={(event) => setStartTime(event.target.value)}
+        placeholder="2026-04-05T13:00:00Z"
+        helperText="Use ISO datetime (UTC)."
+      />
+      <TextField
+        label="End (UTC ISO)"
+        size="small"
+        value={endTime}
+        onChange={(event) => setEndTime(event.target.value)}
+        placeholder="2026-04-05T15:00:00Z"
+        helperText="Use ISO datetime (UTC)."
+      />
+      <TextField
+        label="Note (optional)"
+        size="small"
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+        inputProps={{ maxLength: 255 }}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+        }
+        label="Enabled"
+      />
+    </BaseSchedulerDialog>
   );
 };

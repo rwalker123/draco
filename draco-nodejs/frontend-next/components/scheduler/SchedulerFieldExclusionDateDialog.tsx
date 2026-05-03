@@ -2,26 +2,20 @@
 
 import React, { useState } from 'react';
 import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Checkbox,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   TextField,
-  Typography,
-  Checkbox,
-  FormControlLabel,
 } from '@mui/material';
 import type {
   SchedulerFieldExclusionDate,
   SchedulerFieldExclusionDateUpsert,
 } from '@draco/shared-schemas';
 import { SchedulerFieldExclusionDateUpsertSchema } from '@draco/shared-schemas';
+import { BaseSchedulerDialog } from './BaseSchedulerDialog';
 
 type FieldOption = { id: string; name: string };
 
@@ -69,65 +63,51 @@ export const SchedulerFieldExclusionDateDialog: React.FC<
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          {error && (
-            <Typography variant="body2" color="error">
-              {error}
-            </Typography>
-          )}
-
-          <FormControl fullWidth size="small">
-            <InputLabel id="scheduler-exclusion-field">Field</InputLabel>
-            <Select
-              labelId="scheduler-exclusion-field"
-              label="Field"
-              value={fieldId}
-              onChange={(event) => setFieldId(String(event.target.value))}
-            >
-              {fields.map((field) => (
-                <MenuItem key={field.id} value={field.id}>
-                  {field.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <TextField
-            label="Date"
-            type="date"
-            size="small"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-
-          <TextField
-            label="Note (optional)"
-            size="small"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            inputProps={{ maxLength: 255 }}
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-            }
-            label="Enabled"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {mode === 'create' ? 'Create' : 'Save'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <BaseSchedulerDialog
+      open={open}
+      title={title}
+      mode={mode}
+      loading={loading}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      apiError={error}
+    >
+      <FormControl fullWidth size="small">
+        <InputLabel id="scheduler-exclusion-field">Field</InputLabel>
+        <Select
+          labelId="scheduler-exclusion-field"
+          label="Field"
+          value={fieldId}
+          onChange={(event) => setFieldId(String(event.target.value))}
+        >
+          {fields.map((field) => (
+            <MenuItem key={field.id} value={field.id}>
+              {field.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <TextField
+        label="Date"
+        type="date"
+        size="small"
+        value={date}
+        onChange={(event) => setDate(event.target.value)}
+        InputLabelProps={{ shrink: true }}
+      />
+      <TextField
+        label="Note (optional)"
+        size="small"
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+        inputProps={{ maxLength: 255 }}
+      />
+      <FormControlLabel
+        control={
+          <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+        }
+        label="Enabled"
+      />
+    </BaseSchedulerDialog>
   );
 };

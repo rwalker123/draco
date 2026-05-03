@@ -706,4 +706,222 @@ describe('SchedulerEngineService', () => {
     expect(result.assignments[0]?.fieldId).toBe('field-lights');
     expect(result.unscheduled).toHaveLength(0);
   });
+
+  it('field exclusion date: game is scheduled when the slot is present, unscheduled when the slot is absent (as if excluded)', () => {
+    const service = new SchedulerEngineService();
+
+    const slottedSpec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 75 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+      constraints: { hard: { respectFieldSlots: true } },
+    };
+
+    const withSlot = service.solve(slottedSpec);
+    expect(withSlot.status).toBe('completed');
+    expect(withSlot.assignments).toHaveLength(1);
+
+    const withWrongDaySlot = service.solve({
+      ...slottedSpec,
+      fieldSlots: [
+        {
+          id: 'slot-wrong-day',
+          fieldId: 'field-1',
+          startTime: '2026-04-07T09:00:00Z',
+          endTime: '2026-04-07T10:30:00Z',
+        },
+      ],
+    });
+    expect(withWrongDaySlot.status).toBe('infeasible');
+    expect(withWrongDaySlot.unscheduled).toHaveLength(1);
+    expect(withWrongDaySlot.unscheduled[0]?.gameId).toBe('game-1');
+    expect(withWrongDaySlot.unscheduled[0]?.reason).toBeTruthy();
+  });
+
+  it('field availability rule DOW/time-window: game scheduled when slot exists for the rule, unscheduled when rule produces no viable slot', () => {
+    const service = new SchedulerEngineService();
+
+    const saturdaySlotSpec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 75 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-sat',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+      constraints: { hard: { respectFieldSlots: true } },
+    };
+
+    const withSaturdaySlot = service.solve(saturdaySlotSpec);
+    expect(withSaturdaySlot.status).toBe('completed');
+    expect(withSaturdaySlot.assignments).toHaveLength(1);
+
+    const weekdayOnlySpec: SchedulerProblemSpec = {
+      ...saturdaySlotSpec,
+      fieldSlots: [
+        {
+          id: 'slot-weekday',
+          fieldId: 'field-1',
+          startTime: '2026-04-07T09:00:00Z',
+          endTime: '2026-04-07T10:30:00Z',
+        },
+      ],
+    };
+
+    const withWeekdaySlot = service.solve(weekdayOnlySpec);
+    expect(['partial', 'infeasible']).toContain(withWeekdaySlot.status);
+    expect(withWeekdaySlot.unscheduled).toHaveLength(1);
+    expect(withWeekdaySlot.unscheduled[0]?.gameId).toBe('game-1');
+  });
+
+  it('over-constrained: multiple games are reported unscheduled with reasons when both season exclusion and umpire limit apply', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 75 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [{ id: 'ump-1', name: 'Alice' }],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T11:00:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          id: 'game-2',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T11:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          id: 'game-3',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T13:00:00Z',
+          latestEnd: '2026-04-05T16:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T11:30:00Z',
+          endTime: '2026-04-05T13:00:00Z',
+        },
+        {
+          id: 'slot-3',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T13:30:00Z',
+          endTime: '2026-04-05T15:00:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-04-05T08:00:00Z', endTime: '2026-04-05T18:00:00Z' },
+      ],
+      seasonExclusions: [
+        {
+          id: 'ex-1',
+          seasonId: 'spring-2026',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T11:00:00Z',
+          enabled: true,
+        },
+      ],
+      constraints: {
+        hard: {
+          respectUmpireAvailability: true,
+          maxGamesPerUmpirePerDay: 1,
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('partial');
+    expect(result.unscheduled.length).toBeGreaterThanOrEqual(2);
+
+    for (const unscheduled of result.unscheduled) {
+      expect(unscheduled.gameId).toBeTruthy();
+      expect(unscheduled.reason).toBeTruthy();
+    }
+  });
 });
