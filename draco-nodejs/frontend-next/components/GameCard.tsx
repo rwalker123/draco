@@ -566,7 +566,7 @@ const GameCard: React.FC<GameCardProps> = ({
                     sx={{ color: 'text.primary' }}
                     noWrap
                   >
-                    {game.homeTeamName}
+                    @ {game.homeTeamName}
                   </Typography>
                   {game.gameStatus !== GameStatus.Completed &&
                     renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
@@ -716,7 +716,7 @@ const GameCard: React.FC<GameCardProps> = ({
                     sx={{ color: 'text.primary' }}
                     noWrap
                   >
-                    {game.homeTeamName}
+                    @ {game.homeTeamName}
                   </Typography>
                   {game.gameStatus !== GameStatus.Completed &&
                     renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}

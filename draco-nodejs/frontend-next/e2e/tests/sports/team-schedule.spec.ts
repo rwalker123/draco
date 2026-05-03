@@ -43,13 +43,28 @@ test.describe('Team Schedule - Game Details Dialog', () => {
       await teamSchedulePage.monthButton.click();
     }
 
-    const firstCard = teamSchedulePage.gameCards.first();
-    const noGamesText = page.getByText(/^No games(?:$| found)/i).first();
-    await expect(firstCard.or(noGamesText)).toBeVisible({ timeout: 15_000 });
+    const noGamesLocator = page.getByText(/^No games(?:$| found)/i);
+    await expect
+      .poll(
+        async () => {
+          const firstCardVisible = await teamSchedulePage.gameCards
+            .first()
+            .isVisible()
+            .catch(() => false);
+          const noGamesVisible = await noGamesLocator
+            .first()
+            .isVisible()
+            .catch(() => false);
+          return firstCardVisible || noGamesVisible;
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(true);
 
     const cardCount = await teamSchedulePage.gameCards.count();
     test.skip(cardCount === 0, 'No games visible for this team/season');
 
+    const firstCard = teamSchedulePage.gameCards.first();
     await firstCard.scrollIntoViewIfNeeded();
     await firstCard.click();
 
