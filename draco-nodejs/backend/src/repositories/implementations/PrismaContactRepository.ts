@@ -340,8 +340,24 @@ export class PrismaContactRepository implements IContactRepository {
           -- Global roles: No additional restrictions
           OR cr.roleid = ${ROLE_IDS[RoleNamesType.ADMINISTRATOR]}
 
-          -- Team and League roles: Will be validated by subsequent joins
-          OR cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}, ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]})
+          -- Team roles: must reference a team in the requested season
+          OR (
+            cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
+            AND EXISTS (
+              SELECT 1 FROM teamsseason ts_v
+              JOIN leagueseason ls_v ON ts_v.leagueseasonid = ls_v.id
+              WHERE ts_v.id = cr.roledata AND ls_v.seasonid = ${seasonId}
+            )
+          )
+
+          -- League role: must reference a leagueseason in the requested season
+          OR (
+            cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
+            AND EXISTS (
+              SELECT 1 FROM leagueseason ls_v
+              WHERE ls_v.id = cr.roledata AND ls_v.seasonid = ${seasonId}
+            )
+          )
         )
       )
       -- Team roles: Join to teamsseason and validate season
