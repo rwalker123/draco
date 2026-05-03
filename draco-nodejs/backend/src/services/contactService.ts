@@ -228,6 +228,10 @@ export class ContactService {
       return this.getContactsSimple(accountId, options);
     }
 
+    if (seasonId === undefined || seasonId === null) {
+      throw new ValidationError('seasonId is required when includeRoles is true');
+    }
+
     const rows = await this.contactRepository.searchContactsWithRoles(accountId, options, seasonId);
 
     // Transform the flat rows into the desired structure

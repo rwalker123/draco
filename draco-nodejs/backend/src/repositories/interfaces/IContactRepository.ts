@@ -40,7 +40,7 @@ export interface IContactRepository extends IBaseRepository<contacts> {
   searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,
-    seasonId?: bigint | null,
+    seasonId: bigint | null,
   ): Promise<dbContactWithRoleAndDetails[]>;
   searchContactsByName(
     accountId: bigint,

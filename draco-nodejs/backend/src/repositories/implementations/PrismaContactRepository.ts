@@ -251,7 +251,7 @@ export class PrismaContactRepository implements IContactRepository {
   async searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,
-    seasonId?: bigint | null,
+    seasonId: bigint | null,
   ): Promise<dbContactWithRoleAndDetails[]> {
     const { includeContactDetails, searchQuery, onlyWithRoles, pagination, advancedFilter } =
       options;
