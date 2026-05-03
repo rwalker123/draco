@@ -276,14 +276,20 @@ export class PrismaContactRepository implements IContactRepository {
             AND EXISTS (
               SELECT 1 FROM teamsseason ts_v
               JOIN leagueseason ls_v ON ts_v.leagueseasonid = ls_v.id
-              WHERE ts_v.id = cr.roledata AND ls_v.seasonid = ${seasonId}
+              JOIN league l_v ON ls_v.leagueid = l_v.id
+              WHERE ts_v.id = cr.roledata
+                AND ls_v.seasonid = ${seasonId}
+                AND l_v.accountid = ${accountId}
             )
           )
           OR (
             cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
             AND EXISTS (
               SELECT 1 FROM leagueseason ls_v
-              WHERE ls_v.id = cr.roledata AND ls_v.seasonid = ${seasonId}
+              JOIN league l_v ON ls_v.leagueid = l_v.id
+              WHERE ls_v.id = cr.roledata
+                AND ls_v.seasonid = ${seasonId}
+                AND l_v.accountid = ${accountId}
             )
           )
         `
@@ -301,6 +307,11 @@ export class PrismaContactRepository implements IContactRepository {
         AND ts.leagueseasonid = ls_ts.id
         AND ls_ts.seasonid = ${seasonId}
       )
+      LEFT JOIN league l_ts ON (
+        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
+        AND ls_ts.leagueid = l_ts.id
+        AND l_ts.accountid = ${accountId}
+      )
       LEFT JOIN leagueseason ls ON (
         cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
         AND cr.roledata = ls.id
@@ -309,11 +320,13 @@ export class PrismaContactRepository implements IContactRepository {
       LEFT JOIN league l ON (
         cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
         AND ls.leagueid = l.id
+        AND l.accountid = ${accountId}
       )
         `
         : Prisma.sql`
       LEFT JOIN teamsseason ts ON FALSE
       LEFT JOIN leagueseason ls_ts ON FALSE
+      LEFT JOIN league l_ts ON FALSE
       LEFT JOIN leagueseason ls ON FALSE
       LEFT JOIN league l ON FALSE
         `;
@@ -321,8 +334,8 @@ export class PrismaContactRepository implements IContactRepository {
     const onlyWithRolesSeasonScoped =
       seasonId !== null
         ? Prisma.sql`
-          OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}) AND ls_ts.id IS NOT NULL)
-          OR (cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]} AND ls.id IS NOT NULL)
+          OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}) AND l_ts.id IS NOT NULL)
+          OR (cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]} AND l.id IS NOT NULL)
         `
         : Prisma.empty;
 
@@ -422,6 +435,7 @@ export class PrismaContactRepository implements IContactRepository {
         AND (
           ${!onlyWithRoles ? Prisma.sql`cr.roleid IS NULL OR` : Prisma.empty}
           (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
+          OR cr.roleid = ${ROLE_IDS[RoleNamesType.ADMINISTRATOR]}
           ${onlyWithRolesSeasonScoped}
         )
       ORDER BY ${Prisma.raw(sortColumn)} ${Prisma.raw(orderDirection)} ${Prisma.raw(nullsOrder)}, contacts.firstname ${Prisma.raw(orderDirection)}, cr.roleid

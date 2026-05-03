@@ -47,9 +47,15 @@ test.describe('Team Schedule - Game Details Dialog', () => {
     await expect
       .poll(
         async () => {
-          const cards = await teamSchedulePage.gameCards.count();
-          const noGames = await noGamesLocator.count();
-          return cards > 0 || noGames > 0;
+          const firstCardVisible = await teamSchedulePage.gameCards
+            .first()
+            .isVisible()
+            .catch(() => false);
+          const noGamesVisible = await noGamesLocator
+            .first()
+            .isVisible()
+            .catch(() => false);
+          return firstCardVisible || noGamesVisible;
         },
         { timeout: 15_000 },
       )
