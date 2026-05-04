@@ -14,7 +14,7 @@ function normalizePath(path?: string): string {
 
 async function resolveOrigin(): Promise<string> {
   const requestHeaders = await headers();
-  const host = requestHeaders.get('host');
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
   if (!host) {
     throw new Error('seoMetadata.resolveOrigin: missing "host" header on request');
   }
