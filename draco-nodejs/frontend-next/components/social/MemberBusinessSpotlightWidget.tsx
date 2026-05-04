@@ -106,7 +106,12 @@ const MemberBusinessSpotlightWidget: React.FC<MemberBusinessSpotlightWidgetProps
       <Stack spacing={2}>
         {businesses.map((business, index) => (
           <React.Fragment key={business.id}>
-            <MemberBusinessSummary business={business} compact />
+            <MemberBusinessSummary
+              business={business}
+              compact
+              accountId={accountId}
+              playerLinkLabel="Member Business Spotlight"
+            />
             {index < businesses.length - 1 ? (
               <Divider sx={{ borderColor: 'widget.border' }} />
             ) : null}

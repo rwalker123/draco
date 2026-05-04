@@ -22,6 +22,11 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/account/acc-1/surveys',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 const buildSpotlightResponse = (overrides = {}) =>
   ({
     data: {
