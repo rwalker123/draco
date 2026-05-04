@@ -1,5 +1,3 @@
-import { buildCanonicalUrl } from '../../lib/seoMetadata';
-
 const DISALLOWED_PATHS = [
   '/account-management*',
   '/admin*',
@@ -20,12 +18,23 @@ const DISALLOWED_PATHS = [
   '/account/*/workouts*',
 ] as const;
 
-function resolveOrigin(requestUrl: URL): string {
+function parseConfiguredOrigin(): string | null {
   const configuredOrigin =
     process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? null;
+  if (!configuredOrigin) {
+    return null;
+  }
+  try {
+    return new URL(configuredOrigin).origin;
+  } catch {
+    return null;
+  }
+}
 
+function resolveOrigin(requestUrl: URL): string {
+  const configuredOrigin = parseConfiguredOrigin();
   if (configuredOrigin) {
-    return configuredOrigin.replace(/\/$/, '');
+    return configuredOrigin;
   }
 
   const hostname = requestUrl.hostname === '0.0.0.0' ? 'localhost' : requestUrl.hostname;
@@ -40,7 +49,7 @@ export async function GET(request: Request): Promise<Response> {
   const lines = [
     'User-agent: *',
     ...DISALLOWED_PATHS.map((path) => `Disallow: ${path}`),
-    `Sitemap: ${buildCanonicalUrl('/sitemap.xml', { origin })}`,
+    `Sitemap: ${new URL('/sitemap.xml', origin).toString()}`,
   ];
 
   const body = `${lines.join('\n')}\n`;

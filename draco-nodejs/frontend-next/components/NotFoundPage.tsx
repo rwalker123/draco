@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { DEFAULT_SITE_NAME } from '@/lib/seoMetadata';
+import { DEFAULT_SITE_NAME } from '@/lib/seoConstants';
 
 const NotFoundPage: React.FC = () => {
   return (
