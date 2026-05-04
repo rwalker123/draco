@@ -10,7 +10,5 @@ export const facebookOAuthConfig = {
     'instagram_basic',
     'instagram_content_publish',
   ].join(','),
-  resultUrlTemplate:
-    process.env.FACEBOOK_RESULT_URL_TEMPLATE ??
-    'http://localhost:3000/account/{accountId}/social-media?facebookAuth=',
+  resultUrlTemplate: process.env.FACEBOOK_RESULT_URL_TEMPLATE,
 };

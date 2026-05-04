@@ -6,23 +6,6 @@ import { DEFAULT_SITE_NAME } from '../lib/seoConstants';
 const CRAWLER_USER_AGENT_REGEX =
   /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|facebot|ia_archiver/i;
 
-const FALLBACK_ORIGIN =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.NEXT_PUBLIC_APP_URL ??
-  process.env.NEXT_PUBLIC_FALLBACK_URL ??
-  'http://localhost:3000';
-
-function buildCanonical(pathname?: string, originOverride?: string): string {
-  const origin = (originOverride ?? FALLBACK_ORIGIN).replace(/\/$/, '');
-  const normalizedPath =
-    !pathname || pathname === '/' ? '/' : pathname.startsWith('/') ? pathname : `/${pathname}`;
-  try {
-    return new URL(normalizedPath, origin).toString();
-  } catch {
-    return `${origin}${normalizedPath}`;
-  }
-}
-
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   console.error('Global application error captured by Next.js boundary', {
     message: error.message,
@@ -33,11 +16,11 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
   const isCrawler = CRAWLER_USER_AGENT_REGEX.test(detectedUserAgent);
   const canonical =
     typeof window === 'object'
-      ? buildCanonical(
-          `${window.location.pathname}${window.location.search}`,
+      ? new URL(
+          `${window.location.pathname}${window.location.search}` || '/',
           window.location.origin,
-        )
-      : buildCanonical('/');
+        ).toString()
+      : null;
 
   if (isCrawler) {
     return (
@@ -52,7 +35,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
             name="robots"
             content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1"
           />
-          <link rel="canonical" href={canonical} />
+          {canonical && <link rel="canonical" href={canonical} />}
           <style>{`
             body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;background:#f4f6f8;color:#101828;}
             main{max-width:720px;margin:0 auto;padding:72px 24px;text-align:center;}

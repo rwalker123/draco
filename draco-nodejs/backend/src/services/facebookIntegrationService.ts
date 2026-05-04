@@ -634,6 +634,9 @@ export class FacebookIntegrationService {
     message?: string,
     returnUrl?: string | null,
   ): string {
+    if (!facebookOAuthConfig.resultUrlTemplate) {
+      throw new ValidationError('Facebook OAuth result URL template is not configured.');
+    }
     const base =
       returnUrl?.trim() ||
       facebookOAuthConfig.resultUrlTemplate.replace('{accountId}', accountId.toString());

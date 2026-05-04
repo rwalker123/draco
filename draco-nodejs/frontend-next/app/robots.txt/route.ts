@@ -1,5 +1,3 @@
-import { buildCanonicalUrl } from '../../lib/seoMetadata';
-
 const DISALLOWED_PATHS = [
   '/account-management*',
   '/admin*',
@@ -40,7 +38,7 @@ export async function GET(request: Request): Promise<Response> {
   const lines = [
     'User-agent: *',
     ...DISALLOWED_PATHS.map((path) => `Disallow: ${path}`),
-    `Sitemap: ${buildCanonicalUrl('/sitemap.xml', { origin })}`,
+    `Sitemap: ${new URL('/sitemap.xml', origin).toString()}`,
   ];
 
   const body = `${lines.join('\n')}\n`;

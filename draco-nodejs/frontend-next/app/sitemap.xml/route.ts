@@ -1,7 +1,5 @@
 import type { MetadataRoute } from 'next';
 
-import { buildCanonicalUrl } from '../../lib/seoMetadata';
-
 const STATIC_ROUTES = ['/', '/accounts', '/signup'] as const;
 
 type ChangeFrequency = NonNullable<MetadataRoute.Sitemap[number]['changeFrequency']>;
@@ -51,7 +49,7 @@ export async function GET(request: Request): Promise<Response> {
   const lastModified = new Date().toISOString();
 
   const urlEntries = STATIC_ROUTES.map((path) => {
-    const url = buildCanonicalUrl(path, { origin: requestOrigin });
+    const url = new URL(path, requestOrigin).toString();
     const changeFrequency = CHANGE_FREQUENCIES[path];
     const priority = PRIORITIES[path];
     return [
