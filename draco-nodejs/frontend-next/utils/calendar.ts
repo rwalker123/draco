@@ -1,4 +1,5 @@
 import type { GameCardData } from '../components/GameCard';
+import { downloadBlob } from './downloadUtils';
 
 export interface CalendarEvent {
   uid: string;
@@ -106,13 +107,7 @@ export const sanitizeIcsFilename = (input: string): string => {
 
 export const downloadIcsFile = (filename: string, content: string): void => {
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
+  downloadBlob(blob, filename);
 };
 
 const formatFieldAddress = (game: GameCardData): string => {

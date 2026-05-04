@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { GameCardData } from '../../components/GameCard';
 import {
   buildIcsContent,
-  CalendarEvent,
+  type CalendarEvent,
   gameToCalendarEvent,
   sanitizeIcsFilename,
 } from '../calendar';
