@@ -25,6 +25,12 @@ import { unwrapApiResult } from '../../utils/apiResult';
 import { FieldDetailsCard, type FieldDetails } from '../fields/FieldDetailsCard';
 import ButtonBase from '@mui/material/ButtonBase';
 import RichTextContent from '../common/RichTextContent';
+import {
+  buildIcsContent,
+  downloadIcsFile,
+  sanitizeIcsFilename,
+  type CalendarEvent,
+} from '../../utils/calendar';
 
 interface WorkoutDisplayProps {
   accountId: string;
@@ -186,48 +192,16 @@ export const WorkoutDisplay: React.FC<WorkoutDisplayProps> = ({
 
   const handleAddToCalendar = () => {
     if (!workout) return;
-
-    // Create calendar event data
-    const eventTitle = workout.workoutDesc;
-    const eventStart = new Date(workout.workoutDate);
-    const eventEnd = new Date(workout.workoutDate); // Assuming it's a single-day event
-    const eventLocation = getFieldName(workout.field?.id || null);
-    const eventDescription = workout.comments || '';
-    const eventUrl = `/account/${accountId}/workouts`;
-
-    // Format dates for iCal format
-    const formatDateForICal = (date: Date) => {
-      return date
-        .toISOString()
-        .replace(/[-:]/g, '')
-        .replace(/\.\d{3}/, '');
+    const event: CalendarEvent = {
+      uid: `workout-${workout.id}@draco`,
+      title: workout.workoutDesc,
+      start: new Date(workout.workoutDate),
+      end: new Date(workout.workoutDate),
+      location: getFieldName(workout.field?.id || null),
+      description: workout.comments || '',
+      url: `${window.location.origin}/account/${accountId}/workouts`,
     };
-
-    // Create iCal content
-    const icalContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Draco//Workout Calendar//EN',
-      'BEGIN:VEVENT',
-      `DTSTART:${formatDateForICal(eventStart)}`,
-      `DTEND:${formatDateForICal(eventEnd)}`,
-      `SUMMARY:${eventTitle}`,
-      `DESCRIPTION:${eventDescription}`,
-      `LOCATION:${eventLocation}`,
-      `URL:${window.location.origin}${eventUrl}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\r\n');
-
-    // Create and download the .ics file
-    const blob = new Blob([icalContent], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${eventTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    downloadIcsFile(`${sanitizeIcsFilename(workout.workoutDesc)}.ics`, buildIcsContent([event]));
   };
 
   if (loading) {
