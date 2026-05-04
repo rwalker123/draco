@@ -102,6 +102,11 @@ describe('buildIcsContent', () => {
     expect(ics.includes('\r\n')).toBe(true);
     expect(ics.includes('\n\n')).toBe(false);
   });
+
+  it('terminates the final line with CRLF per RFC 5545', () => {
+    const ics = buildIcsContent([sampleEvent()]);
+    expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true);
+  });
 });
 
 describe('sanitizeIcsFilename', () => {

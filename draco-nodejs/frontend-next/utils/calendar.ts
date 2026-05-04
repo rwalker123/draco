@@ -91,7 +91,7 @@ export const buildIcsContent = (
     lines.push(...buildEventLines(event, dtStamp));
   }
   lines.push('END:VCALENDAR');
-  return lines.map(foldIcsLine).join('\r\n');
+  return `${lines.map(foldIcsLine).join('\r\n')}\r\n`;
 };
 
 export const formatLocalDateStamp = (date: Date): string => {
