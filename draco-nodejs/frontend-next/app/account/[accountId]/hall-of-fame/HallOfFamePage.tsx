@@ -825,7 +825,7 @@ const HallOfFamePage: React.FC<HallOfFamePageProps> = ({ accountId }) => {
                   <Grid container spacing={3}>
                     {membersForSelectedYear.map((member) => (
                       <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={member.id}>
-                        <HofMemberCard member={member} />
+                        <HofMemberCard member={member} accountId={accountId} />
                       </Grid>
                     ))}
                   </Grid>

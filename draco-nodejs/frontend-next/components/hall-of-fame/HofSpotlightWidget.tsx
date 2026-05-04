@@ -186,7 +186,12 @@ const HofSpotlightWidget: React.FC<HofSpotlightWidgetProps> = ({ accountId, hide
         ) : hallOfFameMembers.length > 0 ? (
           <Stack spacing={2} sx={{ width: '100%' }}>
             {hallOfFameMembers.map((member) => (
-              <HofMemberCard key={member.id} member={member} />
+              <HofMemberCard
+                key={member.id}
+                member={member}
+                accountId={accountId}
+                playerLinkLabel="Hall of Fame Spotlight"
+              />
             ))}
           </Stack>
         ) : (

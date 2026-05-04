@@ -156,7 +156,7 @@ const MemberBusinessDirectoryPage: React.FC = () => {
         {businesses.map((business) => (
           <Card key={business.id} variant="outlined" sx={{ borderColor: 'divider' }}>
             <CardContent>
-              <MemberBusinessSummary business={business} />
+              <MemberBusinessSummary business={business} accountId={accountId} />
             </CardContent>
           </Card>
         ))}

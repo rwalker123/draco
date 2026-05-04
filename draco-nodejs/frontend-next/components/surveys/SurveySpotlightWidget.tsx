@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Alert,
   Box,
@@ -17,6 +18,7 @@ import { getPlayerSurveySpotlight, getPlayerSurveyTeamSpotlight } from '@draco/s
 import { PlayerSurveySpotlightSchema, type PlayerSurveySpotlightType } from '@draco/shared-schemas';
 import { useApiClient } from '@/hooks/useApiClient';
 import { ApiClientError, unwrapApiResult } from '@/utils/apiResult';
+import { buildPlayerStatisticsHref } from '@/utils/playerLinks';
 import WidgetShell from '../ui/WidgetShell';
 
 type SpotlightStatus = 'loading' | 'success' | 'empty' | 'error';
@@ -106,11 +108,22 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
   viewSurveysLabel = 'View Surveys',
 }) => {
   const apiClient = useApiClient();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [status, setStatus] = React.useState<SpotlightStatus>('loading');
   const [spotlight, setSpotlight] = React.useState<PlayerSurveySpotlightType | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const fallbackMessage = getFallbackError(teamSeasonId);
+
+  const currentLocation = (() => {
+    if (!pathname) {
+      return null;
+    }
+    const query = searchParams?.toString() ?? '';
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  })();
+  const playerLinkLabel = title;
   const accountSurveyHref = surveysHref
     ? surveysHref
     : accountId
@@ -248,6 +261,12 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
 
     const playerName = formatPlayerName(spotlight);
     const teamSuffix = spotlight.teamName ? ` • ${spotlight.teamName}` : '';
+    const playerHref = buildPlayerStatisticsHref({
+      accountId,
+      contactId: spotlight.player.id,
+      returnTo: currentLocation,
+      returnLabel: playerLinkLabel,
+    });
 
     return (
       <Stack spacing={2}>
@@ -263,7 +282,27 @@ const SurveySpotlightWidget: React.FC<SurveySpotlightWidgetProps> = ({
               {playerName.charAt(0)}
             </Avatar>
             <Typography variant="body2" color="text.secondary">
-              — {playerName}
+              {'— '}
+              {playerHref ? (
+                <Typography
+                  component={Link}
+                  href={playerHref}
+                  prefetch={false}
+                  variant="body2"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {playerName}
+                </Typography>
+              ) : (
+                <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+                  {playerName}
+                </Typography>
+              )}
               {teamSuffix}
             </Typography>
           </Stack>
