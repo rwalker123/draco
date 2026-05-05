@@ -235,7 +235,10 @@ import {
   RoleWithContactSchema,
   VerifyTokenRequestSchema,
   ChangePasswordRequestSchema,
+  ChangeLoginEmailRequestSchema,
   RoleCheckResponseSchema,
+  AdminUserSummarySchema,
+  AdminUserListResponseSchema,
   UpsertHandoutSchema,
   CreatePhotoSubmissionFormSchema,
   PhotoSubmissionRecordSchema,
@@ -1214,6 +1217,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'ChangePasswordRequest',
     ChangePasswordRequestSchema,
   );
+  const ChangeLoginEmailRequestSchemaRef = registry.register(
+    'ChangeLoginEmailRequest',
+    ChangeLoginEmailRequestSchema,
+  );
+  const AdminUserSummarySchemaRef = registry.register('AdminUserSummary', AdminUserSummarySchema);
+  const AdminUserListResponseSchemaRef = registry.register(
+    'AdminUserListResponse',
+    AdminUserListResponseSchema,
+  );
   const SchedulerProblemSpecSchemaRef = registry.register(
     'SchedulerProblemSpec',
     SchedulerProblemSpecSchema,
@@ -1873,6 +1885,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
+    ChangeLoginEmailRequestSchemaRef,
+    AdminUserSummarySchemaRef,
+    AdminUserListResponseSchemaRef,
     SchedulerProblemSpecSchemaRef,
     SchedulerProblemSpecPreviewSchemaRef,
     SchedulerSeasonSolveRequestSchemaRef,

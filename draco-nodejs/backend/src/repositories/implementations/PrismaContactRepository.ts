@@ -366,6 +366,7 @@ export class PrismaContactRepository implements IContactRepository {
         contacts.lastname,
         contacts.email,
         contacts.userid,
+        aspnetusers.username AS login_email,
         ${
           includeContactDetails
             ? Prisma.sql`
@@ -407,6 +408,7 @@ export class PrismaContactRepository implements IContactRepository {
       FROM contacts
       -- Always join roster to get firstYear
       LEFT JOIN roster ON roster.contactid = contacts.id
+      LEFT JOIN aspnetusers ON aspnetusers.id = contacts.userid
       LEFT JOIN contactroles cr ON (
         contacts.id = cr.contactid
         AND cr.accountid = ${accountId}
