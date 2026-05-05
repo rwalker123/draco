@@ -13,6 +13,25 @@ vi.mock('../../../hooks/useApiClient', () => ({
   useApiClient: () => ({}),
 }));
 
+vi.mock('../../common/ImageCropDialog', () => ({
+  default: function ImageCropDialogMock({
+    open,
+    sourceFile,
+    onCropConfirm,
+  }: {
+    open: boolean;
+    sourceFile: File | null;
+    onCropConfirm: (file: File) => void;
+  }) {
+    React.useEffect(() => {
+      if (open && sourceFile) {
+        onCropConfirm(sourceFile);
+      }
+    }, [open, sourceFile, onCropConfirm]);
+    return null;
+  },
+}));
+
 const createAccountPhotoSubmission = vi.fn();
 const createTeamPhotoSubmission = vi.fn();
 

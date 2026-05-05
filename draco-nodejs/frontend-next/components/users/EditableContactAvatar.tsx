@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useId, useImperativeHandle, useRef } from 'react';
+import React, { useId, useImperativeHandle, useRef, useState } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import type { BaseContactType, ContactType } from '@draco/shared-schemas';
 import UserAvatar from './UserAvatar';
 import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
+import ImageCropDialog from '../common/ImageCropDialog';
+import { IMAGE_CROP_PRESETS } from '@/config/imageCropPresets';
 
 interface EditableContactAvatarProps {
   accountId: string;
@@ -53,6 +55,7 @@ const EditableContactAvatar = React.forwardRef<
     const inputId = useId();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const { uploadContactPhoto, loading } = useContactPhotoUpload(accountId);
+    const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
 
     const firstName = contact.firstName?.trim() || 'User';
     const lastName = contact.lastName?.trim() || 'Member';
@@ -77,26 +80,34 @@ const EditableContactAvatar = React.forwardRef<
       fileInputRef.current?.click();
     };
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
+      event.target.value = '';
       if (!file) {
         return;
       }
+      setPendingCropFile(file);
+    };
+
+    const handleCropConfirm = async (croppedFile: File) => {
+      setPendingCropFile(null);
 
       if (!uploadOnSelect && onFileSelected) {
-        onFileSelected(file);
-        event.target.value = '';
+        onFileSelected(croppedFile);
         return;
       }
 
-      const result = await uploadContactPhoto(contact, file);
-      event.target.value = '';
+      const result = await uploadContactPhoto(contact, croppedFile);
 
       if (result.success && result.contact) {
         onPhotoUpdated?.(result.contact);
       } else if (result.error) {
         onError?.(result.error);
       }
+    };
+
+    const handleCropCancel = () => {
+      setPendingCropFile(null);
     };
 
     return (
@@ -132,6 +143,13 @@ const EditableContactAvatar = React.forwardRef<
             <CircularProgress size={size * 0.4} />
           </Box>
         ) : null}
+        <ImageCropDialog
+          open={pendingCropFile !== null}
+          sourceFile={pendingCropFile}
+          preset={IMAGE_CROP_PRESETS.contactPhoto}
+          onClose={handleCropCancel}
+          onCropConfirm={handleCropConfirm}
+        />
       </Box>
     );
   },

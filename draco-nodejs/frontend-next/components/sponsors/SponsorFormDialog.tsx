@@ -28,6 +28,8 @@ import { z } from 'zod';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPhoneInput, isValidPhoneNumber } from '../../utils/phoneNumber';
+import ImageCropDialog from '../common/ImageCropDialog';
+import { IMAGE_CROP_PRESETS } from '../../config/imageCropPresets';
 
 interface SponsorFormDialogProps {
   open: boolean;
@@ -101,6 +103,7 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
   const photoValue = useWatch({ control, name: 'photo' }) as File | null | undefined;
   const sponsorName = useWatch({ control, name: 'name' });
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [pendingCropFile, setPendingCropFile] = React.useState<File | null>(null);
   const handlePreviewError = () => {
     setPreviewUrl(null);
   };
@@ -147,11 +150,23 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files && event.target.files.length > 0 ? event.target.files[0] : null;
-    setValue('photo', file, { shouldDirty: true, shouldValidate: false });
-    // reset value so selecting the same file again triggers change
     if (event.target) {
       event.target.value = '';
     }
+    if (!file) {
+      setValue('photo', null, { shouldDirty: true, shouldValidate: false });
+      return;
+    }
+    setPendingCropFile(file);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setPendingCropFile(null);
+    setValue('photo', croppedFile, { shouldDirty: true, shouldValidate: false });
+  };
+
+  const handleCropCancel = () => {
+    setPendingCropFile(null);
   };
 
   const onSubmit = handleSubmit(async (values) => {
@@ -328,6 +343,13 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
           </Button>
         </DialogActions>
       </Box>
+      <ImageCropDialog
+        open={pendingCropFile !== null}
+        sourceFile={pendingCropFile}
+        preset={IMAGE_CROP_PRESETS.sponsorPhoto}
+        onClose={handleCropCancel}
+        onCropConfirm={handleCropConfirm}
+      />
     </Dialog>
   );
 };

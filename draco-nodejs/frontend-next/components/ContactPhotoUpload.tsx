@@ -3,6 +3,8 @@ import { Box, Typography, Button, CircularProgress, IconButton, Tooltip } from '
 import { PhotoCamera as PhotoCameraIcon, Close as CloseIcon } from '@mui/icons-material';
 import Image from 'next/image';
 import { getPhotoSize, validateContactPhotoFile, addCacheBuster } from '../config/contacts';
+import ImageCropDialog from './common/ImageCropDialog';
+import { IMAGE_CROP_PRESETS } from '../config/imageCropPresets';
 
 interface ContactPhotoUploadProps {
   contactId: string;
@@ -33,6 +35,7 @@ const ContactPhotoUpload: React.FC<ContactPhotoUploadProps> = ({
   const [photoPreviewError, setPhotoPreviewError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (initialPhotoUrl) {
@@ -47,6 +50,9 @@ const ContactPhotoUpload: React.FC<ContactPhotoUploadProps> = ({
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (event.target) {
+      event.target.value = '';
+    }
 
     if (file) {
       const validationError = validateContactPhotoFile(file);
@@ -56,17 +62,25 @@ const ContactPhotoUpload: React.FC<ContactPhotoUploadProps> = ({
         return;
       }
 
-      setPhotoFile(file);
-      onPhotoChange(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string);
-        setPhotoPreviewError(false);
-      };
-      reader.readAsDataURL(file);
+      setPendingCropFile(file);
     }
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setPendingCropFile(null);
+    setPhotoFile(croppedFile);
+    onPhotoChange(croppedFile);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPhotoPreview(e.target?.result as string);
+      setPhotoPreviewError(false);
+    };
+    reader.readAsDataURL(croppedFile);
+  };
+
+  const handleCropCancel = () => {
+    setPendingCropFile(null);
   };
 
   const handlePhotoDelete = async () => {
@@ -270,6 +284,14 @@ const ContactPhotoUpload: React.FC<ContactPhotoUploadProps> = ({
           {error}
         </Typography>
       )}
+
+      <ImageCropDialog
+        open={pendingCropFile !== null}
+        sourceFile={pendingCropFile}
+        preset={IMAGE_CROP_PRESETS.contactPhoto}
+        onClose={handleCropCancel}
+        onCropConfirm={handleCropConfirm}
+      />
     </Box>
   );
 };

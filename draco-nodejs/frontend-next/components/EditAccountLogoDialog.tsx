@@ -20,12 +20,14 @@ import {
 } from '@mui/icons-material';
 import Image from 'next/image';
 import ConfirmDeleteDialog from './social/ConfirmDeleteDialog';
+import ImageCropDialog from './common/ImageCropDialog';
 import { addCacheBuster } from '../utils/addCacheBuster';
 import {
   AccountLogoOperationSuccess,
   useAccountLogoOperations,
 } from '../hooks/useAccountLogoOperations';
 import { useNotifications } from '../hooks/useNotifications';
+import { IMAGE_CROP_PRESETS } from '../config/imageCropPresets';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
@@ -111,9 +113,13 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
   );
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (event.target) {
+      event.target.value = '';
+    }
     if (!file) {
       return;
     }
@@ -126,15 +132,24 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
       return;
     }
 
-    setLogoFile(file);
     hideNotification();
     clearError();
+    setPendingCropFile(file);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setPendingCropFile(null);
+    setLogoFile(croppedFile);
     setLogoPreviewError(false);
     const reader = new FileReader();
     reader.onload = (e) => {
       setLogoPreview(e.target?.result as string);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(croppedFile);
+  };
+
+  const handleCropCancel = () => {
+    setPendingCropFile(null);
   };
 
   const handleSave = async () => {
@@ -272,6 +287,13 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
         cancelButtonProps={{ disabled: deleting }}
       />
       <NotificationSnackbar notification={notification} onClose={hideNotification} />
+      <ImageCropDialog
+        open={pendingCropFile !== null}
+        sourceFile={pendingCropFile}
+        preset={IMAGE_CROP_PRESETS.accountLogo}
+        onClose={handleCropCancel}
+        onCropConfirm={handleCropConfirm}
+      />
     </>
   );
 };

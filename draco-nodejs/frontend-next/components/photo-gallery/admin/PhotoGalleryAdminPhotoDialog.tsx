@@ -24,6 +24,8 @@ import {
 } from '../../../services/photoGalleryAdminService';
 import { ApiClientError } from '../../../utils/apiResult';
 import { normalizeEntityId } from '../utils';
+import ImageCropDialog from '../../common/ImageCropDialog';
+import { IMAGE_CROP_PRESETS } from '../../../config/imageCropPresets';
 
 type PhotoDialogMode = 'create' | 'edit';
 
@@ -63,6 +65,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   const [file, setFile] = useState<File | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 
   const accountAlbums: Array<{ id: string; title: string }> = [];
@@ -109,6 +112,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       setFile(null);
       setPreviewSrc(null);
       setSubmitting(false);
+      setPendingCropFile(null);
       return;
     }
 
@@ -131,25 +135,30 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   }, [previewSrc]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    if (selected) {
-      setFile(selected);
-      const objectUrl = URL.createObjectURL(selected);
-      setPreviewSrc((previous) => {
-        if (previous?.startsWith('blob:')) {
-          URL.revokeObjectURL(previous);
-        }
-        return objectUrl;
-      });
-    } else {
-      setFile(null);
-      setPreviewSrc((previous) => {
-        if (previous?.startsWith('blob:')) {
-          URL.revokeObjectURL(previous);
-        }
-        return null;
-      });
+    const selected = event.target.files?.[0] ?? null;
+    if (event.target) {
+      event.target.value = '';
     }
+    if (!selected) {
+      return;
+    }
+    setPendingCropFile(selected);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setPendingCropFile(null);
+    setFile(croppedFile);
+    const objectUrl = URL.createObjectURL(croppedFile);
+    setPreviewSrc((previous) => {
+      if (previous?.startsWith('blob:')) {
+        URL.revokeObjectURL(previous);
+      }
+      return objectUrl;
+    });
+  };
+
+  const handleCropCancel = () => {
+    setPendingCropFile(null);
   };
 
   const handleAlbumChange = (event: SelectChangeEvent<string>) => {
@@ -361,6 +370,13 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
           {mode === 'create' ? 'Add Photo' : 'Save Changes'}
         </Button>
       </DialogActions>
+      <ImageCropDialog
+        open={pendingCropFile !== null}
+        sourceFile={pendingCropFile}
+        preset={IMAGE_CROP_PRESETS.photoSubmission}
+        onClose={handleCropCancel}
+        onCropConfirm={handleCropConfirm}
+      />
     </Dialog>
   );
 };
