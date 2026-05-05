@@ -38,6 +38,7 @@ export interface GameListDisplayProps {
   onStartLiveScoring?: (game: Game) => void;
   onWatchLiveScoring?: (game: Game) => void;
   accountId?: string;
+  currentTeamSeasonId?: string;
   headerAction?: React.ReactNode;
 }
 
@@ -57,6 +58,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   onStartLiveScoring,
   onWatchLiveScoring,
   accountId,
+  currentTeamSeasonId,
   headerAction,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -235,6 +237,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           onStartLiveScoring={onStartLiveScoring}
                           onWatchLiveScoring={onWatchLiveScoring}
                           accountId={accountId}
+                          currentTeamSeasonId={currentTeamSeasonId}
                         />
                       ))
                     : section.games.map((game, index) => (
@@ -253,6 +256,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                             onStartLiveScoring={onStartLiveScoring}
                             onWatchLiveScoring={onWatchLiveScoring}
                             accountId={accountId}
+                            currentTeamSeasonId={currentTeamSeasonId}
                           />
                         </Box>
                       ))}

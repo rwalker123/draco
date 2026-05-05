@@ -14,6 +14,8 @@ import HierarchicalHeader from '../components/HierarchicalHeader';
 import WidgetShell from '../../ui/WidgetShell';
 
 const MonthView: React.FC<ViewComponentProps> = ({
+  accountId,
+  currentTeamSeasonId,
   filteredGames,
   canEditSchedule,
   onEditGame: _onEditGame,
@@ -85,6 +87,8 @@ const MonthView: React.FC<ViewComponentProps> = ({
 
       {/* Calendar Grid */}
       <CalendarGrid
+        accountId={accountId}
+        currentTeamSeasonId={currentTeamSeasonId}
         gridType="month"
         showZoomColumn={true}
         days={monthDays}

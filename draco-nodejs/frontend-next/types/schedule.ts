@@ -161,6 +161,8 @@ export interface ScheduleManagementProps {
 }
 
 export interface ViewComponentProps {
+  accountId: string;
+  currentTeamSeasonId?: string;
   filteredGames: Game[];
   canEditSchedule: boolean;
   onEditGame: (game: Game) => void;
