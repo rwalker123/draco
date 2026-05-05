@@ -98,6 +98,7 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
 export const PublicRosterMemberSchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
+    contactId: z.bigint().transform((val) => val.toString()),
     playerNumber: z.number().min(0).max(99).nullable().optional(),
     firstName: z.string().trim().nullable().optional(),
     lastName: z.string().trim().nullable().optional(),
@@ -107,7 +108,7 @@ export const PublicRosterMemberSchema = z
   })
   .openapi({
     description:
-      'Public-safe roster member payload exposing only jersey number, player name, and optional photo URL.',
+      'Public-safe roster member payload exposing jersey number, player name, optional photo URL, and the contact identifier needed to link to public player statistics.',
   });
 
 export const PublicTeamRosterResponseSchema = z.object({

@@ -2037,6 +2037,9 @@ components:
         id:
           type: string
           pattern: ^d+$
+        contactId:
+          type: string
+          pattern: ^d+$
         playerNumber:
           type: number
           nullable: true
@@ -2060,8 +2063,10 @@ components:
           minimum: 0
       required:
         - id
-      description: Public-safe roster member payload exposing only jersey number,
-        player name, and optional photo URL.
+        - contactId
+      description: Public-safe roster member payload exposing jersey number, player
+        name, optional photo URL, and the contact identifier needed to link to
+        public player statistics.
     PublicTeamRosterResponse:
       type: object
       properties:
@@ -2082,6 +2087,9 @@ components:
             type: object
             properties:
               id:
+                type: string
+                pattern: ^d+$
+              contactId:
                 type: string
                 pattern: ^d+$
               playerNumber:
@@ -2107,8 +2115,10 @@ components:
                 minimum: 0
             required:
               - id
-            description: Public-safe roster member payload exposing only jersey number,
-              player name, and optional photo URL.
+              - contactId
+            description: Public-safe roster member payload exposing jersey number, player
+              name, optional photo URL, and the contact identifier needed to
+              link to public player statistics.
       required:
         - teamSeason
         - rosterMembers
