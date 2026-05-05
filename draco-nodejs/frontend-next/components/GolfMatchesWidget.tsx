@@ -344,6 +344,7 @@ export default function GolfMatchesWidget({
     return {
       id: match.id,
       date: match.matchDateTime,
+      seasonId,
       homeTeamId: match.team1.id,
       visitorTeamId: match.team2.id,
       homeTeamName: getTeamName(match.team1.id, match.team1.name),
@@ -429,6 +430,7 @@ export default function GolfMatchesWidget({
                   canEditGames={false}
                   timeZone={timeZone}
                   onClick={handleMatchClick}
+                  accountId={accountId}
                 />
                 {isAuthenticated && hasActiveSession && isParticipant && (
                   <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>

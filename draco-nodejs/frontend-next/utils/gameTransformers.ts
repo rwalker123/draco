@@ -149,9 +149,12 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
   const parsedGameType = normalizeGameType(game.gameType);
   const fieldDetails = field.id || field.name || field.shortName ? field : null;
 
+  const seasonId = game.season?.id ? String(game.season.id) : undefined;
+
   return {
     id: String(game.id),
     date: game.gameDate,
+    seasonId,
     homeTeamId: String(game.homeTeam?.id ?? ''),
     visitorTeamId: String(game.visitorTeam?.id ?? ''),
     homeTeamName: game.homeTeam?.name ?? 'Unknown Team',
@@ -351,6 +354,7 @@ export function convertGameToGameCardData(
   return {
     id: game.id,
     date: game.gameDate,
+    seasonId: game.season?.id ? String(game.season.id) : undefined,
     homeTeamId: game.homeTeamId,
     visitorTeamId: game.visitorTeamId,
     homeTeamName: homeTeam?.name || game.homeTeamName || 'Unknown Team',

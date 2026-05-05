@@ -287,6 +287,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
   return (
     <ScheduleLayout
       accountId={accountId}
+      currentTeamSeasonId={teamSeasonId}
       title={teamName ?? 'Team Schedule'}
       titleExtra={
         seasonName ? (

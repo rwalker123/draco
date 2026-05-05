@@ -343,6 +343,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     const transformGame = (game: ApiGame): Game => ({
       id: game.id,
       date: game.gameDate,
+      seasonId,
       homeTeamId: game.homeTeam.id ?? '',
       visitorTeamId: game.visitorTeam.id ?? '',
       homeTeamName: game.homeTeam.name ?? '',
@@ -530,6 +531,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     setPlayersWantedDialogOpen(false);
     setPlayersWantedInitialData(undefined);
   };
+
+  const fullScheduleButton = (
+    <Button
+      component={NextLink}
+      href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
+      variant="outlined"
+      size="small"
+    >
+      Full Schedule
+    </Button>
+  );
 
   return (
     <main className="min-h-screen bg-background">
@@ -789,6 +801,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                       sections={upcomingSections}
                       emptyMessage="No upcoming games."
                       timeZone={timeZone}
+                      accountId={accountId}
+                      currentTeamSeasonId={teamSeasonId}
+                      headerAction={fullScheduleButton}
                     />
                   ) : null}
                   <GameListDisplay
@@ -798,16 +813,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     onEditRecap={handleOpenEditRecap}
                     onViewRecap={handleOpenViewRecap}
                     timeZone={timeZone}
-                    headerAction={
-                      <Button
-                        component={NextLink}
-                        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Full Schedule
-                      </Button>
-                    }
+                    accountId={accountId}
+                    currentTeamSeasonId={teamSeasonId}
+                    headerAction={fullScheduleButton}
                   />
                 </>
               )

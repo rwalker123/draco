@@ -77,6 +77,7 @@ export class RosterResponseFormatter {
         gamesPlayedMap !== undefined ? (gamesPlayedMap.get(member.id.toString()) ?? 0) : null;
       return {
         id: member.id.toString(),
+        contactId: contact.id.toString(),
         playerNumber: member.playernumber ?? null,
         firstName: contact.firstname ?? null,
         lastName: contact.lastname ?? null,
