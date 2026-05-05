@@ -532,6 +532,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     setPlayersWantedInitialData(undefined);
   };
 
+  const fullScheduleButton = (
+    <Button
+      component={NextLink}
+      href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
+      variant="outlined"
+      size="small"
+    >
+      Full Schedule
+    </Button>
+  );
+
   return (
     <main className="min-h-screen bg-background">
       {/* Account Header with Team Information */}
@@ -792,16 +803,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                       timeZone={timeZone}
                       accountId={accountId}
                       currentTeamSeasonId={teamSeasonId}
-                      headerAction={
-                        <Button
-                          component={NextLink}
-                          href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
-                          variant="outlined"
-                          size="small"
-                        >
-                          Full Schedule
-                        </Button>
-                      }
+                      headerAction={fullScheduleButton}
                     />
                   ) : null}
                   <GameListDisplay
@@ -813,16 +815,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     timeZone={timeZone}
                     accountId={accountId}
                     currentTeamSeasonId={teamSeasonId}
-                    headerAction={
-                      <Button
-                        component={NextLink}
-                        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Full Schedule
-                      </Button>
-                    }
+                    headerAction={fullScheduleButton}
                   />
                 </>
               )
