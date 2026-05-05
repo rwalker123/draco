@@ -1,3 +1,4 @@
+import { Prisma } from '#prisma/client';
 import { ConflictError, NotFoundError } from '../utils/customErrors.js';
 import { IUserRepository, RepositoryFactory } from '../repositories/index.js';
 import {
@@ -73,6 +74,15 @@ export class AdminUserService {
       );
     }
 
-    await this.userRepository.deleteByUserId(userId);
+    try {
+      await this.userRepository.deleteByUserId(userId);
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+        throw new ConflictError(
+          'This auth user is still referenced by other records (for example emails or templates) and cannot be deleted.',
+        );
+      }
+      throw err;
+    }
   }
 }

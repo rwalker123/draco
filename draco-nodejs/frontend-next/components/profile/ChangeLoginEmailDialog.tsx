@@ -14,6 +14,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { ChangeLoginEmailRequestSchema } from '@draco/shared-schemas';
 import { changeLoginEmail } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -26,20 +27,12 @@ interface ChangeLoginEmailDialogProps {
   onSuccess?: (newToken: string) => void;
 }
 
-const ChangeLoginEmailFormSchema = z
-  .object({
-    currentPassword: z.string().min(6, 'Current password must be at least 6 characters'),
-    newLoginEmail: z.email('Enter a valid email').max(256),
-    confirmNewLoginEmail: z.email('Enter a valid email').max(256),
-  })
-  .refine(
-    (data) =>
-      data.newLoginEmail.trim().toLowerCase() === data.confirmNewLoginEmail.trim().toLowerCase(),
-    {
-      message: 'Email addresses do not match',
-      path: ['confirmNewLoginEmail'],
-    },
-  );
+const ChangeLoginEmailFormSchema = ChangeLoginEmailRequestSchema.extend({
+  confirmNewLoginEmail: z.email().trim().max(256),
+}).refine((data) => data.newLoginEmail.toLowerCase() === data.confirmNewLoginEmail.toLowerCase(), {
+  message: 'Email addresses do not match',
+  path: ['confirmNewLoginEmail'],
+});
 
 type ChangeLoginEmailFormValues = z.infer<typeof ChangeLoginEmailFormSchema>;
 

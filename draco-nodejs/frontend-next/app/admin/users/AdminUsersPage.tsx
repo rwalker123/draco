@@ -165,13 +165,14 @@ const AdminUsersPage: React.FC = () => {
 
       if (result.error) {
         const status = result.response?.status;
+        const serverMessage = result.error.message;
         let message: string;
         if (status === 409) {
-          message = 'This user is still linked to contacts. Unlink them first.';
+          message = serverMessage ?? 'Cannot delete this user — it is still referenced.';
         } else if (status === 404) {
           message = 'User not found.';
         } else {
-          message = result.error.message ?? 'Failed to delete user';
+          message = serverMessage ?? 'Failed to delete user';
         }
         showNotification(message, 'error');
         return;
@@ -310,7 +311,7 @@ const AdminUsersPage: React.FC = () => {
                           <Tooltip
                             title={
                               isOrphan
-                                ? 'Delete this orphan login'
+                                ? 'Delete this orphan login (will be blocked if it owns accounts or other records)'
                                 : 'Cannot delete: still linked to contacts'
                             }
                           >
