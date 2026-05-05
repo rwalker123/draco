@@ -35,12 +35,15 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const isRegistered = !!userId;
   const hasMismatch = isRegistered && Boolean(loginEmail);
-  const iconFontSize = size === 'small' ? 'small' : 'medium';
+  const iconPixelSize = size === 'small' ? 25 : 30;
 
   const icon = isRegistered ? (
-    <CheckCircle color={hasMismatch ? 'warning' : 'success'} fontSize={iconFontSize} />
+    <CheckCircle color={hasMismatch ? 'warning' : 'success'} sx={{ fontSize: iconPixelSize }} />
   ) : (
-    <PersonOutline color={onRequestRegister ? 'primary' : 'action'} fontSize={iconFontSize} />
+    <PersonOutline
+      color={onRequestRegister ? 'primary' : 'action'}
+      sx={{ fontSize: iconPixelSize }}
+    />
   );
 
   let tooltipTitle: React.ReactNode;

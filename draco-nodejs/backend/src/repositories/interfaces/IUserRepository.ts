@@ -34,5 +34,6 @@ export interface IUserRepository extends IBaseRepository<aspnetusers> {
   updateUser(userId: string, data: Partial<aspnetusers>): Promise<aspnetusers>;
   deleteByUserId(userId: string): Promise<void>;
   countContactsForUser(userId: string): Promise<number>;
+  countAccountsOwnedByUser(userId: string): Promise<number>;
   searchAdminUsers(filters: AdminUserListFilters): Promise<AdminUserListResult>;
 }

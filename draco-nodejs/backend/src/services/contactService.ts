@@ -80,7 +80,8 @@ export class ContactService {
     if (!dbContact) {
       throw new NotFoundError('Contact not found');
     }
-    return ContactResponseFormatter.formatContactResponse(dbContact);
+    const loginEmail = await this.resolveLoginEmail(dbContact.userid);
+    return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }
 
   /**
@@ -93,7 +94,8 @@ export class ContactService {
     if (!dbContact) {
       throw new NotFoundError('Contact not found');
     }
-    return ContactResponseFormatter.formatContactResponse(dbContact);
+    const loginEmail = await this.resolveLoginEmail(dbContact.userid);
+    return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }
 
   /**
@@ -123,8 +125,9 @@ export class ContactService {
     }
 
     const updatedContact = await this.contactRepository.update(contactId, updatePayload);
+    const loginEmail = await this.resolveLoginEmail(updatedContact.userid);
 
-    return ContactResponseFormatter.formatContactResponse(updatedContact);
+    return ContactResponseFormatter.formatContactResponse(updatedContact, loginEmail);
   }
 
   /**
@@ -148,7 +151,15 @@ export class ContactService {
       userid: null,
     });
 
-    return ContactResponseFormatter.formatContactResponse(updatedContact);
+    return ContactResponseFormatter.formatContactResponse(updatedContact, null);
+  }
+
+  private async resolveLoginEmail(userid: string | null | undefined): Promise<string | null> {
+    if (!userid) {
+      return null;
+    }
+    const authUser = await this.userRepository.findByUserId(userid);
+    return authUser?.username ?? null;
   }
 
   /**
@@ -204,12 +215,7 @@ export class ContactService {
     };
 
     const dbContact = await this.contactRepository.update(contactId, dbCreateContact);
-
-    let loginEmail: string | null = null;
-    if (dbContact.userid) {
-      const authUser = await this.userRepository.findByUserId(dbContact.userid);
-      loginEmail = authUser?.username ?? null;
-    }
+    const loginEmail = await this.resolveLoginEmail(dbContact.userid);
 
     return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }

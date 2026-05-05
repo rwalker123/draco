@@ -66,6 +66,13 @@ export class AdminUserService {
       );
     }
 
+    const ownedAccountCount = await this.userRepository.countAccountsOwnedByUser(userId);
+    if (ownedAccountCount > 0) {
+      throw new ConflictError(
+        'This auth user is the owner of one or more accounts. Reassign ownership before deleting.',
+      );
+    }
+
     await this.userRepository.deleteByUserId(userId);
   }
 }

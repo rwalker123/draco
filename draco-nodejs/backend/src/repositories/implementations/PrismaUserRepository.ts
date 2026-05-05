@@ -100,18 +100,27 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
+  async countAccountsOwnedByUser(userId: string): Promise<number> {
+    return this.prisma.accounts.count({
+      where: { owneruserid: userId },
+    });
+  }
+
   async searchAdminUsers(filters: AdminUserListFilters): Promise<AdminUserListResult> {
     const { search, orphansOnly, limit, offset } = filters;
 
     const trimmedSearch = search?.trim();
     const searchPattern = trimmedSearch ? `%${trimmedSearch}%` : null;
 
-    const orphanFilter = orphansOnly
-      ? Prisma.sql`HAVING COALESCE(c.contact_count, 0) = 0`
-      : Prisma.empty;
-    const searchFilter = searchPattern
-      ? Prisma.sql`WHERE u.username ILIKE ${searchPattern}`
-      : Prisma.empty;
+    const conditions: Prisma.Sql[] = [];
+    if (searchPattern) {
+      conditions.push(Prisma.sql`u.username ILIKE ${searchPattern}`);
+    }
+    if (orphansOnly) {
+      conditions.push(Prisma.sql`COALESCE(c.contact_count, 0) = 0`);
+    }
+    const whereClause =
+      conditions.length > 0 ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty;
 
     const rows = await this.prisma.$queryRaw<
       Array<{
@@ -138,8 +147,7 @@ export class PrismaUserRepository implements IUserRepository {
           WHERE userid IS NOT NULL
           GROUP BY userid
         ) c ON c.userid = u.id
-        ${searchFilter}
-        ${orphanFilter}
+        ${whereClause}
         ORDER BY u.username ASC NULLS LAST
         LIMIT ${limit}
         OFFSET ${offset}
@@ -158,8 +166,7 @@ export class PrismaUserRepository implements IUserRepository {
             WHERE userid IS NOT NULL
             GROUP BY userid
           ) c ON c.userid = u.id
-          ${searchFilter}
-          ${orphanFilter}
+          ${whereClause}
         ) AS filtered
       `,
     );

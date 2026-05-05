@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import LockIcon from '@mui/icons-material/Lock';
+import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
@@ -174,9 +175,22 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
     ) : null;
 
   const actionButtons =
-    surveyButton || onEdit || onChangePassword ? (
+    surveyButton || onEdit || onChangePassword || onChangeLoginEmail ? (
       <Stack direction="row" spacing={1}>
         {surveyButton}
+        {onChangeLoginEmail && (
+          <Tooltip title="Change login email">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onChangeLoginEmail}
+              data-testid="profile-change-login-email-header-button"
+              sx={{ minWidth: 36, px: 1 }}
+            >
+              <AlternateEmailIcon fontSize="small" />
+            </Button>
+          </Tooltip>
+        )}
         {onChangePassword && (
           <Tooltip title="Change password">
             <Button
