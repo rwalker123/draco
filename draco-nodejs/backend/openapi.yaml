@@ -25255,7 +25255,27 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/CreatePhotoGalleryPhoto"
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  description: Title for the approved team gallery photo
+                caption:
+                  type: string
+                  maxLength: 255
+                  description: Optional caption describing the team gallery photo
+                photo:
+                  type: string
+                  format: binary
+                  description: Photo file to upload
+              required:
+                - title
+                - photo
+              title: CreateTeamGalleryPhoto
+              description: Multipart payload used by team administrators to upload a team
+                gallery photo. The album is auto-managed by the backend.
             encoding:
               photo:
                 contentType: image/*
@@ -25305,7 +25325,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdatePhotoGalleryPhoto"
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  description: Updated title for the team gallery photo
+                caption:
+                  type: string
+                  nullable: true
+                  maxLength: 255
+                  description: Updated caption for the team gallery photo
+              title: UpdateTeamGalleryPhoto
+              description: JSON payload to update title or caption on a team gallery photo.
+                Album reassignment is not supported.
       responses:
         "200":
           description: Updated team gallery photo metadata.

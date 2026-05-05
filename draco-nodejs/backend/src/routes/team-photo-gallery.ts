@@ -10,10 +10,10 @@ import {
   UpdatePhotoGalleryAlbumSchema,
   UpdatePhotoGalleryPhotoSchema,
 } from '@draco/shared-schemas';
-
-const TeamPhotoGalleryQuerySchema = PhotoGalleryQuerySchema.pick({ albumId: true });
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { handlePhotoUploadMiddleware, validatePhotoUpload } from '../middleware/fileUpload.js';
+
+const TeamPhotoGalleryQuerySchema = PhotoGalleryQuerySchema.pick({ albumId: true });
 
 const router = Router({ mergeParams: true });
 const galleryAdminService = ServiceFactory.getPhotoGalleryAdminService();

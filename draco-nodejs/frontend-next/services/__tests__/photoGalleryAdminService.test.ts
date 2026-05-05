@@ -8,6 +8,14 @@ import {
   createAccountGalleryAlbum as apiCreateAlbum,
   updateAccountGalleryAlbum as apiUpdateAlbum,
   deleteAccountGalleryAlbum as apiDeleteAlbum,
+  listTeamGalleryPhotosAdmin as apiListTeamPhotos,
+  createTeamGalleryPhoto as apiCreateTeamPhoto,
+  updateTeamGalleryPhoto as apiUpdateTeamPhoto,
+  deleteTeamGalleryPhoto as apiDeleteTeamPhoto,
+  listTeamGalleryAlbumsAdmin as apiListTeamAlbums,
+  createTeamGalleryAlbum as apiCreateTeamAlbum,
+  updateTeamGalleryAlbum as apiUpdateTeamAlbum,
+  deleteTeamGalleryAlbum as apiDeleteTeamAlbum,
 } from '@draco/shared-api-client';
 import { ApiClientError } from '../../utils/apiResult';
 import {
@@ -30,6 +38,14 @@ vi.mock('@draco/shared-api-client', () => ({
   createAccountGalleryAlbum: vi.fn(),
   updateAccountGalleryAlbum: vi.fn(),
   deleteAccountGalleryAlbum: vi.fn(),
+  listTeamGalleryPhotosAdmin: vi.fn(),
+  createTeamGalleryPhoto: vi.fn(),
+  updateTeamGalleryPhoto: vi.fn(),
+  deleteTeamGalleryPhoto: vi.fn(),
+  listTeamGalleryAlbumsAdmin: vi.fn(),
+  createTeamGalleryAlbum: vi.fn(),
+  updateTeamGalleryAlbum: vi.fn(),
+  deleteTeamGalleryAlbum: vi.fn(),
 }));
 
 vi.mock('../../lib/apiClientFactory', () => ({
@@ -324,6 +340,134 @@ describe('photoGalleryAdminService', () => {
       await expect(deleteGalleryAlbumAdmin(ACCOUNT_ID, 'album-1')).rejects.toBeInstanceOf(
         ApiClientError,
       );
+    });
+  });
+
+  describe('team-scoped routing', () => {
+    const TEAM_ID = 'team-77';
+
+    it('listGalleryPhotosAdmin uses the team endpoint when teamId is provided', async () => {
+      const payload = { photos: [], total: 0 };
+      vi.mocked(apiListTeamPhotos).mockResolvedValue(makeOk(payload));
+
+      const result = await listGalleryPhotosAdmin(ACCOUNT_ID, 'token', undefined, TEAM_ID);
+
+      expect(apiListTeamPhotos).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { accountId: ACCOUNT_ID, teamId: TEAM_ID } }),
+      );
+      expect(apiListPhotos).not.toHaveBeenCalled();
+      expect(result).toEqual(payload);
+    });
+
+    it('createGalleryPhotoAdmin uses the team endpoint when teamId is provided', async () => {
+      vi.mocked(apiCreateTeamPhoto).mockResolvedValue(makeOk(photoData));
+
+      await createGalleryPhotoAdmin(ACCOUNT_ID, { title: 'T', file: new Blob() }, 'token', TEAM_ID);
+
+      expect(apiCreateTeamPhoto).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { accountId: ACCOUNT_ID, teamId: TEAM_ID } }),
+      );
+      expect(apiCreatePhoto).not.toHaveBeenCalled();
+    });
+
+    it('updateGalleryPhotoAdmin uses the team endpoint with photoId in path', async () => {
+      vi.mocked(apiUpdateTeamPhoto).mockResolvedValue(makeOk(photoData));
+
+      await updateGalleryPhotoAdmin(ACCOUNT_ID, 'photo-9', { title: 'Updated' }, 'token', TEAM_ID);
+
+      expect(apiUpdateTeamPhoto).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: ACCOUNT_ID, teamId: TEAM_ID, photoId: 'photo-9' },
+        }),
+      );
+      expect(apiUpdatePhoto).not.toHaveBeenCalled();
+    });
+
+    it('deleteGalleryPhotoAdmin uses the team endpoint', async () => {
+      vi.mocked(apiDeleteTeamPhoto).mockResolvedValue({
+        data: undefined,
+        request: {} as Request,
+        response: { status: 204 } as Response,
+      } as never);
+
+      await deleteGalleryPhotoAdmin(ACCOUNT_ID, 'photo-9', 'token', TEAM_ID);
+
+      expect(apiDeleteTeamPhoto).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: ACCOUNT_ID, teamId: TEAM_ID, photoId: 'photo-9' },
+        }),
+      );
+      expect(apiDeletePhoto).not.toHaveBeenCalled();
+    });
+
+    it('listGalleryAlbumsAdmin uses the team endpoint', async () => {
+      vi.mocked(apiListTeamAlbums).mockResolvedValue(makeOk({ albums: [], total: 0 }));
+
+      await listGalleryAlbumsAdmin(ACCOUNT_ID, 'token', undefined, TEAM_ID);
+
+      expect(apiListTeamAlbums).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { accountId: ACCOUNT_ID, teamId: TEAM_ID } }),
+      );
+      expect(apiListAlbums).not.toHaveBeenCalled();
+    });
+
+    it('createGalleryAlbumAdmin forces teamId into the body for team endpoints', async () => {
+      vi.mocked(apiCreateTeamAlbum).mockResolvedValue(makeOk(albumData));
+
+      await createGalleryAlbumAdmin(
+        ACCOUNT_ID,
+        { title: 'New', teamId: null, parentAlbumId: null },
+        'token',
+        TEAM_ID,
+      );
+
+      const call = vi.mocked(apiCreateTeamAlbum).mock.calls[0][0] as {
+        path: { accountId: string; teamId: string };
+        body: { teamId: string };
+      };
+      expect(call.path).toEqual({ accountId: ACCOUNT_ID, teamId: TEAM_ID });
+      expect(call.body.teamId).toBe(TEAM_ID);
+      expect(apiCreateAlbum).not.toHaveBeenCalled();
+    });
+
+    it('updateGalleryAlbumAdmin uses the team endpoint with albumId in path', async () => {
+      vi.mocked(apiUpdateTeamAlbum).mockResolvedValue(makeOk(albumData));
+
+      await updateGalleryAlbumAdmin(ACCOUNT_ID, 'album-1', { title: 'Renamed' }, 'token', TEAM_ID);
+
+      expect(apiUpdateTeamAlbum).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: ACCOUNT_ID, teamId: TEAM_ID, albumId: 'album-1' },
+        }),
+      );
+      expect(apiUpdateAlbum).not.toHaveBeenCalled();
+    });
+
+    it('deleteGalleryAlbumAdmin uses the team endpoint', async () => {
+      vi.mocked(apiDeleteTeamAlbum).mockResolvedValue({
+        data: undefined,
+        request: {} as Request,
+        response: { status: 204 } as Response,
+      } as never);
+
+      await deleteGalleryAlbumAdmin(ACCOUNT_ID, 'album-1', 'token', TEAM_ID);
+
+      expect(apiDeleteTeamAlbum).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: ACCOUNT_ID, teamId: TEAM_ID, albumId: 'album-1' },
+        }),
+      );
+      expect(apiDeleteAlbum).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the account endpoint when teamId is omitted', async () => {
+      const payload = { photos: [], total: 0 };
+      vi.mocked(apiListPhotos).mockResolvedValue(makeOk(payload));
+
+      await listGalleryPhotosAdmin(ACCOUNT_ID);
+
+      expect(apiListPhotos).toHaveBeenCalled();
+      expect(apiListTeamPhotos).not.toHaveBeenCalled();
     });
   });
 });
