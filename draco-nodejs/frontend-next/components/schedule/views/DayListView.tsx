@@ -17,6 +17,8 @@ interface DayListViewProps extends ViewComponentProps {
 }
 
 const DayListView: React.FC<DayListViewProps> = ({
+  accountId,
+  currentTeamSeasonId,
   filteredGames,
   canEditSchedule,
   onEditGame: _onEditGame,
@@ -154,6 +156,8 @@ const DayListView: React.FC<DayListViewProps> = ({
               }
               showActions={showActions}
               timeZone={timeZone}
+              accountId={accountId}
+              currentTeamSeasonId={currentTeamSeasonId}
             />
           );
         })}
@@ -259,6 +263,8 @@ const DayListView: React.FC<DayListViewProps> = ({
                       }
                       showActions={showActions}
                       timeZone={timeZone}
+                      accountId={accountId}
+                      currentTeamSeasonId={currentTeamSeasonId}
                     />
                   );
                 })}

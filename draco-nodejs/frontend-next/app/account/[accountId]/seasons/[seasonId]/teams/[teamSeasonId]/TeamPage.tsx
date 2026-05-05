@@ -343,6 +343,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     const transformGame = (game: ApiGame): Game => ({
       id: game.id,
       date: game.gameDate,
+      seasonId,
       homeTeamId: game.homeTeam.id ?? '',
       visitorTeamId: game.visitorTeam.id ?? '',
       homeTeamName: game.homeTeam.name ?? '',
@@ -789,6 +790,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                       sections={upcomingSections}
                       emptyMessage="No upcoming games."
                       timeZone={timeZone}
+                      accountId={accountId}
+                      currentTeamSeasonId={teamSeasonId}
+                      headerAction={
+                        <Button
+                          component={NextLink}
+                          href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`}
+                          variant="outlined"
+                          size="small"
+                        >
+                          Full Schedule
+                        </Button>
+                      }
                     />
                   ) : null}
                   <GameListDisplay
@@ -798,6 +811,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     onEditRecap={handleOpenEditRecap}
                     onViewRecap={handleOpenViewRecap}
                     timeZone={timeZone}
+                    accountId={accountId}
+                    currentTeamSeasonId={teamSeasonId}
                     headerAction={
                       <Button
                         component={NextLink}

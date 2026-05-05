@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   Box,
   Typography,
@@ -52,6 +53,7 @@ export interface BaseballGameExtras {
 export interface GameCardData {
   id: string;
   date: string;
+  seasonId?: string;
   homeTeamId: string;
   visitorTeamId: string;
   homeTeamName: string;
@@ -100,6 +102,7 @@ export interface GameCardProps {
   onStartLiveScoring?: (game: GameCardData) => void;
   onWatchLiveScoring?: (game: GameCardData) => void;
   accountId?: string;
+  currentTeamSeasonId?: string;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -122,6 +125,7 @@ const GameCard: React.FC<GameCardProps> = ({
   onStartLiveScoring,
   onWatchLiveScoring,
   accountId,
+  currentTeamSeasonId,
 }) => {
   const { user } = useAuth();
   const isAuthenticated = !!user;
@@ -364,6 +368,50 @@ const GameCard: React.FC<GameCardProps> = ({
 
   const hasGolfExtras = game.golfExtras !== undefined;
 
+  const buildTeamHref = (teamSeasonId: string): string | null => {
+    if (!accountId || !game.seasonId || !teamSeasonId) {
+      return null;
+    }
+    if (currentTeamSeasonId && teamSeasonId === currentTeamSeasonId) {
+      return null;
+    }
+    const segment = hasGolfExtras ? 'golf/teams' : 'teams';
+    return `/account/${accountId}/seasons/${game.seasonId}/${segment}/${teamSeasonId}`;
+  };
+
+  const renderTeamName = (teamSeasonId: string, teamName: string, prefix?: string) => {
+    const href = buildTeamHref(teamSeasonId);
+    const label = prefix ? `${prefix}${teamName}` : teamName;
+
+    if (!href) {
+      return (
+        <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }} noWrap>
+          {label}
+        </Typography>
+      );
+    }
+
+    return (
+      <Typography
+        component={Link}
+        href={href}
+        onClick={(event: React.MouseEvent) => event.stopPropagation()}
+        variant="body1"
+        fontWeight={700}
+        noWrap
+        sx={{
+          color: 'primary.main',
+          textDecoration: 'none',
+          '&:hover': {
+            textDecoration: 'underline',
+          },
+        }}
+      >
+        {label}
+      </Typography>
+    );
+  };
+
   const renderHandicapBadge = (handicap: number | undefined) => {
     if (handicap === undefined) return null;
     return (
@@ -548,26 +596,12 @@ const GameCard: React.FC<GameCardProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    sx={{ color: 'text.primary' }}
-                    noWrap
-                  >
-                    {game.visitorTeamName}
-                  </Typography>
+                  {renderTeamName(game.visitorTeamId, game.visitorTeamName)}
                   {game.gameStatus !== GameStatus.Completed &&
                     renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    sx={{ color: 'text.primary' }}
-                    noWrap
-                  >
-                    @ {game.homeTeamName}
-                  </Typography>
+                  {renderTeamName(game.homeTeamId, game.homeTeamName, '@ ')}
                   {game.gameStatus !== GameStatus.Completed &&
                     renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
                 </Box>
@@ -698,26 +732,12 @@ const GameCard: React.FC<GameCardProps> = ({
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    sx={{ color: 'text.primary' }}
-                    noWrap
-                  >
-                    {game.visitorTeamName}
-                  </Typography>
+                  {renderTeamName(game.visitorTeamId, game.visitorTeamName)}
                   {game.gameStatus !== GameStatus.Completed &&
                     renderHandicapBadge(game.golfExtras?.visitorCourseHandicap)}
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight={700}
-                    sx={{ color: 'text.primary' }}
-                    noWrap
-                  >
-                    @ {game.homeTeamName}
-                  </Typography>
+                  {renderTeamName(game.homeTeamId, game.homeTeamName, '@ ')}
                   {game.gameStatus !== GameStatus.Completed &&
                     renderHandicapBadge(game.golfExtras?.homeCourseHandicap)}
                 </Box>
