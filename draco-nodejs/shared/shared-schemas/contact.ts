@@ -69,6 +69,10 @@ export const BaseContactSchema = NamedContactSchema.extend({
     z.email().trim().max(100).optional(),
   ),
   userId: z.string().trim().max(50).optional(),
+  loginEmail: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.email().trim().max(256).optional(),
+  ),
   photoUrl: z.preprocess((val) => (val === '' ? undefined : val), z.url().trim().optional()),
   contactDetails: ContactDetailsSchema.optional(),
 });
@@ -260,6 +264,11 @@ export const ChangePasswordRequestSchema = z.object({
   newPassword: z.string().min(6),
 });
 
+export const ChangeLoginEmailRequestSchema = z.object({
+  currentPassword: z.string().min(6),
+  newLoginEmail: z.email().trim().max(256),
+});
+
 export const RoleCheckResponseSchema = z.object({
   hasRole: z.boolean(),
   roleLevel: z.string().optional(),
@@ -372,4 +381,5 @@ export type RegisteredUserWithRolesType = z.infer<typeof RegisteredUserWithRoles
 export type ContactWithContactRolesType = z.infer<typeof ContactWithContactRolesSchema>;
 export type VerifyTokenRequestType = z.infer<typeof VerifyTokenRequestSchema>;
 export type ChangePasswordRequestType = z.infer<typeof ChangePasswordRequestSchema>;
+export type ChangeLoginEmailRequestType = z.infer<typeof ChangeLoginEmailRequestSchema>;
 export type RoleCheckResponseType = z.infer<typeof RoleCheckResponseSchema>;

@@ -39,6 +39,7 @@ import seasonSchedulerFieldAvailabilityRouter from './routes/season-scheduler-fi
 import monitoringRouter from './routes/monitoring.js';
 import adminAnalyticsRouter from './routes/admin-analytics.js';
 import adminGolfCoursesRouter from './routes/admin-golf-courses.js';
+import adminUsersRouter from './routes/admin-users.js';
 import alertsRouter from './routes/alerts.js';
 import emailsRouter from './routes/emails.js';
 import teamEmailsRouter from './routes/team-emails.js';
@@ -265,6 +266,7 @@ app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/golf/courses', adminGolfCoursesRouter);
+app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/cleanup', cleanupRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);

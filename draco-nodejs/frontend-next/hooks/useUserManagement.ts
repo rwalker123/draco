@@ -825,6 +825,8 @@ export const useUserManagement = (
             lastName: contact.lastName,
             middleName: contact.middleName,
             email: contact.email,
+            userId: contact.userId,
+            loginEmail: contact.loginEmail,
             photoUrl: contact.photoUrl,
             contactDetails: contact.contactDetails,
           };

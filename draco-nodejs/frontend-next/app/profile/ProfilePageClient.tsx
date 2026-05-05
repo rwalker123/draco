@@ -32,6 +32,7 @@ import OrganizationsWidget from '@/components/OrganizationsWidget';
 import MyTeams, { UserTeam } from '@/components/MyTeams';
 import EditContactInfoDialog from '@/components/profile/EditContactInfoDialog';
 import ChangePasswordDialog from '@/components/profile/ChangePasswordDialog';
+import ChangeLoginEmailDialog from '@/components/profile/ChangeLoginEmailDialog';
 import AccountOptional from '@/components/account/AccountOptional';
 import DeleteIndividualGolfAccountDialog from '@/components/golf/dialogs/DeleteIndividualGolfAccountDialog';
 import { isGolfIndividualAccountType, isGolfLeagueAccountType } from '@/utils/accountTypeUtils';
@@ -84,6 +85,7 @@ const ProfilePageClient: React.FC = () => {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isChangePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [isChangeLoginEmailDialogOpen, setChangeLoginEmailDialogOpen] = useState(false);
 
   useEffect(() => {
     teamsByAccountRef.current = teamsByAccount;
@@ -413,6 +415,10 @@ const ProfilePageClient: React.FC = () => {
     setChangePasswordDialogOpen(true);
   };
 
+  const handleChangeLoginEmail = () => {
+    setChangeLoginEmailDialogOpen(true);
+  };
+
   const handleContactUpdated = (updated: BaseContactType) => {
     setContact(updated);
   };
@@ -525,6 +531,8 @@ const ProfilePageClient: React.FC = () => {
                   : undefined
               }
               onChangePassword={user ? handleChangePassword : undefined}
+              onChangeLoginEmail={user ? handleChangeLoginEmail : undefined}
+              loginEmail={user?.userName ?? undefined}
               surveyHref={currentAccountId ? `/account/${currentAccountId}/surveys` : undefined}
               surveyAccountId={currentAccountId}
               hideDetails={hideContactDetails}
@@ -603,6 +611,13 @@ const ProfilePageClient: React.FC = () => {
       <ChangePasswordDialog
         open={isChangePasswordDialogOpen}
         onClose={() => setChangePasswordDialogOpen(false)}
+        onSuccess={(newToken: string) => setAuthToken(newToken)}
+      />
+
+      <ChangeLoginEmailDialog
+        open={isChangeLoginEmailDialogOpen}
+        currentLoginEmail={user?.userName ?? undefined}
+        onClose={() => setChangeLoginEmailDialogOpen(false)}
         onSuccess={(newToken: string) => setAuthToken(newToken)}
       />
     </Box>

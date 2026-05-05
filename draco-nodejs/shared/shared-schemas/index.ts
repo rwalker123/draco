@@ -39,6 +39,7 @@ export * from './accountDiscord.js';
 export * from './welcomeMessage.js';
 export * from './scheduler.js';
 export * from './adminDashboard.js';
+export * from './adminUser.js';
 export * from './golfCourse.js';
 export * from './golfLeague.js';
 export * from './golfFlight.js';

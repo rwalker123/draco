@@ -1275,6 +1275,7 @@ export type dbContactWithRole = {
   lastname: string;
   email: string | null;
   userid: string | null;
+  login_email: string | null;
   role_context_name: string | null;
   contactrole_id: bigint | null;
   roleid: string | null;

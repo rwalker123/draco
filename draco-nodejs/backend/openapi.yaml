@@ -75,6 +75,10 @@ components:
                 userId:
                   type: string
                   maxLength: 50
+                loginEmail:
+                  type: string
+                  maxLength: 256
+                  format: email
                 photoUrl:
                   type: string
                   format: uri
@@ -172,6 +176,10 @@ components:
             userId:
               type: string
               maxLength: 50
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             photoUrl:
               type: string
               format: uri
@@ -272,6 +280,10 @@ components:
                     email:
                       type: string
                       maxLength: 100
+                      format: email
+                    loginEmail:
+                      type: string
+                      maxLength: 256
                       format: email
                     contactDetails:
                       type: object
@@ -374,6 +386,10 @@ components:
         userId:
           type: string
           maxLength: 50
+        loginEmail:
+          type: string
+          maxLength: 256
+          format: email
         photoUrl:
           type: string
           format: uri
@@ -479,6 +495,10 @@ components:
         userId:
           type: string
           maxLength: 50
+        loginEmail:
+          type: string
+          maxLength: 256
+          format: email
         photoUrl:
           type: string
           format: uri
@@ -575,6 +595,10 @@ components:
         userId:
           type: string
           maxLength: 50
+        loginEmail:
+          type: string
+          maxLength: 256
+          format: email
         photoUrl:
           type: string
           format: uri
@@ -922,6 +946,10 @@ components:
           type: string
           maxLength: 100
           format: email
+        loginEmail:
+          type: string
+          maxLength: 256
+          format: email
         contactDetails:
           type: object
           properties:
@@ -1027,6 +1055,10 @@ components:
             userId:
               type: string
               maxLength: 50
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             photoUrl:
               type: string
               format: uri
@@ -1163,6 +1195,10 @@ components:
             userId:
               type: string
               maxLength: 50
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             photoUrl:
               type: string
               format: uri
@@ -1473,6 +1509,10 @@ components:
             userId:
               type: string
               maxLength: 50
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             photoUrl:
               type: string
               format: uri
@@ -1838,6 +1878,10 @@ components:
             userId:
               type: string
               maxLength: 50
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             photoUrl:
               type: string
               format: uri
@@ -1969,6 +2013,10 @@ components:
                       userId:
                         type: string
                         maxLength: 50
+                      loginEmail:
+                        type: string
+                        maxLength: 256
+                        format: email
                       photoUrl:
                         type: string
                         format: uri
@@ -2405,6 +2453,10 @@ components:
         email:
           type: string
           maxLength: 100
+          format: email
+        loginEmail:
+          type: string
+          maxLength: 256
           format: email
         contactDetails:
           type: object
@@ -3048,6 +3100,10 @@ components:
               userId:
                 type: string
                 maxLength: 50
+              loginEmail:
+                type: string
+                maxLength: 256
+                format: email
               photoUrl:
                 type: string
                 format: uri
@@ -3165,6 +3221,10 @@ components:
           type: string
           maxLength: 100
           format: email
+        loginEmail:
+          type: string
+          maxLength: 256
+          format: email
         photoUrl:
           type: string
           format: uri
@@ -3246,6 +3306,10 @@ components:
               email:
                 type: string
                 maxLength: 100
+                format: email
+              loginEmail:
+                type: string
+                maxLength: 256
                 format: email
               photoUrl:
                 type: string
@@ -3467,6 +3531,10 @@ components:
                     userId:
                       type: string
                       maxLength: 50
+                    loginEmail:
+                      type: string
+                      maxLength: 256
+                      format: email
                     photoUrl:
                       type: string
                       format: uri
@@ -3696,6 +3764,10 @@ components:
                         userId:
                           type: string
                           maxLength: 50
+                        loginEmail:
+                          type: string
+                          maxLength: 256
+                          format: email
                         photoUrl:
                           type: string
                           format: uri
@@ -3875,6 +3947,10 @@ components:
             userId:
               type: string
               maxLength: 50
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             photoUrl:
               type: string
               format: uri
@@ -3951,6 +4027,10 @@ components:
               userId:
                 type: string
                 maxLength: 50
+              loginEmail:
+                type: string
+                maxLength: 256
+                format: email
               photoUrl:
                 type: string
                 format: uri
@@ -4168,6 +4248,10 @@ components:
               type: string
               maxLength: 100
               format: email
+            loginEmail:
+              type: string
+              maxLength: 256
+              format: email
             contactDetails:
               type: object
               properties:
@@ -4373,6 +4457,10 @@ components:
                         userId:
                           type: string
                           maxLength: 50
+                        loginEmail:
+                          type: string
+                          maxLength: 256
+                          format: email
                         photoUrl:
                           type: string
                           format: uri
@@ -4591,6 +4679,10 @@ components:
                         userId:
                           type: string
                           maxLength: 50
+                        loginEmail:
+                          type: string
+                          maxLength: 256
+                          format: email
                         photoUrl:
                           type: string
                           format: uri
@@ -16052,6 +16144,94 @@ components:
       required:
         - currentPassword
         - newPassword
+    ChangeLoginEmailRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          minLength: 6
+        newLoginEmail:
+          type: string
+          maxLength: 256
+          format: email
+      required:
+        - currentPassword
+        - newLoginEmail
+    AdminUserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        contactCount:
+          type: integer
+          minimum: 0
+        accessFailedCount:
+          type: integer
+          minimum: 0
+        lockoutEndDateUtc:
+          type: string
+          nullable: true
+        hasPassword:
+          type: boolean
+      required:
+        - id
+        - username
+        - contactCount
+        - accessFailedCount
+        - lockoutEndDateUtc
+        - hasPassword
+      title: AdminUserSummary
+      description: Summary of an aspnetusers row, used by the global Administrator
+        user list.
+    AdminUserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              username:
+                type: string
+              contactCount:
+                type: integer
+                minimum: 0
+              accessFailedCount:
+                type: integer
+                minimum: 0
+              lockoutEndDateUtc:
+                type: string
+                nullable: true
+              hasPassword:
+                type: boolean
+            required:
+              - id
+              - username
+              - contactCount
+              - accessFailedCount
+              - lockoutEndDateUtc
+              - hasPassword
+            title: AdminUserSummary
+            description: Summary of an aspnetusers row, used by the global Administrator
+              user list.
+        total:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+      required:
+        - users
+        - total
+        - hasNext
+        - hasPrev
+      title: AdminUserListResponse
+      description: Paged response of admin user summaries.
     SchedulerProblemSpec:
       type: object
       properties:
@@ -18388,6 +18568,10 @@ components:
         email:
           type: string
           maxLength: 100
+          format: email
+        loginEmail:
+          type: string
+          maxLength: 256
           format: email
         contactDetails:
           type: object
@@ -25202,6 +25386,10 @@ paths:
                       type: string
                       maxLength: 100
                       format: email
+                    loginEmail:
+                      type: string
+                      maxLength: 256
+                      format: email
                     contactDetails:
                       type: object
                       properties:
@@ -29284,6 +29472,111 @@ paths:
           description: Authentication required.
         "403":
           description: Administrator privileges are required to access analytics.
+  /api/admin/users:
+    get:
+      operationId: listAdminUsers
+      summary: List authentication users for global Administrator login management.
+      description: Returns paged aspnetusers rows along with a per-user contact count.
+        Filter to orphan users (zero linked contacts) via `orphansOnly=true`.
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: search
+          in: query
+        - schema:
+            type: boolean
+            nullable: true
+          required: false
+          name: orphansOnly
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: integer
+            nullable: true
+            minimum: 0
+          required: false
+          name: offset
+          in: query
+      responses:
+        "200":
+          description: Paged admin user summaries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserListResponse"
+        "400":
+          description: Query parameters are invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "500":
+          description: Unexpected error while listing admin users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/admin/users/{userId}:
+    delete:
+      operationId: deleteAdminUser
+      summary: Delete an authentication user (orphans only).
+      description: Permanently removes an aspnetusers row. Refused with 409 when the
+        user is still linked to one or more contacts.
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: userId
+          in: path
+      responses:
+        "204":
+          description: User deleted successfully.
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: User is still linked to one or more contacts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Unexpected error while deleting the user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/alerts:
     get:
       summary: List active alerts
@@ -30195,6 +30488,53 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "500":
           description: Unexpected error while changing the password.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/auth/change-login-email:
+    post:
+      operationId: changeLoginEmail
+      summary: Change login email
+      description: Allows the authenticated user to change the email used to sign in.
+        Requires the current password and a unique new email; returns a
+        refreshed JWT.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeLoginEmailRequest"
+      responses:
+        "200":
+          description: Login email changed successfully; response includes a refreshed JWT.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredUser"
+        "400":
+          description: Request is invalid or new email matches current login email.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required or current password incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "409":
+          description: New email is already in use as a login by another account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictError"
+        "500":
+          description: Unexpected error while changing the login email.
           content:
             application/json:
               schema:
@@ -31184,6 +31524,10 @@ paths:
                   type: string
                   maxLength: 100
                   format: email
+                loginEmail:
+                  type: string
+                  maxLength: 256
+                  format: email
                 contactDetails:
                   type: object
                   properties:
@@ -31248,6 +31592,10 @@ paths:
                 email:
                   type: string
                   maxLength: 100
+                  format: email
+                loginEmail:
+                  type: string
+                  maxLength: 256
                   format: email
                 contactDetails:
                   type: object
@@ -31429,6 +31777,10 @@ paths:
                   type: string
                   maxLength: 100
                   format: email
+                loginEmail:
+                  type: string
+                  maxLength: 256
+                  format: email
                 contactDetails:
                   type: object
                   properties:
@@ -31493,6 +31845,10 @@ paths:
                 email:
                   type: string
                   maxLength: 100
+                  format: email
+                loginEmail:
+                  type: string
+                  maxLength: 256
                   format: email
                 contactDetails:
                   type: object

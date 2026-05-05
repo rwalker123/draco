@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Tooltip, Box, IconButton } from '@mui/material';
+import { Tooltip, Box, IconButton, Typography } from '@mui/material';
 import { CheckCircle, PersonOutline, Close as CloseIcon } from '@mui/icons-material';
 
 interface RegistrationStatusChipProps {
@@ -11,11 +11,16 @@ interface RegistrationStatusChipProps {
   canManage?: boolean;
   onRevoke?: (contactId: string) => void;
   onRequestRegister?: () => void;
+  loginEmail?: string;
+  contactEmail?: string;
 }
 
 /**
  * RegistrationStatusChip Component
- * Displays whether a contact is registered (has userId) or not
+ * Displays whether a contact is registered (has userId) or not.
+ * When the contact's login email differs from its account email, the
+ * check is rendered in `warning` (amber) color and the tooltip surfaces
+ * both addresses so admins can spot the mismatch.
  */
 const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
   userId,
@@ -24,18 +29,42 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
   canManage = false,
   onRevoke,
   onRequestRegister,
+  loginEmail,
+  contactEmail,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const isRegistered = !!userId;
+  const hasMismatch = isRegistered && Boolean(loginEmail);
+  const iconFontSize = size === 'small' ? 'small' : 'medium';
 
   const icon = isRegistered ? (
-    <CheckCircle color="success" fontSize={size === 'small' ? 'small' : 'medium'} />
+    <CheckCircle color={hasMismatch ? 'warning' : 'success'} fontSize={iconFontSize} />
   ) : (
-    <PersonOutline
-      color={onRequestRegister ? 'primary' : 'action'}
-      fontSize={size === 'small' ? 'small' : 'medium'}
-    />
+    <PersonOutline color={onRequestRegister ? 'primary' : 'action'} fontSize={iconFontSize} />
   );
+
+  let tooltipTitle: React.ReactNode;
+  if (!isRegistered) {
+    tooltipTitle = onRequestRegister ? 'Click to auto register' : 'Not registered';
+  } else if (hasMismatch) {
+    tooltipTitle = (
+      <Box>
+        <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
+          Registered
+        </Typography>
+        <Typography variant="caption" component="div">
+          Login: {loginEmail}
+        </Typography>
+        {contactEmail && (
+          <Typography variant="caption" component="div">
+            Account email: {contactEmail}
+          </Typography>
+        )}
+      </Box>
+    );
+  } else {
+    tooltipTitle = 'Registered';
+  }
 
   return (
     <Box
@@ -43,17 +72,7 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Tooltip
-        title={
-          isRegistered
-            ? 'Registered'
-            : onRequestRegister
-              ? 'Click to auto register'
-              : 'Not registered'
-        }
-        placement="top"
-        arrow
-      >
+      <Tooltip title={tooltipTitle} placement="top" arrow>
         <Box
           sx={{
             display: 'inline-flex',

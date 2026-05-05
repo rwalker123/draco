@@ -17,6 +17,7 @@ import { ContactResponseFormatter, TeamResponseFormatter } from '../responseForm
 import {
   RepositoryFactory,
   IContactRepository,
+  IUserRepository,
   dbRosterPlayer,
   ISeasonsRepository,
   ITeamRepository,
@@ -28,12 +29,14 @@ export class ContactService {
   private contactRepository: IContactRepository;
   private seasonRepository: ISeasonsRepository;
   private teamRepository: ITeamRepository;
+  private userRepository: IUserRepository;
   private storageService: StorageService;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
+    this.userRepository = RepositoryFactory.getUserRepository();
     this.storageService = ServiceFactory.getStorageService();
   }
 
@@ -183,7 +186,6 @@ export class ContactService {
    * @returns BaseContactType
    */
   async updateContact(contact: CreateContactType, contactId: bigint): Promise<BaseContactType> {
-    // convert to db contact
     const dbCreateContact: Partial<contacts> = {
       firstname: contact.firstName,
       lastname: contact.lastName,
@@ -202,7 +204,14 @@ export class ContactService {
     };
 
     const dbContact = await this.contactRepository.update(contactId, dbCreateContact);
-    return ContactResponseFormatter.formatContactResponse(dbContact);
+
+    let loginEmail: string | null = null;
+    if (dbContact.userid) {
+      const authUser = await this.userRepository.findByUserId(dbContact.userid);
+      loginEmail = authUser?.username ?? null;
+    }
+
+    return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }
 
   /**
