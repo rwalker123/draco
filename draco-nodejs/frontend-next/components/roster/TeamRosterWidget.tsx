@@ -466,6 +466,13 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
               lastName,
               photoUrl: member.photoUrl ?? undefined,
             };
+            const playerHref = buildPlayerStatisticsHref({
+              accountId,
+              contactId: member.contactId,
+              returnTo: currentLocation,
+              returnLabel: playerLinkLabel,
+            });
+            const playerLabel = displayName || firstName;
 
             return (
               <TableRow key={member.id} hover>
@@ -473,9 +480,26 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <UserAvatar user={user} size={32} />
-                    <Typography variant="body2" fontWeight={600}>
-                      {displayName || firstName}
-                    </Typography>
+                    {playerHref ? (
+                      <Typography
+                        component={NextLink}
+                        href={playerHref}
+                        prefetch={false}
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          color: 'primary.main',
+                          textDecoration: 'none',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {playerLabel}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" fontWeight={600}>
+                        {playerLabel}
+                      </Typography>
+                    )}
                   </Box>
                 </TableCell>
                 {showGamesPlayed && <TableCell>{member.gamesPlayed ?? '-'}</TableCell>}
