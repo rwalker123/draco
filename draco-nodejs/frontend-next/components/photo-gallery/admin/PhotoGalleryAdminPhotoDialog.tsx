@@ -31,6 +31,7 @@ type PhotoDialogMode = 'create' | 'edit';
 
 interface PhotoGalleryAdminPhotoDialogProps {
   accountId: string;
+  teamId?: string | null;
   open: boolean;
   mode: PhotoDialogMode;
   albums: PhotoGalleryAdminAlbumType[];
@@ -50,6 +51,7 @@ const getDefaultAlbumValue = (photo?: PhotoGalleryPhotoType): string => {
 
 export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialogProps> = ({
   accountId,
+  teamId,
   open,
   mode,
   albums,
@@ -59,6 +61,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   onSuccess,
   onError,
 }) => {
+  const teamScopeId = teamId ?? null;
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [albumId, setAlbumId] = useState<string>('');
@@ -185,6 +188,11 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       return;
     }
 
+    if (teamScopeId && !albumId) {
+      onError?.('Select a team album for this photo');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -196,7 +204,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
           file: file as File,
         };
 
-        const created = await createGalleryPhotoAdmin(accountId, payload, token);
+        const created = await createGalleryPhotoAdmin(accountId, payload, token, teamScopeId);
         onSuccess?.({
           message: 'Photo added to gallery',
           photo: created,
@@ -208,7 +216,13 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
           albumId: albumId ? albumId : null,
         };
 
-        const updated = await updateGalleryPhotoAdmin(accountId, photo.id, payload, token);
+        const updated = await updateGalleryPhotoAdmin(
+          accountId,
+          photo.id,
+          payload,
+          token,
+          teamScopeId,
+        );
         onSuccess?.({
           message: 'Photo updated successfully',
           photo: updated,
@@ -272,14 +286,16 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
               displayEmpty
               renderValue={(selected) => {
                 if (!selected) {
-                  return <em>Account Album (default)</em>;
+                  return <em>{teamScopeId ? 'Select team album' : 'Account Album (default)'}</em>;
                 }
                 return albumTitleMap.get(String(selected)) ?? '';
               }}
             >
-              <MenuItem value="">
-                <em>Account Album (default)</em>
-              </MenuItem>
+              {!teamScopeId ? (
+                <MenuItem value="">
+                  <em>Account Album (default)</em>
+                </MenuItem>
+              ) : null}
               {albumSections.accountAlbums.length > 0 ? (
                 <ListSubheader
                   component="div"

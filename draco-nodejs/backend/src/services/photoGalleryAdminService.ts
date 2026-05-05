@@ -232,6 +232,147 @@ export class PhotoGalleryAdminService {
     await this.repository.deleteAlbum(albumId);
   }
 
+  async listTeamGalleryEntries(
+    accountId: bigint,
+    teamId: bigint,
+    query: { albumId?: string | null },
+  ): Promise<PhotoGalleryListType> {
+    return this.listGalleryEntries(accountId, {
+      albumId: query.albumId,
+      teamId: teamId.toString(),
+    });
+  }
+
+  async listTeamAlbums(accountId: bigint, teamId: bigint): Promise<PhotoGalleryAdminAlbumListType> {
+    const albums = await this.repository.listAlbums(accountId);
+    const teamAlbums = albums.filter((album) => album.teamid === teamId);
+    return PhotoGalleryAdminResponseFormatter.formatAlbumList(teamAlbums);
+  }
+
+  async createTeamAlbum(
+    accountId: bigint,
+    teamId: bigint,
+    payload: CreatePhotoGalleryAlbumType,
+  ): Promise<PhotoGalleryAdminAlbumType> {
+    const parentAlbumIdValue = await this.parseOptionalParentAlbumId(
+      payload.parentAlbumId,
+      accountId,
+    );
+    if (parentAlbumIdValue !== null) {
+      await this.requireTeamAlbum(accountId, teamId, parentAlbumIdValue);
+    }
+
+    return this.createAlbum(accountId, {
+      ...payload,
+      teamId: teamId.toString(),
+      parentAlbumId: parentAlbumIdValue ? parentAlbumIdValue.toString() : null,
+    });
+  }
+
+  async updateTeamAlbum(
+    accountId: bigint,
+    teamId: bigint,
+    albumId: bigint,
+    payload: UpdatePhotoGalleryAlbumType,
+  ): Promise<PhotoGalleryAdminAlbumType> {
+    await this.requireTeamAlbum(accountId, teamId, albumId);
+
+    if (payload.teamId !== undefined) {
+      const requestedTeamId = this.parseOptionalTeamId(payload.teamId);
+      if (requestedTeamId !== teamId) {
+        throw new ValidationError('Team albums cannot be reassigned to a different team');
+      }
+    }
+
+    if (payload.parentAlbumId !== undefined && payload.parentAlbumId !== null) {
+      const parsed = await this.parseOptionalParentAlbumId(payload.parentAlbumId, accountId);
+      if (parsed !== null) {
+        await this.requireTeamAlbum(accountId, teamId, parsed);
+      }
+    }
+
+    return this.updateAlbum(accountId, albumId, {
+      ...payload,
+      teamId: teamId.toString(),
+    });
+  }
+
+  async deleteTeamAlbum(accountId: bigint, teamId: bigint, albumId: bigint): Promise<void> {
+    await this.requireTeamAlbum(accountId, teamId, albumId);
+    return this.deleteAlbum(accountId, albumId);
+  }
+
+  async createTeamPhoto(
+    accountId: bigint,
+    teamId: bigint,
+    payload: AdminCreatePhotoPayload,
+    fileBuffer: Buffer,
+  ): Promise<PhotoGalleryPhotoType> {
+    const albumId = await this.parseOptionalAlbumId(payload.albumId, accountId);
+    if (albumId === null) {
+      throw new ValidationError('A team album is required for team photo uploads');
+    }
+    await this.requireTeamAlbum(accountId, teamId, albumId);
+
+    return this.createPhoto(
+      accountId,
+      {
+        ...payload,
+        albumId: albumId.toString(),
+      },
+      fileBuffer,
+    );
+  }
+
+  async updateTeamPhoto(
+    accountId: bigint,
+    teamId: bigint,
+    photoId: bigint,
+    payload: UpdatePhotoGalleryPhotoType,
+  ): Promise<PhotoGalleryPhotoType> {
+    await this.requireTeamPhoto(accountId, teamId, photoId);
+
+    if (payload.albumId !== undefined) {
+      const targetAlbumId = await this.parseOptionalAlbumId(payload.albumId, accountId);
+      if (targetAlbumId === null) {
+        throw new ValidationError('Team photos must belong to a team album');
+      }
+      await this.requireTeamAlbum(accountId, teamId, targetAlbumId);
+    }
+
+    return this.updatePhoto(accountId, photoId, payload);
+  }
+
+  async deleteTeamPhoto(accountId: bigint, teamId: bigint, photoId: bigint): Promise<void> {
+    await this.requireTeamPhoto(accountId, teamId, photoId);
+    return this.deletePhoto(accountId, photoId);
+  }
+
+  private async requireTeamAlbum(
+    accountId: bigint,
+    teamId: bigint,
+    albumId: bigint,
+  ): Promise<dbPhotoGalleryAlbum> {
+    const album = await this.requireAlbum(accountId, albumId);
+    if (album.teamid !== teamId) {
+      throw new NotFoundError('Photo album not found');
+    }
+    return album;
+  }
+
+  private async requireTeamPhoto(
+    accountId: bigint,
+    teamId: bigint,
+    photoId: bigint,
+  ): Promise<dbPhotoGalleryEntry> {
+    const entry = await this.requirePhoto(accountId, photoId);
+    const albumTeamId = entry.photogalleryalbum?.teamid ?? null;
+    if (albumTeamId === null || albumTeamId !== teamId) {
+      throw new NotFoundError('Gallery photo not found');
+    }
+    return entry;
+  }
+
   private ensureFileProvided(fileBuffer: Buffer | undefined): void {
     if (!fileBuffer || fileBuffer.length === 0) {
       throw new ValidationError('Photo file is required');
