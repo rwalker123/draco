@@ -188,11 +188,6 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       return;
     }
 
-    if (teamScopeId && !albumId) {
-      onError?.('Select a team album for this photo');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -274,66 +269,66 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
             inputProps={{ maxLength: 255 }}
             helperText={`${caption.length}/255`}
           />
-          <FormControl fullWidth disabled={submitting}>
-            <InputLabel id="photo-album-select-label" shrink>
-              Album
-            </InputLabel>
-            <Select
-              labelId="photo-album-select-label"
-              value={albumId}
-              label="Album"
-              onChange={handleAlbumChange}
-              displayEmpty
-              renderValue={(selected) => {
-                if (!selected) {
-                  return <em>{teamScopeId ? 'Select team album' : 'Account Album (default)'}</em>;
-                }
-                return albumTitleMap.get(String(selected)) ?? '';
-              }}
-            >
-              {!teamScopeId ? (
+          {teamScopeId ? null : (
+            <FormControl fullWidth disabled={submitting}>
+              <InputLabel id="photo-album-select-label" shrink>
+                Album
+              </InputLabel>
+              <Select
+                labelId="photo-album-select-label"
+                value={albumId}
+                label="Album"
+                onChange={handleAlbumChange}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) {
+                    return <em>Account Album (default)</em>;
+                  }
+                  return albumTitleMap.get(String(selected)) ?? '';
+                }}
+              >
                 <MenuItem value="">
                   <em>Account Album (default)</em>
                 </MenuItem>
-              ) : null}
-              {albumSections.accountAlbums.length > 0 ? (
-                <ListSubheader
-                  component="div"
-                  disableSticky
-                  sx={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: 'text.secondary',
-                  }}
-                >
-                  Account Albums
-                </ListSubheader>
-              ) : null}
-              {albumSections.accountAlbums.map((album) => (
-                <MenuItem key={album.id} value={album.id}>
-                  {album.title}
-                </MenuItem>
-              ))}
-              {albumSections.teamAlbums.length > 0 ? (
-                <ListSubheader
-                  component="div"
-                  disableSticky
-                  sx={{
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: 'text.secondary',
-                  }}
-                >
-                  Team Albums
-                </ListSubheader>
-              ) : null}
-              {albumSections.teamAlbums.map((album) => (
-                <MenuItem key={album.id} value={album.id}>
-                  {album.title}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                {albumSections.accountAlbums.length > 0 ? (
+                  <ListSubheader
+                    component="div"
+                    disableSticky
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Account Albums
+                  </ListSubheader>
+                ) : null}
+                {albumSections.accountAlbums.map((album) => (
+                  <MenuItem key={album.id} value={album.id}>
+                    {album.title}
+                  </MenuItem>
+                ))}
+                {albumSections.teamAlbums.length > 0 ? (
+                  <ListSubheader
+                    component="div"
+                    disableSticky
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Team Albums
+                  </ListSubheader>
+                ) : null}
+                {albumSections.teamAlbums.map((album) => (
+                  <MenuItem key={album.id} value={album.id}>
+                    {album.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           {mode === 'create' ? (
             <Box>
               <Button

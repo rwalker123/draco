@@ -23,6 +23,10 @@ import { ConflictError, NotFoundError, ValidationError } from '../utils/customEr
 import { ValidationUtils } from '../utils/validationUtils.js';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
+import prisma from '../lib/prisma.js';
+
+const TEAM_ALBUM_TITLE_MAX_LENGTH = 25;
+const FALLBACK_TEAM_ALBUM_TITLE = 'Team Photos';
 
 const GALLERY_EXTENSION = '.jpg';
 type AdminCreatePhotoPayload = Omit<CreatePhotoGalleryPhotoType, 'photo'>;
@@ -308,11 +312,7 @@ export class PhotoGalleryAdminService {
     payload: AdminCreatePhotoPayload,
     fileBuffer: Buffer,
   ): Promise<PhotoGalleryPhotoType> {
-    const albumId = await this.parseOptionalAlbumId(payload.albumId, accountId);
-    if (albumId === null) {
-      throw new ValidationError('A team album is required for team photo uploads');
-    }
-    await this.requireTeamAlbum(accountId, teamId, albumId);
+    const albumId = await this.ensureTeamAlbum(accountId, teamId);
 
     return this.createPhoto(
       accountId,
@@ -332,20 +332,49 @@ export class PhotoGalleryAdminService {
   ): Promise<PhotoGalleryPhotoType> {
     await this.requireTeamPhoto(accountId, teamId, photoId);
 
-    if (payload.albumId !== undefined) {
-      const targetAlbumId = await this.parseOptionalAlbumId(payload.albumId, accountId);
-      if (targetAlbumId === null) {
-        throw new ValidationError('Team photos must belong to a team album');
-      }
-      await this.requireTeamAlbum(accountId, teamId, targetAlbumId);
-    }
-
-    return this.updatePhoto(accountId, photoId, payload);
+    const { albumId: _ignoredAlbumId, ...metadataOnly } = payload;
+    return this.updatePhoto(accountId, photoId, metadataOnly);
   }
 
   async deleteTeamPhoto(accountId: bigint, teamId: bigint, photoId: bigint): Promise<void> {
     await this.requireTeamPhoto(accountId, teamId, photoId);
     return this.deletePhoto(accountId, photoId);
+  }
+
+  private async ensureTeamAlbum(accountId: bigint, teamId: bigint): Promise<bigint> {
+    const albums = await this.repository.listAlbums(accountId);
+    const existing = albums.find((album) => album.teamid === teamId);
+    if (existing) {
+      return existing.id;
+    }
+
+    const title = await this.resolveTeamAlbumTitle(accountId, teamId);
+    const created = await this.repository.createAlbum({
+      accountid: accountId,
+      title,
+      teamid: teamId,
+      parentalbumid: 0n,
+    });
+    return created.id;
+  }
+
+  private async resolveTeamAlbumTitle(accountId: bigint, teamId: bigint): Promise<string> {
+    const team = await prisma.teams.findFirst({
+      where: { id: teamId, accountid: accountId },
+      select: { id: true },
+    });
+    if (!team) {
+      throw new NotFoundError('Team not found');
+    }
+
+    const teamSeason = await prisma.teamsseason.findFirst({
+      where: { teamid: teamId },
+      orderBy: { id: 'desc' },
+      select: { name: true },
+    });
+
+    const candidate = teamSeason?.name?.trim() || FALLBACK_TEAM_ALBUM_TITLE;
+    return candidate.slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
   }
 
   private async requireTeamAlbum(

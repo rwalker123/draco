@@ -603,18 +603,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
                 additionalOptions={teamAlbumMenuOptions}
               />
             ) : null}
-            {teamScope &&
-              teamAlbumOptions.map((album) => (
-                <AlbumPillButton
-                  key={album.id}
-                  selected={selectedTeamAlbumId === album.id}
-                  onClick={() => handleTeamAlbumChange(album.id)}
-                >
-                  <Typography variant="body1">{album.title}</Typography>
-                  <AlbumCountChip>{album.photoCount}</AlbumCountChip>
-                </AlbumPillButton>
-              ))}
-            {(teamScope || teamAlbumOptions.length > 0) && (
+            {!teamScope && teamAlbumOptions.length > 0 && (
               <Button
                 variant="outlined"
                 startIcon={<CollectionsBookmarkIcon />}

@@ -86,9 +86,9 @@ const TeamPhotoGalleryAdminContent: React.FC<{
         teamId: teamHeader.teamId,
         teamName: teamHeader.teamName,
         breadcrumbs: (
-          <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-            <MuiLink component={NextLink} href={teamHref} underline="hover" color="inherit">
-              {teamHeader.teamName}
+          <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
+            <MuiLink component={NextLink} color="inherit" href={teamHref}>
+              Team Overview
             </MuiLink>
             <Typography color="text.primary">Photo Gallery</Typography>
           </Breadcrumbs>
