@@ -25209,22 +25209,13 @@ paths:
           schema:
             type: string
             format: number
-        - schema:
-            type: string
-            nullable: true
-            pattern: ^\d+$
-            example: "12345"
-          required: false
-          name: albumId
+        - name: albumId
           in: query
-        - schema:
-            type: string
-            nullable: true
-            pattern: ^\d+$
-            example: "12345"
           required: false
-          name: teamId
-          in: query
+          schema:
+            type: string
+            format: number
+          description: Optional album filter scoped to this team.
       responses:
         "200":
           description: Team gallery photos available for administrative management.

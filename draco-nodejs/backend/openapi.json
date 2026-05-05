@@ -33583,26 +33583,14 @@
             }
           },
           {
-            "schema": {
-              "type": "string",
-              "nullable": true,
-              "pattern": "^\\d+$",
-              "example": "12345"
-            },
-            "required": false,
             "name": "albumId",
-            "in": "query"
-          },
-          {
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
-              "nullable": true,
-              "pattern": "^\\d+$",
-              "example": "12345"
+              "format": "number"
             },
-            "required": false,
-            "name": "teamId",
-            "in": "query"
+            "description": "Optional album filter scoped to this team."
           }
         ],
         "responses": {

@@ -22,7 +22,10 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { validatePhotoSubmissionFile } from '../../config/photoSubmissions';
+import {
+  PHOTO_SUBMISSION_CONFIG,
+  validatePhotoSubmissionFile,
+} from '../../config/photoSubmissions';
 import { usePhotoSubmission } from '../../hooks/usePhotoSubmission';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import ImageCropDialog from '../common/ImageCropDialog';
@@ -127,6 +130,8 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
     control,
     register,
     reset,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<PhotoSubmissionFormValues, unknown, PhotoSubmissionFormSubmitValues>({
     resolver: zodResolver(PhotoSubmissionSchema),
@@ -282,7 +287,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
                     {...field}
                     hidden
                     type="file"
-                    accept="image/*"
+                    accept={PHOTO_SUBMISSION_CONFIG.ALLOWED_MIME_TYPES.join(',')}
                     onChange={(event) => {
                       const file = event.target.files?.[0] ?? null;
                       event.target.value = '';
@@ -290,13 +295,21 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
                         return;
                       }
                       clearStatus();
+
+                      const validationError = validatePhotoSubmissionFile(file);
+                      if (validationError) {
+                        setError('photo', { type: 'manual', message: validationError });
+                        return;
+                      }
+
+                      clearErrors('photo');
                       setPendingCropFile(file);
                     }}
                     data-testid="photo-input"
                   />
                 </Button>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {selectedFile ? selectedFile.name : 'GIF, JPG, JPEG, PNG, or BMP up to 10MB'}
+                  {selectedFile ? selectedFile.name : 'JPG, JPEG, PNG, or BMP up to 10MB'}
                 </Typography>
                 {previewUrl && (
                   <Box sx={{ mt: 2 }}>

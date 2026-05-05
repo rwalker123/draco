@@ -851,10 +851,16 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       'Returns approved gallery photos belonging to a specific team for administrative management. Requires team photo management permissions.',
     tags: ['Photo Gallery'],
     security: [{ bearerAuth: [] }],
-    parameters: teamScopeParams,
-    request: {
-      query: PhotoGalleryQuerySchemaRef,
-    },
+    parameters: [
+      ...teamScopeParams,
+      {
+        name: 'albumId',
+        in: 'query',
+        required: false,
+        schema: { type: 'string', format: 'number' },
+        description: 'Optional album filter scoped to this team.',
+      },
+    ],
     responses: {
       200: {
         description: 'Team gallery photos available for administrative management.',

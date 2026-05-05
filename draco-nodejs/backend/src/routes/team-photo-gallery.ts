@@ -10,6 +10,8 @@ import {
   UpdatePhotoGalleryAlbumSchema,
   UpdatePhotoGalleryPhotoSchema,
 } from '@draco/shared-schemas';
+
+const TeamPhotoGalleryQuerySchema = PhotoGalleryQuerySchema.pick({ albumId: true });
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { handlePhotoUploadMiddleware, validatePhotoUpload } from '../middleware/fileUpload.js';
 
@@ -51,7 +53,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { teamId } = extractBigIntParams(req.params, 'teamId');
-    const query = PhotoGalleryQuerySchema.parse(req.query);
+    const query = TeamPhotoGalleryQuerySchema.parse(req.query);
 
     const response = await galleryAdminService.listTeamGalleryEntries(accountId, teamId, {
       albumId: query.albumId ?? undefined,

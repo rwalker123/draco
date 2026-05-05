@@ -23,7 +23,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../utils/customEr
 import { ValidationUtils } from '../utils/validationUtils.js';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
-import prisma from '../lib/prisma.js';
+import { ITeamRepository } from '../repositories/interfaces/index.js';
 
 const TEAM_ALBUM_TITLE_MAX_LENGTH = 25;
 const FALLBACK_TEAM_ALBUM_TITLE = 'Team Photos';
@@ -45,6 +45,7 @@ export class PhotoGalleryAdminService {
     private readonly repository: IPhotoGalleryAdminRepository = RepositoryFactory.getPhotoGalleryAdminRepository(),
     private readonly assetService: PhotoGalleryAssetService = ServiceFactory.getPhotoGalleryAssetService(),
     private readonly instagramIntegrationService: InstagramIntegrationService = ServiceFactory.getInstagramIntegrationService(),
+    private readonly teamRepository: ITeamRepository = RepositoryFactory.getTeamRepository(),
   ) {}
 
   async listGalleryEntries(
@@ -266,11 +267,18 @@ export class PhotoGalleryAdminService {
       await this.requireTeamAlbum(accountId, teamId, parentAlbumIdValue);
     }
 
-    return this.createAlbum(accountId, {
-      ...payload,
-      teamId: teamId.toString(),
-      parentAlbumId: parentAlbumIdValue ? parentAlbumIdValue.toString() : null,
+    const baseTitle = payload.title.trim().slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
+    const albums = await this.repository.listAlbums(accountId);
+    const title = this.disambiguateAlbumTitle(baseTitle, teamId, albums);
+
+    const created = await this.repository.createAlbum({
+      accountid: accountId,
+      title,
+      teamid: teamId,
+      parentalbumid: parentAlbumIdValue ?? 0n,
     });
+
+    return PhotoGalleryAdminResponseFormatter.formatAlbum(created);
   }
 
   async updateTeamAlbum(
@@ -348,7 +356,8 @@ export class PhotoGalleryAdminService {
       return existing.id;
     }
 
-    const title = await this.resolveTeamAlbumTitle(accountId, teamId);
+    const baseTitle = await this.resolveTeamAlbumTitle(accountId, teamId);
+    const title = this.disambiguateAlbumTitle(baseTitle, teamId, albums);
     const created = await this.repository.createAlbum({
       accountid: accountId,
       title,
@@ -359,22 +368,30 @@ export class PhotoGalleryAdminService {
   }
 
   private async resolveTeamAlbumTitle(accountId: bigint, teamId: bigint): Promise<string> {
-    const team = await prisma.teams.findFirst({
-      where: { id: teamId, accountid: accountId },
-      select: { id: true },
-    });
-    if (!team) {
+    const team = await this.teamRepository.findTeamDefinition(teamId);
+    if (!team || team.accountid !== accountId) {
       throw new NotFoundError('Team not found');
     }
 
-    const teamSeason = await prisma.teamsseason.findFirst({
-      where: { teamid: teamId },
-      orderBy: { id: 'desc' },
-      select: { name: true },
-    });
-
-    const candidate = teamSeason?.name?.trim() || FALLBACK_TEAM_ALBUM_TITLE;
+    const latestName = await this.teamRepository.findLatestTeamSeasonName(teamId);
+    const candidate = latestName?.trim() || FALLBACK_TEAM_ALBUM_TITLE;
     return candidate.slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
+  }
+
+  private disambiguateAlbumTitle(
+    baseTitle: string,
+    teamId: bigint,
+    existingAlbums: dbPhotoGalleryAlbum[],
+  ): string {
+    const taken = new Set(existingAlbums.map((album) => album.title.trim().toLowerCase()));
+    if (!taken.has(baseTitle.trim().toLowerCase())) {
+      return baseTitle;
+    }
+
+    const suffix = ` (#${teamId.toString()})`;
+    const maxBaseLength = Math.max(0, TEAM_ALBUM_TITLE_MAX_LENGTH - suffix.length);
+    const truncatedBase = baseTitle.slice(0, maxBaseLength).trimEnd();
+    return `${truncatedBase}${suffix}`.slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
   }
 
   private async requireTeamAlbum(
