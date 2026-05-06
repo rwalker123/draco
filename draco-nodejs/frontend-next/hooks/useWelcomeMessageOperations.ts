@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type UpsertWelcomeMessageType, type WelcomeMessageType } from '@draco/shared-schemas';
 
 import { useAuth } from '../context/AuthContext';
@@ -43,7 +43,9 @@ export function useWelcomeMessageOperations(scope: WelcomeMessageScope): Operati
   const [error, setError] = useState<string | null>(null);
 
   const depsRef = useRef({ scope, token, apiClient });
-  depsRef.current = { scope, token, apiClient };
+  useEffect(() => {
+    depsRef.current = { scope, token, apiClient };
+  });
 
   const [operations] = useState(() => {
     const getService = () => {
