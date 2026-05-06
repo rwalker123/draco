@@ -59,7 +59,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
   seasonId,
   teamSeasonId,
 }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const timeZone = useAccountTimezone();
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
@@ -315,12 +315,14 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
             <Typography color="text.primary">Schedule</Typography>
           </Breadcrumbs>
           <Stack direction="row" spacing={1}>
-            <SubscribeToScheduleButton
-              seasonTeamId={teamSeasonId}
-              teamName={teamName ?? 'Team'}
-              size="small"
-              variant="outlined"
-            />
+            {user && (
+              <SubscribeToScheduleButton
+                seasonTeamId={teamSeasonId}
+                teamName={teamName ?? 'Team'}
+                size="small"
+                variant="outlined"
+              />
+            )}
             <Tooltip
               title={filteredGames.length === 0 ? 'No games to export' : 'Download schedule (.ics)'}
             >
