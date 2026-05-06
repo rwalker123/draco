@@ -1,12 +1,14 @@
 import type {
   CreatePhotoGalleryAlbumType,
   CreatePhotoGalleryPhotoType,
+  CreateTeamGalleryPhotoType,
   PhotoGalleryAdminAlbumListType,
   PhotoGalleryAdminAlbumType,
   PhotoGalleryListType,
   PhotoGalleryPhotoType,
   UpdatePhotoGalleryAlbumType,
   UpdatePhotoGalleryPhotoType,
+  UpdateTeamGalleryPhotoType,
 } from '@draco/shared-schemas';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
@@ -23,9 +25,14 @@ import { ConflictError, NotFoundError, ValidationError } from '../utils/customEr
 import { ValidationUtils } from '../utils/validationUtils.js';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
 import { InstagramIntegrationService } from './instagramIntegrationService.js';
+import { ITeamRepository } from '../repositories/interfaces/index.js';
+
+const TEAM_ALBUM_TITLE_MAX_LENGTH = 25;
+const FALLBACK_TEAM_ALBUM_TITLE = 'Team Photos';
 
 const GALLERY_EXTENSION = '.jpg';
 type AdminCreatePhotoPayload = Omit<CreatePhotoGalleryPhotoType, 'photo'>;
+type AdminCreateTeamPhotoPayload = Omit<CreateTeamGalleryPhotoType, 'photo'>;
 
 const trimOrEmpty = (value: string | null | undefined): string => {
   if (value === undefined || value === null) {
@@ -41,6 +48,7 @@ export class PhotoGalleryAdminService {
     private readonly repository: IPhotoGalleryAdminRepository = RepositoryFactory.getPhotoGalleryAdminRepository(),
     private readonly assetService: PhotoGalleryAssetService = ServiceFactory.getPhotoGalleryAssetService(),
     private readonly instagramIntegrationService: InstagramIntegrationService = ServiceFactory.getInstagramIntegrationService(),
+    private readonly teamRepository: ITeamRepository = RepositoryFactory.getTeamRepository(),
   ) {}
 
   async listGalleryEntries(
@@ -230,6 +238,191 @@ export class PhotoGalleryAdminService {
     }
 
     await this.repository.deleteAlbum(albumId);
+  }
+
+  async listTeamGalleryEntries(
+    accountId: bigint,
+    teamId: bigint,
+    query: { albumId?: string | null },
+  ): Promise<PhotoGalleryListType> {
+    return this.listGalleryEntries(accountId, {
+      albumId: query.albumId,
+      teamId: teamId.toString(),
+    });
+  }
+
+  async listTeamAlbums(accountId: bigint, teamId: bigint): Promise<PhotoGalleryAdminAlbumListType> {
+    const albums = await this.repository.listAlbums(accountId);
+    const teamAlbums = albums.filter((album) => album.teamid === teamId);
+    return PhotoGalleryAdminResponseFormatter.formatAlbumList(teamAlbums);
+  }
+
+  async createTeamAlbum(
+    accountId: bigint,
+    teamId: bigint,
+    payload: CreatePhotoGalleryAlbumType,
+  ): Promise<PhotoGalleryAdminAlbumType> {
+    await this.requireTeamBelongsToAccount(accountId, teamId);
+
+    const parentAlbumIdValue = await this.parseOptionalParentAlbumId(
+      payload.parentAlbumId,
+      accountId,
+    );
+    if (parentAlbumIdValue !== null) {
+      await this.requireTeamAlbum(accountId, teamId, parentAlbumIdValue);
+    }
+
+    const baseTitle = payload.title.trim().slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
+    const albums = await this.repository.listAlbums(accountId);
+    const title = this.disambiguateAlbumTitle(baseTitle, teamId, albums);
+
+    const created = await this.repository.createAlbum({
+      accountid: accountId,
+      title,
+      teamid: teamId,
+      parentalbumid: parentAlbumIdValue ?? 0n,
+    });
+
+    return PhotoGalleryAdminResponseFormatter.formatAlbum(created);
+  }
+
+  async updateTeamAlbum(
+    accountId: bigint,
+    teamId: bigint,
+    albumId: bigint,
+    payload: UpdatePhotoGalleryAlbumType,
+  ): Promise<PhotoGalleryAdminAlbumType> {
+    await this.requireTeamAlbum(accountId, teamId, albumId);
+
+    if (payload.teamId !== undefined) {
+      const requestedTeamId = this.parseOptionalTeamId(payload.teamId);
+      if (requestedTeamId !== teamId) {
+        throw new ValidationError('Team albums cannot be reassigned to a different team');
+      }
+    }
+
+    if (payload.parentAlbumId !== undefined && payload.parentAlbumId !== null) {
+      const parsed = await this.parseOptionalParentAlbumId(payload.parentAlbumId, accountId);
+      if (parsed !== null) {
+        await this.requireTeamAlbum(accountId, teamId, parsed);
+      }
+    }
+
+    const { teamId: _ignoredTeamId, ...delegatePayload } = payload;
+    return this.updateAlbum(accountId, albumId, delegatePayload);
+  }
+
+  async deleteTeamAlbum(accountId: bigint, teamId: bigint, albumId: bigint): Promise<void> {
+    await this.requireTeamAlbum(accountId, teamId, albumId);
+    return this.deleteAlbum(accountId, albumId);
+  }
+
+  async createTeamPhoto(
+    accountId: bigint,
+    teamId: bigint,
+    payload: AdminCreateTeamPhotoPayload,
+    fileBuffer: Buffer,
+  ): Promise<PhotoGalleryPhotoType> {
+    const albumId = await this.ensureTeamAlbum(accountId, teamId);
+
+    return this.createPhoto(
+      accountId,
+      {
+        ...payload,
+        albumId: albumId.toString(),
+      },
+      fileBuffer,
+    );
+  }
+
+  async updateTeamPhoto(
+    accountId: bigint,
+    teamId: bigint,
+    photoId: bigint,
+    payload: UpdateTeamGalleryPhotoType,
+  ): Promise<PhotoGalleryPhotoType> {
+    await this.requireTeamPhoto(accountId, teamId, photoId);
+
+    return this.updatePhoto(accountId, photoId, payload);
+  }
+
+  async deleteTeamPhoto(accountId: bigint, teamId: bigint, photoId: bigint): Promise<void> {
+    await this.requireTeamPhoto(accountId, teamId, photoId);
+    return this.deletePhoto(accountId, photoId);
+  }
+
+  private async ensureTeamAlbum(accountId: bigint, teamId: bigint): Promise<bigint> {
+    const albums = await this.repository.listAlbums(accountId);
+    const existing = albums.find((album) => album.teamid === teamId);
+    if (existing) {
+      return existing.id;
+    }
+
+    const baseTitle = await this.resolveTeamAlbumTitle(accountId, teamId);
+    const title = this.disambiguateAlbumTitle(baseTitle, teamId, albums);
+    const created = await this.repository.createAlbum({
+      accountid: accountId,
+      title,
+      teamid: teamId,
+      parentalbumid: 0n,
+    });
+    return created.id;
+  }
+
+  private async resolveTeamAlbumTitle(accountId: bigint, teamId: bigint): Promise<string> {
+    await this.requireTeamBelongsToAccount(accountId, teamId);
+
+    const latestName = await this.teamRepository.findLatestTeamSeasonName(teamId);
+    const candidate = latestName?.trim() || FALLBACK_TEAM_ALBUM_TITLE;
+    return candidate.slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
+  }
+
+  private async requireTeamBelongsToAccount(accountId: bigint, teamId: bigint): Promise<void> {
+    const team = await this.teamRepository.findTeamDefinition(teamId);
+    if (!team || team.accountid !== accountId) {
+      throw new NotFoundError('Team not found');
+    }
+  }
+
+  private disambiguateAlbumTitle(
+    baseTitle: string,
+    teamId: bigint,
+    existingAlbums: dbPhotoGalleryAlbum[],
+  ): string {
+    const taken = new Set(existingAlbums.map((album) => album.title.trim().toLowerCase()));
+    if (!taken.has(baseTitle.trim().toLowerCase())) {
+      return baseTitle;
+    }
+
+    const suffix = ` (#${teamId.toString()})`;
+    const maxBaseLength = Math.max(0, TEAM_ALBUM_TITLE_MAX_LENGTH - suffix.length);
+    const truncatedBase = baseTitle.slice(0, maxBaseLength).trimEnd();
+    return `${truncatedBase}${suffix}`.slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
+  }
+
+  private async requireTeamAlbum(
+    accountId: bigint,
+    teamId: bigint,
+    albumId: bigint,
+  ): Promise<dbPhotoGalleryAlbum> {
+    const album = await this.requireAlbum(accountId, albumId);
+    if (album.teamid !== teamId) {
+      throw new NotFoundError('Photo album not found');
+    }
+    return album;
+  }
+
+  private async requireTeamPhoto(
+    accountId: bigint,
+    teamId: bigint,
+    photoId: bigint,
+  ): Promise<dbPhotoGalleryEntry> {
+    const entry = await this.requirePhoto(accountId, photoId);
+    const albumTeamId = entry.photogalleryalbum?.teamid ?? null;
+    if (albumTeamId === null || albumTeamId !== teamId) {
+      throw new NotFoundError('Gallery photo not found');
+    }
+    return entry;
   }
 
   private ensureFileProvided(fileBuffer: Buffer | undefined): void {

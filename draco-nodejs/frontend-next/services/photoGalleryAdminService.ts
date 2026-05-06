@@ -1,12 +1,20 @@
 import {
   createAccountGalleryAlbum,
   createAccountGalleryPhoto,
+  createTeamGalleryAlbum,
+  createTeamGalleryPhoto,
   deleteAccountGalleryAlbum,
   deleteAccountGalleryPhoto,
+  deleteTeamGalleryAlbum,
+  deleteTeamGalleryPhoto,
   listAccountGalleryAlbumsAdmin,
   listAccountGalleryPhotosAdmin,
+  listTeamGalleryAlbumsAdmin,
+  listTeamGalleryPhotosAdmin,
   updateAccountGalleryAlbum,
   updateAccountGalleryPhoto,
+  updateTeamGalleryAlbum,
+  updateTeamGalleryPhoto,
 } from '@draco/shared-api-client';
 import type {
   CreatePhotoGalleryAlbumType,
@@ -40,14 +48,22 @@ export async function listGalleryPhotosAdmin(
   accountId: string,
   token?: string | null,
   signal?: AbortSignal,
+  teamId?: string | null,
 ): Promise<PhotoGalleryListType> {
   const client = createClient(token);
-  const result = await listAccountGalleryPhotosAdmin({
-    client,
-    path: { accountId },
-    signal,
-    throwOnError: false,
-  });
+  const result = teamId
+    ? await listTeamGalleryPhotosAdmin({
+        client,
+        path: { accountId, teamId },
+        signal,
+        throwOnError: false,
+      })
+    : await listAccountGalleryPhotosAdmin({
+        client,
+        path: { accountId },
+        signal,
+        throwOnError: false,
+      });
 
   return unwrapApiResult(result, 'Failed to load gallery photos');
 }
@@ -56,15 +72,30 @@ export async function createGalleryPhotoAdmin(
   accountId: string,
   input: CreateGalleryPhotoInput,
   token?: string | null,
+  teamId?: string | null,
 ): Promise<PhotoGalleryPhotoType> {
   const client = createClient(token);
+
+  if (teamId) {
+    const result = await createTeamGalleryPhoto({
+      client,
+      path: { accountId, teamId },
+      body: {
+        title: input.title,
+        caption: input.caption ?? undefined,
+        photo: input.file,
+      },
+      throwOnError: false,
+    });
+    return unwrapApiResult(result, 'Failed to create gallery photo');
+  }
+
   const body: NonNullable<CreateAccountGalleryPhotoData['body']> = {
     title: input.title,
     caption: input.caption ?? undefined,
     albumId: input.albumId ?? null,
     photo: input.file,
   };
-
   const result = await createAccountGalleryPhoto({
     client,
     path: { accountId },
@@ -80,8 +111,27 @@ export async function updateGalleryPhotoAdmin(
   photoId: string,
   input: UpdateGalleryPhotoInput,
   token?: string | null,
+  teamId?: string | null,
 ): Promise<PhotoGalleryPhotoType> {
   const client = createClient(token);
+
+  if (teamId) {
+    const teamPayload: { title?: string; caption?: string | null } = {};
+    if (input.title !== undefined) {
+      teamPayload.title = input.title;
+    }
+    if (input.caption !== undefined) {
+      teamPayload.caption = input.caption;
+    }
+    const result = await updateTeamGalleryPhoto({
+      client,
+      path: { accountId, teamId, photoId },
+      body: teamPayload,
+      throwOnError: false,
+    });
+    return unwrapApiResult(result, 'Failed to update gallery photo');
+  }
+
   const payload: UpdatePhotoGalleryPhotoType = {};
 
   if (input.title !== undefined) {
@@ -110,13 +160,20 @@ export async function deleteGalleryPhotoAdmin(
   accountId: string,
   photoId: string,
   token?: string | null,
+  teamId?: string | null,
 ): Promise<void> {
   const client = createClient(token);
-  const result = await deleteAccountGalleryPhoto({
-    client,
-    path: { accountId, photoId },
-    throwOnError: false,
-  });
+  const result = teamId
+    ? await deleteTeamGalleryPhoto({
+        client,
+        path: { accountId, teamId, photoId },
+        throwOnError: false,
+      })
+    : await deleteAccountGalleryPhoto({
+        client,
+        path: { accountId, photoId },
+        throwOnError: false,
+      });
 
   assertNoApiError(result, 'Failed to delete gallery photo');
 }
@@ -125,14 +182,22 @@ export async function listGalleryAlbumsAdmin(
   accountId: string,
   token?: string | null,
   signal?: AbortSignal,
+  teamId?: string | null,
 ): Promise<PhotoGalleryAdminAlbumListType> {
   const client = createClient(token);
-  const result = await listAccountGalleryAlbumsAdmin({
-    client,
-    path: { accountId },
-    signal,
-    throwOnError: false,
-  });
+  const result = teamId
+    ? await listTeamGalleryAlbumsAdmin({
+        client,
+        path: { accountId, teamId },
+        signal,
+        throwOnError: false,
+      })
+    : await listAccountGalleryAlbumsAdmin({
+        client,
+        path: { accountId },
+        signal,
+        throwOnError: false,
+      });
 
   return unwrapApiResult(result, 'Failed to load gallery albums');
 }
@@ -141,14 +206,22 @@ export async function createGalleryAlbumAdmin(
   accountId: string,
   input: CreatePhotoGalleryAlbumType,
   token?: string | null,
+  teamId?: string | null,
 ): Promise<PhotoGalleryAdminAlbumType> {
   const client = createClient(token);
-  const result = await createAccountGalleryAlbum({
-    client,
-    path: { accountId },
-    body: input,
-    throwOnError: false,
-  });
+  const result = teamId
+    ? await createTeamGalleryAlbum({
+        client,
+        path: { accountId, teamId },
+        body: { title: input.title, parentAlbumId: input.parentAlbumId ?? null },
+        throwOnError: false,
+      })
+    : await createAccountGalleryAlbum({
+        client,
+        path: { accountId },
+        body: input,
+        throwOnError: false,
+      });
 
   return unwrapApiResult(result, 'Failed to create gallery album');
 }
@@ -158,14 +231,22 @@ export async function updateGalleryAlbumAdmin(
   albumId: string,
   input: UpdatePhotoGalleryAlbumType,
   token?: string | null,
+  teamId?: string | null,
 ): Promise<PhotoGalleryAdminAlbumType> {
   const client = createClient(token);
-  const result = await updateAccountGalleryAlbum({
-    client,
-    path: { accountId, albumId },
-    body: input,
-    throwOnError: false,
-  });
+  const result = teamId
+    ? await updateTeamGalleryAlbum({
+        client,
+        path: { accountId, teamId, albumId },
+        body: { title: input.title, parentAlbumId: input.parentAlbumId },
+        throwOnError: false,
+      })
+    : await updateAccountGalleryAlbum({
+        client,
+        path: { accountId, albumId },
+        body: input,
+        throwOnError: false,
+      });
 
   return unwrapApiResult(result, 'Failed to update gallery album');
 }
@@ -174,13 +255,20 @@ export async function deleteGalleryAlbumAdmin(
   accountId: string,
   albumId: string,
   token?: string | null,
+  teamId?: string | null,
 ): Promise<void> {
   const client = createClient(token);
-  const result = await deleteAccountGalleryAlbum({
-    client,
-    path: { accountId, albumId },
-    throwOnError: false,
-  });
+  const result = teamId
+    ? await deleteTeamGalleryAlbum({
+        client,
+        path: { accountId, teamId, albumId },
+        throwOnError: false,
+      })
+    : await deleteAccountGalleryAlbum({
+        client,
+        path: { accountId, albumId },
+        throwOnError: false,
+      });
 
   assertNoApiError(result, 'Failed to delete gallery album');
 }

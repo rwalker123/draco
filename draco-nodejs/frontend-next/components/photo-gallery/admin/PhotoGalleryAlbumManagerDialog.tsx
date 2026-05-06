@@ -42,6 +42,7 @@ type AlbumDialogSuccessPayload =
 
 interface PhotoGalleryAlbumManagerDialogProps {
   accountId: string;
+  teamId?: string | null;
   open: boolean;
   albums: PhotoGalleryAdminAlbumType[];
   albumPhotoCounts: Map<string, number>;
@@ -76,6 +77,7 @@ const normalizeAlbums = (
 
 export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDialogProps> = ({
   accountId,
+  teamId,
   open,
   albums,
   albumPhotoCounts,
@@ -85,6 +87,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
   onSuccess,
   onError,
 }) => {
+  const teamScopeId = teamId ?? null;
   const [localAlbums, setLocalAlbums] = useState<EditableAlbum[]>([]);
   const [newAlbumTitle, setNewAlbumTitle] = useState('');
   const [editingAlbumId, setEditingAlbumId] = useState<string | null>(null);
@@ -116,10 +119,10 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     try {
       const payload = {
         title,
-        teamId: null,
+        teamId: teamScopeId,
         parentAlbumId: null,
       };
-      const created = await createGalleryAlbumAdmin(accountId, payload, token);
+      const created = await createGalleryAlbumAdmin(accountId, payload, token, teamScopeId);
       const normalized: EditableAlbum = {
         ...created,
         id: created.id ?? '',
@@ -175,7 +178,13 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     setOperationMessage(null);
 
     try {
-      const updated = await updateGalleryAlbumAdmin(accountId, editingAlbumId, { title }, token);
+      const updated = await updateGalleryAlbumAdmin(
+        accountId,
+        editingAlbumId,
+        { title },
+        token,
+        teamScopeId,
+      );
 
       setLocalAlbums((current) =>
         current.map((album) =>
@@ -228,7 +237,7 @@ export const PhotoGalleryAlbumManagerDialog: React.FC<PhotoGalleryAlbumManagerDi
     setOperationMessage(null);
 
     try {
-      await deleteGalleryAlbumAdmin(accountId, pendingDelete.id, token);
+      await deleteGalleryAlbumAdmin(accountId, pendingDelete.id, token, teamScopeId);
       setLocalAlbums((current) => current.filter((album) => album.id !== pendingDelete.id));
       setPendingDelete(null);
       onSuccess?.({

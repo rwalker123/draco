@@ -26,6 +26,7 @@ import teamSponsorsRouter from './routes/team-sponsors.js';
 import teamHandoutsRouter from './routes/team-handouts.js';
 import teamAnnouncementsRouter from './routes/team-announcements.js';
 import teamPhotoSubmissionsRouter from './routes/team-photo-submissions.js';
+import teamPhotoGalleryRouter from './routes/team-photo-gallery.js';
 import accountsWelcomeMessagesRouter from './routes/accounts-welcome-messages.js';
 import teamWelcomeMessagesRouter from './routes/team-welcome-messages.js';
 import gamesRouter from './routes/games.js';
@@ -292,6 +293,7 @@ app.use('/api/accounts/:accountId/teams', teamHandoutsRouter);
 app.use('/api/accounts/:accountId/teams', teamAnnouncementsRouter);
 app.use('/api/accounts', teamWelcomeMessagesRouter);
 app.use('/api/accounts/:accountId/teams', teamPhotoSubmissionsRouter);
+app.use('/api/accounts/:accountId/teams', teamPhotoGalleryRouter);
 app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,

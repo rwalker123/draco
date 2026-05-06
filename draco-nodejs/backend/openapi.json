@@ -18227,6 +18227,52 @@
         "title": "UpdatePhotoGalleryPhoto",
         "description": "JSON payload for updating gallery photo metadata"
       },
+      "CreateTeamGalleryPhoto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Title for the approved team gallery photo"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Optional caption describing the team gallery photo"
+          },
+          "photo": {
+            "type": "string",
+            "format": "binary",
+            "description": "Photo file to upload"
+          }
+        },
+        "required": [
+          "title",
+          "photo"
+        ],
+        "title": "CreateTeamGalleryPhoto",
+        "description": "Multipart payload used by team administrators to upload a team gallery photo. The album is auto-managed by the backend."
+      },
+      "UpdateTeamGalleryPhoto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Updated title for the team gallery photo"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Updated caption for the team gallery photo"
+          }
+        },
+        "title": "UpdateTeamGalleryPhoto",
+        "description": "JSON payload to update title or caption on a team gallery photo. Album reassignment is not supported."
+      },
       "PhotoGalleryPhoto": {
         "type": "object",
         "properties": {
@@ -33539,6 +33585,679 @@
           },
           "500": {
             "description": "Unexpected server error while deleting the gallery album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos": {
+      "get": {
+        "operationId": "listTeamGalleryPhotosAdmin",
+        "summary": "List team gallery photos for administration",
+        "description": "Returns approved gallery photos belonging to a specific team for administrative management. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            },
+            "description": "Optional album filter scoped to this team."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team gallery photos available for administrative management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving team gallery photos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeamGalleryPhoto",
+        "summary": "Upload a team gallery photo as an administrator",
+        "description": "Uploads a new photo into the team’s auto-managed gallery album. The album is selected by the backend; callers cannot target a specific album. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamGalleryPhoto"
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/*"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Team gallery photo created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "500": {
+            "description": "Unexpected server error while creating the team gallery photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos/{photoId}": {
+      "patch": {
+        "operationId": "updateTeamGalleryPhoto",
+        "summary": "Update team gallery photo metadata",
+        "description": "Updates the title or caption for a team gallery photo. Album reassignment is not supported. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamGalleryPhoto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated team gallery photo metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "404": {
+            "description": "Team gallery photo not found."
+          },
+          "500": {
+            "description": "Unexpected server error while updating the team gallery photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTeamGalleryPhoto",
+        "summary": "Delete a team gallery photo",
+        "description": "Removes a team gallery photo and its associated assets. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team gallery photo deleted."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "404": {
+            "description": "Team gallery photo not found."
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the team gallery photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums": {
+      "get": {
+        "operationId": "listTeamGalleryAlbumsAdmin",
+        "summary": "List team gallery albums for administration",
+        "description": "Retrieves albums belonging to the specified team for administrative management. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team gallery albums available for administrative management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryAdminAlbumList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving team gallery albums.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeamGalleryAlbum",
+        "summary": "Create a team gallery album",
+        "description": "Creates a new album owned by the specified team. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25,
+                    "description": "Title for the team album"
+                  },
+                  "parentAlbumId": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Optional parent album identifier scoped to the same team. Null nests at the team root."
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "title": "CreateTeamGalleryAlbum",
+                "description": "JSON payload to create a team gallery album. The owning team is taken from the URL path."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Team gallery album created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryAdminAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "409": {
+            "description": "Album title conflicts with an existing album."
+          },
+          "500": {
+            "description": "Unexpected server error while creating the team gallery album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums/{albumId}": {
+      "patch": {
+        "operationId": "updateTeamGalleryAlbum",
+        "summary": "Update team gallery album metadata",
+        "description": "Updates the title or parent album of a team gallery album. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25,
+                    "description": "Updated title for the team album"
+                  },
+                  "parentAlbumId": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Updated parent album identifier scoped to the same team"
+                  }
+                },
+                "title": "UpdateTeamGalleryAlbum",
+                "description": "JSON payload to update a team gallery album. The owning team cannot be changed."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Team gallery album updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryAdminAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "404": {
+            "description": "Team gallery album not found."
+          },
+          "409": {
+            "description": "Album title conflicts with an existing album."
+          },
+          "500": {
+            "description": "Unexpected server error while updating the team gallery album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTeamGalleryAlbum",
+        "summary": "Delete a team gallery album",
+        "description": "Deletes an album owned by the specified team. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team gallery album deleted."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "404": {
+            "description": "Team gallery album not found."
+          },
+          "409": {
+            "description": "Album cannot be deleted while it contains photos."
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the team gallery album.",
             "content": {
               "application/json": {
                 "schema": {

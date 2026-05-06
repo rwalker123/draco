@@ -255,6 +255,8 @@ import {
   PhotoGalleryQuerySchema,
   UpdatePhotoGalleryAlbumSchema,
   UpdatePhotoGalleryPhotoSchema,
+  CreateTeamGalleryPhotoSchema,
+  UpdateTeamGalleryPhotoSchema,
   SocialFeedItemSchema,
   SocialFeedListSchema,
   SocialFeedQuerySchema,
@@ -1095,6 +1097,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'UpdatePhotoGalleryPhoto',
     UpdatePhotoGalleryPhotoSchema,
   );
+  const CreateTeamGalleryPhotoSchemaRef = registry.register(
+    'CreateTeamGalleryPhoto',
+    CreateTeamGalleryPhotoSchema,
+  );
+  const UpdateTeamGalleryPhotoSchemaRef = registry.register(
+    'UpdateTeamGalleryPhoto',
+    UpdateTeamGalleryPhotoSchema,
+  );
   const PhotoGalleryPhotoSchemaRef = registry.register(
     'PhotoGalleryPhoto',
     PhotoGalleryPhotoSchema,
@@ -1810,6 +1820,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpsertWelcomeMessageSchemaRef,
     CreatePhotoGalleryPhotoSchemaRef,
     UpdatePhotoGalleryPhotoSchemaRef,
+    CreateTeamGalleryPhotoSchemaRef,
+    UpdateTeamGalleryPhotoSchemaRef,
     PhotoGalleryPhotoSchemaRef,
     CreatePhotoGalleryAlbumSchemaRef,
     UpdatePhotoGalleryAlbumSchemaRef,

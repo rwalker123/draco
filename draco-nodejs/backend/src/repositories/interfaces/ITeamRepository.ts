@@ -121,4 +121,5 @@ export interface ITeamRepository extends IBaseRepository<teamsseason> {
   findTeamSeasonsWithYouTube(): Promise<dbTeamSeasonWithTeamAndSeason[]>;
   findTeamSeasonWithAccount(teamSeasonId: bigint): Promise<dbTeamSeasonAccount | null>;
   findAllTimeTeams(accountId: bigint): Promise<dbAllTimeTeamRow[]>;
+  findLatestTeamSeasonName(teamId: bigint): Promise<string | null>;
 }

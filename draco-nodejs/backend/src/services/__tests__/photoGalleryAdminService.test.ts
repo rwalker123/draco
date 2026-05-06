@@ -22,6 +22,7 @@ const createAlbum = (overrides: Partial<unknown> = {}) => ({
   title: 'Main Album',
   teamid: 0n,
   parentalbumid: 0n,
+  _count: { photogallery: 0 },
   ...overrides,
 });
 
@@ -51,6 +52,11 @@ describe('PhotoGalleryAdminService', () => {
     uploadPhotoFromGallery: vi.fn(),
   };
 
+  const teamRepository = {
+    findTeamDefinition: vi.fn(),
+    findLatestTeamSeasonName: vi.fn(),
+  };
+
   let service: PhotoGalleryAdminService;
 
   beforeEach(() => {
@@ -60,6 +66,7 @@ describe('PhotoGalleryAdminService', () => {
       repository as never,
       assetService as never,
       instagramIntegrationService as never,
+      teamRepository as never,
     );
   });
 
@@ -177,5 +184,270 @@ describe('PhotoGalleryAdminService', () => {
     );
 
     expect(repository.deleteAlbum).not.toHaveBeenCalled();
+  });
+
+  describe('team-scoped operations', () => {
+    const accountId = 1n;
+    const teamId = 42n;
+
+    const teamAlbumRow = createAlbum({ id: 7n, teamid: teamId, title: 'Eagles' });
+    const teamPhotoEntry = createGalleryEntry({
+      id: 100n,
+      albumid: 7n,
+      photogalleryalbum: { id: 7n, title: 'Eagles', teamid: teamId },
+    });
+
+    it('auto-creates the team album from the latest season name when none exists', async () => {
+      repository.listAlbums.mockResolvedValue([
+        createAlbum({ id: 5n, teamid: 99n, title: 'Other Team' }),
+      ]);
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: accountId });
+      teamRepository.findLatestTeamSeasonName.mockResolvedValue('Eagles');
+      repository.createAlbum.mockResolvedValue({
+        ...teamAlbumRow,
+        _count: { photogallery: 0 },
+      });
+      repository.countPhotosInAlbum.mockResolvedValue(0);
+      repository.findAlbumById.mockResolvedValue(teamAlbumRow);
+      repository.createPhoto.mockResolvedValue({
+        id: 100n,
+        accountid: accountId,
+        albumid: 7n,
+        title: 'Trophy',
+        caption: '',
+      });
+      repository.findPhotoById
+        .mockResolvedValueOnce(teamPhotoEntry)
+        .mockResolvedValueOnce(teamPhotoEntry);
+      assetService.saveGalleryAssets.mockResolvedValue(undefined);
+
+      await service.createTeamPhoto(
+        accountId,
+        teamId,
+        { title: 'Trophy', caption: '' },
+        Buffer.from('img'),
+      );
+
+      expect(teamRepository.findTeamDefinition).toHaveBeenCalledWith(teamId);
+      expect(teamRepository.findLatestTeamSeasonName).toHaveBeenCalledWith(teamId);
+      expect(repository.createAlbum).toHaveBeenCalledWith({
+        accountid: accountId,
+        title: 'Eagles',
+        teamid: teamId,
+        parentalbumid: 0n,
+      });
+      expect(repository.createPhoto).toHaveBeenCalledWith({
+        accountid: accountId,
+        albumid: 7n,
+        title: 'Trophy',
+        caption: '',
+      });
+    });
+
+    it('reuses the existing team album on subsequent uploads', async () => {
+      repository.listAlbums.mockResolvedValue([teamAlbumRow]);
+      repository.countPhotosInAlbum.mockResolvedValue(0);
+      repository.findAlbumById.mockResolvedValue(teamAlbumRow);
+      repository.createPhoto.mockResolvedValue({
+        id: 101n,
+        accountid: accountId,
+        albumid: 7n,
+        title: 'Banner',
+        caption: '',
+      });
+      repository.findPhotoById
+        .mockResolvedValueOnce(teamPhotoEntry)
+        .mockResolvedValueOnce(teamPhotoEntry);
+      assetService.saveGalleryAssets.mockResolvedValue(undefined);
+
+      await service.createTeamPhoto(accountId, teamId, { title: 'Banner' }, Buffer.from('img'));
+
+      expect(repository.createAlbum).not.toHaveBeenCalled();
+      expect(teamRepository.findTeamDefinition).not.toHaveBeenCalled();
+      expect(repository.createPhoto).toHaveBeenCalledWith(expect.objectContaining({ albumid: 7n }));
+    });
+
+    it('disambiguates the auto-created album title when another album already uses it', async () => {
+      repository.listAlbums.mockResolvedValue([
+        createAlbum({ id: 9n, teamid: 99n, title: 'Eagles' }),
+      ]);
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: accountId });
+      teamRepository.findLatestTeamSeasonName.mockResolvedValue('Eagles');
+      repository.createAlbum.mockImplementation(async (data) => ({
+        id: 7n,
+        accountid: data.accountid,
+        title: data.title,
+        teamid: data.teamid,
+        parentalbumid: data.parentalbumid,
+        _count: { photogallery: 0 },
+      }));
+      repository.countPhotosInAlbum.mockResolvedValue(0);
+      repository.findAlbumById.mockResolvedValue(teamAlbumRow);
+      repository.createPhoto.mockResolvedValue({
+        id: 100n,
+        accountid: accountId,
+        albumid: 7n,
+        title: 'Photo',
+        caption: '',
+      });
+      repository.findPhotoById
+        .mockResolvedValueOnce(teamPhotoEntry)
+        .mockResolvedValueOnce(teamPhotoEntry);
+      assetService.saveGalleryAssets.mockResolvedValue(undefined);
+
+      await service.createTeamPhoto(accountId, teamId, { title: 'Photo' }, Buffer.from('img'));
+
+      const createCall = repository.createAlbum.mock.calls[0][0];
+      expect(createCall.title).toBe(`Eagles (#${teamId.toString()})`);
+      expect(createCall.title.length).toBeLessThanOrEqual(25);
+    });
+
+    it('rejects when the team does not belong to the account', async () => {
+      repository.listAlbums.mockResolvedValue([]);
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: 999n });
+
+      await expect(
+        service.createTeamPhoto(accountId, teamId, { title: 'X' }, Buffer.from('img')),
+      ).rejects.toThrow('Team not found');
+
+      expect(repository.createAlbum).not.toHaveBeenCalled();
+      expect(repository.createPhoto).not.toHaveBeenCalled();
+    });
+
+    it('updateTeamPhoto applies title and caption updates', async () => {
+      repository.findPhotoById.mockResolvedValue(teamPhotoEntry);
+      repository.updatePhoto.mockResolvedValue({
+        id: 100n,
+        accountid: accountId,
+        albumid: 7n,
+        title: 'Renamed',
+        caption: 'updated',
+      });
+
+      await service.updateTeamPhoto(accountId, teamId, 100n, {
+        title: 'Renamed',
+        caption: 'updated',
+      });
+
+      expect(repository.updatePhoto).toHaveBeenCalledWith(100n, {
+        title: 'Renamed',
+        caption: 'updated',
+      });
+      const updatePayload = repository.updatePhoto.mock.calls[0][1];
+      expect(updatePayload).not.toHaveProperty('albumid');
+    });
+
+    it('updateTeamPhoto rejects photos that do not belong to the team', async () => {
+      const otherTeamPhoto = createGalleryEntry({
+        id: 200n,
+        albumid: 99n,
+        photogalleryalbum: { id: 99n, title: 'Other', teamid: 555n },
+      });
+      repository.findPhotoById.mockResolvedValue(otherTeamPhoto);
+
+      await expect(
+        service.updateTeamPhoto(accountId, teamId, 200n, { title: 'X' }),
+      ).rejects.toThrow('Gallery photo not found');
+
+      expect(repository.updatePhoto).not.toHaveBeenCalled();
+    });
+
+    it('deleteTeamPhoto enforces team ownership', async () => {
+      const otherTeamPhoto = createGalleryEntry({
+        id: 200n,
+        albumid: 99n,
+        photogalleryalbum: { id: 99n, title: 'Other', teamid: 555n },
+      });
+      repository.findPhotoById.mockResolvedValue(otherTeamPhoto);
+
+      await expect(service.deleteTeamPhoto(accountId, teamId, 200n)).rejects.toThrow(
+        'Gallery photo not found',
+      );
+
+      expect(repository.deletePhoto).not.toHaveBeenCalled();
+    });
+
+    it('listTeamAlbums filters to the requested team', async () => {
+      repository.listAlbums.mockResolvedValue([
+        createAlbum({ id: 7n, teamid: teamId, title: 'Eagles' }),
+        createAlbum({ id: 8n, teamid: 99n, title: 'Other' }),
+        createAlbum({ id: 9n, teamid: 0n, title: 'Account Album' }),
+      ]);
+
+      const result = await service.listTeamAlbums(accountId, teamId);
+
+      expect(result.albums).toHaveLength(1);
+      expect(result.albums[0].id).toBe('7');
+    });
+
+    it('createTeamAlbum bypasses the account-level uniqueness check and disambiguates', async () => {
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: accountId });
+      repository.listAlbums.mockResolvedValue([
+        createAlbum({ id: 9n, teamid: 99n, title: 'Eagles' }),
+      ]);
+      repository.createAlbum.mockImplementation(async (data) => ({
+        id: 7n,
+        accountid: data.accountid,
+        title: data.title,
+        teamid: data.teamid,
+        parentalbumid: data.parentalbumid,
+        _count: { photogallery: 0 },
+      }));
+
+      const result = await service.createTeamAlbum(accountId, teamId, {
+        title: 'Eagles',
+        teamId: teamId.toString(),
+        parentAlbumId: null,
+      });
+
+      expect(repository.findAlbumByTitle).not.toHaveBeenCalled();
+      expect(repository.createAlbum).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountid: accountId,
+          teamid: teamId,
+          title: `Eagles (#${teamId.toString()})`,
+        }),
+      );
+      expect(result.title).toBe(`Eagles (#${teamId.toString()})`);
+    });
+
+    it('createTeamAlbum rejects when the team does not belong to the account', async () => {
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: 999n });
+
+      await expect(
+        service.createTeamAlbum(accountId, teamId, {
+          title: 'Eagles',
+          teamId: teamId.toString(),
+          parentAlbumId: null,
+        }),
+      ).rejects.toThrow('Team not found');
+
+      expect(repository.createAlbum).not.toHaveBeenCalled();
+    });
+
+    it('updateTeamAlbum rejects reassigning the album to a different team', async () => {
+      repository.findAlbumById.mockResolvedValue(teamAlbumRow);
+
+      await expect(
+        service.updateTeamAlbum(accountId, teamId, 7n, {
+          title: 'Renamed',
+          teamId: '999',
+        }),
+      ).rejects.toThrow('Team albums cannot be reassigned to a different team');
+
+      expect(repository.updateAlbum).not.toHaveBeenCalled();
+    });
+
+    it('deleteTeamAlbum rejects albums that do not belong to the team', async () => {
+      repository.findAlbumById.mockResolvedValue(
+        createAlbum({ id: 7n, teamid: 555n, title: 'Other' }),
+      );
+
+      await expect(service.deleteTeamAlbum(accountId, teamId, 7n)).rejects.toThrow(
+        'Photo album not found',
+      );
+
+      expect(repository.deleteAlbum).not.toHaveBeenCalled();
+    });
   });
 });

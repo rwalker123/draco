@@ -13,6 +13,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import EmailIcon from '@mui/icons-material/Email';
 import HistoryIcon from '@mui/icons-material/History';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import WidgetShell from '../ui/WidgetShell';
 import AccountOptional from '../account/AccountOptional';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +24,7 @@ interface TeamAdminPanelProps {
   seasonId: string;
   teamSeasonId: string;
   canManageSponsors?: boolean;
+  canManageTeamPhotos?: boolean;
   canManageAnnouncements?: boolean;
   showPlayerClassifiedsLink?: boolean;
   playerClassifiedsHref?: string;
@@ -44,6 +46,7 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   seasonId,
   teamSeasonId,
   canManageSponsors = true,
+  canManageTeamPhotos = false,
   canManageAnnouncements = true,
   showPlayerClassifiedsLink = false,
   playerClassifiedsHref,
@@ -226,6 +229,20 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
   }
 
   const contentButtons: React.ReactNode[] = [];
+  if (canManageTeamPhotos) {
+    contentButtons.push(
+      <Button
+        key="photo-gallery"
+        variant="contained"
+        color="primary"
+        startIcon={<PhotoLibraryIcon />}
+        component={Link}
+        href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/photo-gallery/admin`}
+      >
+        Photo Gallery
+      </Button>,
+    );
+  }
   if (shouldShowYouTubeLink) {
     contentButtons.push(
       <Button

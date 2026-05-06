@@ -486,6 +486,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRoleInAccount('AccountAdmin', accountId) ||
     hasRoleInTeam('TeamAdmin', teamSeasonId);
 
+  const canManageTeamPhotos =
+    hasRole('Administrator') ||
+    hasRoleInAccount('AccountAdmin', accountId) ||
+    hasRoleInAccount('AccountPhotoAdmin', accountId) ||
+    hasRoleInTeam('TeamAdmin', teamSeasonId) ||
+    hasRoleInTeam('TeamPhotoAdmin', teamSeasonId);
+
   const canSendTeamCommunications =
     hasRole('Administrator') ||
     hasRoleInAccount('AccountAdmin', accountId) ||
@@ -601,13 +608,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            {(canManageTeamSponsors || isAccountMember) && (
+            {(canManageTeamSponsors || canManageTeamPhotos || isAccountMember) && (
               <TeamAdminPanel
                 accountId={accountId}
                 seasonId={seasonId}
                 teamSeasonId={teamSeasonId}
                 isHistoricalSeason={!isCurrentSeason && !currentSeasonLoading}
                 canManageSponsors={canManageTeamSponsors}
+                canManageTeamPhotos={canManageTeamPhotos}
                 canManageAnnouncements={Boolean(teamData?.teamId)}
                 showPlayerClassifiedsLink={isAccountMember}
                 playerClassifiedsHref={`/account/${accountId}/player-classifieds?tab=players-wanted`}

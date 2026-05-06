@@ -55,6 +55,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     DenyPhotoSubmissionRequestSchemaRef,
     CreatePhotoGalleryPhotoSchemaRef,
     UpdatePhotoGalleryPhotoSchemaRef,
+    CreateTeamGalleryPhotoSchemaRef,
+    UpdateTeamGalleryPhotoSchemaRef,
     CreatePhotoGalleryAlbumSchemaRef,
     UpdatePhotoGalleryAlbumSchemaRef,
     PhotoGalleryPhotoSchemaRef,
@@ -95,6 +97,35 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
   const TweetListQuerySchemaRef = SocialFeedQuerySchemaRef.pick({ limit: true });
   const BlueskyPostCreateSchemaRef = SocialFeedItemSchemaRef.pick({ content: true });
   const BlueskyListQuerySchemaRef = SocialFeedQuerySchemaRef.pick({ limit: true });
+  const CreateTeamGalleryAlbumSchemaRef = z
+    .object({
+      title: z.string().trim().min(1).max(25).openapi({
+        description: 'Title for the team album',
+      }),
+      parentAlbumId: z.string().nullable().optional().openapi({
+        description:
+          'Optional parent album identifier scoped to the same team. Null nests at the team root.',
+      }),
+    })
+    .openapi({
+      title: 'CreateTeamGalleryAlbum',
+      description:
+        'JSON payload to create a team gallery album. The owning team is taken from the URL path.',
+    });
+  const UpdateTeamGalleryAlbumSchemaRef = z
+    .object({
+      title: z.string().trim().min(1).max(25).optional().openapi({
+        description: 'Updated title for the team album',
+      }),
+      parentAlbumId: z.string().nullable().optional().openapi({
+        description: 'Updated parent album identifier scoped to the same team',
+      }),
+    })
+    .openapi({
+      title: 'UpdateTeamGalleryAlbum',
+      description:
+        'JSON payload to update a team gallery album. The owning team cannot be changed.',
+    });
 
   // GET /api/accounts/search
   registry.registerPath({
@@ -820,6 +851,352 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       409: { description: 'Album cannot be deleted while it contains photos.' },
       500: {
         description: 'Unexpected server error while deleting the gallery album.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  const teamScopeParams = [
+    {
+      name: 'accountId',
+      in: 'path' as const,
+      required: true,
+      schema: { type: 'string' as const, format: 'number' },
+    },
+    {
+      name: 'teamId',
+      in: 'path' as const,
+      required: true,
+      schema: { type: 'string' as const, format: 'number' },
+    },
+  ];
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos',
+    operationId: 'listTeamGalleryPhotosAdmin',
+    summary: 'List team gallery photos for administration',
+    description:
+      'Returns approved gallery photos belonging to a specific team for administrative management. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      ...teamScopeParams,
+      {
+        name: 'albumId',
+        in: 'query',
+        required: false,
+        schema: { type: 'string', format: 'number' },
+        description: 'Optional album filter scoped to this team.',
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Team gallery photos available for administrative management.',
+        content: {
+          'application/json': { schema: PhotoGalleryListSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery photos.' },
+      500: {
+        description: 'Unexpected server error while retrieving team gallery photos.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos',
+    operationId: 'createTeamGalleryPhoto',
+    summary: 'Upload a team gallery photo as an administrator',
+    description:
+      'Uploads a new photo into the team’s auto-managed gallery album. The album is selected by the backend; callers cannot target a specific album. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: teamScopeParams,
+    request: {
+      body: {
+        content: {
+          'multipart/form-data': {
+            schema: CreateTeamGalleryPhotoSchemaRef,
+            encoding: {
+              photo: { contentType: 'image/*' },
+            },
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Team gallery photo created.',
+        content: {
+          'application/json': { schema: PhotoGalleryPhotoSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery photos.' },
+      500: {
+        description: 'Unexpected server error while creating the team gallery photo.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos/{photoId}',
+    operationId: 'updateTeamGalleryPhoto',
+    summary: 'Update team gallery photo metadata',
+    description:
+      'Updates the title or caption for a team gallery photo. Album reassignment is not supported. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      ...teamScopeParams,
+      {
+        name: 'photoId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateTeamGalleryPhotoSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated team gallery photo metadata.',
+        content: {
+          'application/json': { schema: PhotoGalleryPhotoSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery photos.' },
+      404: { description: 'Team gallery photo not found.' },
+      500: {
+        description: 'Unexpected server error while updating the team gallery photo.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos/{photoId}',
+    operationId: 'deleteTeamGalleryPhoto',
+    summary: 'Delete a team gallery photo',
+    description:
+      'Removes a team gallery photo and its associated assets. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      ...teamScopeParams,
+      {
+        name: 'photoId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Team gallery photo deleted.' },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery photos.' },
+      404: { description: 'Team gallery photo not found.' },
+      500: {
+        description: 'Unexpected server error while deleting the team gallery photo.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums',
+    operationId: 'listTeamGalleryAlbumsAdmin',
+    summary: 'List team gallery albums for administration',
+    description:
+      'Retrieves albums belonging to the specified team for administrative management. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: teamScopeParams,
+    responses: {
+      200: {
+        description: 'Team gallery albums available for administrative management.',
+        content: {
+          'application/json': { schema: PhotoGalleryAdminAlbumListSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery albums.' },
+      500: {
+        description: 'Unexpected server error while retrieving team gallery albums.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums',
+    operationId: 'createTeamGalleryAlbum',
+    summary: 'Create a team gallery album',
+    description:
+      'Creates a new album owned by the specified team. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: teamScopeParams,
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: CreateTeamGalleryAlbumSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Team gallery album created.',
+        content: {
+          'application/json': { schema: PhotoGalleryAdminAlbumSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery albums.' },
+      409: { description: 'Album title conflicts with an existing album.' },
+      500: {
+        description: 'Unexpected server error while creating the team gallery album.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums/{albumId}',
+    operationId: 'updateTeamGalleryAlbum',
+    summary: 'Update team gallery album metadata',
+    description:
+      'Updates the title or parent album of a team gallery album. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      ...teamScopeParams,
+      {
+        name: 'albumId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: UpdateTeamGalleryAlbumSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Team gallery album updated.',
+        content: {
+          'application/json': { schema: PhotoGalleryAdminAlbumSchemaRef },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': { schema: ValidationErrorSchemaRef },
+        },
+      },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery albums.' },
+      404: { description: 'Team gallery album not found.' },
+      409: { description: 'Album title conflicts with an existing album.' },
+      500: {
+        description: 'Unexpected server error while updating the team gallery album.',
+        content: {
+          'application/json': { schema: InternalServerErrorSchemaRef },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums/{albumId}',
+    operationId: 'deleteTeamGalleryAlbum',
+    summary: 'Delete a team gallery album',
+    description:
+      'Deletes an album owned by the specified team. Requires team photo management permissions.',
+    tags: ['Photo Gallery'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      ...teamScopeParams,
+      {
+        name: 'albumId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      204: { description: 'Team gallery album deleted.' },
+      401: { description: 'Authentication required.' },
+      403: { description: 'Insufficient permissions to manage team gallery albums.' },
+      404: { description: 'Team gallery album not found.' },
+      409: { description: 'Album cannot be deleted while it contains photos.' },
+      500: {
+        description: 'Unexpected server error while deleting the team gallery album.',
         content: {
           'application/json': { schema: InternalServerErrorSchemaRef },
         },
