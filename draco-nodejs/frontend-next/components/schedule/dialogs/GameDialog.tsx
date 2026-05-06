@@ -4,9 +4,13 @@ import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
+  FormControlLabel,
+  Tooltip,
   Typography,
   TextField,
   CircularProgress,
@@ -17,6 +21,9 @@ import { Controller, FormProvider, useForm, useWatch, type Resolver } from 'reac
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UpsertGameSchema } from '@draco/shared-schemas';
+import { getGameTeamRecipientCount } from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../../utils/apiResult';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { Game, GameType, GameStatus } from '@/types/schedule';
 import { GameFormProvider } from '../contexts/GameFormContext';
 import GameFormFields from '../forms/GameFormFields';
@@ -187,9 +194,13 @@ const GameDialog: React.FC<GameDialogProps> = (props) => {
 
 type GameDialogInnerProps = Omit<GameDialogProps, 'open'>;
 
+const SCHEDULE_HIDDEN_TOOLTIP =
+  'Schedule is hidden from public — notifications and the calendar feed are disabled.';
+
 const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   mode,
   accountId,
+  seasonId,
   timeZone,
   selectedGame,
   leagues,
@@ -197,6 +208,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   officials = [],
   leagueTeamsCache,
   canEditSchedule,
+  scheduleVisible = true,
   defaultLeagueSeasonId,
   defaultGameDate,
   onClose,
@@ -205,8 +217,13 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
   onDelete,
 }) => {
   const hasOfficials = officials.length > 0;
+  const apiClient = useApiClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
+  const [notifyTeams, setNotifyTeams] = useState(mode === 'edit');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [pendingSubmitValues, setPendingSubmitValues] = useState<GameFormValues | null>(null);
 
   const defaultSchemaStatus =
     mode === 'edit' && selectedGame ? selectedGame.gameStatus : GameStatus.Scheduled;
@@ -315,27 +332,25 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
     umpire4: values.umpire4 ? values.umpire4 : undefined,
   });
 
-  const handleDialogSubmit = handleSubmit(async (values) => {
+  const executeGameSave = async (values: GameFormValues) => {
     try {
       setSubmitError(null);
-      const payload = sanitizeFormValues(values);
+
+      const effectiveNotifyTeams = notifyTeams && scheduleVisible;
 
       const result =
         mode === 'create'
-          ? await createGame(payload)
-          : await updateGame(selectedGame as Game, payload);
+          ? await createGame(values, effectiveNotifyTeams)
+          : await updateGame(selectedGame as Game, values, effectiveNotifyTeams);
 
       onSuccess?.({ message: result.message, game: result.game });
 
       if (mode === 'create' && keepDialogOpen) {
-        const preservedDate = values.gameDate;
-        const preservedTime = values.gameTime;
-        const preservedLeague = values.leagueSeasonId;
-
+        const currentValues = getValues();
         reset({
-          leagueSeasonId: preservedLeague,
-          gameDate: preservedDate,
-          gameTime: preservedTime,
+          leagueSeasonId: currentValues.leagueSeasonId,
+          gameDate: currentValues.gameDate,
+          gameTime: currentValues.gameTime,
           homeTeamId: '',
           visitorTeamId: '',
           fieldId: '',
@@ -346,6 +361,7 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
           umpire3: '',
           umpire4: '',
         });
+        setNotifyTeams(false);
         return;
       }
 
@@ -355,186 +371,282 @@ const GameDialogInner: React.FC<GameDialogInnerProps> = ({
       setSubmitError(message);
       onError?.(message);
     }
+  };
+
+  const fetchRecipientCount = async (values: GameDialogFormValues): Promise<number | null> => {
+    try {
+      const teamIds = [values.homeTeamId, values.visitorTeamId].filter(Boolean);
+      if (!teamIds.length || !seasonId) return null;
+
+      const result = await getGameTeamRecipientCount({
+        client: apiClient,
+        path: { accountId, seasonId },
+        query: { teamIds: teamIds.join(',') },
+        throwOnError: false,
+      });
+
+      const data = unwrapApiResult(result, 'Failed to fetch recipient count');
+      return data.count;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleDialogSubmit = handleSubmit(async (values) => {
+    if (notifyTeams && scheduleVisible) {
+      const count = await fetchRecipientCount(values);
+      setRecipientCount(count);
+      setPendingSubmitValues(sanitizeFormValues(values));
+      setConfirmOpen(true);
+      return;
+    }
+
+    await executeGameSave(sanitizeFormValues(values));
   });
+
+  const handleConfirmSend = async () => {
+    setConfirmOpen(false);
+    if (pendingSubmitValues) {
+      await executeGameSave(pendingSubmitValues);
+      setPendingSubmitValues(null);
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    setConfirmOpen(false);
+    setPendingSubmitValues(null);
+    setRecipientCount(null);
+  };
 
   const handleClose = () => {
     setSubmitError(null);
     onClose();
   };
 
+  const confirmationMessage =
+    recipientCount !== null
+      ? `Send to approximately ${recipientCount} ${recipientCount === 1 ? 'person' : 'people'}? They'll receive an email summarizing the current game details.`
+      : "Send schedule update emails to both teams? They'll receive an email summarizing the current game details.";
+
   return (
-    <Dialog
-      open
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          maxHeight: '90vh',
-        },
-      }}
-    >
-      {/* Custom Header with League and Season Info */}
-      <Box
-        sx={{
-          p: 2,
-          borderBottom: '1px solid',
-          borderBottomColor: 'divider',
-          backgroundColor: 'background.paper',
+    <>
+      <Dialog
+        open
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            maxHeight: '90vh',
+          },
         }}
       >
+        {/* Custom Header with League and Season Info */}
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 1,
+            p: 2,
+            borderBottom: '1px solid',
+            borderBottomColor: 'divider',
+            backgroundColor: 'background.paper',
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }} color="text.primary">
-            {dialogTitle}
-          </Typography>
-        </Box>
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          justifyContent="space-between"
-        >
-          <Box sx={{ flex: 1, width: '100%' }}>
-            {mode === 'create' ? (
-              <Controller
-                name="leagueSeasonId"
-                control={control}
-                render={({ field, fieldState }) => {
-                  const selectedOption = leagues.find((league) => league.id === field.value);
-                  return (
-                    <Autocomplete
-                      options={leagues}
-                      getOptionLabel={(option) => option.name}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                      filterOptions={leagueStartsWithFilter}
-                      value={selectedOption}
-                      onChange={(_, option) => field.onChange(option?.id ?? '')}
-                      onBlur={field.onBlur}
-                      disabled={!canEditSchedule}
-                      disableClearable
-                      autoHighlight
-                      autoSelect
-                      size="small"
-                      fullWidth
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          inputRef={field.ref}
-                          label="League"
-                          required
-                          autoFocus={canEditSchedule}
-                          error={!!fieldState.error}
-                          helperText={fieldState.error?.message}
-                        />
-                      )}
-                    />
-                  );
-                }}
-              />
-            ) : (
-              <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                {selectedLeague?.name || selectedGame?.league?.name || 'Unknown League'}
-              </Typography>
-            )}
-          </Box>
-        </Stack>
-      </Box>
-
-      <DialogContent>
-        {submitError && (
-          <Box sx={{ mb: 2 }}>
-            <Alert severity="error">{submitError}</Alert>
-          </Box>
-        )}
-
-        {hasUnassignedTeams && (
-          <Box sx={{ mb: 2 }}>
-            <Alert severity="warning">
-              This game has teams that are no longer assigned to a division. Please reassign the
-              teams in League Management before editing this game.
-            </Alert>
-          </Box>
-        )}
-
-        <FormProvider {...formMethods}>
-          <Box sx={{ mt: 1 }}>
-            <GameFormProvider
-              value={{
-                leagueTeams: dialogTeams,
-                fields: locations,
-                umpires: officials,
-                canEditSchedule,
-                isAccountAdmin: canEditSchedule,
-                hasOfficials,
-                getAvailableUmpires,
-                getTeamName,
-                getFieldName,
-                getGameTypeText,
-                selectedGame: selectedGame || undefined,
-              }}
-            >
-              <GameFormFields />
-            </GameFormProvider>
-          </Box>
-        </FormProvider>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 2, gap: 1 }}>
-        {mode === 'edit' && canEditSchedule && onDelete && (
-          <Button onClick={onDelete} color="error" variant="outlined" disabled={loading}>
-            Delete
-          </Button>
-        )}
-
-        {mode === 'create' && canEditSchedule && (
-          <Button
-            onClick={() => setKeepDialogOpen((prev) => !prev)}
-            variant={keepDialogOpen ? 'contained' : 'outlined'}
-            color="secondary"
-            size="small"
+          <Box
             sx={{
-              minWidth: 'auto',
-              px: 2,
-              '&.MuiButton-contained': {
-                backgroundColor: 'secondary.main',
-                color: 'secondary.contrastText',
-                '&:hover': {
-                  backgroundColor: 'secondary.dark',
-                },
-              },
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 1,
             }}
           >
-            Keep Open
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }} color="text.primary">
+              {dialogTitle}
+            </Typography>
+          </Box>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Box sx={{ flex: 1, width: '100%' }}>
+              {mode === 'create' ? (
+                <Controller
+                  name="leagueSeasonId"
+                  control={control}
+                  render={({ field, fieldState }) => {
+                    const selectedOption = leagues.find((league) => league.id === field.value);
+                    return (
+                      <Autocomplete
+                        options={leagues}
+                        getOptionLabel={(option) => option.name}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        filterOptions={leagueStartsWithFilter}
+                        value={selectedOption}
+                        onChange={(_, option) => field.onChange(option?.id ?? '')}
+                        onBlur={field.onBlur}
+                        disabled={!canEditSchedule}
+                        disableClearable
+                        autoHighlight
+                        autoSelect
+                        size="small"
+                        fullWidth
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            inputRef={field.ref}
+                            label="League"
+                            required
+                            autoFocus={canEditSchedule}
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                          />
+                        )}
+                      />
+                    );
+                  }}
+                />
+              ) : (
+                <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                  {selectedLeague?.name || selectedGame?.league?.name || 'Unknown League'}
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+        </Box>
+
+        <DialogContent>
+          {submitError && (
+            <Box sx={{ mb: 2 }}>
+              <Alert severity="error">{submitError}</Alert>
+            </Box>
+          )}
+
+          {hasUnassignedTeams && (
+            <Box sx={{ mb: 2 }}>
+              <Alert severity="warning">
+                This game has teams that are no longer assigned to a division. Please reassign the
+                teams in League Management before editing this game.
+              </Alert>
+            </Box>
+          )}
+
+          <FormProvider {...formMethods}>
+            <Box sx={{ mt: 1 }}>
+              <GameFormProvider
+                value={{
+                  leagueTeams: dialogTeams,
+                  fields: locations,
+                  umpires: officials,
+                  canEditSchedule,
+                  isAccountAdmin: canEditSchedule,
+                  hasOfficials,
+                  getAvailableUmpires,
+                  getTeamName,
+                  getFieldName,
+                  getGameTypeText,
+                  selectedGame: selectedGame || undefined,
+                }}
+              >
+                <GameFormFields />
+              </GameFormProvider>
+            </Box>
+          </FormProvider>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, gap: 1, flexWrap: 'wrap' }}>
+          {mode === 'edit' && canEditSchedule && onDelete && (
+            <Button onClick={onDelete} color="error" variant="outlined" disabled={loading}>
+              Delete
+            </Button>
+          )}
+
+          {mode === 'create' && canEditSchedule && (
+            <Button
+              onClick={() => setKeepDialogOpen((prev) => !prev)}
+              variant={keepDialogOpen ? 'contained' : 'outlined'}
+              color="secondary"
+              size="small"
+              sx={{
+                minWidth: 'auto',
+                px: 2,
+                '&.MuiButton-contained': {
+                  backgroundColor: 'secondary.main',
+                  color: 'secondary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'secondary.dark',
+                  },
+                },
+              }}
+            >
+              Keep Open
+            </Button>
+          )}
+
+          {canEditSchedule && (
+            <Tooltip
+              title={!scheduleVisible ? SCHEDULE_HIDDEN_TOOLTIP : ''}
+              placement="top"
+              disableHoverListener={scheduleVisible}
+              disableFocusListener={scheduleVisible}
+              disableTouchListener={scheduleVisible}
+            >
+              <span>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={notifyTeams && scheduleVisible}
+                      onChange={(e) => setNotifyTeams(e.target.checked)}
+                      disabled={!scheduleVisible}
+                      size="small"
+                    />
+                  }
+                  label="Email teams about this change"
+                  sx={{ ml: 0 }}
+                />
+              </span>
+            </Tooltip>
+          )}
+
+          <Box sx={{ flex: 1 }} />
+
+          <Button onClick={handleClose} variant="outlined" disabled={loading}>
+            {canEditSchedule ? 'Cancel' : 'Close'}
           </Button>
-        )}
 
-        <Box sx={{ flex: 1 }} />
+          {canEditSchedule && (
+            <Button
+              onClick={handleDialogSubmit}
+              variant="contained"
+              color="primary"
+              disabled={loading || hasUnassignedTeams}
+              startIcon={loading ? <CircularProgress size={18} color="inherit" /> : undefined}
+            >
+              {mode === 'create' ? 'Create' : 'Update'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
-        <Button onClick={handleClose} variant="outlined" disabled={loading}>
-          {canEditSchedule ? 'Cancel' : 'Close'}
-        </Button>
-
-        {canEditSchedule && (
+      <Dialog open={confirmOpen} onClose={handleConfirmCancel} maxWidth="xs" fullWidth>
+        <DialogContent>
+          <DialogContentText>{confirmationMessage}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmCancel} variant="outlined">
+            Cancel
+          </Button>
           <Button
-            onClick={handleDialogSubmit}
+            onClick={handleConfirmSend}
             variant="contained"
             color="primary"
-            disabled={loading || hasUnassignedTeams}
-            startIcon={loading ? <CircularProgress size={18} color="inherit" /> : undefined}
+            disabled={loading}
           >
-            {mode === 'create' ? 'Create' : 'Update'}
+            {loading ? <CircularProgress size={18} color="inherit" /> : 'Send'}
           </Button>
-        )}
-      </DialogActions>
-    </Dialog>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

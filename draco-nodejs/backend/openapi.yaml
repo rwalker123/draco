@@ -15914,6 +15914,8 @@ components:
               minLength: 1
           required:
             - id
+        notifyTeams:
+          type: boolean
       required:
         - gameDate
         - gameStatus
@@ -15930,6 +15932,14 @@ components:
           maxLength: 5000
       required:
         - recap
+    GameTeamRecipientCount:
+      type: object
+      properties:
+        count:
+          type: integer
+          minimum: 0
+      required:
+        - count
     UpsertSeason:
       type: object
       properties:
@@ -34856,6 +34866,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/games/team-recipient-count:
+    get:
+      operationId: getGameTeamRecipientCount
+      summary: Get recipient count for teams
+      description: Return the deduplicated count of active roster members with email
+        addresses across one or more teams in a season. Used to show the
+        approximate notification reach before sending schedule-change emails.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: teamIds
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated list of team season IDs to count recipients for.
+      responses:
+        "200":
+          description: Recipient count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameTeamRecipientCount"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
         "500":
           description: Internal server error
           content:

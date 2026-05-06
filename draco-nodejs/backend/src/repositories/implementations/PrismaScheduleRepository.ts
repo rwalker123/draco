@@ -518,4 +518,63 @@ export class PrismaScheduleRepository implements IScheduleRepository {
 
     return games;
   }
+
+  async listAllGamesForTeam(teamSeasonId: bigint, seasonId: bigint): Promise<dbGameInfo[]> {
+    const games: TeamGameInfoPayload[] = await this.prisma.leagueschedule.findMany({
+      where: this.buildTeamGamesWhere(teamSeasonId, seasonId),
+      select: teamGameSelect,
+      orderBy: [{ gamedate: 'asc' }, { id: 'asc' }],
+    });
+
+    return games;
+  }
+
+  async getTeamScheduleFingerprint(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<{ count: number; maxId: bigint | null; maxGamedate: Date | null }> {
+    const result = await this.prisma.leagueschedule.aggregate({
+      where: this.buildTeamGamesWhere(teamSeasonId, seasonId),
+      _count: { _all: true },
+      _max: { id: true, gamedate: true },
+    });
+
+    return {
+      count: result._count._all,
+      maxId: result._max.id,
+      maxGamedate: result._max.gamedate,
+    };
+  }
+
+  async findTeamSeasonCalendarContext(teamSeasonId: bigint): Promise<{
+    teamName: string;
+    leagueName: string;
+    seasonName: string;
+    seasonId: bigint;
+    accountId: bigint;
+    scheduleVisible: boolean;
+  } | null> {
+    const ts = await this.prisma.teamsseason.findUnique({
+      where: { id: teamSeasonId },
+      include: {
+        leagueseason: {
+          include: {
+            league: true,
+            season: true,
+          },
+        },
+      },
+    });
+
+    if (!ts) return null;
+
+    return {
+      teamName: ts.name,
+      leagueName: ts.leagueseason.league.name,
+      seasonName: ts.leagueseason.season.name,
+      seasonId: ts.leagueseason.seasonid,
+      accountId: ts.leagueseason.league.accountid,
+      scheduleVisible: ts.leagueseason.season.schedulevisible,
+    };
+  }
 }

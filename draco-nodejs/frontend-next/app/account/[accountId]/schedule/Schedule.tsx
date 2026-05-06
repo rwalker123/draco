@@ -42,7 +42,7 @@ const CALENDAR_VIEW_BREAKPOINT = 900;
 
 const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { token } = useAuth();
-  const { currentSeasonName, currentSeasonScheduleVisible, fetchCurrentSeason } =
+  const { currentSeasonId, currentSeasonName, currentSeasonScheduleVisible, fetchCurrentSeason } =
     useCurrentSeason(accountId);
   const timeZone = useAccountTimezone();
   const { currentAccount } = useAccount();
@@ -280,6 +280,7 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
           open={viewDialogOpen}
           mode="edit"
           accountId={accountId}
+          seasonId={currentSeasonId ?? ''}
           timeZone={timeZone}
           selectedGame={selectedGame}
           leagues={leagues}

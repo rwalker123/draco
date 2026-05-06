@@ -44,6 +44,7 @@ import {
   gameToCalendarEvent,
   sanitizeIcsFilename,
 } from '../../../../../../../../utils/calendar';
+import SubscribeToScheduleButton from '../../../../../../../../components/calendar/SubscribeToScheduleButton';
 
 interface TeamSchedulePageProps {
   accountId: string;
@@ -314,6 +315,12 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
             <Typography color="text.primary">Schedule</Typography>
           </Breadcrumbs>
           <Stack direction="row" spacing={1}>
+            <SubscribeToScheduleButton
+              seasonTeamId={teamSeasonId}
+              teamName={teamName ?? 'Team'}
+              size="small"
+              variant="outlined"
+            />
             <Tooltip
               title={filteredGames.length === 0 ? 'No games to export' : 'Download schedule (.ics)'}
             >
@@ -391,6 +398,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
         open={viewDialogOpen}
         mode="edit"
         accountId={accountId}
+        seasonId={seasonId}
         timeZone={timeZone}
         selectedGame={selectedGame}
         leagues={seasonLeagues}

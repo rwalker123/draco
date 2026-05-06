@@ -149,6 +149,7 @@ export const UpsertGameSchema = GameSchema.pick({
       .object({ id: z.string().trim().min(1) })
       .nullable()
       .optional(),
+    notifyTeams: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.homeTeam.id === data.visitorTeam.id) {
@@ -180,6 +181,10 @@ export const UpsertGameRecapSchema = GameRecapSchema.omit({
   team: true,
 });
 
+export const GameTeamRecipientCountSchema = z.object({
+  count: z.number().int().min(0),
+});
+
 export const RecentGamesSchema = z.object({
   upcoming: GameSchema.array(),
   recent: GameSchema.array(),
@@ -208,3 +213,4 @@ export type GameStatusShortEnumType = z.infer<typeof GameStatusShortEnumSchema>;
 export type GameTypeEnumType = z.infer<typeof GameTypeEnumSchema>;
 export type RecentGamesQueryType = z.infer<typeof RecentGamesQuerySchema>;
 export type GameRecapsType = z.infer<typeof GameRecapsSchema>;
+export type GameTeamRecipientCountType = z.infer<typeof GameTeamRecipientCountSchema>;

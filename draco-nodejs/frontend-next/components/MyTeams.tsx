@@ -5,6 +5,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import TeamAvatar from './TeamAvatar';
 import WidgetShell from './ui/WidgetShell';
 import { alpha, useTheme } from '@mui/material/styles';
+import SubscribeToScheduleButton from './calendar/SubscribeToScheduleButton';
 
 export interface UserTeam {
   id: string;
@@ -177,23 +178,28 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                   </Typography>
                 </Box>
               )}
-              <Button
-                size="small"
-                startIcon={<VisibilityIcon />}
-                onClick={() => onViewTeam(team.id)}
-                sx={{
-                  position: 'relative',
-                  zIndex: 1,
-                  alignSelf: 'flex-start',
-                  color: 'primary.main',
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                View Team
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1, position: 'relative', zIndex: 1 }}>
+                <Button
+                  size="small"
+                  startIcon={<VisibilityIcon />}
+                  onClick={() => onViewTeam(team.id)}
+                  sx={{
+                    alignSelf: 'flex-start',
+                    color: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  View Team
+                </Button>
+                <SubscribeToScheduleButton
+                  seasonTeamId={team.id}
+                  teamName={team.name}
+                  size="small"
+                />
+              </Box>
             </Paper>
           ))}
         </Box>
