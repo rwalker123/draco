@@ -55,6 +55,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     DenyPhotoSubmissionRequestSchemaRef,
     CreatePhotoGalleryPhotoSchemaRef,
     UpdatePhotoGalleryPhotoSchemaRef,
+    CreateTeamGalleryPhotoSchemaRef,
+    UpdateTeamGalleryPhotoSchemaRef,
     CreatePhotoGalleryAlbumSchemaRef,
     UpdatePhotoGalleryAlbumSchemaRef,
     PhotoGalleryPhotoSchemaRef,
@@ -95,39 +97,6 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
   const TweetListQuerySchemaRef = SocialFeedQuerySchemaRef.pick({ limit: true });
   const BlueskyPostCreateSchemaRef = SocialFeedItemSchemaRef.pick({ content: true });
   const BlueskyListQuerySchemaRef = SocialFeedQuerySchemaRef.pick({ limit: true });
-  const CreateTeamGalleryPhotoSchemaRef = z
-    .object({
-      title: z.string().trim().min(1).max(50).openapi({
-        description: 'Title for the approved team gallery photo',
-      }),
-      caption: z.string().trim().max(255).optional().openapi({
-        description: 'Optional caption describing the team gallery photo',
-      }),
-      photo: z.string().openapi({
-        type: 'string',
-        format: 'binary',
-        description: 'Photo file to upload',
-      }),
-    })
-    .openapi({
-      title: 'CreateTeamGalleryPhoto',
-      description:
-        'Multipart payload used by team administrators to upload a team gallery photo. The album is auto-managed by the backend.',
-    });
-  const UpdateTeamGalleryPhotoSchemaRef = z
-    .object({
-      title: z.string().trim().min(1).max(50).optional().openapi({
-        description: 'Updated title for the team gallery photo',
-      }),
-      caption: z.string().trim().max(255).nullable().optional().openapi({
-        description: 'Updated caption for the team gallery photo',
-      }),
-    })
-    .openapi({
-      title: 'UpdateTeamGalleryPhoto',
-      description:
-        'JSON payload to update title or caption on a team gallery photo. Album reassignment is not supported.',
-    });
   const CreateTeamGalleryAlbumSchemaRef = z
     .object({
       title: z.string().trim().min(1).max(25).openapi({
@@ -953,7 +922,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     operationId: 'createTeamGalleryPhoto',
     summary: 'Upload a team gallery photo as an administrator',
     description:
-      'Uploads a new photo into one of the team’s gallery albums. Requires team photo management permissions.',
+      'Uploads a new photo into the team’s auto-managed gallery album. The album is selected by the backend; callers cannot target a specific album. Requires team photo management permissions.',
     tags: ['Photo Gallery'],
     security: [{ bearerAuth: [] }],
     parameters: teamScopeParams,

@@ -198,6 +198,56 @@ export const UpdatePhotoGalleryPhotoSchema = z
     description: 'JSON payload for updating gallery photo metadata',
   });
 
+export const CreateTeamGalleryPhotoSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1)
+      .max(50)
+      .openapi({ description: 'Title for the approved team gallery photo' }),
+    caption: z
+      .string()
+      .trim()
+      .max(255)
+      .optional()
+      .openapi({ description: 'Optional caption describing the team gallery photo' }),
+    photo: z
+      .string()
+      .openapi({ type: 'string', format: 'binary', description: 'Photo file to upload' }),
+  })
+  .openapi({
+    title: 'CreateTeamGalleryPhoto',
+    description:
+      'Multipart payload used by team administrators to upload a team gallery photo. The album is auto-managed by the backend.',
+  });
+
+export const UpdateTeamGalleryPhotoSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1)
+      .max(50)
+      .optional()
+      .openapi({ description: 'Updated title for the team gallery photo' }),
+    caption: z
+      .string()
+      .trim()
+      .max(255)
+      .nullable()
+      .optional()
+      .openapi({ description: 'Updated caption for the team gallery photo' }),
+  })
+  .refine((value) => value.title !== undefined || value.caption !== undefined, {
+    message: 'At least one field must be provided to update the photo',
+  })
+  .openapi({
+    title: 'UpdateTeamGalleryPhoto',
+    description:
+      'JSON payload to update title or caption on a team gallery photo. Album reassignment is not supported.',
+  });
+
 export const CreatePhotoGalleryAlbumSchema = z
   .object({
     title: z
@@ -289,6 +339,8 @@ export type PhotoGalleryListType = z.infer<typeof PhotoGalleryListSchema>;
 export type PhotoGalleryQueryType = z.infer<typeof PhotoGalleryQuerySchema>;
 export type CreatePhotoGalleryPhotoType = z.infer<typeof CreatePhotoGalleryPhotoSchema>;
 export type UpdatePhotoGalleryPhotoType = z.infer<typeof UpdatePhotoGalleryPhotoSchema>;
+export type CreateTeamGalleryPhotoType = z.infer<typeof CreateTeamGalleryPhotoSchema>;
+export type UpdateTeamGalleryPhotoType = z.infer<typeof UpdateTeamGalleryPhotoSchema>;
 export type CreatePhotoGalleryAlbumType = z.infer<typeof CreatePhotoGalleryAlbumSchema>;
 export type UpdatePhotoGalleryAlbumType = z.infer<typeof UpdatePhotoGalleryAlbumSchema>;
 export type PhotoGalleryAdminAlbumType = z.infer<typeof PhotoGalleryAdminAlbumSchema>;

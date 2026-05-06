@@ -5,10 +5,10 @@ import { extractAccountParams, extractBigIntParams } from '../utils/paramExtract
 import { ValidationError } from '../utils/customErrors.js';
 import {
   CreatePhotoGalleryAlbumSchema,
-  CreatePhotoGalleryPhotoSchema,
+  CreateTeamGalleryPhotoSchema,
   PhotoGalleryQuerySchema,
   UpdatePhotoGalleryAlbumSchema,
-  UpdatePhotoGalleryPhotoSchema,
+  UpdateTeamGalleryPhotoSchema,
 } from '@draco/shared-schemas';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { handlePhotoUploadMiddleware, validatePhotoUpload } from '../middleware/fileUpload.js';
@@ -40,8 +40,8 @@ const normalizeOptionalNumericInput = (value: unknown): string | null | undefine
   return stringValue;
 };
 
-const createPhotoBodySchema = CreatePhotoGalleryPhotoSchema.omit({ photo: true });
-const updatePhotoBodySchema = UpdatePhotoGalleryPhotoSchema;
+const createPhotoBodySchema = CreateTeamGalleryPhotoSchema.omit({ photo: true });
+const updatePhotoBodySchema = UpdateTeamGalleryPhotoSchema;
 const createAlbumBodySchema = CreatePhotoGalleryAlbumSchema;
 const updateAlbumBodySchema = UpdatePhotoGalleryAlbumSchema;
 
@@ -81,7 +81,6 @@ router.post(
     const body = createPhotoBodySchema.parse({
       title: req.body.title,
       caption: req.body.caption,
-      albumId: normalizeOptionalNumericInput(req.body.albumId),
     });
 
     const photo = await galleryAdminService.createTeamPhoto(accountId, teamId, body, file.buffer);
@@ -101,7 +100,6 @@ router.patch(
     const body = updatePhotoBodySchema.parse({
       title: req.body.title,
       caption: req.body.caption,
-      albumId: normalizeOptionalNumericInput(req.body.albumId),
     });
 
     const photo = await galleryAdminService.updateTeamPhoto(accountId, teamId, photoId, body);

@@ -314,7 +314,7 @@ describe('PhotoGalleryAdminService', () => {
       expect(repository.createPhoto).not.toHaveBeenCalled();
     });
 
-    it('updateTeamPhoto strips albumId from the payload', async () => {
+    it('updateTeamPhoto applies title and caption updates', async () => {
       repository.findPhotoById.mockResolvedValue(teamPhotoEntry);
       repository.updatePhoto.mockResolvedValue({
         id: 100n,
@@ -327,7 +327,6 @@ describe('PhotoGalleryAdminService', () => {
       await service.updateTeamPhoto(accountId, teamId, 100n, {
         title: 'Renamed',
         caption: 'updated',
-        albumId: '999',
       });
 
       expect(repository.updatePhoto).toHaveBeenCalledWith(100n, {

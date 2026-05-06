@@ -7,6 +7,7 @@ import UserAvatar from './UserAvatar';
 import { useContactPhotoUpload } from '@/hooks/useContactPhotoUpload';
 import ImageCropDialog from '../common/ImageCropDialog';
 import { IMAGE_CROP_PRESETS } from '@/config/imageCropPresets';
+import { CONTACT_PHOTO_UPLOAD_CONFIG, validateImageFile } from '@/utils/imageFileValidation';
 
 interface EditableContactAvatarProps {
   accountId: string;
@@ -86,6 +87,11 @@ const EditableContactAvatar = React.forwardRef<
       if (!file) {
         return;
       }
+      const validationError = validateImageFile(file, CONTACT_PHOTO_UPLOAD_CONFIG);
+      if (validationError) {
+        onError?.(validationError);
+        return;
+      }
       setPendingCropFile(file);
     };
 
@@ -124,7 +130,7 @@ const EditableContactAvatar = React.forwardRef<
           ref={fileInputRef}
           type="file"
           hidden
-          accept="image/*"
+          accept={CONTACT_PHOTO_UPLOAD_CONFIG.allowedMimeTypes.join(',')}
           onChange={handleFileChange}
           disabled={loading}
         />

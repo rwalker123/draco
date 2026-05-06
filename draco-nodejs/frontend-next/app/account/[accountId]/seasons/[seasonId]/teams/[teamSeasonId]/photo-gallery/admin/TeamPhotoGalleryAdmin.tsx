@@ -32,6 +32,7 @@ const TeamPhotoGalleryAdmin: React.FC<TeamPhotoGalleryAdminProps> = ({
     const controller = new AbortController();
 
     const loadTeam = async () => {
+      setTeamHeader(null);
       setError(null);
       try {
         const result = await getTeamSeasonDetails({

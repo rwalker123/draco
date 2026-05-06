@@ -75,26 +75,33 @@ export async function createGalleryPhotoAdmin(
   teamId?: string | null,
 ): Promise<PhotoGalleryPhotoType> {
   const client = createClient(token);
+
+  if (teamId) {
+    const result = await createTeamGalleryPhoto({
+      client,
+      path: { accountId, teamId },
+      body: {
+        title: input.title,
+        caption: input.caption ?? undefined,
+        photo: input.file,
+      },
+      throwOnError: false,
+    });
+    return unwrapApiResult(result, 'Failed to create gallery photo');
+  }
+
   const body: NonNullable<CreateAccountGalleryPhotoData['body']> = {
     title: input.title,
     caption: input.caption ?? undefined,
     albumId: input.albumId ?? null,
     photo: input.file,
   };
-
-  const result = teamId
-    ? await createTeamGalleryPhoto({
-        client,
-        path: { accountId, teamId },
-        body,
-        throwOnError: false,
-      })
-    : await createAccountGalleryPhoto({
-        client,
-        path: { accountId },
-        body,
-        throwOnError: false,
-      });
+  const result = await createAccountGalleryPhoto({
+    client,
+    path: { accountId },
+    body,
+    throwOnError: false,
+  });
 
   return unwrapApiResult(result, 'Failed to create gallery photo');
 }
@@ -107,6 +114,24 @@ export async function updateGalleryPhotoAdmin(
   teamId?: string | null,
 ): Promise<PhotoGalleryPhotoType> {
   const client = createClient(token);
+
+  if (teamId) {
+    const teamPayload: { title?: string; caption?: string | null } = {};
+    if (input.title !== undefined) {
+      teamPayload.title = input.title;
+    }
+    if (input.caption !== undefined) {
+      teamPayload.caption = input.caption;
+    }
+    const result = await updateTeamGalleryPhoto({
+      client,
+      path: { accountId, teamId, photoId },
+      body: teamPayload,
+      throwOnError: false,
+    });
+    return unwrapApiResult(result, 'Failed to update gallery photo');
+  }
+
   const payload: UpdatePhotoGalleryPhotoType = {};
 
   if (input.title !== undefined) {
@@ -121,19 +146,12 @@ export async function updateGalleryPhotoAdmin(
     payload.albumId = input.albumId;
   }
 
-  const result = teamId
-    ? await updateTeamGalleryPhoto({
-        client,
-        path: { accountId, teamId, photoId },
-        body: payload,
-        throwOnError: false,
-      })
-    : await updateAccountGalleryPhoto({
-        client,
-        path: { accountId, photoId },
-        body: payload,
-        throwOnError: false,
-      });
+  const result = await updateAccountGalleryPhoto({
+    client,
+    path: { accountId, photoId },
+    body: payload,
+    throwOnError: false,
+  });
 
   return unwrapApiResult(result, 'Failed to update gallery photo');
 }

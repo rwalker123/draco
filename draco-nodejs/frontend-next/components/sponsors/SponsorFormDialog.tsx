@@ -30,6 +30,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPhoneInput, isValidPhoneNumber } from '../../utils/phoneNumber';
 import ImageCropDialog from '../common/ImageCropDialog';
 import { IMAGE_CROP_PRESETS } from '../../config/imageCropPresets';
+import { SPONSOR_PHOTO_UPLOAD_CONFIG, validateImageFile } from '../../utils/imageFileValidation';
 
 interface SponsorFormDialogProps {
   open: boolean;
@@ -93,6 +94,8 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
     handleSubmit,
     reset,
     setValue,
+    setError,
+    clearErrors,
     control,
     formState: { errors, isSubmitting },
   } = useForm<SponsorFormSchemaType>({
@@ -157,6 +160,12 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
       setValue('photo', null, { shouldDirty: true, shouldValidate: false });
       return;
     }
+    const validationError = validateImageFile(file, SPONSOR_PHOTO_UPLOAD_CONFIG);
+    if (validationError) {
+      setError('photo', { type: 'manual', message: validationError });
+      return;
+    }
+    clearErrors('photo');
     setPendingCropFile(file);
   };
 
@@ -298,7 +307,12 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
             <Stack direction="row" spacing={2} alignItems="center">
               <Button variant="outlined" component="label">
                 {photoValue ? 'Change Logo' : 'Upload Logo'}
-                <input hidden type="file" accept="image/*" onChange={handlePhotoChange} />
+                <input
+                  hidden
+                  type="file"
+                  accept={SPONSOR_PHOTO_UPLOAD_CONFIG.allowedMimeTypes.join(',')}
+                  onChange={handlePhotoChange}
+                />
               </Button>
               {previewUrl ? (
                 <Box
@@ -324,6 +338,11 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
             {mode === 'edit' && initialSponsor?.photoUrl && !photoValue && (
               <Typography variant="caption" color="text.secondary">
                 Current logo will be retained unless a new file is uploaded.
+              </Typography>
+            )}
+            {errors.photo?.message && (
+              <Typography variant="caption" color="error">
+                {String(errors.photo.message)}
               </Typography>
             )}
           </Stack>

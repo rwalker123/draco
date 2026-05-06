@@ -26,6 +26,7 @@ import { ApiClientError } from '../../../utils/apiResult';
 import { normalizeEntityId } from '../utils';
 import ImageCropDialog from '../../common/ImageCropDialog';
 import { IMAGE_CROP_PRESETS } from '../../../config/imageCropPresets';
+import { GALLERY_PHOTO_UPLOAD_CONFIG, validateImageFile } from '../../../utils/imageFileValidation';
 
 type PhotoDialogMode = 'create' | 'edit';
 
@@ -143,6 +144,11 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
       event.target.value = '';
     }
     if (!selected) {
+      return;
+    }
+    const validationError = validateImageFile(selected, GALLERY_PHOTO_UPLOAD_CONFIG);
+    if (validationError) {
+      onError?.(validationError);
       return;
     }
     setPendingCropFile(selected);
@@ -338,7 +344,12 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
                 sx={{ width: '100%' }}
               >
                 {file ? 'Replace Photo' : 'Upload Photo'}
-                <input type="file" accept="image/*" hidden onChange={handleFileChange} />
+                <input
+                  type="file"
+                  accept={GALLERY_PHOTO_UPLOAD_CONFIG.allowedMimeTypes.join(',')}
+                  hidden
+                  onChange={handleFileChange}
+                />
               </Button>
               {previewSrc ? (
                 <Box

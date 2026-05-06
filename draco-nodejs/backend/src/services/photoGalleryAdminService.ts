@@ -1,12 +1,14 @@
 import type {
   CreatePhotoGalleryAlbumType,
   CreatePhotoGalleryPhotoType,
+  CreateTeamGalleryPhotoType,
   PhotoGalleryAdminAlbumListType,
   PhotoGalleryAdminAlbumType,
   PhotoGalleryListType,
   PhotoGalleryPhotoType,
   UpdatePhotoGalleryAlbumType,
   UpdatePhotoGalleryPhotoType,
+  UpdateTeamGalleryPhotoType,
 } from '@draco/shared-schemas';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
@@ -30,6 +32,7 @@ const FALLBACK_TEAM_ALBUM_TITLE = 'Team Photos';
 
 const GALLERY_EXTENSION = '.jpg';
 type AdminCreatePhotoPayload = Omit<CreatePhotoGalleryPhotoType, 'photo'>;
+type AdminCreateTeamPhotoPayload = Omit<CreateTeamGalleryPhotoType, 'photo'>;
 
 const trimOrEmpty = (value: string | null | undefined): string => {
   if (value === undefined || value === null) {
@@ -317,7 +320,7 @@ export class PhotoGalleryAdminService {
   async createTeamPhoto(
     accountId: bigint,
     teamId: bigint,
-    payload: AdminCreatePhotoPayload,
+    payload: AdminCreateTeamPhotoPayload,
     fileBuffer: Buffer,
   ): Promise<PhotoGalleryPhotoType> {
     const albumId = await this.ensureTeamAlbum(accountId, teamId);
@@ -336,12 +339,11 @@ export class PhotoGalleryAdminService {
     accountId: bigint,
     teamId: bigint,
     photoId: bigint,
-    payload: UpdatePhotoGalleryPhotoType,
+    payload: UpdateTeamGalleryPhotoType,
   ): Promise<PhotoGalleryPhotoType> {
     await this.requireTeamPhoto(accountId, teamId, photoId);
 
-    const { albumId: _ignoredAlbumId, ...metadataOnly } = payload;
-    return this.updatePhoto(accountId, photoId, metadataOnly);
+    return this.updatePhoto(accountId, photoId, payload);
   }
 
   async deleteTeamPhoto(accountId: bigint, teamId: bigint, photoId: bigint): Promise<void> {

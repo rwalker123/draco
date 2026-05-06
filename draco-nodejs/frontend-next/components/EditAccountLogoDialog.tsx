@@ -28,10 +28,10 @@ import {
 } from '../hooks/useAccountLogoOperations';
 import { useNotifications } from '../hooks/useNotifications';
 import { IMAGE_CROP_PRESETS } from '../config/imageCropPresets';
+import { ACCOUNT_LOGO_UPLOAD_CONFIG, validateImageFile } from '../utils/imageFileValidation';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 interface EditAccountLogoDialogProps {
   open: boolean;
@@ -47,15 +47,9 @@ const logoFileSchema = z
     message: 'Please select a logo to upload.',
   })
   .superRefine((file, ctx) => {
-    if (!file.type.startsWith('image/')) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'File must be an image.' });
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'File size must be less than 10MB.',
-      });
+    const validationError = validateImageFile(file, ACCOUNT_LOGO_UPLOAD_CONFIG);
+    if (validationError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: validationError });
     }
   });
 
@@ -238,7 +232,12 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
                 startIcon={<CloudUploadIcon />}
                 disabled={uploading || deleting}
               >
-                <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
+                <input
+                  type="file"
+                  hidden
+                  accept={ACCOUNT_LOGO_UPLOAD_CONFIG.allowedMimeTypes.join(',')}
+                  onChange={handleLogoChange}
+                />
               </Button>
               {accountLogoUrl && (
                 <Button

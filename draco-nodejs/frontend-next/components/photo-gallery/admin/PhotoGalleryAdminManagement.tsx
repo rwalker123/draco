@@ -541,7 +541,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
         </Typography>
         <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
           {teamScope
-            ? `Upload photos and manage albums for ${teamScope.teamName}.`
+            ? `Upload photos for ${teamScope.teamName}.`
             : 'Upload photos, organize albums, and curate your gallery for members and visitors.'}
         </Typography>
       </AccountPageHeader>

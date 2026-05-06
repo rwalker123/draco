@@ -370,6 +370,22 @@ describe('photoGalleryAdminService', () => {
       expect(apiCreatePhoto).not.toHaveBeenCalled();
     });
 
+    it('createGalleryPhotoAdmin team body excludes albumId even when supplied', async () => {
+      vi.mocked(apiCreateTeamPhoto).mockResolvedValue(makeOk(photoData));
+      const file = new Blob(['data']);
+
+      await createGalleryPhotoAdmin(
+        ACCOUNT_ID,
+        { title: 'T', albumId: 'caller-supplied-99', file },
+        'token',
+        TEAM_ID,
+      );
+
+      const call = vi.mocked(apiCreateTeamPhoto).mock.calls[0]?.[0];
+      expect(call?.body).toEqual({ title: 'T', caption: undefined, photo: file });
+      expect(call?.body).not.toHaveProperty('albumId');
+    });
+
     it('updateGalleryPhotoAdmin uses the team endpoint with photoId in path', async () => {
       vi.mocked(apiUpdateTeamPhoto).mockResolvedValue(makeOk(photoData));
 
@@ -381,6 +397,22 @@ describe('photoGalleryAdminService', () => {
         }),
       );
       expect(apiUpdatePhoto).not.toHaveBeenCalled();
+    });
+
+    it('updateGalleryPhotoAdmin team body excludes albumId even when supplied', async () => {
+      vi.mocked(apiUpdateTeamPhoto).mockResolvedValue(makeOk(photoData));
+
+      await updateGalleryPhotoAdmin(
+        ACCOUNT_ID,
+        'photo-9',
+        { title: 'Updated', albumId: 'caller-supplied-42' },
+        'token',
+        TEAM_ID,
+      );
+
+      const call = vi.mocked(apiUpdateTeamPhoto).mock.calls[0]?.[0];
+      expect(call?.body).toEqual({ title: 'Updated' });
+      expect(call?.body).not.toHaveProperty('albumId');
     });
 
     it('deleteGalleryPhotoAdmin uses the team endpoint', async () => {
