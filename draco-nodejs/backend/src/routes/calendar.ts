@@ -15,6 +15,11 @@ const calendarService = ServiceFactory.getCalendarService();
 
 const stripEtagQuotes = (value: string): string => value.replace(/^W\//, '').replace(/^"|"$/g, '');
 
+const firstHeaderValue = (header: string | string[] | undefined): string | undefined => {
+  if (header === undefined) return undefined;
+  return Array.isArray(header) ? header[0] : header;
+};
+
 router.get(
   '/team-season/:teamSeasonId.ics',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -36,9 +41,10 @@ router.get(
 
     const { etag, lastModified } = fingerprint;
 
-    const ifNoneMatch = req.headers['if-none-match'];
+    const ifNoneMatch = firstHeaderValue(req.headers['if-none-match']);
     if (ifNoneMatch !== undefined) {
-      if (stripEtagQuotes(ifNoneMatch) === stripEtagQuotes(etag)) {
+      const candidates = ifNoneMatch.split(',').map((v) => stripEtagQuotes(v.trim()));
+      if (candidates.includes(stripEtagQuotes(etag))) {
         res.setHeader('ETag', etag);
         res.setHeader('Last-Modified', lastModified.toUTCString());
         res.setHeader('Cache-Control', 'public, max-age=60, must-revalidate');
@@ -47,7 +53,7 @@ router.get(
       }
     }
 
-    const ifModifiedSince = req.headers['if-modified-since'];
+    const ifModifiedSince = firstHeaderValue(req.headers['if-modified-since']);
     if (ifModifiedSince !== undefined) {
       const since = new Date(ifModifiedSince);
       if (!isNaN(since.getTime()) && lastModified <= since) {
@@ -67,7 +73,7 @@ router.get(
 
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
     res.setHeader('Content-Disposition', `inline; filename="team-${teamSeasonId}-schedule.ics"`);
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Cache-Control', 'public, max-age=60, must-revalidate');
     res.setHeader('ETag', result.etag);
     res.setHeader('Last-Modified', result.lastModified.toUTCString());
     res.status(200).send(result.body);

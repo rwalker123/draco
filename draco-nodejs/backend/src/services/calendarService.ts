@@ -114,7 +114,8 @@ export class CalendarService {
     const games = await this.scheduleRepository.listAllGamesForTeam(teamSeasonId, context.seasonId);
 
     const etag = this.buildEtag(games);
-    const lastModified = this.computeLastModified(games);
+    const previous = this.cache.get(key);
+    const lastModified = previous && previous.etag === etag ? previous.lastModified : new Date();
 
     const uidDomain = process.env.ICS_UID_DOMAIN ?? 'draco.local';
     const dtstamp = formatIcsDateTime(new Date());
@@ -159,15 +160,6 @@ export class CalendarService {
       hash.update('\n');
     }
     return `W/"${games.length}-${hash.digest('hex').slice(0, 16)}"`;
-  }
-
-  private computeLastModified(games: dbGameInfo[]): Date {
-    let max = 0;
-    for (const game of games) {
-      const t = game.gamedate?.getTime() ?? 0;
-      if (t > max) max = t;
-    }
-    return max > 0 ? new Date(max) : new Date(0);
   }
 
   private evictOldestIfNeeded(): void {
