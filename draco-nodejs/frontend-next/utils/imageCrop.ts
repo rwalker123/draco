@@ -53,23 +53,36 @@ export async function cropImageToBlob(
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
 
-    context.drawImage(
-      image,
-      croppedAreaPixels.x,
-      croppedAreaPixels.y,
-      croppedAreaPixels.width,
-      croppedAreaPixels.height,
-      0,
-      0,
-      output.width,
-      output.height,
-    );
-
     const requestedMimeType = output.mimeType ?? DEFAULT_MIME_TYPE;
     const mimeType = SUPPORTED_OUTPUT_MIME_TYPES.has(requestedMimeType)
       ? requestedMimeType
       : DEFAULT_MIME_TYPE;
     const quality = output.quality ?? DEFAULT_QUALITY;
+
+    if (mimeType === 'image/jpeg') {
+      context.fillStyle = '#000000';
+      context.fillRect(0, 0, output.width, output.height);
+    }
+
+    if (croppedAreaPixels.width > 0 && croppedAreaPixels.height > 0) {
+      const scaleX = output.width / croppedAreaPixels.width;
+      const scaleY = output.height / croppedAreaPixels.height;
+
+      const sx = Math.max(0, croppedAreaPixels.x);
+      const sy = Math.max(0, croppedAreaPixels.y);
+      const sxEnd = Math.min(image.naturalWidth, croppedAreaPixels.x + croppedAreaPixels.width);
+      const syEnd = Math.min(image.naturalHeight, croppedAreaPixels.y + croppedAreaPixels.height);
+      const sw = Math.max(0, sxEnd - sx);
+      const sh = Math.max(0, syEnd - sy);
+
+      if (sw > 0 && sh > 0) {
+        const dx = (sx - croppedAreaPixels.x) * scaleX;
+        const dy = (sy - croppedAreaPixels.y) * scaleY;
+        const dw = sw * scaleX;
+        const dh = sh * scaleY;
+        context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+      }
+    }
 
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob((result) => resolve(result), mimeType, quality);
