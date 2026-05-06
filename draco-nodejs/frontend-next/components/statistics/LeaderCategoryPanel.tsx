@@ -371,6 +371,7 @@ export default function LeaderCategoryPanel({
             emptyMessage={message}
             getRowKey={getRowKey}
             hideHeader={hideHeaderWhenCard && leaderForCard !== null}
+            fullWidth
           />
         </Box>
       )}
