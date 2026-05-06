@@ -22,7 +22,6 @@ interface CacheEntry {
   etag: string;
   lastModified: Date;
   body: string;
-  context: TeamSeasonContext;
   cachedAt: number;
 }
 
@@ -48,15 +47,14 @@ export interface CalendarResult {
 }
 
 export class CalendarService {
-  private readonly scheduleRepository: IScheduleRepository;
   private readonly cache = new Map<string, CacheEntry>();
   private readonly inFlight = new Map<
     string,
     Promise<{ result: CalendarResult; context: TeamSeasonContext } | null>
   >();
 
-  constructor(scheduleRepository?: IScheduleRepository) {
-    this.scheduleRepository = scheduleRepository ?? RepositoryFactory.getScheduleRepository();
+  private get scheduleRepository(): IScheduleRepository {
+    return RepositoryFactory.getScheduleRepository();
   }
 
   async getTeamSeasonCalendarFingerprint(
@@ -79,13 +77,19 @@ export class CalendarService {
   private async getOrLoadCalendar(
     teamSeasonId: bigint,
   ): Promise<{ result: CalendarResult; context: TeamSeasonContext } | null> {
+    const context = await this.scheduleRepository.findTeamSeasonCalendarContext(teamSeasonId);
+    if (!context || !context.scheduleVisible) {
+      this.cache.delete(teamSeasonId.toString());
+      return null;
+    }
+
     const key = teamSeasonId.toString();
 
     const existing = this.cache.get(key);
-    if (existing && Date.now() - existing.cachedAt < CALENDAR_CACHE_TTL_MS && existing.context) {
+    if (existing && Date.now() - existing.cachedAt < CALENDAR_CACHE_TTL_MS) {
       return {
         result: { etag: existing.etag, lastModified: existing.lastModified, body: existing.body },
-        context: existing.context,
+        context,
       };
     }
 
@@ -94,7 +98,7 @@ export class CalendarService {
       return inflight;
     }
 
-    const promise = this.loadAndCache(teamSeasonId, key).finally(() => {
+    const promise = this.loadAndCache(teamSeasonId, key, context).finally(() => {
       this.inFlight.delete(key);
     });
 
@@ -105,12 +109,8 @@ export class CalendarService {
   private async loadAndCache(
     teamSeasonId: bigint,
     key: string,
+    context: TeamSeasonContext,
   ): Promise<{ result: CalendarResult; context: TeamSeasonContext } | null> {
-    const context = await this.scheduleRepository.findTeamSeasonCalendarContext(teamSeasonId);
-    if (!context || !context.scheduleVisible) {
-      return null;
-    }
-
     const games = await this.scheduleRepository.listAllGamesForTeam(teamSeasonId, context.seasonId);
 
     const etag = this.buildEtag(games);
@@ -138,7 +138,7 @@ export class CalendarService {
     });
 
     this.evictOldestIfNeeded();
-    this.cache.set(key, { etag, lastModified, body, context, cachedAt: Date.now() });
+    this.cache.set(key, { etag, lastModified, body, cachedAt: Date.now() });
 
     return { result: { etag, lastModified, body }, context };
   }

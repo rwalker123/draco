@@ -3,20 +3,11 @@ import request from 'supertest';
 import type { Express } from 'express';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { CalendarService } from '../services/calendarService.js';
+import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import { GameStatus } from '../types/gameEnums.js';
 import type { dbGameInfo } from '../repositories/index.js';
 import type { IScheduleRepository } from '../repositories/interfaces/IScheduleRepository.js';
-
-const buildExpectedEtag = (fingerprint: {
-  count: number;
-  maxId: bigint | null;
-  maxGamedate: Date | null;
-}): string => {
-  const maxIdHex = fingerprint.maxId !== null ? fingerprint.maxId.toString(16) : '0';
-  const maxEpoch =
-    fingerprint.maxGamedate !== null ? fingerprint.maxGamedate.getTime().toString() : '0';
-  return `W/"${fingerprint.count}-${maxIdHex}-${maxEpoch}"`;
-};
+import { partialMock } from '../test-utils/partialMock.js';
 
 const makeGame = (id: bigint, overrides: Partial<dbGameInfo> = {}): dbGameInfo =>
   ({
@@ -54,56 +45,28 @@ const baseContext = {
 
 const baseGames = [makeGame(1n), makeGame(2n)];
 
-const makeRepo = (overrides: Partial<IScheduleRepository> = {}): IScheduleRepository =>
-  ({
+const makeRepo = () =>
+  partialMock<IScheduleRepository>({
     findTeamSeasonCalendarContext: vi.fn().mockResolvedValue({ ...baseContext }),
     listAllGamesForTeam: vi.fn().mockResolvedValue([...baseGames]),
-    findById: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    count: vi.fn(),
-    findGameWithAccountContext: vi.fn(),
-    findGameWithDetails: vi.fn(),
-    listSeasonGames: vi.fn(),
-    countSeasonGames: vi.fn(),
-    findTeamsInLeagueSeason: vi.fn(),
-    createGame: vi.fn(),
-    updateGame: vi.fn(),
-    updateGameResults: vi.fn(),
-    deleteGame: vi.fn(),
-    findFieldConflict: vi.fn(),
-    countFieldBookingsAtTime: vi.fn(),
-    countTeamBookingsAtTime: vi.fn(),
-    countUmpireBookingsAtTime: vi.fn(),
-    countTeamGamesInRange: vi.fn(),
-    countUmpireGamesInRange: vi.fn(),
-    countUmpireAssignmentsForAccount: vi.fn(),
-    findRecap: vi.fn(),
-    upsertRecap: vi.fn(),
-    getTeamNames: vi.fn(),
-    listUpcomingGamesForTeam: vi.fn(),
-    listRecentGamesForTeam: vi.fn(),
-    ...overrides,
-  }) as unknown as IScheduleRepository;
+  });
 
 describe('calendar integration', () => {
   let app: Express;
-  let repo: IScheduleRepository;
+  let repo: ReturnType<typeof makeRepo>;
 
   beforeAll(async () => {
     repo = makeRepo();
-    const calendarService = new CalendarService(repo);
-    vi.spyOn(ServiceFactory, 'getCalendarService').mockReturnValue(calendarService);
+    vi.spyOn(RepositoryFactory, 'getScheduleRepository').mockReturnValue(repo);
+    vi.spyOn(ServiceFactory, 'getCalendarService').mockReturnValue(new CalendarService());
 
     const appModule = await import('../app.js');
     app = appModule.default;
   });
 
   beforeEach(() => {
-    vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue({ ...baseContext });
-    vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([...baseGames]);
+    repo.findTeamSeasonCalendarContext.mockResolvedValue({ ...baseContext });
+    repo.listAllGamesForTeam.mockResolvedValue([...baseGames]);
   });
 
   describe('GET /api/calendar/team-season/:teamSeasonId.ics', () => {
@@ -127,18 +90,32 @@ describe('calendar integration', () => {
     });
 
     it('returns 404 on missing team-season', async () => {
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue(null);
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(null);
       const res = await request(app).get('/api/calendar/team-season/99999.ics');
       expect(res.status).toBe(404);
     });
 
     it('returns 404 on hidden season', async () => {
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue({
+      repo.findTeamSeasonCalendarContext.mockResolvedValue({
         ...baseContext,
         scheduleVisible: false,
       });
       const res = await request(app).get('/api/calendar/team-season/77777.ics');
       expect(res.status).toBe(404);
+    });
+
+    it('hidden season takes effect on the next request even after a prior visible response', async () => {
+      const firstId = '88888';
+      const initial = await request(app).get(`/api/calendar/team-season/${firstId}.ics`);
+      expect(initial.status).toBe(200);
+
+      repo.findTeamSeasonCalendarContext.mockResolvedValue({
+        ...baseContext,
+        scheduleVisible: false,
+      });
+
+      const second = await request(app).get(`/api/calendar/team-season/${firstId}.ics`);
+      expect(second.status).toBe(404);
     });
 
     it('returns 400 on invalid teamSeasonId', async () => {
@@ -194,24 +171,6 @@ describe('calendar integration', () => {
       const r3 = await request(app).get('/api/calendar/team-season/42.ics');
       expect(r1.headers['etag']).toBe(r2.headers['etag']);
       expect(r2.headers['etag']).toBe(r3.headers['etag']);
-    });
-
-    it('ETag changes when underlying data changes', async () => {
-      const firstFingerprint = {
-        count: 2,
-        maxId: 200n,
-        maxGamedate: new Date('2025-09-01T00:00:00Z'),
-      };
-      const secondFingerprint = {
-        count: 99,
-        maxId: 9999n,
-        maxGamedate: new Date('2030-01-01T00:00:00Z'),
-      };
-
-      const etag1 = buildExpectedEtag(firstFingerprint);
-      const etag2 = buildExpectedEtag(secondFingerprint);
-
-      expect(etag1).not.toBe(etag2);
     });
   });
 });

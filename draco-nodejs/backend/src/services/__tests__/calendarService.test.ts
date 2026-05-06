@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarService } from '../calendarService.js';
+import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 import type { IScheduleRepository } from '../../repositories/interfaces/IScheduleRepository.js';
 import { GameStatus } from '../../types/gameEnums.js';
 import type { dbGameInfo } from '../../repositories/index.js';
+import { partialMock } from '../../test-utils/partialMock.js';
 
 const makeGame = (id: bigint, overrides: Partial<dbGameInfo> = {}): dbGameInfo =>
   ({
@@ -48,66 +50,38 @@ const makeContext = (
   ...overrides,
 });
 
-const makeRepo = (overrides: Partial<IScheduleRepository> = {}): IScheduleRepository =>
-  ({
+const makeRepo = () =>
+  partialMock<IScheduleRepository>({
     findTeamSeasonCalendarContext: vi.fn().mockResolvedValue(makeContext()),
     listAllGamesForTeam: vi.fn().mockResolvedValue([makeGame(1n), makeGame(2n), makeGame(3n)]),
-    findById: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    count: vi.fn(),
-    findGameWithAccountContext: vi.fn(),
-    findGameWithDetails: vi.fn(),
-    listSeasonGames: vi.fn(),
-    countSeasonGames: vi.fn(),
-    findTeamsInLeagueSeason: vi.fn(),
-    createGame: vi.fn(),
-    updateGame: vi.fn(),
-    updateGameResults: vi.fn(),
-    deleteGame: vi.fn(),
-    findFieldConflict: vi.fn(),
-    countFieldBookingsAtTime: vi.fn(),
-    countTeamBookingsAtTime: vi.fn(),
-    countUmpireBookingsAtTime: vi.fn(),
-    countTeamGamesInRange: vi.fn(),
-    countUmpireGamesInRange: vi.fn(),
-    countUmpireAssignmentsForAccount: vi.fn(),
-    findRecap: vi.fn(),
-    upsertRecap: vi.fn(),
-    getTeamNames: vi.fn(),
-    listUpcomingGamesForTeam: vi.fn(),
-    listRecentGamesForTeam: vi.fn(),
-    ...overrides,
-  }) as unknown as IScheduleRepository;
+  });
 
 describe('CalendarService', () => {
-  let repo: IScheduleRepository;
+  let repo: ReturnType<typeof makeRepo>;
   let service: CalendarService;
 
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-01-01T00:00:00Z'));
     repo = makeRepo();
-    service = new CalendarService(repo);
+    vi.spyOn(RepositoryFactory, 'getScheduleRepository').mockReturnValue(repo);
+    service = new CalendarService();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   describe('getTeamSeasonCalendarFingerprint', () => {
     it('returns null when context lookup returns null', async () => {
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue(null);
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(null);
       const result = await service.getTeamSeasonCalendarFingerprint(1n);
       expect(result).toBeNull();
     });
 
     it('returns null when scheduleVisible is false', async () => {
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue(
-        makeContext({ scheduleVisible: false }),
-      );
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(makeContext({ scheduleVisible: false }));
       const result = await service.getTeamSeasonCalendarFingerprint(1n);
       expect(result).toBeNull();
     });
@@ -121,15 +95,13 @@ describe('CalendarService', () => {
 
   describe('getTeamSeasonCalendar', () => {
     it('returns null when context lookup returns null', async () => {
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue(null);
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(null);
       const result = await service.getTeamSeasonCalendar(1n);
       expect(result).toBeNull();
     });
 
     it('returns null when scheduleVisible is false', async () => {
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue(
-        makeContext({ scheduleVisible: false }),
-      );
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(makeContext({ scheduleVisible: false }));
       const result = await service.getTeamSeasonCalendar(1n);
       expect(result).toBeNull();
     });
@@ -153,25 +125,46 @@ describe('CalendarService', () => {
       expect(first?.etag).toBe(second?.etag);
     });
 
-    it('second call within TTL does not re-query the repo', async () => {
+    it('second call within TTL does not re-load games', async () => {
       await service.getTeamSeasonCalendar(1n);
-      const callCount = vi.mocked(repo.listAllGamesForTeam).mock.calls.length;
+      const callCount = repo.listAllGamesForTeam.mock.calls.length;
       vi.advanceTimersByTime(30_000);
       await service.getTeamSeasonCalendar(1n);
-      expect(vi.mocked(repo.listAllGamesForTeam).mock.calls.length).toBe(callCount);
+      expect(repo.listAllGamesForTeam.mock.calls.length).toBe(callCount);
     });
 
-    it('re-queries the repo after TTL expires', async () => {
+    it('every request re-checks the schedule visibility context', async () => {
+      await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(30_000);
+      await service.getTeamSeasonCalendar(1n);
+      expect(repo.findTeamSeasonCalendarContext.mock.calls.length).toBe(2);
+    });
+
+    it('subsequent request with hidden visibility returns null and evicts cache', async () => {
+      const first = await service.getTeamSeasonCalendar(1n);
+      expect(first).not.toBeNull();
+
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(makeContext({ scheduleVisible: false }));
+      const hidden = await service.getTeamSeasonCalendar(1n);
+      expect(hidden).toBeNull();
+
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(makeContext());
+      const reopened = await service.getTeamSeasonCalendar(1n);
+      expect(repo.listAllGamesForTeam.mock.calls.length).toBe(2);
+      expect(reopened).not.toBeNull();
+    });
+
+    it('re-loads games after TTL expires', async () => {
       await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
       await service.getTeamSeasonCalendar(1n);
-      expect(vi.mocked(repo.listAllGamesForTeam).mock.calls.length).toBe(2);
+      expect(repo.listAllGamesForTeam.mock.calls.length).toBe(2);
     });
 
     it('ETag changes when game count changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n),
         makeGame(2n),
         makeGame(3n),
@@ -184,7 +177,7 @@ describe('CalendarService', () => {
     it('ETag changes when a game gamedate changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { gamedate: new Date('2025-07-15T18:00:00Z') }),
         makeGame(2n),
         makeGame(3n),
@@ -196,7 +189,7 @@ describe('CalendarService', () => {
     it('ETag changes when a game gamestatus changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { gamestatus: GameStatus.Rainout }),
         makeGame(2n),
         makeGame(3n),
@@ -208,7 +201,7 @@ describe('CalendarService', () => {
     it('ETag changes when a game fieldid changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { fieldid: 42n }),
         makeGame(2n),
         makeGame(3n),
@@ -220,7 +213,7 @@ describe('CalendarService', () => {
     it('ETag changes when a game comment changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { comment: 'doubleheader' }),
         makeGame(2n),
         makeGame(3n),
@@ -232,7 +225,7 @@ describe('CalendarService', () => {
     it('ETag changes when a game team assignment changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { hteamid: 99n }),
         makeGame(2n),
         makeGame(3n),
@@ -241,29 +234,28 @@ describe('CalendarService', () => {
       expect(first?.etag).not.toBe(second?.etag);
     });
 
-    it('in-flight dedupe: two concurrent calls trigger only one repo call', async () => {
+    it('in-flight dedupe: two concurrent calls trigger only one games load', async () => {
       vi.useRealTimers();
       repo = makeRepo();
-      let resolveContext!: (v: ReturnType<typeof makeContext>) => void;
-      const contextPromise = new Promise<ReturnType<typeof makeContext>>(
-        (resolve) => (resolveContext = resolve),
-      );
-      vi.mocked(repo.findTeamSeasonCalendarContext).mockReturnValue(contextPromise);
+      vi.mocked(RepositoryFactory.getScheduleRepository).mockReturnValue(repo);
+      service = new CalendarService();
 
-      service = new CalendarService(repo);
+      let resolveGames!: (v: dbGameInfo[]) => void;
+      const gamesPromise = new Promise<dbGameInfo[]>((resolve) => (resolveGames = resolve));
+      repo.listAllGamesForTeam.mockReturnValue(gamesPromise);
 
       const p1 = service.getTeamSeasonCalendar(1n);
       const p2 = service.getTeamSeasonCalendar(1n);
 
-      resolveContext(makeContext());
+      resolveGames([makeGame(1n)]);
 
       const [r1, r2] = await Promise.all([p1, p2]);
       expect(r1?.body).toBe(r2?.body);
-      expect(vi.mocked(repo.findTeamSeasonCalendarContext).mock.calls.length).toBe(1);
+      expect(repo.listAllGamesForTeam.mock.calls.length).toBe(1);
     });
 
     it('STATUS:CANCELLED appears for Rainout games', async () => {
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { gamestatus: GameStatus.Rainout }),
       ]);
       const result = await service.getTeamSeasonCalendar(1n);
@@ -271,7 +263,7 @@ describe('CalendarService', () => {
     });
 
     it('STATUS:CONFIRMED appears for Scheduled games', async () => {
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { gamestatus: GameStatus.Scheduled }),
       ]);
       const result = await service.getTeamSeasonCalendar(1n);
@@ -279,7 +271,7 @@ describe('CalendarService', () => {
     });
 
     it('STATUS:CANCELLED appears for Postponed games', async () => {
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { gamestatus: GameStatus.Postponed }),
       ]);
       const result = await service.getTeamSeasonCalendar(1n);
@@ -287,7 +279,7 @@ describe('CalendarService', () => {
     });
 
     it('STATUS:CONFIRMED appears for Forfeit games', async () => {
-      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+      repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { gamestatus: GameStatus.Forfeit }),
       ]);
       const result = await service.getTeamSeasonCalendar(1n);

@@ -242,7 +242,8 @@ router.get(
       throw new ValidationError('teamIds query parameter is required');
     }
 
-    const teamIds = rawTeamIds
+    const MAX_TEAM_IDS = 4;
+    const parsedIds = rawTeamIds
       .split(',')
       .map((id) => id.trim())
       .filter(Boolean)
@@ -254,8 +255,14 @@ router.get(
         }
       });
 
-    if (!teamIds.length) {
+    if (!parsedIds.length) {
       throw new ValidationError('teamIds must contain at least one valid ID');
+    }
+
+    const teamIds = Array.from(new Set(parsedIds.map((id) => id.toString()))).map((s) => BigInt(s));
+
+    if (teamIds.length > MAX_TEAM_IDS) {
+      throw new ValidationError(`teamIds must contain at most ${MAX_TEAM_IDS} unique IDs`);
     }
 
     const result = await scheduleService.getTeamRecipientCount(accountId, seasonId, teamIds);

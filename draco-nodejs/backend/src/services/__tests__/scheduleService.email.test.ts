@@ -18,8 +18,7 @@ import type { TwitterIntegrationService } from '../twitterIntegrationService.js'
 import type { BlueskyIntegrationService } from '../blueskyIntegrationService.js';
 import type { FacebookIntegrationService } from '../facebookIntegrationService.js';
 import type { dbScheduleGameWithDetails } from '../../repositories/types/index.js';
-
-const partialMock = <T>(partial: Partial<Mocked<T>>): Mocked<T> => partial as Mocked<T>;
+import { partialMock } from '../../test-utils/partialMock.js';
 
 const makeGame = (overrides: Partial<dbScheduleGameWithDetails> = {}): dbScheduleGameWithDetails =>
   ({
