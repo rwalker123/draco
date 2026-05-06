@@ -529,23 +529,6 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     return games;
   }
 
-  async getTeamScheduleFingerprint(
-    teamSeasonId: bigint,
-    seasonId: bigint,
-  ): Promise<{ count: number; maxId: bigint | null; maxGamedate: Date | null }> {
-    const result = await this.prisma.leagueschedule.aggregate({
-      where: this.buildTeamGamesWhere(teamSeasonId, seasonId),
-      _count: { _all: true },
-      _max: { id: true, gamedate: true },
-    });
-
-    return {
-      count: result._count._all,
-      maxId: result._max.id,
-      maxGamedate: result._max.gamedate,
-    };
-  }
-
   async findTeamSeasonCalendarContext(teamSeasonId: bigint): Promise<{
     teamName: string;
     leagueName: string;

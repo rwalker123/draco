@@ -246,6 +246,7 @@ export class ScheduleService {
     const safeStatusLine = sanitizePlainText(statusLine);
     const safeScoreLine = sanitizePlainText(scoreLine);
     const safeGameDate = gameDate ? sanitizePlainText(gameDate) : '';
+    const safeScheduleUrl = sanitizePlainText(scheduleUrl);
 
     return `
       <!DOCTYPE html>
@@ -274,9 +275,9 @@ export class ScheduleService {
             <p><strong>${safeScoreLine}</strong></p>
             ${safeGameDate ? `<p>${safeGameDate}</p>` : ''}
             <p>Use the button below to view the full schedule.</p>
-            <a href="${scheduleUrl}" class="button">View Schedule</a>
+            <a href="${safeScheduleUrl}" class="button">View Schedule</a>
             <p>If the button doesn't work, copy and paste this link into your browser:</p>
-            <p>${scheduleUrl}</p>
+            <p>${safeScheduleUrl}</p>
           </div>
           <div class="footer">
             <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
@@ -440,6 +441,7 @@ export class ScheduleService {
     const safeFieldName = fieldName ? sanitizePlainText(fieldName) : '';
     const safeFieldAddress = fieldAddress ? sanitizePlainText(fieldAddress) : '';
     const safeStatusLine = sanitizePlainText(statusLine);
+    const safeScheduleUrl = sanitizePlainText(scheduleUrl);
 
     return `
       <!DOCTYPE html>
@@ -471,9 +473,9 @@ export class ScheduleService {
             ${safeFieldName ? `<div class="detail-row"><span class="label">Location:</span> ${safeFieldName}${safeFieldAddress ? ` &mdash; ${safeFieldAddress}` : ''}</div>` : ''}
             <div class="detail-row"><span class="label">Status:</span> ${safeStatusLine}</div>
             <p>Use the button below to view the full schedule.</p>
-            <a href="${scheduleUrl}" class="button">View Schedule</a>
+            <a href="${safeScheduleUrl}" class="button">View Schedule</a>
             <p>If the button doesn't work, copy and paste this link into your browser:</p>
-            <p>${scheduleUrl}</p>
+            <p>${safeScheduleUrl}</p>
           </div>
           <div class="footer">
             <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>

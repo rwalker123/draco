@@ -41,7 +41,7 @@ router.get(
       if (stripEtagQuotes(ifNoneMatch) === stripEtagQuotes(etag)) {
         res.setHeader('ETag', etag);
         res.setHeader('Last-Modified', lastModified.toUTCString());
-        res.setHeader('Cache-Control', 'public, max-age=300');
+        res.setHeader('Cache-Control', 'public, max-age=60, must-revalidate');
         res.status(304).end();
         return;
       }
@@ -53,7 +53,7 @@ router.get(
       if (!isNaN(since.getTime()) && lastModified <= since) {
         res.setHeader('ETag', etag);
         res.setHeader('Last-Modified', lastModified.toUTCString());
-        res.setHeader('Cache-Control', 'public, max-age=300');
+        res.setHeader('Cache-Control', 'public, max-age=60, must-revalidate');
         res.status(304).end();
         return;
       }

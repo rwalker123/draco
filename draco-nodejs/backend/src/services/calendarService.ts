@@ -1,10 +1,18 @@
+import { createHash } from 'crypto';
 import { buildIcsCalendar, buildVEvent, formatIcsDateTime } from '../utils/icsBuilder.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { IScheduleRepository } from '../repositories/interfaces/IScheduleRepository.js';
+import type { dbGameInfo } from '../repositories/types/index.js';
 
-const ICS_DEFAULT_GAME_DURATION_MINUTES = parseInt(
-  process.env.ICS_DEFAULT_GAME_DURATION_MINUTES ?? '180',
-  10,
+const DEFAULT_GAME_DURATION_MINUTES_FALLBACK = 180;
+
+const parseGameDurationMinutes = (raw: string | undefined): number => {
+  const parsed = parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_GAME_DURATION_MINUTES_FALLBACK;
+};
+
+const ICS_DEFAULT_GAME_DURATION_MINUTES = parseGameDurationMinutes(
+  process.env.ICS_DEFAULT_GAME_DURATION_MINUTES,
 );
 
 const CALENDAR_CACHE_TTL_MS = 60_000;
@@ -14,6 +22,7 @@ interface CacheEntry {
   etag: string;
   lastModified: Date;
   body: string;
+  context: TeamSeasonContext;
   cachedAt: number;
 }
 
@@ -41,7 +50,10 @@ export interface CalendarResult {
 export class CalendarService {
   private readonly scheduleRepository: IScheduleRepository;
   private readonly cache = new Map<string, CacheEntry>();
-  private readonly inFlight = new Map<string, Promise<CalendarResult | null>>();
+  private readonly inFlight = new Map<
+    string,
+    Promise<{ result: CalendarResult; context: TeamSeasonContext } | null>
+  >();
 
   constructor(scheduleRepository?: IScheduleRepository) {
     this.scheduleRepository = scheduleRepository ?? RepositoryFactory.getScheduleRepository();
@@ -50,29 +62,31 @@ export class CalendarService {
   async getTeamSeasonCalendarFingerprint(
     teamSeasonId: bigint,
   ): Promise<CalendarFingerprint | null> {
-    const context = await this.scheduleRepository.findTeamSeasonCalendarContext(teamSeasonId);
-
-    if (!context || !context.scheduleVisible) {
-      return null;
-    }
-
-    const fingerprint = await this.scheduleRepository.getTeamScheduleFingerprint(
-      teamSeasonId,
-      context.seasonId,
-    );
-
-    const etag = this.buildEtag(fingerprint);
-    const lastModified = fingerprint.maxGamedate ?? new Date(0);
-
-    return { etag, lastModified, teamSeasonContext: context };
+    const loaded = await this.getOrLoadCalendar(teamSeasonId);
+    if (!loaded) return null;
+    return {
+      etag: loaded.result.etag,
+      lastModified: loaded.result.lastModified,
+      teamSeasonContext: loaded.context,
+    };
   }
 
   async getTeamSeasonCalendar(teamSeasonId: bigint): Promise<CalendarResult | null> {
+    const loaded = await this.getOrLoadCalendar(teamSeasonId);
+    return loaded?.result ?? null;
+  }
+
+  private async getOrLoadCalendar(
+    teamSeasonId: bigint,
+  ): Promise<{ result: CalendarResult; context: TeamSeasonContext } | null> {
     const key = teamSeasonId.toString();
 
     const existing = this.cache.get(key);
-    if (existing && Date.now() - existing.cachedAt < CALENDAR_CACHE_TTL_MS) {
-      return { etag: existing.etag, lastModified: existing.lastModified, body: existing.body };
+    if (existing && Date.now() - existing.cachedAt < CALENDAR_CACHE_TTL_MS && existing.context) {
+      return {
+        result: { etag: existing.etag, lastModified: existing.lastModified, body: existing.body },
+        context: existing.context,
+      };
     }
 
     const inflight = this.inFlight.get(key);
@@ -80,7 +94,7 @@ export class CalendarService {
       return inflight;
     }
 
-    const promise = this.fetchAndCache(teamSeasonId, key).finally(() => {
+    const promise = this.loadAndCache(teamSeasonId, key).finally(() => {
       this.inFlight.delete(key);
     });
 
@@ -88,44 +102,34 @@ export class CalendarService {
     return promise;
   }
 
-  private async fetchAndCache(teamSeasonId: bigint, key: string): Promise<CalendarResult | null> {
-    const fingerprintResult = await this.getTeamSeasonCalendarFingerprint(teamSeasonId);
-
-    if (!fingerprintResult) {
+  private async loadAndCache(
+    teamSeasonId: bigint,
+    key: string,
+  ): Promise<{ result: CalendarResult; context: TeamSeasonContext } | null> {
+    const context = await this.scheduleRepository.findTeamSeasonCalendarContext(teamSeasonId);
+    if (!context || !context.scheduleVisible) {
       return null;
     }
 
-    const { etag, lastModified, teamSeasonContext } = fingerprintResult;
+    const games = await this.scheduleRepository.listAllGamesForTeam(teamSeasonId, context.seasonId);
 
-    const existing = this.cache.get(key);
-    if (
-      existing &&
-      existing.etag === etag &&
-      Date.now() - existing.cachedAt < CALENDAR_CACHE_TTL_MS
-    ) {
-      return { etag: existing.etag, lastModified: existing.lastModified, body: existing.body };
-    }
-
-    const games = await this.scheduleRepository.listAllGamesForTeam(
-      teamSeasonId,
-      teamSeasonContext.seasonId,
-    );
+    const etag = this.buildEtag(games);
+    const lastModified = this.computeLastModified(games);
 
     const uidDomain = process.env.ICS_UID_DOMAIN ?? 'draco.local';
     const dtstamp = formatIcsDateTime(new Date());
-    const gameDurationMinutes = ICS_DEFAULT_GAME_DURATION_MINUTES;
 
     const eventBlocks = games.map((game) =>
       buildVEvent({
         game,
         dtstamp,
-        gameDurationMinutes,
+        gameDurationMinutes: ICS_DEFAULT_GAME_DURATION_MINUTES,
         uidDomain,
-        leagueName: teamSeasonContext.leagueName || null,
+        leagueName: context.leagueName || null,
       }),
     );
 
-    const calendarName = `${teamSeasonContext.teamName} Schedule (${teamSeasonContext.seasonName})`;
+    const calendarName = `${context.teamName} Schedule (${context.seasonName})`;
 
     const body = buildIcsCalendar({
       calendarName,
@@ -133,20 +137,37 @@ export class CalendarService {
     });
 
     this.evictOldestIfNeeded();
-    this.cache.set(key, { etag, lastModified, body, cachedAt: Date.now() });
+    this.cache.set(key, { etag, lastModified, body, context, cachedAt: Date.now() });
 
-    return { etag, lastModified, body };
+    return { result: { etag, lastModified, body }, context };
   }
 
-  private buildEtag(fingerprint: {
-    count: number;
-    maxId: bigint | null;
-    maxGamedate: Date | null;
-  }): string {
-    const maxIdHex = fingerprint.maxId !== null ? fingerprint.maxId.toString(16) : '0';
-    const maxEpoch =
-      fingerprint.maxGamedate !== null ? fingerprint.maxGamedate.getTime().toString() : '0';
-    return `W/"${fingerprint.count}-${maxIdHex}-${maxEpoch}"`;
+  private buildEtag(games: dbGameInfo[]): string {
+    const hash = createHash('sha1');
+    for (const game of games) {
+      hash.update(
+        [
+          game.id.toString(),
+          game.gamedate?.toISOString() ?? '',
+          game.gamestatus.toString(),
+          game.fieldid?.toString() ?? '',
+          game.comment ?? '',
+          game.hteamid.toString(),
+          game.vteamid.toString(),
+        ].join('|'),
+      );
+      hash.update('\n');
+    }
+    return `W/"${games.length}-${hash.digest('hex').slice(0, 16)}"`;
+  }
+
+  private computeLastModified(games: dbGameInfo[]): Date {
+    let max = 0;
+    for (const game of games) {
+      const t = game.gamedate?.getTime() ?? 0;
+      if (t > max) max = t;
+    }
+    return max > 0 ? new Date(max) : new Date(0);
   }
 
   private evictOldestIfNeeded(): void {

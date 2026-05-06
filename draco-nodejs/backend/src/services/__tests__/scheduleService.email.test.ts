@@ -19,6 +19,8 @@ import type { BlueskyIntegrationService } from '../blueskyIntegrationService.js'
 import type { FacebookIntegrationService } from '../facebookIntegrationService.js';
 import type { dbScheduleGameWithDetails } from '../../repositories/types/index.js';
 
+const partialMock = <T>(partial: Partial<Mocked<T>>): Mocked<T> => partial as Mocked<T>;
+
 const makeGame = (overrides: Partial<dbScheduleGameWithDetails> = {}): dbScheduleGameWithDetails =>
   ({
     id: 1n,
@@ -136,7 +138,7 @@ describe('ScheduleService — schedule change emails', () => {
   const emptyRoster = { rosterMembers: [] };
 
   beforeEach(() => {
-    scheduleRepositoryMock = {
+    scheduleRepositoryMock = partialMock<IScheduleRepository>({
       findGameWithAccountContext: vi.fn(),
       findGameWithDetails: vi.fn(),
       createGame: vi.fn(),
@@ -153,7 +155,6 @@ describe('ScheduleService — schedule change emails', () => {
       listUpcomingGamesForTeam: vi.fn(),
       listRecentGamesForTeam: vi.fn(),
       listAllGamesForTeam: vi.fn(),
-      getTeamScheduleFingerprint: vi.fn(),
       findTeamSeasonCalendarContext: vi.fn(),
       findById: vi.fn(),
       findMany: vi.fn(),
@@ -167,28 +168,28 @@ describe('ScheduleService — schedule change emails', () => {
       countTeamGamesInRange: vi.fn(),
       countUmpireGamesInRange: vi.fn(),
       countUmpireAssignmentsForAccount: vi.fn(),
-    } as unknown as Mocked<IScheduleRepository>;
+    });
 
-    emailServiceMock = {
+    emailServiceMock = partialMock<EmailService>({
       composeAndSendEmailFromUser: vi.fn().mockResolvedValue(undefined),
-    } as unknown as Mocked<EmailService>;
+    });
 
-    rosterServiceMock = {
+    rosterServiceMock = partialMock<RosterService>({
       getTeamRosterMembers: vi.fn().mockResolvedValue(rosterWithTwoMembers),
-    } as unknown as Mocked<RosterService>;
+    });
 
-    accountsServiceMock = {
+    accountsServiceMock = partialMock<AccountsService>({
       getAccountHeader: vi.fn().mockResolvedValue({ id: '99', name: 'Test League' }),
-    } as unknown as Mocked<AccountsService>;
+    });
 
-    accountSettingsServiceMock = {
+    accountSettingsServiceMock = partialMock<AccountSettingsService>({
       getAccountSettings: vi.fn().mockResolvedValue([]),
-    } as unknown as Mocked<AccountSettingsService>;
+    });
 
-    discordMock = { publishGameResult: vi.fn() } as unknown as Mocked<DiscordIntegrationService>;
-    twitterMock = { publishGameResult: vi.fn() } as unknown as Mocked<TwitterIntegrationService>;
-    blueskyMock = { publishGameResult: vi.fn() } as unknown as Mocked<BlueskyIntegrationService>;
-    facebookMock = { publishGameResult: vi.fn() } as unknown as Mocked<FacebookIntegrationService>;
+    discordMock = partialMock<DiscordIntegrationService>({ publishGameResult: vi.fn() });
+    twitterMock = partialMock<TwitterIntegrationService>({ publishGameResult: vi.fn() });
+    blueskyMock = partialMock<BlueskyIntegrationService>({ publishGameResult: vi.fn() });
+    facebookMock = partialMock<FacebookIntegrationService>({ publishGameResult: vi.fn() });
 
     vi.spyOn(RepositoryFactory, 'getScheduleRepository').mockReturnValue(scheduleRepositoryMock);
     vi.spyOn(ServiceFactory, 'getEmailService').mockReturnValue(emailServiceMock);

@@ -52,18 +52,11 @@ const baseContext = {
   scheduleVisible: true,
 };
 
-const baseFingerprint = {
-  count: 2,
-  maxId: 200n,
-  maxGamedate: new Date('2025-09-01T00:00:00Z'),
-};
-
 const baseGames = [makeGame(1n), makeGame(2n)];
 
 const makeRepo = (overrides: Partial<IScheduleRepository> = {}): IScheduleRepository =>
   ({
     findTeamSeasonCalendarContext: vi.fn().mockResolvedValue({ ...baseContext }),
-    getTeamScheduleFingerprint: vi.fn().mockResolvedValue({ ...baseFingerprint }),
     listAllGamesForTeam: vi.fn().mockResolvedValue([...baseGames]),
     findById: vi.fn(),
     findMany: vi.fn(),
@@ -110,7 +103,6 @@ describe('calendar integration', () => {
 
   beforeEach(() => {
     vi.mocked(repo.findTeamSeasonCalendarContext).mockResolvedValue({ ...baseContext });
-    vi.mocked(repo.getTeamScheduleFingerprint).mockResolvedValue({ ...baseFingerprint });
     vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([...baseGames]);
   });
 
@@ -145,7 +137,7 @@ describe('calendar integration', () => {
         ...baseContext,
         scheduleVisible: false,
       });
-      const res = await request(app).get('/api/calendar/team-season/42.ics');
+      const res = await request(app).get('/api/calendar/team-season/77777.ics');
       expect(res.status).toBe(404);
     });
 

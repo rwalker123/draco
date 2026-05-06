@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -14,15 +14,15 @@ interface SubscribeToScheduleButtonProps {
   variant?: 'text' | 'outlined' | 'contained';
 }
 
-const MENU_ID = 'subscribe-to-schedule-menu';
-
 const SubscribeToScheduleButton: React.FC<SubscribeToScheduleButtonProps> = ({
   seasonTeamId,
   teamName,
   size = 'small',
   variant = 'outlined',
 }) => {
+  const menuId = useId();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const isOpen = Boolean(anchorEl);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
   const isDisabled = apiUrl === '';
@@ -58,12 +58,12 @@ const SubscribeToScheduleButton: React.FC<SubscribeToScheduleButtonProps> = ({
         startIcon={<EventAvailableIcon />}
         onClick={openMenu}
         aria-haspopup="menu"
-        aria-expanded={Boolean(anchorEl)}
-        aria-controls={MENU_ID}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? menuId : undefined}
       >
         Subscribe
       </Button>
-      <Menu id={MENU_ID} anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu id={menuId} anchorEl={anchorEl} open={isOpen} onClose={closeMenu}>
         <MenuItem
           component="a"
           href={urls.google}

@@ -48,23 +48,9 @@ const makeContext = (
   ...overrides,
 });
 
-const makeFingerprint = (
-  overrides: Partial<{
-    count: number;
-    maxId: bigint | null;
-    maxGamedate: Date | null;
-  }> = {},
-) => ({
-  count: 3,
-  maxId: 300n,
-  maxGamedate: new Date('2025-09-01T00:00:00Z'),
-  ...overrides,
-});
-
 const makeRepo = (overrides: Partial<IScheduleRepository> = {}): IScheduleRepository =>
   ({
     findTeamSeasonCalendarContext: vi.fn().mockResolvedValue(makeContext()),
-    getTeamScheduleFingerprint: vi.fn().mockResolvedValue(makeFingerprint()),
     listAllGamesForTeam: vi.fn().mockResolvedValue([makeGame(1n), makeGame(2n), makeGame(3n)]),
     findById: vi.fn(),
     findMany: vi.fn(),
@@ -185,29 +171,72 @@ describe('CalendarService', () => {
     it('ETag changes when game count changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.getTeamScheduleFingerprint).mockResolvedValue(
-        makeFingerprint({ count: 5, maxId: 500n }),
-      );
+      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+        makeGame(1n),
+        makeGame(2n),
+        makeGame(3n),
+        makeGame(4n),
+      ]);
       const second = await service.getTeamSeasonCalendar(1n);
       expect(first?.etag).not.toBe(second?.etag);
     });
 
-    it('ETag changes when maxId changes', async () => {
+    it('ETag changes when a game gamedate changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.getTeamScheduleFingerprint).mockResolvedValue(
-        makeFingerprint({ maxId: 999n }),
-      );
+      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+        makeGame(1n, { gamedate: new Date('2025-07-15T18:00:00Z') }),
+        makeGame(2n),
+        makeGame(3n),
+      ]);
       const second = await service.getTeamSeasonCalendar(1n);
       expect(first?.etag).not.toBe(second?.etag);
     });
 
-    it('ETag changes when maxGamedate changes', async () => {
+    it('ETag changes when a game gamestatus changes', async () => {
       const first = await service.getTeamSeasonCalendar(1n);
       vi.advanceTimersByTime(61_000);
-      vi.mocked(repo.getTeamScheduleFingerprint).mockResolvedValue(
-        makeFingerprint({ maxGamedate: new Date('2026-01-01T00:00:00Z') }),
-      );
+      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+        makeGame(1n, { gamestatus: GameStatus.Rainout }),
+        makeGame(2n),
+        makeGame(3n),
+      ]);
+      const second = await service.getTeamSeasonCalendar(1n);
+      expect(first?.etag).not.toBe(second?.etag);
+    });
+
+    it('ETag changes when a game fieldid changes', async () => {
+      const first = await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(61_000);
+      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+        makeGame(1n, { fieldid: 42n }),
+        makeGame(2n),
+        makeGame(3n),
+      ]);
+      const second = await service.getTeamSeasonCalendar(1n);
+      expect(first?.etag).not.toBe(second?.etag);
+    });
+
+    it('ETag changes when a game comment changes', async () => {
+      const first = await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(61_000);
+      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+        makeGame(1n, { comment: 'doubleheader' }),
+        makeGame(2n),
+        makeGame(3n),
+      ]);
+      const second = await service.getTeamSeasonCalendar(1n);
+      expect(first?.etag).not.toBe(second?.etag);
+    });
+
+    it('ETag changes when a game team assignment changes', async () => {
+      const first = await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(61_000);
+      vi.mocked(repo.listAllGamesForTeam).mockResolvedValue([
+        makeGame(1n, { hteamid: 99n }),
+        makeGame(2n),
+        makeGame(3n),
+      ]);
       const second = await service.getTeamSeasonCalendar(1n);
       expect(first?.etag).not.toBe(second?.etag);
     });
