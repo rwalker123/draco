@@ -128,6 +128,35 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       description:
         'JSON payload to update title or caption on a team gallery photo. Album reassignment is not supported.',
     });
+  const CreateTeamGalleryAlbumSchemaRef = z
+    .object({
+      title: z.string().trim().min(1).max(25).openapi({
+        description: 'Title for the team album',
+      }),
+      parentAlbumId: z.string().nullable().optional().openapi({
+        description:
+          'Optional parent album identifier scoped to the same team. Null nests at the team root.',
+      }),
+    })
+    .openapi({
+      title: 'CreateTeamGalleryAlbum',
+      description:
+        'JSON payload to create a team gallery album. The owning team is taken from the URL path.',
+    });
+  const UpdateTeamGalleryAlbumSchemaRef = z
+    .object({
+      title: z.string().trim().min(1).max(25).optional().openapi({
+        description: 'Updated title for the team album',
+      }),
+      parentAlbumId: z.string().nullable().optional().openapi({
+        description: 'Updated parent album identifier scoped to the same team',
+      }),
+    })
+    .openapi({
+      title: 'UpdateTeamGalleryAlbum',
+      description:
+        'JSON payload to update a team gallery album. The owning team cannot be changed.',
+    });
 
   // GET /api/accounts/search
   registry.registerPath({
@@ -970,7 +999,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     operationId: 'updateTeamGalleryPhoto',
     summary: 'Update team gallery photo metadata',
     description:
-      'Updates the title, caption, or album assignment for a team gallery photo. Requires team photo management permissions.',
+      'Updates the title or caption for a team gallery photo. Album reassignment is not supported. Requires team photo management permissions.',
     tags: ['Photo Gallery'],
     security: [{ bearerAuth: [] }],
     parameters: [
@@ -1090,7 +1119,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       body: {
         content: {
           'application/json': {
-            schema: CreatePhotoGalleryAlbumSchemaRef,
+            schema: CreateTeamGalleryAlbumSchemaRef,
           },
         },
       },
@@ -1142,7 +1171,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
       body: {
         content: {
           'application/json': {
-            schema: UpdatePhotoGalleryAlbumSchemaRef,
+            schema: UpdateTeamGalleryAlbumSchemaRef,
           },
         },
       },

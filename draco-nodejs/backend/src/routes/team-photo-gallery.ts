@@ -167,7 +167,6 @@ router.patch(
 
     const body = updateAlbumBodySchema.parse({
       title: req.body.title,
-      teamId: teamId.toString(),
       parentAlbumId: normalizeOptionalNumericInput(req.body.parentAlbumId),
     });
 

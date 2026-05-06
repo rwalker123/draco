@@ -382,6 +382,7 @@ describe('PhotoGalleryAdminService', () => {
     });
 
     it('createTeamAlbum bypasses the account-level uniqueness check and disambiguates', async () => {
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: accountId });
       repository.listAlbums.mockResolvedValue([
         createAlbum({ id: 9n, teamid: 99n, title: 'Eagles' }),
       ]);
@@ -409,6 +410,20 @@ describe('PhotoGalleryAdminService', () => {
         }),
       );
       expect(result.title).toBe(`Eagles (#${teamId.toString()})`);
+    });
+
+    it('createTeamAlbum rejects when the team does not belong to the account', async () => {
+      teamRepository.findTeamDefinition.mockResolvedValue({ id: teamId, accountid: 999n });
+
+      await expect(
+        service.createTeamAlbum(accountId, teamId, {
+          title: 'Eagles',
+          teamId: teamId.toString(),
+          parentAlbumId: null,
+        }),
+      ).rejects.toThrow('Team not found');
+
+      expect(repository.createAlbum).not.toHaveBeenCalled();
     });
 
     it('updateTeamAlbum rejects reassigning the album to a different team', async () => {

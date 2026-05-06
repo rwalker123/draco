@@ -259,6 +259,8 @@ export class PhotoGalleryAdminService {
     teamId: bigint,
     payload: CreatePhotoGalleryAlbumType,
   ): Promise<PhotoGalleryAdminAlbumType> {
+    await this.requireTeamBelongsToAccount(accountId, teamId);
+
     const parentAlbumIdValue = await this.parseOptionalParentAlbumId(
       payload.parentAlbumId,
       accountId,
@@ -303,10 +305,8 @@ export class PhotoGalleryAdminService {
       }
     }
 
-    return this.updateAlbum(accountId, albumId, {
-      ...payload,
-      teamId: teamId.toString(),
-    });
+    const { teamId: _ignoredTeamId, ...delegatePayload } = payload;
+    return this.updateAlbum(accountId, albumId, delegatePayload);
   }
 
   async deleteTeamAlbum(accountId: bigint, teamId: bigint, albumId: bigint): Promise<void> {
@@ -368,14 +368,18 @@ export class PhotoGalleryAdminService {
   }
 
   private async resolveTeamAlbumTitle(accountId: bigint, teamId: bigint): Promise<string> {
-    const team = await this.teamRepository.findTeamDefinition(teamId);
-    if (!team || team.accountid !== accountId) {
-      throw new NotFoundError('Team not found');
-    }
+    await this.requireTeamBelongsToAccount(accountId, teamId);
 
     const latestName = await this.teamRepository.findLatestTeamSeasonName(teamId);
     const candidate = latestName?.trim() || FALLBACK_TEAM_ALBUM_TITLE;
     return candidate.slice(0, TEAM_ALBUM_TITLE_MAX_LENGTH);
+  }
+
+  private async requireTeamBelongsToAccount(accountId: bigint, teamId: bigint): Promise<void> {
+    const team = await this.teamRepository.findTeamDefinition(teamId);
+    if (!team || team.accountid !== accountId) {
+      throw new NotFoundError('Team not found');
+    }
   }
 
   private disambiguateAlbumTitle(

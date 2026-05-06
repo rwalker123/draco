@@ -411,7 +411,7 @@ describe('photoGalleryAdminService', () => {
       expect(apiListAlbums).not.toHaveBeenCalled();
     });
 
-    it('createGalleryAlbumAdmin forces teamId into the body for team endpoints', async () => {
+    it('createGalleryAlbumAdmin uses the team endpoint with team scoping in the path', async () => {
       vi.mocked(apiCreateTeamAlbum).mockResolvedValue(makeOk(albumData));
 
       await createGalleryAlbumAdmin(
@@ -423,10 +423,10 @@ describe('photoGalleryAdminService', () => {
 
       const call = vi.mocked(apiCreateTeamAlbum).mock.calls[0][0] as {
         path: { accountId: string; teamId: string };
-        body: { teamId: string };
+        body: { title: string; parentAlbumId: string | null };
       };
       expect(call.path).toEqual({ accountId: ACCOUNT_ID, teamId: TEAM_ID });
-      expect(call.body.teamId).toBe(TEAM_ID);
+      expect(call.body).toEqual({ title: 'New', parentAlbumId: null });
       expect(apiCreateAlbum).not.toHaveBeenCalled();
     });
 

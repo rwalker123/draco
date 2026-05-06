@@ -195,7 +195,7 @@ export async function createGalleryAlbumAdmin(
     ? await createTeamGalleryAlbum({
         client,
         path: { accountId, teamId },
-        body: { ...input, teamId },
+        body: { title: input.title, parentAlbumId: input.parentAlbumId ?? null },
         throwOnError: false,
       })
     : await createAccountGalleryAlbum({
@@ -220,7 +220,7 @@ export async function updateGalleryAlbumAdmin(
     ? await updateTeamGalleryAlbum({
         client,
         path: { accountId, teamId, albumId },
-        body: input,
+        body: { title: input.title, parentAlbumId: input.parentAlbumId },
         throwOnError: false,
       })
     : await updateAccountGalleryAlbum({
