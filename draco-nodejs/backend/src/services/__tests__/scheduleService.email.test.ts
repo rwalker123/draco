@@ -20,6 +20,12 @@ import type { FacebookIntegrationService } from '../facebookIntegrationService.j
 import type { dbScheduleGameWithDetails } from '../../repositories/types/index.js';
 import { partialMock } from '../../test-utils/partialMock.js';
 
+const flushMicrotasks = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
 const makeGame = (overrides: Partial<dbScheduleGameWithDetails> = {}): dbScheduleGameWithDetails =>
   ({
     id: 1n,
@@ -249,7 +255,7 @@ describe('ScheduleService — schedule change emails', () => {
         userId,
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushMicrotasks();
       expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
     });
 
@@ -297,7 +303,7 @@ describe('ScheduleService — schedule change emails', () => {
         userId,
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushMicrotasks();
       expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
     });
 
@@ -311,7 +317,7 @@ describe('ScheduleService — schedule change emails', () => {
         userId,
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushMicrotasks();
       expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
     });
 
@@ -383,7 +389,7 @@ describe('ScheduleService — schedule change emails', () => {
         userId,
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushMicrotasks();
       expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
     });
 
@@ -406,7 +412,7 @@ describe('ScheduleService — schedule change emails', () => {
         userId,
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushMicrotasks();
       expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
     });
 
@@ -493,7 +499,7 @@ describe('ScheduleService — schedule change emails', () => {
         userId,
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushMicrotasks();
       expect(emailServiceMock.composeAndSendEmailFromUser).not.toHaveBeenCalled();
     });
 
