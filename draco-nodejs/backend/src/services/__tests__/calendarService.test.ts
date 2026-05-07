@@ -234,6 +234,60 @@ describe('CalendarService', () => {
       expect(first?.etag).not.toBe(second?.etag);
     });
 
+    it('ETag changes when a team is renamed', async () => {
+      const first = await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(61_000);
+      repo.listAllGamesForTeam.mockResolvedValue([
+        makeGame(1n, { hometeam: { id: 10n, name: 'Renamed Home' } }),
+        makeGame(2n),
+        makeGame(3n),
+      ]);
+      const second = await service.getTeamSeasonCalendar(1n);
+      expect(first?.etag).not.toBe(second?.etag);
+    });
+
+    it('ETag changes when a field address is edited', async () => {
+      const fieldBase = {
+        id: 7n,
+        accountid: 1n,
+        name: 'Main Field',
+        shortname: 'MF',
+        comment: '',
+        address: '123 Main St',
+        city: 'Springfield',
+        state: 'IL',
+        zipcode: '62701',
+        directions: '',
+        rainoutnumber: '',
+        latitude: '',
+        longitude: '',
+        haslights: false,
+        maxparallelgames: 1,
+        schedulerstartincrementminutes: 165,
+      };
+      repo.listAllGamesForTeam.mockResolvedValue([
+        makeGame(1n, { fieldid: 7n, availablefields: { ...fieldBase } }),
+      ]);
+      const first = await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(61_000);
+      repo.listAllGamesForTeam.mockResolvedValue([
+        makeGame(1n, {
+          fieldid: 7n,
+          availablefields: { ...fieldBase, address: '456 Other Ave' },
+        }),
+      ]);
+      const second = await service.getTeamSeasonCalendar(1n);
+      expect(first?.etag).not.toBe(second?.etag);
+    });
+
+    it('ETag changes when the team-season calendar name context changes', async () => {
+      const first = await service.getTeamSeasonCalendar(1n);
+      vi.advanceTimersByTime(61_000);
+      repo.findTeamSeasonCalendarContext.mockResolvedValue(makeContext({ teamName: 'Renamed' }));
+      const second = await service.getTeamSeasonCalendar(1n);
+      expect(first?.etag).not.toBe(second?.etag);
+    });
+
     it('in-flight dedupe: two concurrent calls trigger only one games load', async () => {
       vi.useRealTimers();
       repo = makeRepo();

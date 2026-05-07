@@ -113,7 +113,7 @@ export class CalendarService {
   ): Promise<{ result: CalendarResult; context: TeamSeasonContext } | null> {
     const games = await this.scheduleRepository.listAllGamesForTeam(teamSeasonId, context.seasonId);
 
-    const etag = this.buildEtag(games);
+    const etag = this.buildEtag(games, context);
     const previous = this.cache.get(key);
     const lastModified = previous && previous.etag === etag ? previous.lastModified : new Date();
 
@@ -143,9 +143,14 @@ export class CalendarService {
     return { result: { etag, lastModified, body }, context };
   }
 
-  private buildEtag(games: dbGameInfo[]): string {
+  private buildEtag(games: dbGameInfo[], context: TeamSeasonContext): string {
     const hash = createHash('sha1');
+
+    hash.update(['CTX', context.teamName, context.leagueName, context.seasonName].join('|'));
+    hash.update('\n');
+
     for (const game of games) {
+      const field = game.availablefields;
       hash.update(
         [
           game.id.toString(),
@@ -155,6 +160,14 @@ export class CalendarService {
           game.comment ?? '',
           game.hteamid.toString(),
           game.vteamid.toString(),
+          game.hometeam?.name ?? '',
+          game.visitingteam?.name ?? '',
+          game.leagueseason?.league?.name ?? '',
+          field?.name ?? '',
+          field?.address ?? '',
+          field?.city ?? '',
+          field?.state ?? '',
+          field?.zipcode ?? '',
         ].join('|'),
       );
       hash.update('\n');
