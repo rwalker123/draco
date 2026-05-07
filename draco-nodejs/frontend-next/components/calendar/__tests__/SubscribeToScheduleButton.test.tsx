@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from '@mui/material/styles';
@@ -12,18 +12,35 @@ const renderWithTheme = (ui: React.ReactElement) =>
 
 const TEAM_SEASON_ID = 'ts-abc-123';
 const TEAM_NAME = 'Springfield Hawks';
-const API_URL = 'https://api.example.test';
+const ORIGIN = 'https://app.example.test';
 
-const expectedIcsUrl = `${API_URL}/api/calendar/team-season/${encodeURIComponent(TEAM_SEASON_ID)}.ics`;
+const expectedIcsUrl = `${ORIGIN}/api/calendar/team-season/${encodeURIComponent(TEAM_SEASON_ID)}.ics`;
+
+const setOrigin = (value: string) => {
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: { ...window.location, origin: value },
+  });
+};
 
 describe('SubscribeToScheduleButton', () => {
+  let originalLocation: Location;
+
   beforeEach(() => {
-    vi.stubEnv('NEXT_PUBLIC_API_URL', API_URL);
+    originalLocation = window.location;
+    setOrigin(ORIGIN);
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: originalLocation,
+    });
   });
 
   it('renders a trigger button labelled Subscribe', () => {
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
     expect(screen.getByRole('button', { name: /subscribe/i })).toBeInTheDocument();
   });
@@ -31,7 +48,7 @@ describe('SubscribeToScheduleButton', () => {
   it('opens menu with all four provider labels when trigger is clicked', async () => {
     const user = userEvent.setup();
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
 
     await user.click(screen.getByRole('button', { name: /subscribe/i }));
@@ -47,7 +64,7 @@ describe('SubscribeToScheduleButton', () => {
   it('does not render a Download .ics menu item', async () => {
     const user = userEvent.setup();
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
 
     await user.click(screen.getByRole('button', { name: /subscribe/i }));
@@ -58,10 +75,10 @@ describe('SubscribeToScheduleButton', () => {
     expect(screen.queryByText('Download .ics')).not.toBeInTheDocument();
   });
 
-  it('provider link hrefs match buildCalendarSubscribeUrls output', async () => {
+  it('provider link hrefs are built from window.location.origin', async () => {
     const user = userEvent.setup();
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
 
     await user.click(screen.getByRole('button', { name: /subscribe/i }));
@@ -86,7 +103,7 @@ describe('SubscribeToScheduleButton', () => {
   it('Apple Calendar link starts with webcal://', async () => {
     const user = userEvent.setup();
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
 
     await user.click(screen.getByRole('button', { name: /subscribe/i }));
@@ -100,7 +117,7 @@ describe('SubscribeToScheduleButton', () => {
   it('provider links have target=_blank and rel containing noopener and noreferrer', async () => {
     const user = userEvent.setup();
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
 
     await user.click(screen.getByRole('button', { name: /subscribe/i }));
@@ -116,21 +133,14 @@ describe('SubscribeToScheduleButton', () => {
     });
   });
 
-  it('renders a disabled button when NEXT_PUBLIC_API_URL is empty', () => {
-    vi.stubEnv('NEXT_PUBLIC_API_URL', '');
+  it('renders a disabled button when window.location.origin is empty', async () => {
+    setOrigin('');
     renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
+      <SubscribeToScheduleButton teamSeasonId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
     );
 
-    expect(screen.getByRole('button', { name: /subscribe/i })).toBeDisabled();
-  });
-
-  it('renders a disabled button when NEXT_PUBLIC_API_URL is unset', () => {
-    vi.unstubAllEnvs();
-    renderWithTheme(
-      <SubscribeToScheduleButton seasonTeamId={TEAM_SEASON_ID} teamName={TEAM_NAME} />,
-    );
-
-    expect(screen.getByRole('button', { name: /subscribe/i })).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /subscribe/i })).toBeDisabled();
+    });
   });
 });

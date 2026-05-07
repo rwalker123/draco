@@ -195,7 +195,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                   View Team
                 </Button>
                 <SubscribeToScheduleButton
-                  seasonTeamId={team.id}
+                  teamSeasonId={team.id}
                   teamName={team.name}
                   size="small"
                 />

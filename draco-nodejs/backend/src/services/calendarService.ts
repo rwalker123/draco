@@ -118,7 +118,7 @@ export class CalendarService {
     const lastModified = previous && previous.etag === etag ? previous.lastModified : new Date();
 
     const uidDomain = process.env.ICS_UID_DOMAIN ?? 'draco.local';
-    const dtstamp = formatIcsDateTime(new Date());
+    const dtstamp = formatIcsDateTime(lastModified);
 
     const eventBlocks = games.map((game) =>
       buildVEvent({

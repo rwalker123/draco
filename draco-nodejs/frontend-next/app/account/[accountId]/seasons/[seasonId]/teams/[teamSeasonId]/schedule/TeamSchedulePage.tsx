@@ -317,7 +317,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
           <Stack direction="row" spacing={1}>
             {user && (
               <SubscribeToScheduleButton
-                seasonTeamId={teamSeasonId}
+                teamSeasonId={teamSeasonId}
                 teamName={teamName ?? 'Team'}
                 size="small"
                 variant="outlined"

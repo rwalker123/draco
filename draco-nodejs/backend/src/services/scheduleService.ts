@@ -468,7 +468,7 @@ export class ScheduleService {
           <div class="content">
             <h2>Schedule Update</h2>
             <div class="detail-row"><span class="label">League:</span> ${safeLeagueName}</div>
-            <div class="detail-row"><span class="label">Game:</span> ${safeHomeTeam} @ ${safeVisitorTeam}</div>
+            <div class="detail-row"><span class="label">Game:</span> ${safeVisitorTeam} @ ${safeHomeTeam}</div>
             ${safeGameDate ? `<div class="detail-row"><span class="label">Date/Time:</span> ${safeGameDate}</div>` : ''}
             ${safeFieldName ? `<div class="detail-row"><span class="label">Location:</span> ${safeFieldName}${safeFieldAddress ? ` &mdash; ${safeFieldAddress}` : ''}</div>` : ''}
             <div class="detail-row"><span class="label">Status:</span> ${safeStatusLine}</div>
@@ -547,7 +547,7 @@ export class ScheduleService {
       const fieldAddress =
         fieldCity || fieldState ? [fieldCity, fieldState].filter(Boolean).join(', ') : undefined;
       const scheduleUrl = `${baseUrl}/account/${accountHeader.id}/schedule`;
-      const headerLine = `${homeTeamName} @ ${visitorTeamName}`;
+      const headerLine = `${visitorTeamName} @ ${homeTeamName}`;
 
       const subject = this.buildScheduleChangeSubject(
         accountHeader.name,

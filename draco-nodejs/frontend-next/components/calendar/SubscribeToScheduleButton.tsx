@@ -1,5 +1,5 @@
 'use client';
-import React, { useId, useState } from 'react';
+import React, { useId, useState, useSyncExternalStore } from 'react';
 import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -8,14 +8,18 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import { buildCalendarSubscribeUrls } from '../../utils/calendarSubscribe';
 
 interface SubscribeToScheduleButtonProps {
-  seasonTeamId: string;
+  teamSeasonId: string;
   teamName: string;
   size?: 'small' | 'medium';
   variant?: 'text' | 'outlined' | 'contained';
 }
 
+const subscribeToOrigin = () => () => {};
+const getOriginSnapshot = () => window.location.origin;
+const getServerOriginSnapshot = () => '';
+
 const SubscribeToScheduleButton: React.FC<SubscribeToScheduleButtonProps> = ({
-  seasonTeamId,
+  teamSeasonId,
   teamName,
   size = 'small',
   variant = 'outlined',
@@ -24,8 +28,12 @@ const SubscribeToScheduleButton: React.FC<SubscribeToScheduleButtonProps> = ({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const isOpen = Boolean(anchorEl);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
-  const isDisabled = apiUrl === '';
+  const origin = useSyncExternalStore(
+    subscribeToOrigin,
+    getOriginSnapshot,
+    getServerOriginSnapshot,
+  );
+  const isDisabled = origin === '';
 
   const openMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -47,7 +55,7 @@ const SubscribeToScheduleButton: React.FC<SubscribeToScheduleButtonProps> = ({
     );
   }
 
-  const icsUrl = `${apiUrl}/api/calendar/team-season/${encodeURIComponent(seasonTeamId)}.ics`;
+  const icsUrl = `${origin}/api/calendar/team-season/${encodeURIComponent(teamSeasonId)}.ics`;
   const urls = buildCalendarSubscribeUrls(icsUrl, teamName);
 
   return (
