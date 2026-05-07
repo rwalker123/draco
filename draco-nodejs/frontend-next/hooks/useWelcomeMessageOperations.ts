@@ -45,7 +45,7 @@ export function useWelcomeMessageOperations(scope: WelcomeMessageScope): Operati
   const depsRef = useRef({ scope, token, apiClient });
   useEffect(() => {
     depsRef.current = { scope, token, apiClient };
-  });
+  }, [scope, token, apiClient]);
 
   const [operations] = useState(() => {
     const getService = () => {

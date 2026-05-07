@@ -39,17 +39,17 @@ const buildQuery = <T extends Record<string, unknown>>(query?: Partial<T>) => {
   return definedEntries.length > 0 ? Object.fromEntries(definedEntries) : undefined;
 };
 
-export function useSocialHubService(config: SocialHubServiceConfig) {
+export function useSocialHubService({ accountId, seasonId }: SocialHubServiceConfig) {
   const apiClient = useApiClient();
 
-  const depsRef = useRef({ config, apiClient });
+  const depsRef = useRef({ accountId, seasonId, apiClient });
   useEffect(() => {
-    depsRef.current = { config, apiClient };
-  });
+    depsRef.current = { accountId, seasonId, apiClient };
+  }, [accountId, seasonId, apiClient]);
 
   const [operations] = useState(() => {
     const ensureContext = () => {
-      const { accountId: a, seasonId: s } = depsRef.current.config;
+      const { accountId: a, seasonId: s } = depsRef.current;
       if (!a || !s) {
         throw new Error('Account and season are required to load social content.');
       }

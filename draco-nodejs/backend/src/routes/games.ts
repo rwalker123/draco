@@ -259,7 +259,7 @@ router.get(
       throw new ValidationError('teamIds must contain at least one valid ID');
     }
 
-    const teamIds = Array.from(new Set(parsedIds.map((id) => id.toString()))).map((s) => BigInt(s));
+    const teamIds = Array.from(new Set(parsedIds));
 
     if (teamIds.length > MAX_TEAM_IDS) {
       throw new ValidationError(`teamIds must contain at most ${MAX_TEAM_IDS} unique IDs`);
