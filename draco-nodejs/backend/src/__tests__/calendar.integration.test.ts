@@ -157,6 +157,14 @@ describe('calendar integration', () => {
       expect(res.status).toBe(304);
     });
 
+    it('returns 304 on If-None-Match wildcard when feed exists', async () => {
+      const res = await request(app)
+        .get('/api/calendar/team-season/42.ics')
+        .set('If-None-Match', '*');
+      expect(res.status).toBe(304);
+      expect(res.text).toBe('');
+    });
+
     it('returns 200 when If-None-Match is stale', async () => {
       const res = await request(app)
         .get('/api/calendar/team-season/42.ics')

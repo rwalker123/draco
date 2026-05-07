@@ -43,8 +43,10 @@ router.get(
 
     const ifNoneMatch = firstHeaderValue(req.headers['if-none-match']);
     if (ifNoneMatch !== undefined) {
-      const candidates = ifNoneMatch.split(',').map((v) => stripEtagQuotes(v.trim()));
-      if (candidates.includes(stripEtagQuotes(etag))) {
+      const candidates = ifNoneMatch.split(',').map((v) => v.trim());
+      const matches =
+        candidates.includes('*') || candidates.map(stripEtagQuotes).includes(stripEtagQuotes(etag));
+      if (matches) {
         res.setHeader('ETag', etag);
         res.setHeader('Last-Modified', lastModified.toUTCString());
         res.setHeader('Cache-Control', 'public, max-age=60, must-revalidate');
