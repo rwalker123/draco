@@ -10,13 +10,14 @@ export function buildCalendarSubscribeUrls(icsUrl: string, name: string): Calend
     throw new TypeError(`icsUrl must start with http:// or https://, got: ${icsUrl}`);
   }
 
-  const apple = icsUrl.replace(/^https?:\/\//, 'webcal://');
+  const webcalUrl = icsUrl.replace(/^https?:\/\//, 'webcal://');
   const encodedUrl = encodeURIComponent(icsUrl);
+  const encodedWebcalUrl = encodeURIComponent(webcalUrl);
   const encodedName = encodeURIComponent(name);
 
   return {
-    google: `https://calendar.google.com/calendar/r?cid=${encodedUrl}`,
-    apple,
+    google: `https://calendar.google.com/calendar/r?cid=${encodedWebcalUrl}`,
+    apple: webcalUrl,
     outlookCom: `https://outlook.live.com/calendar/0/addfromweb?url=${encodedUrl}&name=${encodedName}`,
     office365: `https://outlook.office.com/calendar/0/addfromweb?url=${encodedUrl}&name=${encodedName}`,
   };
