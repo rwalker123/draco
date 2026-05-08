@@ -54,6 +54,22 @@ describe('frontendBaseUrlMiddleware', () => {
     expect(res.statusCode).toBe(200);
   });
 
+  it('skips calendar subscription routes regardless of origin', async () => {
+    process.env.NODE_ENV = 'production';
+    (originAllowList.isAllowed as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    const middleware = createFrontendBaseUrlMiddleware({ originAllowList });
+    const { req, res } = buildReqRes('/api/calendar/team-season/2411.ics', {
+      origin: 'https://0.0.0.0:8080',
+    });
+
+    await middleware(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect((req as Request).frontendBaseUrl).toBeUndefined();
+    expect(res.statusCode).toBe(200);
+    expect(originAllowList.isAllowed).not.toHaveBeenCalled();
+  });
+
   it('allows missing base URL header without error', async () => {
     const middleware = createFrontendBaseUrlMiddleware({ originAllowList });
     const { req, res } = buildReqRes('/api/test');
