@@ -56,7 +56,7 @@ describe('frontendBaseUrlMiddleware', () => {
 
   it('skips calendar subscription routes regardless of origin', async () => {
     process.env.NODE_ENV = 'production';
-    (originAllowList.isAllowed as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    vi.mocked(originAllowList.isAllowed).mockResolvedValue(false);
     const middleware = createFrontendBaseUrlMiddleware({ originAllowList });
     const { req, res } = buildReqRes('/api/calendar/team-season/2411.ics', {
       origin: 'https://0.0.0.0:8080',
