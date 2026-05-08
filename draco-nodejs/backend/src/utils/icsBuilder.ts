@@ -1,10 +1,8 @@
-import { createHash } from 'crypto';
 import { GameStatus } from '../types/gameEnums.js';
 import type { dbGameInfo } from '../repositories/index.js';
 
 const ICS_LINE_OCTET_LIMIT = 75;
 const PROD_ID = '-//Draco Sports Manager//Team Calendar Feed//EN';
-const RFC_5545_SEQUENCE_MASK = 0x7fffffff;
 
 export const escapeIcsText = (s: string): string =>
   s
@@ -69,12 +67,6 @@ const buildFieldLocation = (field: dbGameInfo['availablefields']): string | null
   return parts.length > 0 ? parts.join(', ') : null;
 };
 
-const deriveSequence = (game: dbGameInfo): number => {
-  const raw = `${game.id}|${game.gamedate.toISOString()}|${game.hscore ?? ''}|${game.vscore ?? ''}|${game.gamestatus}|${game.fieldid ?? ''}|${game.hteamid}|${game.vteamid}|${game.comment ?? ''}`;
-  const hex = createHash('sha1').update(raw).digest('hex').slice(0, 8);
-  return parseInt(hex, 16) & RFC_5545_SEQUENCE_MASK;
-};
-
 export interface IcsVEventInput {
   game: dbGameInfo;
   dtstamp: string;
@@ -97,7 +89,6 @@ export const buildVEvent = ({
   const baseTitle = `${visitorName} @ ${homeName}`;
   const summary = leagueName ? `${leagueName}: ${baseTitle}` : baseTitle;
   const location = buildFieldLocation(game.availablefields);
-  const sequence = deriveSequence(game);
 
   const lines: string[] = [
     'BEGIN:VEVENT',
@@ -113,7 +104,7 @@ export const buildVEvent = ({
   }
 
   lines.push(`STATUS:${mapGameStatusToIcsStatus(game.gamestatus)}`);
-  lines.push(`SEQUENCE:${sequence}`);
+  lines.push('SEQUENCE:0');
   lines.push('END:VEVENT');
 
   return lines.join('\r\n');
