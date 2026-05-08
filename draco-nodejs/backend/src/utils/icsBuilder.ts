@@ -4,6 +4,7 @@ import type { dbGameInfo } from '../repositories/index.js';
 
 const ICS_LINE_OCTET_LIMIT = 75;
 const PROD_ID = '-//Draco Sports Manager//Team Calendar Feed//EN';
+const RFC_5545_SEQUENCE_MASK = 0x7fffffff;
 
 export const escapeIcsText = (s: string): string =>
   s
@@ -71,7 +72,7 @@ const buildFieldLocation = (field: dbGameInfo['availablefields']): string | null
 const deriveSequence = (game: dbGameInfo): number => {
   const raw = `${game.id}|${game.gamedate.toISOString()}|${game.hscore ?? ''}|${game.vscore ?? ''}|${game.gamestatus}|${game.fieldid ?? ''}|${game.hteamid}|${game.vteamid}|${game.comment ?? ''}`;
   const hex = createHash('sha1').update(raw).digest('hex').slice(0, 8);
-  return parseInt(hex, 16) >>> 0;
+  return parseInt(hex, 16) & RFC_5545_SEQUENCE_MASK;
 };
 
 export interface IcsVEventInput {

@@ -223,6 +223,25 @@ describe('buildVEvent', () => {
     expect(Number.isInteger(seq)).toBe(true);
   });
 
+  it('SEQUENCE always fits within the RFC 5545 INTEGER range across many game ids', () => {
+    const RFC_5545_INTEGER_MAX = 2147483647;
+    for (let i = 0; i < 500; i++) {
+      const game = makeGame({
+        id: BigInt(i + 1),
+        gamedate: new Date(Date.UTC(2025, i % 12, (i % 27) + 1, i % 24, i % 60, 0)),
+        hteamid: BigInt(100 + i),
+        vteamid: BigInt(200 + i),
+        comment: `comment-${i}`,
+      });
+      const event = buildVEvent(makeVEventInput(game));
+      const match = event.match(/SEQUENCE:(\d+)/);
+      expect(match).not.toBeNull();
+      const seq = parseInt(match![1], 10);
+      expect(seq).toBeGreaterThanOrEqual(0);
+      expect(seq).toBeLessThanOrEqual(RFC_5545_INTEGER_MAX);
+    }
+  });
+
   it('omits league name from SUMMARY when leagueName is null', () => {
     const game = makeGame();
     const event = buildVEvent(makeVEventInput(game, { leagueName: null }));
