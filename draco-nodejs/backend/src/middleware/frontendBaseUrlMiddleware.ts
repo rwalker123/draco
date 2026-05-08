@@ -40,6 +40,11 @@ export const createFrontendBaseUrlMiddleware =
       return;
     }
 
+    if (req.path.startsWith('/api/calendar/')) {
+      runWithFrontendBaseUrl(null, next);
+      return;
+    }
+
     const headerBaseUrl = extractBaseUrlHeader(req);
     const normalized = AccountBaseUrlResolver.normalizeBaseUrl(headerBaseUrl);
 
