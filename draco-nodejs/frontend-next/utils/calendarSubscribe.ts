@@ -12,10 +12,11 @@ export function buildCalendarSubscribeUrls(icsUrl: string, name: string): Calend
 
   const apple = icsUrl.replace(/^https?:\/\//, 'webcal://');
   const encodedUrl = encodeURIComponent(icsUrl);
+  const encodedWebcalUrl = encodeURIComponent(apple);
   const encodedName = encodeURIComponent(name);
 
   return {
-    google: `https://calendar.google.com/calendar/r?cid=${encodedUrl}`,
+    google: `https://calendar.google.com/calendar/r?cid=${encodedWebcalUrl}`,
     apple,
     outlookCom: `https://outlook.live.com/calendar/0/addfromweb?url=${encodedUrl}&name=${encodedName}`,
     office365: `https://outlook.office.com/calendar/0/addfromweb?url=${encodedUrl}&name=${encodedName}`,

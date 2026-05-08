@@ -6,17 +6,20 @@ const TEAM_NAME = 'Hawks';
 
 describe('buildCalendarSubscribeUrls', () => {
   describe('google', () => {
-    it('percent-encodes the icsUrl in the cid parameter', () => {
+    const webcalEquivalent = (url: string) => url.replace(/^https?:\/\//, 'webcal://');
+
+    it('encodes a webcal:// URL in the cid parameter so Google prompts to subscribe', () => {
       const urls = buildCalendarSubscribeUrls(BASE_URL, TEAM_NAME);
       expect(urls.google).toContain('cid=');
       const cid = new URL(urls.google).searchParams.get('cid');
-      expect(cid).toBe(BASE_URL);
+      expect(cid).toBe(webcalEquivalent(BASE_URL));
+      expect(cid?.startsWith('webcal://')).toBe(true);
     });
 
-    it('round-trips decodeURIComponent back to original icsUrl', () => {
+    it('round-trips decodeURIComponent back to the webcal:// URL', () => {
       const urls = buildCalendarSubscribeUrls(BASE_URL, TEAM_NAME);
       const rawCid = urls.google.split('cid=')[1];
-      expect(decodeURIComponent(rawCid)).toBe(BASE_URL);
+      expect(decodeURIComponent(rawCid)).toBe(webcalEquivalent(BASE_URL));
     });
   });
 
@@ -90,7 +93,7 @@ describe('buildCalendarSubscribeUrls', () => {
       expect(outlookParsed.searchParams.get('url')).toBe(urlWithQuery);
 
       const googleCid = new URL(urls.google).searchParams.get('cid');
-      expect(googleCid).toBe(urlWithQuery);
+      expect(googleCid).toBe(urlWithQuery.replace(/^https?:\/\//, 'webcal://'));
     });
 
     it('spaces in name round-trip correctly', () => {
