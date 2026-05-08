@@ -12,6 +12,7 @@ import { DateUtils } from './utils/dateUtils.js';
 
 import authRouter from './routes/auth.js';
 import passwordResetRouter from './routes/password-reset.js';
+import calendarRouter from './routes/calendar.js';
 import accountsRouter from './routes/accounts.js';
 import seasonsRouter from './routes/seasons.js';
 import leagueSeasonsRouter from './routes/league-seasons.js';
@@ -264,6 +265,7 @@ app.get('/apidocs', (_req: express.Request, res: express.Response) => {
 // API routes (will be added later)
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
+app.use('/api/calendar', calendarRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/golf/courses', adminGolfCoursesRouter);

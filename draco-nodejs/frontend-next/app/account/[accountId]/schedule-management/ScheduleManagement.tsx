@@ -422,12 +422,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         open={createDialogOpen}
         mode="create"
         accountId={accountId}
+        seasonId={currentSeasonId ?? ''}
         timeZone={timeZone}
         leagues={leagues}
         locations={locations}
         officials={officials}
         leagueTeamsCache={leagueTeamsCache}
         canEditSchedule={true}
+        scheduleVisible={currentSeasonScheduleVisible ?? true}
         defaultLeagueSeasonId={createDialogDefaults?.leagueSeasonId}
         defaultGameDate={createDialogDefaults?.gameDate}
         onClose={() => {
@@ -447,6 +449,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         open={editDialogOpen}
         mode="edit"
         accountId={accountId}
+        seasonId={currentSeasonId ?? ''}
         timeZone={timeZone}
         selectedGame={selectedGame || undefined}
         leagues={leagues}
@@ -454,6 +457,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         officials={officials}
         leagueTeamsCache={leagueTeamsCache}
         canEditSchedule={true}
+        scheduleVisible={currentSeasonScheduleVisible ?? true}
         onClose={() => {
           setEditDialogOpen(false);
           setSelectedGame(null);

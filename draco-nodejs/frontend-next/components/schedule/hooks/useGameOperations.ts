@@ -22,6 +22,7 @@ export interface BuildGamePayloadOptions {
   umpire2?: string;
   umpire3?: string;
   umpire4?: string;
+  notifyTeams?: boolean;
 }
 
 export interface CreateGameOptions {
@@ -68,6 +69,7 @@ export const buildUpsertGamePayload = ({
   umpire2,
   umpire3,
   umpire4,
+  notifyTeams,
 }: BuildGamePayloadOptions): UpsertGameType => {
   return {
     leagueSeasonId,
@@ -82,6 +84,7 @@ export const buildUpsertGamePayload = ({
     umpire2: umpire2 ? { id: umpire2 } : null,
     umpire3: umpire3 ? { id: umpire3 } : null,
     umpire4: umpire4 ? { id: umpire4 } : null,
+    notifyTeams,
   };
 };
 
@@ -90,7 +93,10 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);
 
-  const createGameOperation = async (values: GameFormValues): Promise<GameOperationResult> => {
+  const createGameOperation = async (
+    values: GameFormValues,
+    notifyTeams?: boolean,
+  ): Promise<GameOperationResult> => {
     setLoading(true);
     try {
       const currentSeasonId = await fetchCurrentSeason();
@@ -109,6 +115,7 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
         umpire2: values.umpire2,
         umpire3: values.umpire3,
         umpire4: values.umpire4,
+        notifyTeams,
       });
 
       const result = await createGame({
@@ -132,6 +139,7 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
   const updateGameOperation = async (
     game: Game,
     values: GameFormValues,
+    notifyTeams?: boolean,
   ): Promise<GameOperationResult> => {
     setLoading(true);
     try {
@@ -151,6 +159,7 @@ export const useGameOperations = ({ accountId, timeZone }: UseGameOperationsArgs
         umpire2: values.umpire2,
         umpire3: values.umpire3,
         umpire4: values.umpire4,
+        notifyTeams,
       });
 
       const result = await updateGame({

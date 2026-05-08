@@ -62,6 +62,9 @@ jobs:
         run: pnpm run test
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FRONTEND_URL: http://localhost:3000
+          EMAIL_FROM: no-reply@example.com
+          EMAIL_PROVIDER: none
         
       - name: Test Coverage Summary
         run: |

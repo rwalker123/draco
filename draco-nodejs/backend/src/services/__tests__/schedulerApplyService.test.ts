@@ -48,6 +48,8 @@ class ScheduleRepositoryStub implements IScheduleRepository {
   getTeamNames = vi.fn<IScheduleRepository['getTeamNames']>();
   listUpcomingGamesForTeam = vi.fn<IScheduleRepository['listUpcomingGamesForTeam']>();
   listRecentGamesForTeam = vi.fn<IScheduleRepository['listRecentGamesForTeam']>();
+  listAllGamesForTeam = vi.fn<IScheduleRepository['listAllGamesForTeam']>();
+  findTeamSeasonCalendarContext = vi.fn<IScheduleRepository['findTeamSeasonCalendarContext']>();
 }
 
 class FieldRepositoryStub implements IFieldRepository {

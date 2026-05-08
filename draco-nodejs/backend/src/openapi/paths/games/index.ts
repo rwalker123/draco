@@ -8,6 +8,7 @@ export const registerGamesEndpoints = ({ registry, schemaRefs, z }: RegisterCont
     GameResultSchemaRef,
     GamesWithRecapsSchemaRef,
     GameSchemaRef,
+    GameTeamRecipientCountSchemaRef,
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     UpdateGameResultsSchemaRef,
@@ -884,6 +885,83 @@ export const registerGamesEndpoints = ({ registry, schemaRefs, z }: RegisterCont
         content: {
           'application/json': {
             schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+  /**
+   * GET /api/accounts/:accountId/seasons/:seasonId/games/team-recipient-count
+   * Return the count of unique email recipients for a set of team IDs in a season
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/games/team-recipient-count',
+    operationId: 'getGameTeamRecipientCount',
+    summary: 'Get recipient count for teams',
+    description:
+      'Return the deduplicated count of active roster members with email addresses across one or more teams in a season. Used to show the approximate notification reach before sending schedule-change emails.',
+    tags: ['Games'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'teamIds',
+        in: 'query',
+        required: true,
+        schema: { type: 'string' },
+        description: 'Comma-separated list of team season IDs to count recipients for.',
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Recipient count',
+        content: {
+          'application/json': {
+            schema: GameTeamRecipientCountSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
           },
         },
       },

@@ -101,4 +101,13 @@ export interface IScheduleRepository extends IBaseRepository<leagueschedule> {
     limit: number,
     referenceDate: Date,
   ): Promise<dbGameInfo[]>;
+  listAllGamesForTeam(teamSeasonId: bigint, seasonId: bigint): Promise<dbGameInfo[]>;
+  findTeamSeasonCalendarContext(teamSeasonId: bigint): Promise<{
+    teamName: string;
+    leagueName: string;
+    seasonName: string;
+    seasonId: bigint;
+    accountId: bigint;
+    scheduleVisible: boolean;
+  } | null>;
 }

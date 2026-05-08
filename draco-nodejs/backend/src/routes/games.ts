@@ -193,9 +193,15 @@ router.post(
   routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = parseSeasonParams(req.params);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new ValidationError('User ID is required to create a game');
+    }
+
     const input = UpsertGameSchema.parse(req.body);
 
-    const result = await scheduleService.createGame(accountId, seasonId, input);
+    const result = await scheduleService.createGame(accountId, seasonId, input, userId);
 
     res.json(result);
   }),
@@ -209,9 +215,57 @@ router.put(
   routeProtection.requirePermission('account.games.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId, gameId } = parseGameParams(req.params);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new ValidationError('User ID is required to update a game');
+    }
+
     const input = UpsertGameSchema.parse(req.body);
 
-    const result = await scheduleService.updateGame(accountId, seasonId, gameId, input);
+    const result = await scheduleService.updateGame(accountId, seasonId, gameId, input, userId);
+
+    res.json(result);
+  }),
+);
+
+router.get(
+  '/team-recipient-count',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = parseSeasonParams(req.params);
+    const rawTeamIds = req.query.teamIds;
+
+    if (!rawTeamIds || typeof rawTeamIds !== 'string') {
+      throw new ValidationError('teamIds query parameter is required');
+    }
+
+    const MAX_TEAM_IDS = 4;
+    const parsedIds = rawTeamIds
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .map((id) => {
+        try {
+          return BigInt(id);
+        } catch {
+          throw new ValidationError(`Invalid teamId: ${id}`);
+        }
+      });
+
+    if (!parsedIds.length) {
+      throw new ValidationError('teamIds must contain at least one valid ID');
+    }
+
+    const teamIds = Array.from(new Set(parsedIds));
+
+    if (teamIds.length > MAX_TEAM_IDS) {
+      throw new ValidationError(`teamIds must contain at most ${MAX_TEAM_IDS} unique IDs`);
+    }
+
+    const result = await scheduleService.getTeamRecipientCount(accountId, seasonId, teamIds);
 
     res.json(result);
   }),
