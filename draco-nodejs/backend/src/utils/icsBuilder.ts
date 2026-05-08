@@ -71,7 +71,7 @@ const buildFieldLocation = (field: dbGameInfo['availablefields']): string | null
 const deriveSequence = (game: dbGameInfo): number => {
   const raw = `${game.id}|${game.gamedate.toISOString()}|${game.hscore ?? ''}|${game.vscore ?? ''}|${game.gamestatus}|${game.fieldid ?? ''}|${game.hteamid}|${game.vteamid}|${game.comment ?? ''}`;
   const hex = createHash('sha1').update(raw).digest('hex').slice(0, 8);
-  return parseInt(hex, 16) >>> 0;
+  return parseInt(hex, 16) & 0x7fffffff;
 };
 
 export interface IcsVEventInput {
