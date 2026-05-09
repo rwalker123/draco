@@ -1,7 +1,7 @@
 import { getAccountBranding } from '../../../../../lib/metadataFetchers';
 import { buildSeoMetadata } from '../../../../../lib/seoMetadata';
 import { resolveRouteParams, type MetadataParams } from '../../../../../lib/metadataParams';
-import PublicPlayerProfileClient from './PublicPlayerProfileClient';
+import PublicPlayerProfileClientWrapper from './PublicPlayerProfileClientWrapper';
 
 export async function generateMetadata({
   params,
@@ -20,5 +20,5 @@ export async function generateMetadata({
 }
 
 export default function PublicPlayerProfilePage() {
-  return <PublicPlayerProfileClient />;
+  return <PublicPlayerProfileClientWrapper />;
 }

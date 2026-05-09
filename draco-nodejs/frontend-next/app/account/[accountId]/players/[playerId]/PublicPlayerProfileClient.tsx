@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import NextLink from 'next/link';
-import { useParams } from 'next/navigation';
 import { Alert, Box, Button, Container, Stack, Typography } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import type { BaseContactType, PublicPlayerProfileType } from '@draco/shared-schemas';
@@ -12,6 +11,11 @@ import CurrentSeasonTeamsCard from '../../../../../components/profile/CurrentSea
 import { useApiClient } from '../../../../../hooks/useApiClient';
 import { fetchPublicPlayerProfile } from '../../../../../services/publicPlayerProfileService';
 import { useAccount } from '../../../../../context/AccountContext';
+
+interface PublicPlayerProfileClientProps {
+  accountId: string;
+  contactId: string;
+}
 
 const buildSyntheticContact = (profile: PublicPlayerProfileType | null): BaseContactType | null => {
   if (!profile) return null;
@@ -23,16 +27,12 @@ const buildSyntheticContact = (profile: PublicPlayerProfileType | null): BaseCon
   } as BaseContactType;
 };
 
-const PublicPlayerProfileClient: React.FC = () => {
-  const params = useParams();
+export default function PublicPlayerProfileClient({
+  accountId,
+  contactId,
+}: PublicPlayerProfileClientProps) {
   const apiClient = useApiClient();
   const { currentAccount } = useAccount();
-
-  const rawAccountId = Array.isArray(params.accountId) ? params.accountId[0] : params.accountId;
-  const rawPlayerId = Array.isArray(params.playerId) ? params.playerId[0] : params.playerId;
-
-  const accountId = rawAccountId ?? '';
-  const contactId = rawPlayerId ?? '';
 
   const [profile, setProfile] = useState<PublicPlayerProfileType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,6 +137,4 @@ const PublicPlayerProfileClient: React.FC = () => {
       </Container>
     </main>
   );
-};
-
-export default PublicPlayerProfileClient;
+}
