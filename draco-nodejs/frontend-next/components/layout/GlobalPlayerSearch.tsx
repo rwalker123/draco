@@ -85,6 +85,7 @@ const GlobalPlayerSearch: React.FC = () => {
   useEffect(() => {
     if (!expanded || !accountId || !hasActiveQuery) {
       setOptions([]);
+      setLoading(false);
       return;
     }
 

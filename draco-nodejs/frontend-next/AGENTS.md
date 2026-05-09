@@ -444,9 +444,116 @@ export function useServiceHook(accountId: string) {
 }
 ```
 
+### Page Composition Pattern (page → ClientWrapper → Component)
+
+**Every account-scoped page must be split into exactly three files**, with strict
+responsibilities. Do not collapse them, and do not put layout or data fetching
+in the wrong file.
+
+```
+app/account/[accountId]/foo/[fooId]/
+├── page.tsx                  # Server component — metadata + delegate ONLY
+├── FooClientWrapper.tsx      # Client shim — useParams + (optional) ProtectedRoute
+└── FooClient.tsx             # Real component — owns <main>/AccountPageHeader/data
+```
+
+**1. `page.tsx` — server component.** No `'use client'`. Exports
+`generateMetadata` (via `buildSeoMetadata` + `getAccountBranding`) and a default
+component whose body is exactly `return <FooClientWrapper />`. **Never** read
+params here for rendering, **never** render `<main>`, `AccountPageHeader`, or
+data — the wrapper handles that.
+
+```tsx
+// page.tsx
+import { getAccountBranding } from '.../lib/metadataFetchers';
+import { buildSeoMetadata } from '.../lib/seoMetadata';
+import { resolveRouteParams, type MetadataParams } from '.../lib/metadataParams';
+import FooClientWrapper from './FooClientWrapper';
+
+export async function generateMetadata({
+  params,
+}: { params: MetadataParams<{ accountId: string; fooId: string }> }) {
+  const { accountId } = await resolveRouteParams(params);
+  const { name, iconUrl } = await getAccountBranding(accountId);
+  return buildSeoMetadata({
+    title: `${name} Foo`,
+    description: `…`,
+    path: `/account/${accountId}/foo`,
+    icon: iconUrl,
+  });
+}
+
+export default function FooPage() {
+  return <FooClientWrapper />;
+}
+```
+
+**2. `FooClientWrapper.tsx` — thin client shim.** Marked `'use client'`. Reads
+route params via `useParams`, and wraps with `<ProtectedRoute>` only if the
+page requires auth. Delegates to the real component with typed `string` props.
+This file should be ~10 lines. **No layout, no fetching, no business logic.**
+
+```tsx
+// FooClientWrapper.tsx
+'use client';
+
+import { useParams } from 'next/navigation';
+// import ProtectedRoute from '@/components/auth/ProtectedRoute'; // only if auth required
+import FooClient from './FooClient';
+
+export default function FooClientWrapper() {
+  const params = useParams();
+  const accountId = Array.isArray(params.accountId) ? params.accountId[0] : params.accountId;
+  const fooId = Array.isArray(params.fooId) ? params.fooId[0] : params.fooId;
+
+  return <FooClient accountId={accountId ?? ''} fooId={fooId ?? ''} />;
+}
+```
+
+**3. `FooClient.tsx` — the real component.** Marked `'use client'`. Receives
+`accountId` and other ids as props (do **not** call `useParams` here). Owns the
+`<main>` + `AccountPageHeader` + `Container` shell, the data-fetching effect
+(with `AbortController`), and renders the body. This is where the size lives.
+
+```tsx
+// FooClient.tsx
+'use client';
+
+import { Box, Container, Typography } from '@mui/material';
+import AccountPageHeader from '.../components/AccountPageHeader';
+
+interface FooClientProps { accountId: string; fooId: string; }
+
+export default function FooClient({ accountId, fooId }: FooClientProps) {
+  // useEffect + AbortController data fetching here
+  return (
+    <main className="min-h-screen bg-background">
+      <AccountPageHeader accountId={accountId}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4">Foo</Typography>
+        </Box>
+      </AccountPageHeader>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* body */}
+      </Container>
+    </main>
+  );
+}
+```
+
+**Reference implementations:**
+- `app/account/[accountId]/statistics/{page.tsx, StatisticsClientWrapper.tsx, Statistics.tsx}`
+- `app/profile/{page.tsx, ProfilePageClientWrapper.tsx, ProfilePageClient.tsx}` (uses `ProtectedRoute`)
+
+**Common mistakes to avoid:**
+- ❌ `page.tsx` marked `'use client'`, or rendering `<main>` / `AccountPageHeader` directly.
+- ❌ ClientWrapper containing data-fetching, layout JSX, or more than ~15 lines.
+- ❌ Real client component calling `useParams` instead of accepting `accountId` as a prop.
+- ❌ Skipping the wrapper layer and pointing `page.tsx` directly at the real component.
+
 ### Account & Team Page Layout Pattern
 
-Account-scoped and team-scoped management pages must wrap their content with a semantic `<main>` element immediately followed by `AccountPageHeader`:
+Account-scoped and team-scoped management pages must wrap their content with a semantic `<main>` element immediately followed by `AccountPageHeader`. This layout lives **inside the real client component** (the third file in the Page Composition Pattern above), never in `page.tsx` or the ClientWrapper:
 
 ```tsx
 return (

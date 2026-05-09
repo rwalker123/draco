@@ -8,13 +8,13 @@ export async function generateMetadata({
 }: {
   params: MetadataParams<{ accountId: string; playerId: string }>;
 }) {
-  const { accountId } = await resolveRouteParams(params);
+  const { accountId, playerId } = await resolveRouteParams(params);
   const { name: accountName, iconUrl } = await getAccountBranding(accountId);
 
   return buildSeoMetadata({
     title: `${accountName} Player Profile`,
     description: `Player profile and current-season team affiliations for ${accountName}.`,
-    path: `/account/${accountId}/players`,
+    path: `/account/${accountId}/players/${playerId}`,
     icon: iconUrl,
   });
 }
