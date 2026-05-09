@@ -12,7 +12,14 @@ const __dirname = path.dirname(__filename);
  */
 function loadOpenApiSpec() {
   try {
-    const yamlPath = path.resolve(__dirname, '../../openapi.yaml');
+    const candidates = [
+      path.resolve(__dirname, '../../openapi.yaml'),
+      path.resolve(__dirname, '../../../openapi.yaml'),
+    ];
+    const yamlPath = candidates.find((candidate) => fs.existsSync(candidate));
+    if (!yamlPath) {
+      throw new Error(`OpenAPI spec not found. Looked in: ${candidates.join(', ')}`);
+    }
     const yamlContent = fs.readFileSync(yamlPath, 'utf8');
     const spec = YAML.parse(yamlContent);
 
