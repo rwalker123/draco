@@ -36,6 +36,7 @@ import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
+import GlobalPlayerSearch from './layout/GlobalPlayerSearch';
 const TopBarQuickActions = dynamic(() => import('./TopBarQuickActions'), {
   ssr: false,
 });
@@ -423,6 +424,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <GlobalPlayerSearch />
             {/* Hamburger menu for overflow items */}
             {(sportOverflowItems.length > 0 ||
               (isSmallScreen && authMenuItems.length > 0) ||

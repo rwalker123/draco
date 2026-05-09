@@ -90,6 +90,8 @@ import {
   PublicContactSummarySchema,
   PublicContactSearchResponseSchema,
   PublicContactSearchQuerySchema,
+  PublicPlayerProfileSchema,
+  PublicPlayerTeamAffiliationSchema,
   PlayerSurveyCategorySchema,
   PlayerSurveyDetailSchema,
   TeamStatsPlayerSummarySchema,
@@ -835,6 +837,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const PublicContactSearchQuerySchemaRef = registry.register(
     'PublicContactSearchQuery',
     PublicContactSearchQuerySchema,
+  );
+  const PublicPlayerTeamAffiliationSchemaRef = registry.register(
+    'PublicPlayerTeamAffiliation',
+    PublicPlayerTeamAffiliationSchema,
+  );
+  const PublicPlayerProfileSchemaRef = registry.register(
+    'PublicPlayerProfile',
+    PublicPlayerProfileSchema,
   );
   const TeamStatsPlayerSummarySchemaRef = registry.register(
     'TeamStatsPlayerSummary',
@@ -1880,6 +1890,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PublicContactSummarySchemaRef,
     PublicContactSearchResponseSchemaRef,
     PublicContactSearchQuerySchemaRef,
+    PublicPlayerProfileSchemaRef,
+    PublicPlayerTeamAffiliationSchemaRef,
     TeamStatsPlayerSummarySchemaRef,
     GameBattingStatLineSchemaRef,
     GameBattingStatsSchemaRef,
