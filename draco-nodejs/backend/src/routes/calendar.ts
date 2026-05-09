@@ -23,15 +23,6 @@ const firstHeaderValue = (header: string | string[] | undefined): string | undef
 router.get(
   '/team-season/:teamSeasonId.ics',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    console.log(
-      `[calendar] ${req.method} ${req.originalUrl} ` +
-        `ua="${req.headers['user-agent'] ?? ''}" ` +
-        `ip=${req.ip ?? ''} ` +
-        `xff="${req.headers['x-forwarded-for'] ?? ''}" ` +
-        `ifNoneMatch="${req.headers['if-none-match'] ?? ''}" ` +
-        `ifModifiedSince="${req.headers['if-modified-since'] ?? ''}"`,
-    );
-
     const rawId = req.params['teamSeasonId'];
     const rawIdStr = Array.isArray(rawId) ? rawId[0] : rawId;
 
