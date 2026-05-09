@@ -30,6 +30,15 @@ export interface dbPlayerTeamAssignment {
   teamName?: string | null;
 }
 
+export interface dbPlayerCurrentSeasonTeam {
+  teamSeasonId: bigint;
+  teamId: bigint;
+  seasonId: bigint;
+  leagueSeasonId: bigint;
+  leagueName: string;
+  teamName: string;
+}
+
 export type dbWelcomeMessage = Prisma.accountwelcomeGetPayload<{
   select: {
     id: true;

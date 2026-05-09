@@ -20,6 +20,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     ContactSearchParamsSchemaRef,
     PublicContactSearchResponseSchemaRef,
     PublicContactSearchQuerySchemaRef,
+    PublicPlayerProfileSchemaRef,
     AutoRegisterContactResponseSchemaRef,
     ContactIndividualGolfAccountSchemaRef,
   } = schemaRefs;
@@ -122,6 +123,62 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         content: {
           'application/json': {
             schema: BaseContactSchemaRef.array(),
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/players/{contactId}/public-profile',
+    operationId: 'getAccountPlayerPublicProfile',
+    summary: 'Public player profile',
+    description:
+      'Public-safe player profile: identity, current-season team affiliations, and a flag indicating whether career statistics exist. No authentication required.',
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'contactId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Public player profile',
+        content: {
+          'application/json': {
+            schema: PublicPlayerProfileSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Contact not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
           },
         },
       },

@@ -12,7 +12,9 @@ import {
   Typography,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import Grid from '@mui/material/Grid';
+import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   getAccountUserTeams,
@@ -537,6 +539,17 @@ const ProfilePageClient: React.FC = () => {
               surveyAccountId={currentAccountId}
               hideDetails={hideContactDetails}
             />
+            {currentAccountId && contact?.id ? (
+              <Button
+                component={NextLink}
+                href={`/account/${currentAccountId}/players/${contact.id}/statistics?returnTo=/profile&returnLabel=Your%20Profile`}
+                variant="outlined"
+                color="primary"
+                startIcon={<BarChartIcon />}
+              >
+                View Career Statistics
+              </Button>
+            ) : null}
             <AccountOptional
               accountId={currentAccount?.id ? String(currentAccount.id) : null}
               componentId="profile.memberBusiness.card"

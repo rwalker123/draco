@@ -24,6 +24,7 @@ import {
   ContactValidationSchema,
   PublicContactSearchQuerySchema,
   PublicContactSummaryType,
+  PublicPlayerProfileType,
   ContactFilterFieldSchema,
   ContactFilterOpSchema,
   ContactFilterFieldType,
@@ -98,6 +99,24 @@ router.get(
     );
 
     res.json({ results });
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/players/:contactId/public-profile
+ * Public-safe player profile (identity + current-season teams + has-stats flag).
+ */
+router.get(
+  '/:accountId/players/:contactId/public-profile',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+
+    const profile: PublicPlayerProfileType = await contactService.getPublicPlayerProfile(
+      accountId,
+      contactId,
+    );
+
+    res.json(profile);
   }),
 );
 

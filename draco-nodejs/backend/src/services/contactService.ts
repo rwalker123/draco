@@ -11,9 +11,14 @@ import {
   ContactValidationType,
   NamedContactType,
   PublicContactSummaryType,
+  PublicPlayerProfileType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
-import { ContactResponseFormatter, TeamResponseFormatter } from '../responseFormatters/index.js';
+import {
+  ContactResponseFormatter,
+  PublicPlayerProfileResponseFormatter,
+  TeamResponseFormatter,
+} from '../responseFormatters/index.js';
 import {
   RepositoryFactory,
   IContactRepository,
@@ -309,6 +314,39 @@ export class ContactService {
       pagination,
     );
     return response;
+  }
+
+  async getPublicPlayerProfile(
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<PublicPlayerProfileType> {
+    const dbContact = await this.contactRepository.findContactInAccount(contactId, accountId);
+    if (!dbContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    const currentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+
+    const teams = currentSeason
+      ? await this.contactRepository.findCurrentSeasonTeamsForContact(
+          accountId,
+          contactId,
+          currentSeason.id,
+        )
+      : [];
+
+    const hasCareerStatistics = await this.contactRepository.hasCareerStatistics(
+      accountId,
+      contactId,
+    );
+
+    return PublicPlayerProfileResponseFormatter.format(
+      accountId,
+      dbContact,
+      currentSeason,
+      teams,
+      hasCareerStatistics,
+    );
   }
 
   async searchContactsPublic(

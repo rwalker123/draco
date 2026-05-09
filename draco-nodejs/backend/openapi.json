@@ -10913,6 +10913,149 @@
           "query"
         ]
       },
+      "PublicPlayerTeamAffiliation": {
+        "type": "object",
+        "properties": {
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "seasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueName": {
+            "type": "string"
+          },
+          "teamName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "teamSeasonId",
+          "teamId",
+          "seasonId",
+          "leagueSeasonId",
+          "leagueName",
+          "teamName"
+        ]
+      },
+      "PublicPlayerProfile": {
+        "type": "object",
+        "properties": {
+          "contact": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "photoUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "currentSeason": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamSeasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "leagueName": {
+                  "type": "string"
+                },
+                "teamName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "teamSeasonId",
+                "teamId",
+                "seasonId",
+                "leagueSeasonId",
+                "leagueName",
+                "teamName"
+              ]
+            }
+          },
+          "hasCareerStatistics": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contact",
+          "currentSeason",
+          "teams",
+          "hasCareerStatistics"
+        ],
+        "title": "PublicPlayerProfile",
+        "description": "Public-safe player profile: identity, current-season team affiliations, and a flag indicating whether career statistics exist."
+      },
       "TeamStatsPlayerSummary": {
         "type": "object",
         "properties": {
@@ -44052,6 +44195,68 @@
                   "items": {
                     "$ref": "#/components/schemas/BaseContact"
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/players/{contactId}/public-profile": {
+      "get": {
+        "operationId": "getAccountPlayerPublicProfile",
+        "summary": "Public player profile",
+        "description": "Public-safe player profile: identity, current-season team affiliations, and a flag indicating whether career statistics exist. No authentication required.",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public player profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPlayerProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

@@ -11,6 +11,7 @@ import {
   dbContactWithRoleAndDetails,
   dbBirthdayContact,
   dbContactExportData,
+  dbPlayerCurrentSeasonTeam,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -777,5 +778,67 @@ export class PrismaContactRepository implements IContactRepository {
       ...contact,
       contactroles: Array.from(roleIds).map((roleid) => ({ roleid })),
     }));
+  }
+
+  async findCurrentSeasonTeamsForContact(
+    accountId: bigint,
+    contactId: bigint,
+    seasonId: bigint,
+  ): Promise<dbPlayerCurrentSeasonTeam[]> {
+    const rows = await this.prisma.rosterseason.findMany({
+      where: {
+        inactive: false,
+        roster: {
+          contactid: contactId,
+          contacts: { creatoraccountid: accountId },
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+      },
+      select: {
+        teamsseason: {
+          select: {
+            id: true,
+            teamid: true,
+            name: true,
+            leagueseason: {
+              select: {
+                id: true,
+                seasonid: true,
+                league: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { teamsseason: { name: 'asc' } },
+    });
+
+    return rows.map((row) => ({
+      teamSeasonId: row.teamsseason.id,
+      teamId: row.teamsseason.teamid,
+      seasonId: row.teamsseason.leagueseason.seasonid,
+      leagueSeasonId: row.teamsseason.leagueseason.id,
+      leagueName: row.teamsseason.leagueseason.league.name,
+      teamName: row.teamsseason.name,
+    }));
+  }
+
+  async hasCareerStatistics(accountId: bigint, contactId: bigint): Promise<boolean> {
+    const match = await this.prisma.rosterseason.findFirst({
+      where: {
+        roster: {
+          contactid: contactId,
+          contacts: { creatoraccountid: accountId },
+        },
+        OR: [{ batstatsum: { some: {} } }, { pitchstatsum: { some: {} } }],
+      },
+      select: { id: true },
+    });
+    return match !== null;
   }
 }
