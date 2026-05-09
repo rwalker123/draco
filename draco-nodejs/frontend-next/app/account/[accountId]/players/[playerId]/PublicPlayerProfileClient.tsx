@@ -19,12 +19,13 @@ interface PublicPlayerProfileClientProps {
 
 const buildSyntheticContact = (profile: PublicPlayerProfileType | null): BaseContactType | null => {
   if (!profile) return null;
-  return {
+  const synthetic: BaseContactType = {
     id: profile.contact.id,
     firstName: profile.contact.firstName,
     lastName: profile.contact.lastName,
     photoUrl: profile.contact.photoUrl,
-  } as BaseContactType;
+  };
+  return synthetic;
 };
 
 export default function PublicPlayerProfileClient({

@@ -173,21 +173,26 @@ const GlobalPlayerSearch: React.FC = () => {
         noOptionsText={
           hasActiveQuery ? (error ?? 'No players found') : 'Start typing a player name'
         }
-        renderOption={(props, option) => (
-          <Box component="li" {...props} key={option.id}>
-            <Box display="flex" alignItems="center" width="100%" gap={1}>
-              <Avatar
-                src={option.photoUrl}
-                alt={formatDisplayName(option)}
-                sx={{ width: 28, height: 28 }}
-              >
-                {option.firstName?.[0]}
-                {option.lastName?.[0]}
-              </Avatar>
-              <Typography variant="body2">{formatDisplayName(option)}</Typography>
+        renderOption={(props, option) => {
+          const { key, ...liProps } = props as React.HTMLAttributes<HTMLLIElement> & {
+            key?: React.Key;
+          };
+          return (
+            <Box component="li" key={key ?? option.id} {...liProps}>
+              <Box display="flex" alignItems="center" width="100%" gap={1}>
+                <Avatar
+                  src={option.photoUrl}
+                  alt={formatDisplayName(option)}
+                  sx={{ width: 28, height: 28 }}
+                >
+                  {option.firstName?.[0]}
+                  {option.lastName?.[0]}
+                </Avatar>
+                <Typography variant="body2">{formatDisplayName(option)}</Typography>
+              </Box>
             </Box>
-          </Box>
-        )}
+          );
+        }}
         renderInput={(params) => (
           <TextField
             {...params}
