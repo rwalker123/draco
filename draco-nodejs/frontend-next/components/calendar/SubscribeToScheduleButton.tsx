@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import { buildCalendarSubscribeUrls } from '../../utils/calendarSubscribe';
 
@@ -78,8 +79,22 @@ const SubscribeToScheduleButton: React.FC<SubscribeToScheduleButtonProps> = ({
           target="_blank"
           rel="noopener noreferrer"
           onClick={closeMenu}
+          sx={{
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            whiteSpace: 'normal',
+            py: 1,
+          }}
         >
-          Google Calendar
+          <Typography variant="body2">Google Calendar</Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ maxWidth: 280, lineHeight: 1.3 }}
+          >
+            Events may take up to a day to appear. Don&apos;t unsubscribe and retry — it restarts
+            the wait.
+          </Typography>
         </MenuItem>
         <MenuItem
           component="a"
