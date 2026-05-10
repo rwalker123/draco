@@ -21,6 +21,7 @@ import {
   Menu as MenuIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Home as HomeIcon,
+  Hub as HubIcon,
   Key as KeyIcon,
   Person as PersonIcon,
   Handshake as HandshakeIcon,
@@ -260,6 +261,20 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </MenuItem>,
         );
       }
+      items.push(
+        <MenuItem
+          key="ai-integrations"
+          onClick={() => {
+            handleMenuClose();
+            router.push('/account/integrations');
+          }}
+        >
+          <ListItemIcon>
+            <HubIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>AI Integrations</ListItemText>
+        </MenuItem>,
+      );
       items.push(
         <MenuItem
           key="sign-out"

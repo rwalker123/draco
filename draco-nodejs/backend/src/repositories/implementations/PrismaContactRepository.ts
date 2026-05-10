@@ -12,6 +12,7 @@ import {
   dbBirthdayContact,
   dbContactExportData,
   dbPlayerCurrentSeasonTeam,
+  dbRosterSeasonMembership,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -840,5 +841,60 @@ export class PrismaContactRepository implements IContactRepository {
       select: { id: true },
     });
     return match !== null;
+  }
+
+  async findMyTeamSeasons(input: {
+    userId: string;
+    accountId: bigint;
+    seasonId: bigint;
+  }): Promise<dbRosterSeasonMembership[]> {
+    const rows = await this.prisma.rosterseason.findMany({
+      where: {
+        roster: {
+          contacts: {
+            userid: input.userId,
+            creatoraccountid: input.accountId,
+          },
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: input.seasonId,
+            league: { accountid: input.accountId },
+          },
+        },
+      },
+      select: {
+        playernumber: true,
+        teamsseason: {
+          select: {
+            id: true,
+            name: true,
+            divisionseasonid: true,
+            divisionseason: {
+              select: {
+                divisiondefs: { select: { name: true } },
+              },
+            },
+            leagueseason: {
+              select: {
+                id: true,
+                league: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { teamsseason: { name: 'asc' } },
+    });
+
+    return rows.map((row) => ({
+      teamSeasonId: row.teamsseason.id,
+      teamName: row.teamsseason.name,
+      leagueSeasonId: row.teamsseason.leagueseason.id,
+      leagueName: row.teamsseason.leagueseason.league.name,
+      divisionSeasonId: row.teamsseason.divisionseasonid,
+      divisionName: row.teamsseason.divisionseason?.divisiondefs.name ?? null,
+      jerseyNumber: row.playernumber,
+    }));
   }
 }

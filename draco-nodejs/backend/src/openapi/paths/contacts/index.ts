@@ -23,6 +23,7 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     PublicPlayerProfileSchemaRef,
     AutoRegisterContactResponseSchemaRef,
     ContactIndividualGolfAccountSchemaRef,
+    RosterSeasonMembershipListSchemaRef,
   } = schemaRefs;
 
   registry.registerPath({
@@ -1260,6 +1261,70 @@ export const registerContactsEndpoints = ({ registry, schemaRefs, z }: RegisterC
         content: {
           'application/json': {
             schema: ContactIndividualGolfAccountSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/contacts/me/teams',
+    summary: 'List my team memberships for a season',
+    description:
+      "Returns the authenticated user's team memberships within a specific season. Accepts both user JWT and OAuth bearer tokens.",
+    operationId: 'listMyTeamSeasons',
+    security: [{ bearerAuth: [] }],
+    tags: ['Contacts'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: "User's team memberships for the season",
+        content: {
+          'application/json': {
+            schema: RosterSeasonMembershipListSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - user does not belong to account',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
           },
         },
       },

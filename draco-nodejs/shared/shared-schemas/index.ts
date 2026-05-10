@@ -55,3 +55,4 @@ export * from './golfer.js';
 export * from './liveScoring.js';
 export * from './individualLiveScoring.js';
 export * from './baseballLiveScoring.js';
+export * from './rosterSeasonMembership.js';

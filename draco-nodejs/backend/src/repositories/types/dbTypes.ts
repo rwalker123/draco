@@ -39,6 +39,16 @@ export interface dbPlayerCurrentSeasonTeam {
   teamName: string;
 }
 
+export interface dbRosterSeasonMembership {
+  teamSeasonId: bigint;
+  teamName: string;
+  leagueSeasonId: bigint;
+  leagueName: string;
+  divisionSeasonId: bigint | null;
+  divisionName: string | null;
+  jerseyNumber: number | null;
+}
+
 export type dbWelcomeMessage = Prisma.accountwelcomeGetPayload<{
   select: {
     id: true;

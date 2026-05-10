@@ -12,6 +12,7 @@ import {
   NamedContactType,
   PublicContactSummaryType,
   PublicPlayerProfileType,
+  RosterSeasonMembershipType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import {
@@ -495,5 +496,22 @@ export class ContactService {
     );
 
     return getContactPhotoUrl(accountId.toString(), contactId.toString());
+  }
+
+  async getMyTeamSeasons(
+    userId: string,
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<RosterSeasonMembershipType[]> {
+    const rows = await this.contactRepository.findMyTeamSeasons({ userId, accountId, seasonId });
+    return rows.map((row) => ({
+      teamSeasonId: row.teamSeasonId.toString(),
+      teamName: row.teamName,
+      leagueSeasonId: row.leagueSeasonId.toString(),
+      leagueName: row.leagueName,
+      divisionSeasonId: row.divisionSeasonId !== null ? row.divisionSeasonId.toString() : null,
+      divisionName: row.divisionName,
+      jerseyNumber: row.jerseyNumber,
+    }));
   }
 }

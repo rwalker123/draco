@@ -39,6 +39,10 @@ declare global {
       account?: AccountContext;
       hasAccountRoleAccess?: boolean;
       draco?: DracoRequestContext;
+      isOauth?: boolean;
+      oauthScopes?: string[];
+      oauthJti?: string;
+      oauthClientId?: string;
     }
   }
 }
