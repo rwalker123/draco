@@ -12,6 +12,7 @@ import {
   dbBirthdayContact,
   dbContactExportData,
   dbPlayerCurrentSeasonTeam,
+  dbContactSeasonTeamWaiver,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -825,6 +826,60 @@ export class PrismaContactRepository implements IContactRepository {
       leagueSeasonId: row.teamsseason.leagueseason.id,
       leagueName: row.teamsseason.leagueseason.league.name,
       teamName: row.teamsseason.name,
+    }));
+  }
+
+  async findSeasonTeamWaiversForContacts(
+    accountId: bigint,
+    seasonId: bigint,
+    contactIds: bigint[],
+  ): Promise<dbContactSeasonTeamWaiver[]> {
+    if (contactIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.prisma.rosterseason.findMany({
+      where: {
+        inactive: false,
+        roster: {
+          contactid: { in: contactIds },
+          contacts: { creatoraccountid: accountId },
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+      },
+      select: {
+        submittedwaiver: true,
+        roster: { select: { contactid: true } },
+        teamsseason: {
+          select: {
+            id: true,
+            teamid: true,
+            name: true,
+            leagueseason: {
+              select: {
+                id: true,
+                league: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { teamsseason: { name: 'asc' } },
+    });
+
+    return rows.map((row) => ({
+      contactId: row.roster.contactid,
+      teamSeasonId: row.teamsseason.id,
+      teamId: row.teamsseason.teamid,
+      leagueSeasonId: row.teamsseason.leagueseason.id,
+      leagueName: row.teamsseason.leagueseason.league.name,
+      teamName: row.teamsseason.name,
+      submittedWaiver: row.submittedwaiver,
     }));
   }
 

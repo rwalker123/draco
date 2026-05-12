@@ -12,6 +12,7 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
     SignRosterMemberSchemaRef,
     UpdateRosterMemberSchemaRef,
     TeamRosterMembersSchemaRef,
+    TeamRosterWaiverSummariesSchemaRef,
     PublicTeamRosterResponseSchemaRef,
     TeamRosterCardSchemaRef,
   } = schemaRefs;
@@ -60,6 +61,89 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
         content: {
           'application/json': {
             schema: TeamRosterMembersSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Access denied - Account admin required',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Team season not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers',
+    description:
+      'Get roster members for a team season augmented with per-team waiver status for every team the player is on in the current season. Admin only.',
+    summary: 'Get team roster waiver summaries',
+    operationId: 'getTeamRosterWaiverSummaries',
+    security: [{ bearerAuth: [] }],
+    tags: ['Rosters'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+      {
+        name: 'teamSeasonId',
+        in: 'path',
+        required: true,
+        schema: {
+          type: 'string',
+          format: 'number',
+        },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Roster members with waiver summaries returned successfully.',
+        content: {
+          'application/json': {
+            schema: TeamRosterWaiverSummariesSchemaRef,
           },
         },
       },
