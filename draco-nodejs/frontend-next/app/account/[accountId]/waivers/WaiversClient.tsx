@@ -229,46 +229,63 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
           <Alert severity="info">There is no current season configured for this account.</Alert>
         ) : (
           <Stack spacing={3}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <FormControl size="small" sx={{ minWidth: 220 }} disabled={leaguesLoading}>
-                <Select
-                  value={selectedLeagueSeasonId}
-                  onChange={(e) => setSelectedLeagueSeasonId(e.target.value)}
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'League' }}
-                >
-                  <MenuItem value="">
-                    <em>Select a league</em>
-                  </MenuItem>
-                  {leagues.map((league) => (
-                    <MenuItem key={league.leagueSeasonId} value={league.leagueSeasonId}>
-                      {league.leagueName}
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography component="label" htmlFor="waivers-league-select">
+                  League:
+                </Typography>
+                <FormControl size="small" sx={{ minWidth: 220 }} disabled={leaguesLoading}>
+                  <Select
+                    id="waivers-league-select"
+                    value={selectedLeagueSeasonId}
+                    onChange={(e) => setSelectedLeagueSeasonId(e.target.value)}
+                    displayEmpty
+                    inputProps={{ 'aria-label': 'League' }}
+                  >
+                    <MenuItem value="">
+                      <em>Select a league</em>
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                    {leagues.map((league) => (
+                      <MenuItem key={league.leagueSeasonId} value={league.leagueSeasonId}>
+                        {league.leagueName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
 
-              <FormControl
-                size="small"
-                sx={{ minWidth: 220 }}
-                disabled={!selectedLeagueSeasonId || leaguesLoading}
-              >
-                <Select
-                  value={selectedTeamSeasonId}
-                  onChange={(e) => setSelectedTeamSeasonId(e.target.value)}
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'Team' }}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography component="label" htmlFor="waivers-team-select">
+                  Team:
+                </Typography>
+                <FormControl
+                  size="small"
+                  sx={{ minWidth: 220 }}
+                  disabled={!selectedLeagueSeasonId || leaguesLoading}
                 >
-                  <MenuItem value="">
-                    <em>Select a team</em>
-                  </MenuItem>
-                  {teamsForSelectedLeague.map((team) => (
-                    <MenuItem key={team.teamSeasonId} value={team.teamSeasonId}>
-                      {team.teamName}
+                  <Select
+                    id="waivers-team-select"
+                    value={selectedTeamSeasonId}
+                    onChange={(e) => setSelectedTeamSeasonId(e.target.value)}
+                    displayEmpty
+                    inputProps={{ 'aria-label': 'Team' }}
+                  >
+                    <MenuItem value="">
+                      <em>Select a team</em>
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                    {teamsForSelectedLeague.map((team) => (
+                      <MenuItem key={team.teamSeasonId} value={team.teamSeasonId}>
+                        {team.teamName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
             </Stack>
 
             {selectedTeamSeasonId && (
