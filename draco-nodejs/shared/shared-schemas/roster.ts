@@ -49,6 +49,42 @@ export const TeamRosterMembersSchema = z.object({
   rosterMembers: RosterMemberSchema.array(),
 });
 
+export const RosterMemberSeasonTeamWaiverSchema = z
+  .object({
+    teamSeasonId: z.bigint().transform((val) => val.toString()),
+    teamId: z.bigint().transform((val) => val.toString()),
+    teamName: z.string().trim(),
+    leagueSeasonId: z.bigint().transform((val) => val.toString()),
+    leagueName: z.string().trim(),
+    submittedWaiver: z.boolean(),
+  })
+  .openapi({
+    description: 'Per-team waiver status for one of a player’s season teams. Admin-only data.',
+  });
+
+export const RosterMemberWaiverSummarySchema = z
+  .object({
+    rosterMember: RosterMemberSchema,
+    seasonTeams: RosterMemberSeasonTeamWaiverSchema.array(),
+  })
+  .openapi({
+    description:
+      'Roster member augmented with the set of teams in the current season where the player has a roster row, including the submittedWaiver flag for each. Admin-only.',
+  });
+
+export const TeamRosterWaiverSummariesSchema = z
+  .object({
+    teamSeason: z.object({
+      id: z.bigint().transform((val) => val.toString()),
+      name: z.string().trim(),
+    }),
+    members: RosterMemberWaiverSummarySchema.array(),
+  })
+  .openapi({
+    description:
+      'Admin view of a team roster including cross-team waiver status per player for the current season.',
+  });
+
 export const CreateRosterMemberSchema = RosterMemberSchema.omit({
   id: true,
   inactive: true,
@@ -144,6 +180,9 @@ export type CreateRosterMemberType = z.infer<typeof CreateRosterMemberSchema>;
 export type UpdateRosterMemberType = z.infer<typeof UpdateRosterMemberSchema>;
 export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;
+export type RosterMemberSeasonTeamWaiverType = z.infer<typeof RosterMemberSeasonTeamWaiverSchema>;
+export type RosterMemberWaiverSummaryType = z.infer<typeof RosterMemberWaiverSummarySchema>;
+export type TeamRosterWaiverSummariesType = z.infer<typeof TeamRosterWaiverSummariesSchema>;
 export type PublicRosterMemberType = z.infer<typeof PublicRosterMemberSchema>;
 export type PublicTeamRosterResponseType = z.infer<typeof PublicTeamRosterResponseSchema>;
 export type RosterCardPlayerType = z.infer<typeof RosterCardPlayerSchema>;

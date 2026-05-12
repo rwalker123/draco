@@ -147,6 +147,9 @@ import {
   UpdateScheduleVisibilitySchema,
   TeamManagerSchema,
   TeamRosterMembersSchema,
+  RosterMemberSeasonTeamWaiverSchema,
+  RosterMemberWaiverSummarySchema,
+  TeamRosterWaiverSummariesSchema,
   TeamSeasonSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
@@ -483,6 +486,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const TeamRosterMembersSchemaRef = registry.register(
     'TeamRosterMembers',
     TeamRosterMembersSchema,
+  );
+  const RosterMemberSeasonTeamWaiverSchemaRef = registry.register(
+    'RosterMemberSeasonTeamWaiver',
+    RosterMemberSeasonTeamWaiverSchema,
+  );
+  const RosterMemberWaiverSummarySchemaRef = registry.register(
+    'RosterMemberWaiverSummary',
+    RosterMemberWaiverSummarySchema,
+  );
+  const TeamRosterWaiverSummariesSchemaRef = registry.register(
+    'TeamRosterWaiverSummaries',
+    TeamRosterWaiverSummariesSchema,
   );
   const PublicRosterMemberSchemaRef = registry.register(
     'PublicRosterMember',
@@ -1655,6 +1670,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
     TeamRosterMembersSchemaRef,
+    RosterMemberSeasonTeamWaiverSchemaRef,
+    RosterMemberWaiverSummarySchemaRef,
+    TeamRosterWaiverSummariesSchemaRef,
     PublicRosterMemberSchemaRef,
     PublicTeamRosterResponseSchemaRef,
     RosterCardPlayerSchemaRef,

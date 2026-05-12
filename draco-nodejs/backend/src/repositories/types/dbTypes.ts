@@ -39,6 +39,16 @@ export interface dbPlayerCurrentSeasonTeam {
   teamName: string;
 }
 
+export interface dbContactSeasonTeamWaiver {
+  contactId: bigint;
+  teamSeasonId: bigint;
+  teamId: bigint;
+  leagueSeasonId: bigint;
+  leagueName: string;
+  teamName: string;
+  submittedWaiver: boolean;
+}
+
 export type dbWelcomeMessage = Prisma.accountwelcomeGetPayload<{
   select: {
     id: true;

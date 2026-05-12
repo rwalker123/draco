@@ -9,6 +9,7 @@ import StadiumIcon from '@mui/icons-material/Stadium';
 import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import {
   AdminBreadcrumbs,
@@ -77,6 +78,13 @@ const BaseballSeasonAdminPage: React.FC = () => {
       href: `/account/${accountId}/workouts`,
       getMetrics: (data) =>
         data ? [{ value: data.season.upcomingWorkouts, label: 'upcoming' }] : [],
+    },
+    {
+      title: 'Player Waivers',
+      description: 'Track submitted player waivers across teams in the current season.',
+      icon: <AssignmentTurnedInIcon />,
+      href: `/account/${accountId}/waivers`,
+      getMetrics: () => [],
     },
   ];
 

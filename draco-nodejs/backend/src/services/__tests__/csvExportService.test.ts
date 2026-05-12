@@ -73,6 +73,8 @@ class ContactRepositoryStub implements IContactRepository {
   findContactsForExport = vi.fn<IContactRepository['findContactsForExport']>();
   findCurrentSeasonTeamsForContact =
     vi.fn<IContactRepository['findCurrentSeasonTeamsForContact']>();
+  findSeasonTeamWaiversForContacts =
+    vi.fn<IContactRepository['findSeasonTeamWaiversForContacts']>();
   hasCareerStatistics = vi.fn<IContactRepository['hasCareerStatistics']>();
 }
 

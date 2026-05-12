@@ -23,6 +23,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 
 export interface AdminSearchItem {
   id: string;
@@ -166,6 +167,15 @@ export function getBaseballAdminItems(): AdminSearchItem[] {
       getHref: (accountId) => `/account/${accountId}/workouts`,
       category: 'Season',
       keywords: ['workouts', 'training', 'practice', 'fitness', 'sessions'],
+    },
+    {
+      id: 'player-waivers',
+      title: 'Player Waivers',
+      description: 'Track submitted player waivers across teams in the current season.',
+      icon: <AssignmentTurnedInIcon />,
+      getHref: (accountId) => `/account/${accountId}/waivers`,
+      category: 'Season',
+      keywords: ['waivers', 'waiver', 'player', 'roster', 'signed', 'consent'],
     },
     {
       id: 'announcements',

@@ -58,6 +58,33 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/waivers
+ * Admin-only: roster members with per-team waiver status across the season
+ */
+router.get(
+  '/:teamSeasonId/roster/waivers',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAccountAdmin(),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+
+    const accountSettings = await accountSettingsService.getAccountSettings(accountId);
+    const trackGamesPlayed = isTrackGamesPlayedEnabled(accountSettings);
+
+    const summaries = await rosterService.getTeamRosterWaiverSummaries(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      trackGamesPlayed,
+      true,
+    );
+
+    res.json(summaries);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster-public
  * Get public-safe roster members (names, jersey numbers, photos only)
  */
