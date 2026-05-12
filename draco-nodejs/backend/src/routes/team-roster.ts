@@ -77,7 +77,7 @@ router.get(
       seasonId,
       accountId,
       trackGamesPlayed,
-      true,
+      false,
     );
 
     res.json(summaries);
