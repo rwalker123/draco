@@ -36,7 +36,7 @@ const BaseballSeasonAdminPage: React.FC = () => {
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
-  const { settings: accountSettings } = useAccountSettings(accountId);
+  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
 
   const getSettingValue = (key: AccountSettingKey): boolean => {
     const state = accountSettings?.find((setting) => setting.definition.key === key);
@@ -119,7 +119,7 @@ const BaseballSeasonAdminPage: React.FC = () => {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <AdminBreadcrumbs accountId={accountId} currentPage="Season" />
 
-        {loading && (
+        {(loading || settingsLoading) && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
@@ -131,19 +131,21 @@ const BaseballSeasonAdminPage: React.FC = () => {
           </Alert>
         )}
 
-        <Grid container spacing={3}>
-          {subItems.map((item) => (
-            <Grid key={item.title} size={{ xs: 12, sm: 6, md: 6 }}>
-              <AdminSubItemCard
-                title={item.title}
-                description={item.description}
-                icon={item.icon}
-                href={item.href}
-                metrics={item.getMetrics(summary)}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        {!settingsLoading && (
+          <Grid container spacing={3}>
+            {subItems.map((item) => (
+              <Grid key={item.title} size={{ xs: 12, sm: 6, md: 6 }}>
+                <AdminSubItemCard
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
+                  href={item.href}
+                  metrics={item.getMetrics(summary)}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Container>
     </main>
   );

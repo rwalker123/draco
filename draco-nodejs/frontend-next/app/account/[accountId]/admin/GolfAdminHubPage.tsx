@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Container, Typography, Divider } from '@mui/material';
+import { Box, CircularProgress, Container, Divider, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -37,7 +37,7 @@ const GolfAdminHubPage: React.FC = () => {
   const isGlobalAdmin = hasRole('Administrator');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentSeasonId, setCurrentSeasonId] = useState<string | undefined>(undefined);
-  const { settings: accountSettings } = useAccountSettings(accountId);
+  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
 
   const enabledSettings = new Set<AccountSettingKey>(
     (accountSettings ?? [])
@@ -120,14 +120,20 @@ const GolfAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <AdminHubSearch
-          items={golfItems}
-          accountId={accountId}
-          isGlobalAdmin={isGlobalAdmin}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          enabledSettings={enabledSettings}
-        />
+        {settingsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <AdminHubSearch
+            items={golfItems}
+            accountId={accountId}
+            isGlobalAdmin={isGlobalAdmin}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            enabledSettings={enabledSettings}
+          />
+        )}
 
         {!isSearching && (
           <>

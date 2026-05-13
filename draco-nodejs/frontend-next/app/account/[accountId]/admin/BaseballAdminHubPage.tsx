@@ -34,7 +34,7 @@ const BaseballAdminHubPage: React.FC = () => {
   const { hasRole } = useRole();
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
-  const { settings: accountSettings } = useAccountSettings(accountId);
+  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
 
   const enabledSettings = new Set<AccountSettingKey>(
     (accountSettings ?? [])
@@ -136,14 +136,20 @@ const BaseballAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <AdminHubSearch
-          items={baseballItems}
-          accountId={accountId}
-          isGlobalAdmin={isGlobalAdmin}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          enabledSettings={enabledSettings}
-        />
+        {settingsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <AdminHubSearch
+            items={baseballItems}
+            accountId={accountId}
+            isGlobalAdmin={isGlobalAdmin}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            enabledSettings={enabledSettings}
+          />
+        )}
 
         {!isSearching && (
           <>
