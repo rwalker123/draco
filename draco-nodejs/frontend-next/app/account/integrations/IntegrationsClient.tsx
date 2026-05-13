@@ -20,8 +20,19 @@ import { useTheme } from '@mui/material/styles';
 import { useNotifications } from '@/hooks/useNotifications';
 import NotificationSnackbar from '@/components/common/NotificationSnackbar';
 import OneClickCard from './_components/OneClickCard';
-import CodeSnippetCard from './_components/CodeSnippetCard';
 import CopyableUrl from './_components/CopyableUrl';
+
+function buildCursorDeepLink(mcpUrl: string): string {
+  const config = JSON.stringify({ url: mcpUrl });
+  const base64 = btoa(config);
+  const params = new URLSearchParams({ name: 'Draco', config: base64 });
+  return `cursor://anysphere.cursor-deeplink/mcp/install?${params.toString()}`;
+}
+
+function buildVSCodeDeepLink(mcpUrl: string): string {
+  const config = JSON.stringify({ name: 'draco', url: mcpUrl });
+  return `vscode:mcp/install?${encodeURIComponent(config)}`;
+}
 
 const CURSOR_SNIPPET = `{
   "mcpServers": {
@@ -62,6 +73,11 @@ const FAQ_ITEMS = [
     question: 'How do I disconnect?',
     answer:
       'From your AI client’s settings, remove the Draco connector. Or contact us to revoke access from our side.',
+  },
+  {
+    question: 'What if the one-click button doesn’t work?',
+    answer:
+      'Use the manual setup option below the button. The deep-link relies on your AI client being installed and registered as the handler for its URL scheme.',
   },
   {
     question: 'What if it doesn’t work?',
@@ -111,6 +127,9 @@ export default function IntegrationsClient({ mcpUrl }: IntegrationsClientProps) 
   const cursorSnippet = mcpUrl ? CURSOR_SNIPPET.replace('DRACO_MCP_URL', mcpUrl) : CURSOR_SNIPPET;
   const vscodeSnippet = mcpUrl ? VSCODE_SNIPPET.replace('DRACO_MCP_URL', mcpUrl) : VSCODE_SNIPPET;
 
+  const cursorDeepLink = mcpUrl ? buildCursorDeepLink(mcpUrl) : '';
+  const vscodeDeepLink = mcpUrl ? buildVSCodeDeepLink(mcpUrl) : '';
+
   if (!mcpUrl) {
     return (
       <Box
@@ -140,7 +159,7 @@ export default function IntegrationsClient({ mcpUrl }: IntegrationsClientProps) 
             </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 2, maxWidth: 620 }}>
-            Connect your favorite AI assistant to Draco so you can ask it about your team —
+            Connect your favorite AI assistant to Draco so you can ask it about your team &mdash;
             when&apos;s my next game, who&apos;s my manager, how am I batting? Your AI provider runs
             the conversation; Draco just answers the questions about your data.
           </Typography>
@@ -207,30 +226,46 @@ export default function IntegrationsClient({ mcpUrl }: IntegrationsClientProps) 
 
         <Box>
           <Typography variant="h5" fontWeight={600} gutterBottom>
+            Developer tools
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            These clients support one-click deep-link installation. If the button doesn&apos;t open
+            your editor, use the manual setup option below it.
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <OneClickCard
+                title="Cursor"
+                description="AI code editor — install with one click."
+                primaryButtonLabel="Install in Cursor"
+                primaryButtonHref={cursorDeepLink}
+                fallbackSnippet={cursorSnippet}
+                onFallbackCopy={() => handleCopied('Cursor snippet')}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <OneClickCard
+                title="VS Code"
+                description="Editor with GitHub Copilot — install with one click."
+                primaryButtonLabel="Install in VS Code"
+                primaryButtonHref={vscodeDeepLink}
+                fallbackSnippet={vscodeSnippet}
+                onFallbackCopy={() => handleCopied('VS Code snippet')}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="h5" fontWeight={600} gutterBottom>
             Other AI clients
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            For developer tools, copy the snippet below and add it to your client&apos;s MCP
-            configuration file.
+            Copy the URL below and add it as a new remote MCP server in your client&apos;s settings.
           </Typography>
           <Stack spacing={2}>
-            <CodeSnippetCard
-              title="Cursor"
-              description="AI code editor. Add the snippet to your global or project-level MCP config."
-              snippet={cursorSnippet}
-              copyLabel="Copy snippet"
-              instruction="Settings → MCP → paste into mcp.json"
-              onCopy={() => handleCopied('Cursor snippet')}
-            />
-            <CodeSnippetCard
-              title="VS Code (GitHub Copilot)"
-              description="VS Code with GitHub Copilot. Add the snippet to your user settings.json."
-              snippet={vscodeSnippet}
-              copyLabel="Copy snippet"
-              instruction="Settings → search “mcp” → Edit in settings.json"
-              onCopy={() => handleCopied('VS Code snippet')}
-            />
-
             <Box
               sx={{
                 border: `1px solid ${theme.palette.divider}`,

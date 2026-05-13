@@ -1,8 +1,11 @@
 'use client';
 
-import React from 'react';
-import { Box, Button, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Button, Card, CardContent, Chip, Stack, Tooltip, Typography } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CheckIcon from '@mui/icons-material/Check';
+import { useTheme } from '@mui/material/styles';
 
 interface Step {
   label: string;
@@ -17,6 +20,8 @@ interface OneClickCardProps {
   onPrimaryClick?: () => void;
   steps?: Step[];
   badge?: string;
+  fallbackSnippet?: string;
+  onFallbackCopy?: () => void;
 }
 
 export default function OneClickCard({
@@ -28,14 +33,27 @@ export default function OneClickCard({
   onPrimaryClick,
   steps,
   badge,
+  fallbackSnippet,
+  onFallbackCopy,
 }: OneClickCardProps) {
-  const [stepsOpen, setStepsOpen] = React.useState(false);
+  const theme = useTheme();
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const [fallbackOpen, setFallbackOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handlePrimary = () => {
     if (primaryButtonHref) {
       window.open(primaryButtonHref, '_blank', 'noopener,noreferrer');
     }
     onPrimaryClick?.();
+  };
+
+  const handleFallbackCopy = async () => {
+    if (!fallbackSnippet) return;
+    await navigator.clipboard.writeText(fallbackSnippet);
+    setCopied(true);
+    onFallbackCopy?.();
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -75,6 +93,16 @@ export default function OneClickCard({
               {stepsOpen ? 'Hide setup steps' : 'Setup steps'}
             </Button>
           )}
+          {fallbackSnippet && (
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => setFallbackOpen((prev) => !prev)}
+              sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
+            >
+              {fallbackOpen ? 'Hide manual setup' : 'Show manual setup'}
+            </Button>
+          )}
         </Stack>
         {steps && stepsOpen && (
           <Box component="ol" sx={{ pl: 2, m: 0 }}>
@@ -89,6 +117,39 @@ export default function OneClickCard({
                 {step.label}
               </Typography>
             ))}
+          </Box>
+        )}
+        {fallbackSnippet && fallbackOpen && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box
+              component="pre"
+              sx={{
+                backgroundColor: theme.palette.mode === 'dark' ? '#0d1117' : '#f6f8fa',
+                color: theme.palette.mode === 'dark' ? '#e6edf3' : '#24292f',
+                borderRadius: 1,
+                p: 1.5,
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+                overflow: 'auto',
+                whiteSpace: 'pre',
+                m: 0,
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {fallbackSnippet}
+            </Box>
+            <Tooltip title={copied ? 'Copied!' : 'Copy snippet'}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={copied ? <CheckIcon /> : <ContentCopyIcon />}
+                onClick={handleFallbackCopy}
+                color={copied ? 'success' : 'primary'}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                {copied ? 'Copied!' : 'Copy snippet'}
+              </Button>
+            </Tooltip>
           </Box>
         )}
       </CardContent>

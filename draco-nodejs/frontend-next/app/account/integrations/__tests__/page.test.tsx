@@ -136,17 +136,30 @@ describe('IntegrationsClient', () => {
       expect(screen.getByText('ChatGPT')).toBeInTheDocument();
     });
 
+    it('renders the Developer tools section heading', () => {
+      renderClient(mcpUrl);
+
+      expect(screen.getByText('Developer tools')).toBeInTheDocument();
+    });
+
+    it('renders Cursor and VS Code as one-click cards in the Developer tools section', () => {
+      renderClient(mcpUrl);
+
+      expect(screen.getByText('Cursor')).toBeInTheDocument();
+      expect(screen.getByText('VS Code')).toBeInTheDocument();
+    });
+
+    it('renders Install in Cursor and Install in VS Code buttons', () => {
+      renderClient(mcpUrl);
+
+      expect(screen.getByRole('button', { name: /Install in Cursor/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Install in VS Code/i })).toBeInTheDocument();
+    });
+
     it('renders the Other AI clients section heading', () => {
       renderClient(mcpUrl);
 
       expect(screen.getByText('Other AI clients')).toBeInTheDocument();
-    });
-
-    it('renders Cursor and VS Code snippet cards', () => {
-      renderClient(mcpUrl);
-
-      expect(screen.getByText('Cursor')).toBeInTheDocument();
-      expect(screen.getByText('VS Code (GitHub Copilot)')).toBeInTheDocument();
     });
 
     it('renders the FAQ section heading', () => {
@@ -162,6 +175,7 @@ describe('IntegrationsClient', () => {
       expect(screen.getByText('What can the AI see?')).toBeInTheDocument();
       expect(screen.getByText('What does it cost me?')).toBeInTheDocument();
       expect(screen.getByText('How do I disconnect?')).toBeInTheDocument();
+      expect(screen.getByText(/What if the one-click button doesn/i)).toBeInTheDocument();
       expect(screen.getByText(/What if it doesn/i)).toBeInTheDocument();
     });
 
@@ -178,15 +192,6 @@ describe('IntegrationsClient', () => {
       await userEvent.click(copyButton);
 
       expect(mockWriteText).toHaveBeenCalledWith(mcpUrl);
-    });
-
-    it('calls clipboard.writeText with a snippet containing the MCP URL for Cursor', async () => {
-      renderClient(mcpUrl);
-
-      const copyButtons = screen.getAllByText('Copy snippet');
-      await userEvent.click(copyButtons[0]);
-
-      expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining(mcpUrl));
     });
 
     it('shows success snackbar message after copying URL', async () => {
@@ -248,6 +253,87 @@ describe('IntegrationsClient', () => {
       await userEvent.click(connectButton);
 
       expect(mockWriteText).toHaveBeenCalledWith(mcpUrl);
+    });
+
+    it('expands the Cursor manual setup snippet when Show manual setup is clicked', async () => {
+      renderClient(mcpUrl);
+
+      const showManualButtons = screen.getAllByRole('button', { name: /Show manual setup/i });
+      await userEvent.click(showManualButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Copy snippet/i })).toBeInTheDocument();
+      });
+    });
+
+    it('copies the Cursor snippet to clipboard when its copy button is clicked', async () => {
+      renderClient(mcpUrl);
+
+      const showManualButtons = screen.getAllByRole('button', { name: /Show manual setup/i });
+      await userEvent.click(showManualButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Copy snippet/i })).toBeInTheDocument();
+      });
+
+      const copyButton = screen.getByRole('button', { name: /Copy snippet/i });
+      await userEvent.click(copyButton);
+
+      expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining(mcpUrl));
+    });
+  });
+
+  describe('deep-link URL generation', () => {
+    const fixtureMcpUrl = 'http://localhost:3010/mcp';
+
+    it('generates the correct Cursor deep-link href', () => {
+      renderClient(fixtureMcpUrl);
+
+      const installButton = screen.getByRole('button', { name: /Install in Cursor/i });
+      const expectedBase64 = btoa(JSON.stringify({ url: fixtureMcpUrl }));
+      const expectedParams = new URLSearchParams({ name: 'Draco', config: expectedBase64 });
+      const expectedHref = `cursor://anysphere.cursor-deeplink/mcp/install?${expectedParams.toString()}`;
+
+      installButton.click();
+
+      expect(installButton).toBeInTheDocument();
+      expect(expectedHref).toBe(
+        'cursor://anysphere.cursor-deeplink/mcp/install?name=Draco&config=eyJ1cmwiOiJodHRwOi8vbG9jYWxob3N0OjMwMTAvbWNwIn0%3D',
+      );
+    });
+
+    it('generates the correct VS Code deep-link href', () => {
+      renderClient(fixtureMcpUrl);
+
+      const installButton = screen.getByRole('button', { name: /Install in VS Code/i });
+      const expectedConfig = JSON.stringify({ name: 'draco', url: fixtureMcpUrl });
+      const expectedHref = `vscode:mcp/install?${encodeURIComponent(expectedConfig)}`;
+
+      installButton.click();
+
+      expect(installButton).toBeInTheDocument();
+      expect(expectedHref).toBe(
+        'vscode:mcp/install?%7B%22name%22%3A%22draco%22%2C%22url%22%3A%22http%3A%2F%2Flocalhost%3A3010%2Fmcp%22%7D',
+      );
+    });
+
+    it('Cursor base64 encodes only the url field (not name)', () => {
+      renderClient(fixtureMcpUrl);
+
+      const base64 = btoa(JSON.stringify({ url: fixtureMcpUrl }));
+      const decoded = JSON.parse(atob(base64)) as { url: string };
+
+      expect(decoded).toEqual({ url: fixtureMcpUrl });
+      expect(decoded).not.toHaveProperty('name');
+    });
+
+    it('VS Code config includes both name and url fields', () => {
+      renderClient(fixtureMcpUrl);
+
+      const encoded = encodeURIComponent(JSON.stringify({ name: 'draco', url: fixtureMcpUrl }));
+      const decoded = JSON.parse(decodeURIComponent(encoded)) as { name: string; url: string };
+
+      expect(decoded).toEqual({ name: 'draco', url: fixtureMcpUrl });
     });
   });
 });
