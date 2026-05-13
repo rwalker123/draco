@@ -10,6 +10,7 @@ import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import { AccountSettingKey } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../../components/AccountPageHeader';
 import {
   AdminBreadcrumbs,
@@ -17,6 +18,7 @@ import {
   type AdminSubItemMetric,
 } from '../../../../../components/admin';
 import { useAdminDashboardSummary } from '../../../../../hooks/useAdminDashboardSummary';
+import { useAccountSettings } from '../../../../../hooks/useAccountSettings';
 
 interface SubItemConfig {
   title: string;
@@ -34,6 +36,13 @@ const BaseballSeasonAdminPage: React.FC = () => {
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
+  const { settings: accountSettings } = useAccountSettings(accountId);
+
+  const getSettingValue = (key: AccountSettingKey): boolean => {
+    const state = accountSettings?.find((setting) => setting.definition.key === key);
+    return Boolean(state?.effectiveValue ?? state?.value);
+  };
+  const trackWaiverEnabled = getSettingValue('TrackWaiver');
 
   if (!accountId) {
     return null;
@@ -79,13 +88,17 @@ const BaseballSeasonAdminPage: React.FC = () => {
       getMetrics: (data) =>
         data ? [{ value: data.season.upcomingWorkouts, label: 'upcoming' }] : [],
     },
-    {
-      title: 'Player Waivers',
-      description: 'Track submitted player waivers across teams in the current season.',
-      icon: <AssignmentTurnedInIcon />,
-      href: `/account/${accountId}/waivers`,
-      getMetrics: () => [],
-    },
+    ...(trackWaiverEnabled
+      ? [
+          {
+            title: 'Player Waivers',
+            description: 'Track submitted player waivers across teams in the current season.',
+            icon: <AssignmentTurnedInIcon />,
+            href: `/account/${accountId}/waivers`,
+            getMetrics: () => [],
+          } satisfies SubItemConfig,
+        ]
+      : []),
   ];
 
   return (

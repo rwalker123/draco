@@ -121,6 +121,59 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
     };
   }, [accountId, currentSeasonId, selectedTeamSeasonId, apiClient]);
 
+  const handleToggleDriversLicense = async (member: WaiverMember) => {
+    if (!currentSeasonId || !selectedTeamSeasonId) return;
+    const rosterMemberId = member.rosterMember.id;
+    const nextValue = !member.rosterMember.player.submittedDriversLicense;
+
+    setUpdatingMemberIds((prev) => {
+      const next = new Set(prev);
+      next.add(rosterMemberId);
+      return next;
+    });
+    setUpdateError(null);
+
+    try {
+      const result = await updateRosterMember({
+        client: apiClient,
+        path: {
+          accountId,
+          seasonId: currentSeasonId,
+          teamSeasonId: selectedTeamSeasonId,
+          rosterMemberId,
+        },
+        body: { player: { submittedDriversLicense: nextValue } },
+        throwOnError: false,
+      });
+
+      const updated = unwrapApiResult(result, 'Failed to update submitted drivers license status');
+
+      setMembers((prev) =>
+        prev.map((m) => {
+          if (m.rosterMember.id !== rosterMemberId) return m;
+          return {
+            ...m,
+            rosterMember: {
+              ...m.rosterMember,
+              ...updated,
+              player: { ...m.rosterMember.player, ...updated.player },
+            },
+          };
+        }),
+      );
+    } catch (err: unknown) {
+      setUpdateError(
+        err instanceof Error ? err.message : 'Failed to update submitted drivers license status',
+      );
+    } finally {
+      setUpdatingMemberIds((prev) => {
+        const next = new Set(prev);
+        next.delete(rosterMemberId);
+        return next;
+      });
+    }
+  };
+
   const handleToggleWaiver = async (member: WaiverMember) => {
     if (!currentSeasonId || !selectedTeamSeasonId) return;
     const rosterMemberId = member.rosterMember.id;
@@ -308,7 +361,12 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
                       <TableHead>
                         <TableRow>
                           <TableCell>Player</TableCell>
-                          <TableCell sx={{ width: 200 }}>Waiver for This Team</TableCell>
+                          <TableCell align="center" sx={{ width: 220 }}>
+                            Submitted Drivers License
+                          </TableCell>
+                          <TableCell align="center" sx={{ width: 200 }}>
+                            Waiver for This Team
+                          </TableCell>
                           <TableCell>All Teams Waiver Submitted</TableCell>
                         </TableRow>
                       </TableHead>
@@ -326,8 +384,32 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
                           return (
                             <TableRow key={rosterMemberId} hover>
                               <TableCell>{fullName}</TableCell>
-                              <TableCell>
-                                <Stack direction="row" spacing={1} alignItems="center">
+                              <TableCell align="center">
+                                <Stack
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
+                                  <Switch
+                                    checked={Boolean(
+                                      member.rosterMember.player.submittedDriversLicense,
+                                    )}
+                                    onChange={() => handleToggleDriversLicense(member)}
+                                    disabled={isUpdating}
+                                    inputProps={{
+                                      'aria-label': `Toggle submitted drivers license for ${fullName}`,
+                                    }}
+                                  />
+                                </Stack>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Stack
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
                                   <Switch
                                     checked={Boolean(member.rosterMember.submittedWaiver)}
                                     onChange={() => handleToggleWaiver(member)}

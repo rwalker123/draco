@@ -13,7 +13,9 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { AdminCategoryCard, AdminHubSearch, type AdminMetric } from '../../../../components/admin';
+import { AccountSettingKey } from '@draco/shared-schemas';
 import { useAdminDashboardSummary } from '../../../../hooks/useAdminDashboardSummary';
+import { useAccountSettings } from '../../../../hooks/useAccountSettings';
 import { useRole } from '../../../../context/RoleContext';
 import { getBaseballAdminItems } from '../../../../lib/admin-hub-registry';
 
@@ -32,6 +34,13 @@ const BaseballAdminHubPage: React.FC = () => {
   const { hasRole } = useRole();
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
+  const { settings: accountSettings } = useAccountSettings(accountId);
+
+  const enabledSettings = new Set<AccountSettingKey>(
+    (accountSettings ?? [])
+      .filter((setting) => Boolean(setting.effectiveValue ?? setting.value))
+      .map((setting) => setting.definition.key as AccountSettingKey),
+  );
 
   const isGlobalAdmin = hasRole('Administrator');
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,6 +142,7 @@ const BaseballAdminHubPage: React.FC = () => {
           isGlobalAdmin={isGlobalAdmin}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          enabledSettings={enabledSettings}
         />
 
         {!isSearching && (
