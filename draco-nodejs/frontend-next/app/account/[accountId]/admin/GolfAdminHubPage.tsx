@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Box, CircularProgress, Container, Divider, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Divider, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -37,7 +37,11 @@ const GolfAdminHubPage: React.FC = () => {
   const isGlobalAdmin = hasRole('Administrator');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentSeasonId, setCurrentSeasonId] = useState<string | undefined>(undefined);
-  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
+  const {
+    settings: accountSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useAccountSettings(accountId);
 
   const enabledSettings = new Set<AccountSettingKey>(
     (accountSettings ?? [])
@@ -120,11 +124,16 @@ const GolfAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        {settingsError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Unable to load account settings: {settingsError}
+          </Alert>
+        )}
         {settingsLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
-        ) : (
+        ) : settingsError ? null : (
           <AdminHubSearch
             items={golfItems}
             accountId={accountId}

@@ -36,7 +36,11 @@ const BaseballSeasonAdminPage: React.FC = () => {
   const accountId = Array.isArray(accountIdParam) ? accountIdParam[0] : accountIdParam;
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
-  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
+  const {
+    settings: accountSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useAccountSettings(accountId);
 
   const getSettingValue = (key: AccountSettingKey): boolean => {
     const state = accountSettings?.find((setting) => setting.definition.key === key);
@@ -128,6 +132,12 @@ const BaseballSeasonAdminPage: React.FC = () => {
         {error && (
           <Alert severity="warning" sx={{ mb: 3 }}>
             Unable to load summary data. You can still navigate to admin sections.
+          </Alert>
+        )}
+
+        {settingsError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            Unable to load account settings: {settingsError}. Settings-gated tiles may be hidden.
           </Alert>
         )}
 

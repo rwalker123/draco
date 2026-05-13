@@ -34,7 +34,11 @@ const BaseballAdminHubPage: React.FC = () => {
   const { hasRole } = useRole();
 
   const { summary, loading, error } = useAdminDashboardSummary(accountId || '');
-  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
+  const {
+    settings: accountSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useAccountSettings(accountId);
 
   const enabledSettings = new Set<AccountSettingKey>(
     (accountSettings ?? [])
@@ -136,11 +140,16 @@ const BaseballAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        {settingsError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Unable to load account settings: {settingsError}
+          </Alert>
+        )}
         {settingsLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
-        ) : (
+        ) : settingsError ? null : (
           <AdminHubSearch
             items={baseballItems}
             accountId={accountId}

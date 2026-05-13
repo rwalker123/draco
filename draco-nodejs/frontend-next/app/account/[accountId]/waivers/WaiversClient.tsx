@@ -41,7 +41,11 @@ type WaiverMember = TeamRosterWaiverSummaries['members'][number];
 
 export default function WaiversClient({ accountId }: WaiversClientProps) {
   const apiClient = useApiClient();
-  const { settings: accountSettings, loading: settingsLoading } = useAccountSettings(accountId);
+  const {
+    settings: accountSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useAccountSettings(accountId);
   const trackWaiverSetting = accountSettings?.find(
     (setting) => setting.definition.key === 'TrackWaiver',
   );
@@ -273,6 +277,8 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
           </Box>
+        ) : settingsError ? (
+          <Alert severity="error">Unable to load account settings: {settingsError}</Alert>
         ) : !trackWaiverEnabled ? (
           <Alert severity="info">
             Player waiver tracking is currently disabled for this account.
