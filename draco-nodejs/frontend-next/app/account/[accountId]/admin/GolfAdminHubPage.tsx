@@ -11,9 +11,11 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import { getCurrentSeason } from '@draco/shared-api-client';
+import { AccountSettingKey } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { AdminCategoryCard, AdminHubSearch } from '../../../../components/admin';
 import { useRole } from '../../../../context/RoleContext';
+import { useAccountSettings } from '../../../../hooks/useAccountSettings';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { getGolfAdminItems } from '../../../../lib/admin-hub-registry';
 import { unwrapApiResult } from '../../../../utils/apiResult';
@@ -35,6 +37,13 @@ const GolfAdminHubPage: React.FC = () => {
   const isGlobalAdmin = hasRole('Administrator');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentSeasonId, setCurrentSeasonId] = useState<string | undefined>(undefined);
+  const { settings: accountSettings } = useAccountSettings(accountId);
+
+  const enabledSettings = new Set<AccountSettingKey>(
+    (accountSettings ?? [])
+      .filter((setting) => Boolean(setting.effectiveValue ?? setting.value))
+      .map((setting) => setting.definition.key),
+  );
 
   useEffect(() => {
     if (!accountId) return;
@@ -117,6 +126,7 @@ const GolfAdminHubPage: React.FC = () => {
           isGlobalAdmin={isGlobalAdmin}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          enabledSettings={enabledSettings}
         />
 
         {!isSearching && (

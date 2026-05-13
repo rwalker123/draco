@@ -23,7 +23,7 @@ interface AdminHubSearchProps {
   isGlobalAdmin: boolean;
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  enabledSettings?: ReadonlySet<AccountSettingKey>;
+  enabledSettings: ReadonlySet<AccountSettingKey>;
 }
 
 const AdminHubSearch: React.FC<AdminHubSearchProps> = ({

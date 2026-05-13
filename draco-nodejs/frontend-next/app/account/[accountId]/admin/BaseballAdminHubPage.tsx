@@ -39,7 +39,7 @@ const BaseballAdminHubPage: React.FC = () => {
   const enabledSettings = new Set<AccountSettingKey>(
     (accountSettings ?? [])
       .filter((setting) => Boolean(setting.effectiveValue ?? setting.value))
-      .map((setting) => setting.definition.key as AccountSettingKey),
+      .map((setting) => setting.definition.key),
   );
 
   const isGlobalAdmin = hasRole('Administrator');

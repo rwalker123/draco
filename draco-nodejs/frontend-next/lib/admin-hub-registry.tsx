@@ -322,11 +322,11 @@ export function searchAdminItems(
   items: AdminSearchItem[],
   query: string,
   isGlobalAdmin: boolean,
-  enabledSettings?: ReadonlySet<AccountSettingKey>,
+  enabledSettings: ReadonlySet<AccountSettingKey>,
 ): AdminSearchItem[] {
   const roleFiltered = isGlobalAdmin ? items : items.filter((item) => !item.globalAdminOnly);
   const settingFiltered = roleFiltered.filter(
-    (item) => !item.requiresSetting || (enabledSettings?.has(item.requiresSetting) ?? false),
+    (item) => !item.requiresSetting || enabledSettings.has(item.requiresSetting),
   );
 
   if (!query.trim()) {
