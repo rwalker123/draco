@@ -1,4 +1,5 @@
 import React from 'react';
+import { AccountSettingKey } from '@draco/shared-schemas';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ShareIcon from '@mui/icons-material/Share';
@@ -34,6 +35,7 @@ export interface AdminSearchItem {
   category: string;
   keywords: string[];
   globalAdminOnly?: boolean;
+  requiresSetting?: AccountSettingKey;
 }
 
 const baseAccountItems: AdminSearchItem[] = [
@@ -176,6 +178,7 @@ export function getBaseballAdminItems(): AdminSearchItem[] {
       getHref: (accountId) => `/account/${accountId}/waivers`,
       category: 'Season',
       keywords: ['waivers', 'waiver', 'player', 'roster', 'signed', 'consent'],
+      requiresSetting: 'TrackWaiver',
     },
     {
       id: 'announcements',
@@ -319,8 +322,12 @@ export function searchAdminItems(
   items: AdminSearchItem[],
   query: string,
   isGlobalAdmin: boolean,
+  enabledSettings: ReadonlySet<AccountSettingKey>,
 ): AdminSearchItem[] {
-  const filtered = isGlobalAdmin ? items : items.filter((item) => !item.globalAdminOnly);
+  const roleFiltered = isGlobalAdmin ? items : items.filter((item) => !item.globalAdminOnly);
+  const settingFiltered = roleFiltered.filter(
+    (item) => !item.requiresSetting || enabledSettings.has(item.requiresSetting),
+  );
 
   if (!query.trim()) {
     return [];
@@ -328,7 +335,7 @@ export function searchAdminItems(
 
   const lowerQuery = query.toLowerCase().trim();
 
-  return filtered.filter(
+  return settingFiltered.filter(
     (item) =>
       item.title.toLowerCase().includes(lowerQuery) ||
       item.description.toLowerCase().includes(lowerQuery) ||
