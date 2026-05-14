@@ -44,7 +44,7 @@ describe('getLeaderForCard', () => {
     ];
     const card = getLeaderForCard(leaders);
     expect(card).toEqual({
-      playerId: 'tie-entry',
+      playerId: '0',
       playerName: '3 tied',
       teams: [],
       teamName: '',

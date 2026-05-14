@@ -9,7 +9,7 @@ export const getLeaderForCard = (leaders: LeaderRowType[]): LeaderRowType | null
 
   if (firstPlaceEntries.length > 1) {
     return {
-      playerId: 'tie-entry',
+      playerId: '0',
       playerName: `${firstPlaceEntries.length} tied`,
       teams: [],
       teamName: '',
