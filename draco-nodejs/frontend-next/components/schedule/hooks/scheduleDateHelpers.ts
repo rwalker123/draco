@@ -9,6 +9,7 @@ import {
   startOfYear,
 } from 'date-fns';
 import { Game, FilterType } from '@/types/schedule';
+import { endOfDayInTimezone, startOfDayInTimezone } from '../../../utils/dateUtils';
 
 export const sortGamesAscending = (a: Game, b: Game): number => {
   const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
@@ -71,16 +72,22 @@ export const collectGamesForRange = (
 export const computeDateRange = (
   filterType: FilterType,
   filterDate: Date,
+  timeZone?: string,
 ): { startDate: Date; endDate: Date } => {
   let start: Date;
   let end: Date;
 
   switch (filterType) {
     case 'day':
-      start = new Date(filterDate);
-      start.setHours(0, 0, 0, 0);
-      end = new Date(filterDate);
-      end.setHours(23, 59, 59, 999);
+      if (timeZone) {
+        start = startOfDayInTimezone(filterDate, timeZone);
+        end = endOfDayInTimezone(filterDate, timeZone);
+      } else {
+        start = new Date(filterDate);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(filterDate);
+        end.setHours(23, 59, 59, 999);
+      }
       break;
     case 'week':
       start = startOfWeek(filterDate);

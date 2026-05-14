@@ -334,6 +334,41 @@ export function isSameDayInTimezone(
   return partsA.year === partsB.year && partsA.month === partsB.month && partsA.day === partsB.day;
 }
 
+export function startOfDayInTimezone(date: Date, timeZone: string): Date {
+  if (Number.isNaN(date.getTime())) {
+    return new Date(NaN);
+  }
+  return convertZonedPartsToUTCDate(
+    {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+      hour: 0,
+      minute: 0,
+      second: 0,
+    },
+    timeZone,
+  );
+}
+
+export function endOfDayInTimezone(date: Date, timeZone: string): Date {
+  if (Number.isNaN(date.getTime())) {
+    return new Date(NaN);
+  }
+  const lastSecond = convertZonedPartsToUTCDate(
+    {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+      hour: 23,
+      minute: 59,
+      second: 59,
+    },
+    timeZone,
+  );
+  return new Date(lastSecond.getTime() + 999);
+}
+
 /**
  * Checks if a date value is valid
  * @param dateValue - Date value to validate

@@ -149,7 +149,7 @@ export const BattingStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
   minAB: z
     .string()
     .transform((val) => parseInt(val))
-    .default(10),
+    .default(0),
   sortField: z.string().default('avg'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -160,7 +160,7 @@ export const PitchingStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
   minIP: z
     .string()
     .transform((val) => parseInt(val))
-    .default(1),
+    .default(0),
   sortField: z.string().default('era'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });

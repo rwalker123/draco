@@ -29,6 +29,7 @@ interface UseScheduleDataProps {
   accountType?: string;
   filterType: FilterType;
   filterDate: Date;
+  timeZone?: string;
   onError?: (message: string) => void;
   mode?: ScheduleAccessMode;
 }
@@ -101,6 +102,7 @@ export const useScheduleData = ({
   accountType,
   filterType,
   filterDate,
+  timeZone,
   onError,
   mode = 'public',
 }: UseScheduleDataProps): UseScheduleDataReturn => {
@@ -131,7 +133,7 @@ export const useScheduleData = ({
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
-  const { startDate, endDate } = computeDateRange(filterType, filterDate);
+  const { startDate, endDate } = computeDateRange(filterType, filterDate, timeZone);
 
   useEffect(() => {
     gamesCacheRef.current.clear();
@@ -443,7 +445,11 @@ export const useScheduleData = ({
     }
 
     const controller = new AbortController();
-    const { startDate: rangeStart, endDate: rangeEnd } = computeDateRange(filterType, filterDate);
+    const { startDate: rangeStart, endDate: rangeEnd } = computeDateRange(
+      filterType,
+      filterDate,
+      timeZone,
+    );
 
     const runLoadGamesData = async () => {
       try {
@@ -521,7 +527,7 @@ export const useScheduleData = ({
     return () => {
       controller.abort();
     };
-  }, [authLoading, accountId, apiClient, adapter, filterType, filterDate, mode]);
+  }, [authLoading, accountId, apiClient, adapter, filterType, filterDate, timeZone, mode]);
 
   const filteredGames = games;
 
