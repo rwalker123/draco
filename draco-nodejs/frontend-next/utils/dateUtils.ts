@@ -338,11 +338,15 @@ export function startOfDayInTimezone(date: Date, timeZone: string): Date {
   if (Number.isNaN(date.getTime())) {
     return new Date(NaN);
   }
+  const zonedParts = getDateTimePartsInTimezone(date, timeZone);
+  if (!zonedParts) {
+    return new Date(NaN);
+  }
   return convertZonedPartsToUTCDate(
     {
-      year: date.getFullYear(),
-      month: date.getMonth() + 1,
-      day: date.getDate(),
+      year: zonedParts.year,
+      month: zonedParts.month,
+      day: zonedParts.day,
       hour: 0,
       minute: 0,
       second: 0,
@@ -355,11 +359,15 @@ export function endOfDayInTimezone(date: Date, timeZone: string): Date {
   if (Number.isNaN(date.getTime())) {
     return new Date(NaN);
   }
+  const zonedParts = getDateTimePartsInTimezone(date, timeZone);
+  if (!zonedParts) {
+    return new Date(NaN);
+  }
   const lastSecond = convertZonedPartsToUTCDate(
     {
-      year: date.getFullYear(),
-      month: date.getMonth() + 1,
-      day: date.getDate(),
+      year: zonedParts.year,
+      month: zonedParts.month,
+      day: zonedParts.day,
       hour: 23,
       minute: 59,
       second: 59,
