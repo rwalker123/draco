@@ -35,23 +35,28 @@ const getDateTimePartsInTimezone = (
     return null;
   }
 
-  const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+  let parts: Record<string, string>;
+  try {
+    const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
 
-  const parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
-    if (part.type !== 'literal') {
-      acc[part.type] = part.value;
-    }
-    return acc;
-  }, {});
+    parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+      if (part.type !== 'literal') {
+        acc[part.type] = part.value;
+      }
+      return acc;
+    }, {});
+  } catch {
+    return null;
+  }
 
   const requiredParts = ['year', 'month', 'day', 'hour', 'minute', 'second'] as const;
   const hasAllParts = requiredParts.every((part) => parts[part] !== undefined);
