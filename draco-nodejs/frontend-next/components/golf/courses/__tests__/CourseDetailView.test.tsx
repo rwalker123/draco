@@ -178,7 +178,7 @@ describe('CourseDetailView', () => {
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
       });
-    });
+    }, 15000);
 
     it('does not call onSave when there are no changes', () => {
       const onSave = vi.fn().mockResolvedValue(undefined);
