@@ -77,16 +77,32 @@ export const computeDateRange = (
   let start: Date;
   let end: Date;
 
+  const localStartOfDay = (): Date => {
+    const value = new Date(filterDate);
+    value.setHours(0, 0, 0, 0);
+    return value;
+  };
+  const localEndOfDay = (): Date => {
+    const value = new Date(filterDate);
+    value.setHours(23, 59, 59, 999);
+    return value;
+  };
+
   switch (filterType) {
     case 'day':
       if (timeZone) {
         start = startOfDayInTimezone(filterDate, timeZone);
         end = endOfDayInTimezone(filterDate, timeZone);
+        // startOfDayInTimezone/endOfDayInTimezone yield Invalid Date for an
+        // unsupported IANA timeZone; fall back to local day bounds so a bad
+        // account timezone can't propagate NaN dates into the range logic.
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          start = localStartOfDay();
+          end = localEndOfDay();
+        }
       } else {
-        start = new Date(filterDate);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(filterDate);
-        end.setHours(23, 59, 59, 999);
+        start = localStartOfDay();
+        end = localEndOfDay();
       }
       break;
     case 'week':
