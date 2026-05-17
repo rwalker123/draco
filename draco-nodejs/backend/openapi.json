@@ -13146,7 +13146,7 @@
           },
           "minAB": {
             "type": "string",
-            "default": 10
+            "default": 0
           },
           "sortField": {
             "type": "string",
@@ -13192,7 +13192,7 @@
           },
           "minIP": {
             "type": "string",
-            "default": 1
+            "default": 0
           },
           "sortField": {
             "type": "string",
@@ -74121,7 +74121,7 @@
           {
             "schema": {
               "type": "string",
-              "default": 10
+              "default": 0
             },
             "required": false,
             "name": "minAB",
@@ -74277,7 +74277,7 @@
           {
             "schema": {
               "type": "string",
-              "default": 1
+              "default": 0
             },
             "required": false,
             "name": "minIP",

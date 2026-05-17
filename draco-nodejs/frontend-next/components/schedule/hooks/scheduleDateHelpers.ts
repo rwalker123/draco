@@ -9,6 +9,7 @@ import {
   startOfYear,
 } from 'date-fns';
 import { Game, FilterType } from '@/types/schedule';
+import { endOfDayInTimezone, startOfDayInTimezone } from '../../../utils/dateUtils';
 
 export const sortGamesAscending = (a: Game, b: Game): number => {
   const diff = new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
@@ -71,16 +72,38 @@ export const collectGamesForRange = (
 export const computeDateRange = (
   filterType: FilterType,
   filterDate: Date,
+  timeZone?: string,
 ): { startDate: Date; endDate: Date } => {
   let start: Date;
   let end: Date;
 
+  const localStartOfDay = (): Date => {
+    const value = new Date(filterDate);
+    value.setHours(0, 0, 0, 0);
+    return value;
+  };
+  const localEndOfDay = (): Date => {
+    const value = new Date(filterDate);
+    value.setHours(23, 59, 59, 999);
+    return value;
+  };
+
   switch (filterType) {
     case 'day':
-      start = new Date(filterDate);
-      start.setHours(0, 0, 0, 0);
-      end = new Date(filterDate);
-      end.setHours(23, 59, 59, 999);
+      if (timeZone) {
+        start = startOfDayInTimezone(filterDate, timeZone);
+        end = endOfDayInTimezone(filterDate, timeZone);
+        // startOfDayInTimezone/endOfDayInTimezone yield Invalid Date for an
+        // unsupported IANA timeZone; fall back to local day bounds so a bad
+        // account timezone can't propagate NaN dates into the range logic.
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          start = localStartOfDay();
+          end = localEndOfDay();
+        }
+      } else {
+        start = localStartOfDay();
+        end = localEndOfDay();
+      }
       break;
     case 'week':
       start = startOfWeek(filterDate);

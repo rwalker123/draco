@@ -834,7 +834,7 @@ const BaseballAccountHome: React.FC = () => {
             )}
 
             {showInformationWidget && accountIdStr ? (
-              <Box sx={{ order: { xs: 6 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 7 }, minWidth: 0 }}>
                 <InformationWidget
                   accountId={accountIdStr}
                   showAccountMessages
@@ -845,7 +845,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {isAccountMember ? (
-              <Box sx={{ order: { xs: 7 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 8 }, minWidth: 0 }}>
                 <SpecialAnnouncementsWidget
                   accountId={accountIdStr}
                   teamIds={userTeamIds}
@@ -856,7 +856,7 @@ const BaseballAccountHome: React.FC = () => {
               </Box>
             ) : null}
 
-            <Box sx={{ order: { xs: 8 }, minWidth: 0 }}>
+            <Box sx={{ order: { xs: 9 }, minWidth: 0 }}>
               <PhotoGallerySection
                 title="Photo Gallery"
                 description={`Relive the highlights from ${accountDisplayName}.`}
@@ -876,7 +876,7 @@ const BaseballAccountHome: React.FC = () => {
             </Box>
 
             {showSubmissionPanel ? (
-              <Box sx={{ order: { xs: 9 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 10 }, minWidth: 0 }}>
                 <AccountOptional
                   accountId={accountIdStr}
                   componentId="account.home.photoUploadWidget"
@@ -899,7 +899,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {shouldShowPendingPanel ? (
-              <Box sx={{ order: { xs: 10 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 11 }, minWidth: 0 }}>
                 <PendingPhotoSubmissionsPanel
                   containerSx={{ p: 3, mb: 2 }}
                   contextLabel={accountDisplayName}
@@ -919,11 +919,11 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {shouldShowJoinLeagueNearSponsors ? (
-              <Box sx={{ order: { xs: 11 }, minWidth: 0 }}>{joinLeagueDashboard}</Box>
+              <Box sx={{ order: { xs: 12 }, minWidth: 0 }}>{joinLeagueDashboard}</Box>
             ) : null}
 
             {shouldShowAccountSponsors ? (
-              <Box sx={{ order: { xs: 12 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 13 }, minWidth: 0 }}>
                 <SponsorCard
                   sponsors={accountSponsors}
                   title="Account Sponsors"
@@ -933,7 +933,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {user ? (
-              <Box sx={{ order: { xs: 13 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 14 }, minWidth: 0 }}>
                 <OrganizationsWidget
                   title="Your Other Organizations"
                   showSearch={false}
@@ -966,13 +966,13 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {hasAccountContact ? (
-              <Box sx={{ order: { xs: 5 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 6 }, minWidth: 0 }}>
                 <AccountPollsCard accountId={accountIdStr} isAuthorizedForAccount />
               </Box>
             ) : null}
 
             {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 2 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 2 }, minWidth: 0, '&:empty': { display: 'none' } }}>
                 <TodayScoreboard
                   accountId={accountIdStr}
                   layout="vertical"
@@ -987,13 +987,13 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 3 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 3 }, minWidth: 0, '&:empty': { display: 'none' } }}>
                 <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
               </Box>
             ) : null}
 
             {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 4 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 4 }, minWidth: 0, '&:empty': { display: 'none' } }}>
                 <YesterdayScoreboard
                   accountId={accountIdStr}
                   layout="vertical"
@@ -1003,7 +1003,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {leaderLeagues.length > 0 && accountIdStr ? (
-              <Box sx={{ order: { xs: 14 }, minWidth: 0 }}>
+              <Box sx={{ order: { xs: 5 }, minWidth: 0 }}>
                 <LeadersWidget
                   accountId={accountIdStr}
                   seasonId={currentSeasonId}
