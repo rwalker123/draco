@@ -276,25 +276,9 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
   const handleToggleDriversLicense = async (member: WaiverMember) => {
     if (!currentSeasonId || !selectedTeamSeasonId) return;
     const rosterMemberId = member.rosterMember.id;
-    const previousValue = Boolean(member.rosterMember.player.submittedDriversLicense);
-    const nextValue = !previousValue;
+    const contactId = member.rosterMember.player.contact.id;
+    const nextValue = !member.rosterMember.player.submittedDriversLicense;
 
-    setLocalTeamWaiverData((prev) =>
-      prev.map((teamData) => ({
-        ...teamData,
-        members: teamData.members.map((m) =>
-          m.rosterMember.id === rosterMemberId
-            ? {
-                ...m,
-                rosterMember: {
-                  ...m.rosterMember,
-                  player: { ...m.rosterMember.player, submittedDriversLicense: nextValue },
-                },
-              }
-            : m,
-        ),
-      })),
-    );
     setUpdateError(null);
     setUpdatingDriversLicenseIds((prev) => new Set(prev).add(rosterMemberId));
 
@@ -311,26 +295,23 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
         throwOnError: false,
       });
       unwrapApiResult(result, 'Failed to update submitted drivers license status');
-    } catch (err: unknown) {
       setLocalTeamWaiverData((prev) =>
         prev.map((teamData) => ({
           ...teamData,
           members: teamData.members.map((m) =>
-            m.rosterMember.id === rosterMemberId
+            m.rosterMember.player.contact.id === contactId
               ? {
                   ...m,
                   rosterMember: {
                     ...m.rosterMember,
-                    player: {
-                      ...m.rosterMember.player,
-                      submittedDriversLicense: previousValue,
-                    },
+                    player: { ...m.rosterMember.player, submittedDriversLicense: nextValue },
                   },
                 }
               : m,
           ),
         })),
       );
+    } catch (err: unknown) {
       setUpdateError(
         err instanceof Error ? err.message : 'Failed to update submitted drivers license status',
       );
@@ -346,27 +327,10 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
   const handleToggleWaiver = async (member: WaiverMember) => {
     if (!currentSeasonId || !selectedTeamSeasonId) return;
     const rosterMemberId = member.rosterMember.id;
-    const previousValue = Boolean(member.rosterMember.submittedWaiver);
-    const nextValue = !previousValue;
+    const contactId = member.rosterMember.player.contact.id;
+    const teamSeasonId = selectedTeamSeasonId;
+    const nextValue = !member.rosterMember.submittedWaiver;
 
-    setLocalTeamWaiverData((prev) =>
-      prev.map((teamData) => ({
-        ...teamData,
-        members: teamData.members.map((m) =>
-          m.rosterMember.id === rosterMemberId
-            ? {
-                ...m,
-                rosterMember: { ...m.rosterMember, submittedWaiver: nextValue },
-                seasonTeams: m.seasonTeams.map((team) =>
-                  team.teamSeasonId === selectedTeamSeasonId
-                    ? { ...team, submittedWaiver: nextValue }
-                    : team,
-                ),
-              }
-            : m,
-        ),
-      })),
-    );
     setUpdateError(null);
     setUpdatingWaiverIds((prev) => new Set(prev).add(rosterMemberId));
 
@@ -376,32 +340,32 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
         path: {
           accountId,
           seasonId: currentSeasonId,
-          teamSeasonId: selectedTeamSeasonId,
+          teamSeasonId,
           rosterMemberId,
         },
         body: { submittedWaiver: nextValue },
         throwOnError: false,
       });
       unwrapApiResult(result, 'Failed to update waiver status');
-    } catch (err: unknown) {
       setLocalTeamWaiverData((prev) =>
         prev.map((teamData) => ({
           ...teamData,
-          members: teamData.members.map((m) =>
-            m.rosterMember.id === rosterMemberId
-              ? {
-                  ...m,
-                  rosterMember: { ...m.rosterMember, submittedWaiver: previousValue },
-                  seasonTeams: m.seasonTeams.map((team) =>
-                    team.teamSeasonId === selectedTeamSeasonId
-                      ? { ...team, submittedWaiver: previousValue }
-                      : team,
-                  ),
-                }
-              : m,
-          ),
+          members: teamData.members.map((m) => {
+            if (m.rosterMember.player.contact.id !== contactId) return m;
+            return {
+              ...m,
+              rosterMember:
+                m.rosterMember.id === rosterMemberId
+                  ? { ...m.rosterMember, submittedWaiver: nextValue }
+                  : m.rosterMember,
+              seasonTeams: m.seasonTeams.map((team) =>
+                team.teamSeasonId === teamSeasonId ? { ...team, submittedWaiver: nextValue } : team,
+              ),
+            };
+          }),
         })),
       );
+    } catch (err: unknown) {
       setUpdateError(err instanceof Error ? err.message : 'Failed to update waiver status');
     } finally {
       setUpdatingWaiverIds((prev) => {

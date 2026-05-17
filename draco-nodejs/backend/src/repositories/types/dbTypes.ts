@@ -2405,7 +2405,6 @@ export type dbHofClassSummary = {
 export type dbRosterExportData = Prisma.rosterseasonGetPayload<{
   select: {
     playerid: true;
-    submittedwaiver: true;
     roster: {
       select: {
         contacts: {
@@ -2423,6 +2422,7 @@ export type dbRosterExportData = Prisma.rosterseasonGetPayload<{
         rosterseason: {
           select: {
             inactive: true;
+            submittedwaiver: true;
             teamsseason: {
               select: {
                 name: true;

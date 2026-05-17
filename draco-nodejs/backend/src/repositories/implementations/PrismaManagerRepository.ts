@@ -8,6 +8,7 @@ import {
   dbSeasonManagerWithRelations,
   dbTeamManagerWithContact,
 } from '../types/dbTypes.js';
+import { NotFoundError } from '../../utils/customErrors.js';
 
 export class PrismaManagerRepository implements IManagerRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -193,21 +194,49 @@ export class PrismaManagerRepository implements IManagerRepository {
     },
   } as const;
 
-  async findLeagueManagersForExport(leagueSeasonId: bigint): Promise<dbManagerExportData[]> {
-    return this.prisma.teamseasonmanager.findMany({
+  async findLeagueManagersForExport(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<{ leagueName: string; managers: dbManagerExportData[] }> {
+    const leagueSeason = await this.prisma.leagueseason.findFirst({
+      where: {
+        id: leagueSeasonId,
+        seasonid: seasonId,
+        league: { accountid: accountId },
+      },
+      select: { league: { select: { name: true } } },
+    });
+
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found');
+    }
+
+    const managers = await this.prisma.teamseasonmanager.findMany({
       where: {
         teamsseason: { leagueseasonid: leagueSeasonId },
       },
       select: this.managerExportSelect,
       orderBy: [{ contacts: { lastname: 'asc' } }, { contacts: { firstname: 'asc' } }],
     });
+
+    return { leagueName: leagueSeason.league.name, managers };
   }
 
   async findSeasonManagersForExport(
-    seasonId: bigint,
     accountId: bigint,
-  ): Promise<dbManagerExportData[]> {
-    return this.prisma.teamseasonmanager.findMany({
+    seasonId: bigint,
+  ): Promise<{ seasonName: string; managers: dbManagerExportData[] }> {
+    const season = await this.prisma.season.findFirst({
+      where: { id: seasonId, accountid: accountId },
+      select: { name: true },
+    });
+
+    if (!season) {
+      throw new NotFoundError('Season not found');
+    }
+
+    const managers = await this.prisma.teamseasonmanager.findMany({
       where: {
         teamsseason: {
           leagueseason: {
@@ -219,5 +248,7 @@ export class PrismaManagerRepository implements IManagerRepository {
       select: this.managerExportSelect,
       orderBy: [{ contacts: { lastname: 'asc' } }, { contacts: { firstname: 'asc' } }],
     });
+
+    return { seasonName: season.name, managers };
   }
 }

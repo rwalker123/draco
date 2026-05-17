@@ -4,8 +4,6 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
-import prisma from '../lib/prisma.js';
-import { NotFoundError } from '../utils/customErrors.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
@@ -24,26 +22,7 @@ router.get(
       'teamSeasonId',
     );
 
-    const teamSeason = await prisma.teamsseason.findFirst({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-          league: { accountid: accountId },
-        },
-      },
-      select: { name: true },
-    });
-
-    if (!teamSeason) {
-      throw new NotFoundError('Team season not found');
-    }
-
-    const result = await csvExportService.exportTeamWaivers(
-      teamSeasonId,
-      seasonId,
-      teamSeason.name,
-    );
+    const result = await csvExportService.exportTeamWaivers(accountId, seasonId, teamSeasonId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
@@ -67,24 +46,7 @@ router.get(
       'leagueSeasonId',
     );
 
-    const leagueSeason = await prisma.leagueseason.findFirst({
-      where: {
-        id: leagueSeasonId,
-        seasonid: seasonId,
-        league: { accountid: accountId },
-      },
-      include: { league: true },
-    });
-
-    if (!leagueSeason) {
-      throw new NotFoundError('League season not found');
-    }
-
-    const result = await csvExportService.exportLeagueWaivers(
-      leagueSeasonId,
-      seasonId,
-      leagueSeason.league.name,
-    );
+    const result = await csvExportService.exportLeagueWaivers(accountId, seasonId, leagueSeasonId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
@@ -108,24 +70,7 @@ router.get(
       'leagueSeasonId',
     );
 
-    const leagueSeason = await prisma.leagueseason.findFirst({
-      where: {
-        id: leagueSeasonId,
-        seasonid: seasonId,
-        league: { accountid: accountId },
-      },
-      include: { league: true },
-    });
-
-    if (!leagueSeason) {
-      throw new NotFoundError('League season not found');
-    }
-
-    const result = await csvExportService.exportLeagueRoster(
-      leagueSeasonId,
-      seasonId,
-      leagueSeason.league.name,
-    );
+    const result = await csvExportService.exportLeagueRoster(accountId, seasonId, leagueSeasonId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
@@ -149,23 +94,7 @@ router.get(
       'leagueSeasonId',
     );
 
-    const leagueSeason = await prisma.leagueseason.findFirst({
-      where: {
-        id: leagueSeasonId,
-        seasonid: seasonId,
-        league: { accountid: accountId },
-      },
-      include: { league: true },
-    });
-
-    if (!leagueSeason) {
-      throw new NotFoundError('League season not found');
-    }
-
-    const result = await csvExportService.exportLeagueManagers(
-      leagueSeasonId,
-      leagueSeason.league.name,
-    );
+    const result = await csvExportService.exportLeagueManagers(accountId, seasonId, leagueSeasonId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
@@ -184,18 +113,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
 
-    const season = await prisma.season.findFirst({
-      where: {
-        id: seasonId,
-        accountid: accountId,
-      },
-    });
-
-    if (!season) {
-      throw new NotFoundError('Season not found');
-    }
-
-    const result = await csvExportService.exportSeasonRoster(seasonId, accountId, season.name);
+    const result = await csvExportService.exportSeasonRoster(accountId, seasonId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
@@ -214,18 +132,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
 
-    const season = await prisma.season.findFirst({
-      where: {
-        id: seasonId,
-        accountid: accountId,
-      },
-    });
-
-    if (!season) {
-      throw new NotFoundError('Season not found');
-    }
-
-    const result = await csvExportService.exportSeasonManagers(seasonId, accountId, season.name);
+    const result = await csvExportService.exportSeasonManagers(accountId, seasonId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(

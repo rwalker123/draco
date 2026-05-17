@@ -17,17 +17,6 @@ vi.mock('../../middleware/authMiddleware.js', () => ({
   },
 }));
 
-vi.mock('../../lib/prisma.js', () => ({
-  default: {
-    leagueseason: {
-      findFirst: vi.fn(),
-    },
-    season: {
-      findFirst: vi.fn(),
-    },
-  },
-}));
-
 const createRouteProtectionMock = () => {
   const passThrough = () => (_req: Request, _res: Response, next: NextFunction) => next();
 
@@ -96,8 +85,6 @@ const csvExportServiceMock = {
 let app: Express;
 let router: Router;
 
-let prismaMock: any;
-
 describe('Exports routes', () => {
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret'; // pragma: allowlist secret
@@ -108,9 +95,6 @@ describe('Exports routes', () => {
       createRouteProtectionMock() as never,
     );
     vi.spyOn(ServiceFactory, 'getCsvExportService').mockReturnValue(csvExportServiceMock as never);
-
-    const prismaModule = await import('../../lib/prisma.js');
-    prismaMock = prismaModule.default;
 
     const routerModule = await import('../exports.js');
     router = routerModule.default;
@@ -128,8 +112,6 @@ describe('Exports routes', () => {
         (fn as ReturnType<typeof vi.fn>).mockReset();
       }
     });
-    prismaMock.leagueseason.findFirst.mockReset();
-    prismaMock.season.findFirst.mockReset();
   });
 
   afterAll(() => {
@@ -256,10 +238,6 @@ describe('Exports routes', () => {
   describe('GET /leagues/:leagueSeasonId/roster/export', () => {
     it('exports league roster as CSV', async () => {
       const csvBuffer = Buffer.from('Full Name,Email\nJohn Doe,john@example.com');
-      prismaMock.leagueseason.findFirst.mockResolvedValue({
-        id: 50n,
-        league: { name: 'Spring League' },
-      });
       csvExportServiceMock.exportLeagueRoster.mockResolvedValue({
         buffer: csvBuffer,
         fileName: 'spring-league-roster.csv',
@@ -274,6 +252,7 @@ describe('Exports routes', () => {
       expect(res.headers['Content-Type']).toBe('text/csv');
       expect(res.headers['Content-Disposition']).toContain('spring-league-roster.csv');
       expect(res.body).toEqual(csvBuffer);
+      expect(csvExportServiceMock.exportLeagueRoster).toHaveBeenCalledWith(1n, 1n, 50n);
       expect(lastPermissionRequested).toBe('manage-users');
     });
   });
@@ -281,10 +260,6 @@ describe('Exports routes', () => {
   describe('GET /leagues/:leagueSeasonId/managers/export', () => {
     it('exports league managers as CSV', async () => {
       const csvBuffer = Buffer.from('Full Name,Email\nJane Smith,jane@example.com');
-      prismaMock.leagueseason.findFirst.mockResolvedValue({
-        id: 50n,
-        league: { name: 'Spring League' },
-      });
       csvExportServiceMock.exportLeagueManagers.mockResolvedValue({
         buffer: csvBuffer,
         fileName: 'spring-league-managers.csv',
@@ -299,6 +274,7 @@ describe('Exports routes', () => {
       expect(res.headers['Content-Type']).toBe('text/csv');
       expect(res.headers['Content-Disposition']).toContain('spring-league-managers.csv');
       expect(res.body).toEqual(csvBuffer);
+      expect(csvExportServiceMock.exportLeagueManagers).toHaveBeenCalledWith(1n, 1n, 50n);
       expect(lastPermissionRequested).toBe('manage-users');
     });
   });
@@ -306,10 +282,6 @@ describe('Exports routes', () => {
   describe('GET /roster/export', () => {
     it('exports season roster as CSV', async () => {
       const csvBuffer = Buffer.from('Full Name,Email\nJohn Doe,john@example.com');
-      prismaMock.season.findFirst.mockResolvedValue({
-        id: 1n,
-        name: 'Spring 2024',
-      });
       csvExportServiceMock.exportSeasonRoster.mockResolvedValue({
         buffer: csvBuffer,
         fileName: 'spring-2024-roster.csv',
@@ -324,6 +296,7 @@ describe('Exports routes', () => {
       expect(res.headers['Content-Type']).toBe('text/csv');
       expect(res.headers['Content-Disposition']).toContain('spring-2024-roster.csv');
       expect(res.body).toEqual(csvBuffer);
+      expect(csvExportServiceMock.exportSeasonRoster).toHaveBeenCalledWith(1n, 1n);
       expect(lastPermissionRequested).toBe('manage-users');
     });
   });
@@ -331,10 +304,6 @@ describe('Exports routes', () => {
   describe('GET /managers/export', () => {
     it('exports season managers as CSV', async () => {
       const csvBuffer = Buffer.from('Full Name,Email\nJane Smith,jane@example.com');
-      prismaMock.season.findFirst.mockResolvedValue({
-        id: 1n,
-        name: 'Spring 2024',
-      });
       csvExportServiceMock.exportSeasonManagers.mockResolvedValue({
         buffer: csvBuffer,
         fileName: 'spring-2024-managers.csv',
@@ -349,16 +318,13 @@ describe('Exports routes', () => {
       expect(res.headers['Content-Type']).toBe('text/csv');
       expect(res.headers['Content-Disposition']).toContain('spring-2024-managers.csv');
       expect(res.body).toEqual(csvBuffer);
+      expect(csvExportServiceMock.exportSeasonManagers).toHaveBeenCalledWith(1n, 1n);
       expect(lastPermissionRequested).toBe('manage-users');
     });
   });
 
   describe('authorization', () => {
     it('requires manage-users permission for league roster export', async () => {
-      prismaMock.leagueseason.findFirst.mockResolvedValue({
-        id: 50n,
-        league: { name: 'Spring League' },
-      });
       csvExportServiceMock.exportLeagueRoster.mockResolvedValue({
         buffer: Buffer.from(''),
         fileName: 'test.csv',
@@ -373,10 +339,6 @@ describe('Exports routes', () => {
     });
 
     it('requires manage-users permission for league managers export', async () => {
-      prismaMock.leagueseason.findFirst.mockResolvedValue({
-        id: 50n,
-        league: { name: 'Spring League' },
-      });
       csvExportServiceMock.exportLeagueManagers.mockResolvedValue({
         buffer: Buffer.from(''),
         fileName: 'test.csv',
@@ -391,10 +353,6 @@ describe('Exports routes', () => {
     });
 
     it('requires manage-users permission for season roster export', async () => {
-      prismaMock.season.findFirst.mockResolvedValue({
-        id: 1n,
-        name: 'Spring 2024',
-      });
       csvExportServiceMock.exportSeasonRoster.mockResolvedValue({
         buffer: Buffer.from(''),
         fileName: 'test.csv',
@@ -409,10 +367,6 @@ describe('Exports routes', () => {
     });
 
     it('requires manage-users permission for season managers export', async () => {
-      prismaMock.season.findFirst.mockResolvedValue({
-        id: 1n,
-        name: 'Spring 2024',
-      });
       csvExportServiceMock.exportSeasonManagers.mockResolvedValue({
         buffer: Buffer.from(''),
         fileName: 'test.csv',
