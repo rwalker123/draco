@@ -218,7 +218,7 @@ describe('csvGenerator', () => {
 
   describe('ROSTER_EXPORT_HEADERS', () => {
     it('should have correct header definitions', () => {
-      expect(ROSTER_EXPORT_HEADERS).toHaveLength(7);
+      expect(ROSTER_EXPORT_HEADERS).toHaveLength(8);
       expect(ROSTER_EXPORT_HEADERS.map((h) => h.header)).toEqual([
         'Full Name',
         'Email',
@@ -226,7 +226,8 @@ describe('csvGenerator', () => {
         'City',
         'State',
         'Zip',
-        'Affiliation Dues Paid',
+        'Submitted Waiver',
+        'Registered Teams',
       ]);
     });
 
@@ -239,14 +240,17 @@ describe('csvGenerator', () => {
           city: 'Test City',
           state: 'TS',
           zip: '12345',
-          affiliationDuesPaid: 'Yes',
+          submittedWaiver: 'Yes',
+          registeredTeams: 'Spring League / Tigers',
         },
       ];
       const result = await generateCsv(data, ROSTER_EXPORT_HEADERS);
       const csvString = result.toString();
       const lines = csvString.trim().split('\n');
 
-      expect(lines[0]).toBe('Full Name,Email,Street Address,City,State,Zip,Affiliation Dues Paid');
+      expect(lines[0]).toBe(
+        'Full Name,Email,Street Address,City,State,Zip,Submitted Waiver,Registered Teams',
+      );
     });
 
     it('should generate correct roster export row', async () => {
@@ -258,7 +262,8 @@ describe('csvGenerator', () => {
           city: 'Springfield',
           state: 'IL',
           zip: '62701',
-          affiliationDuesPaid: 'Yes',
+          submittedWaiver: 'Yes',
+          registeredTeams: 'Spring League / Panthers',
         },
       ];
 
@@ -266,7 +271,9 @@ describe('csvGenerator', () => {
       const csvString = result.toString();
       const lines = csvString.trim().split('\n');
 
-      expect(lines[1]).toBe('John Doe,john@example.com,123 Main St,Springfield,IL,62701,Yes');
+      expect(lines[1]).toBe(
+        'John Doe,john@example.com,123 Main St,Springfield,IL,62701,Yes,Spring League / Panthers',
+      );
     });
   });
 

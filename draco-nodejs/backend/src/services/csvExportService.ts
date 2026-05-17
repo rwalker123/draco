@@ -11,6 +11,7 @@ import {
   dbManagerExportData,
   dbContactExportData,
   dbWorkoutRegistration,
+  dbWaiverExportData,
 } from '../repositories/types/dbTypes.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import {
@@ -19,10 +20,12 @@ import {
   ManagerExportRow,
   ContactExportRow,
   WorkoutRegistrationExportRow,
+  WaiverExportRow,
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
   CONTACT_EXPORT_HEADERS,
   WORKOUT_REGISTRATION_EXPORT_HEADERS,
+  WAIVER_EXPORT_HEADERS,
 } from '../utils/csvGenerator.js';
 import { PayloadTooLargeError } from '../utils/customErrors.js';
 
@@ -81,6 +84,48 @@ export class CsvExportService {
     return {
       buffer,
       fileName: `${sanitizedName}-roster.csv`,
+    };
+  }
+
+  async exportTeamWaivers(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    teamName: string,
+  ): Promise<CsvExportResult> {
+    const startTime = Date.now();
+    const waiverData = await this.rosterRepository.findTeamWaiverRosterForExport(
+      teamSeasonId,
+      seasonId,
+    );
+    this.checkExportLimit(waiverData.length, 'team waivers', teamName);
+    const rows = this.mapWaiversToExportRows(waiverData);
+    const buffer = await generateCsv(rows, WAIVER_EXPORT_HEADERS);
+    const sanitizedName = this.sanitizeFileName(teamName);
+    this.logExportMetrics('team waivers', teamName, rows.length, buffer.length, startTime);
+    return {
+      buffer,
+      fileName: `${sanitizedName}-waivers.csv`,
+    };
+  }
+
+  async exportLeagueWaivers(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+    leagueName: string,
+  ): Promise<CsvExportResult> {
+    const startTime = Date.now();
+    const waiverData = await this.rosterRepository.findLeagueWaiverRosterForExport(
+      leagueSeasonId,
+      seasonId,
+    );
+    this.checkExportLimit(waiverData.length, 'league waivers', leagueName);
+    const rows = this.mapWaiversToExportRows(waiverData);
+    const buffer = await generateCsv(rows, WAIVER_EXPORT_HEADERS);
+    const sanitizedName = this.sanitizeFileName(leagueName);
+    this.logExportMetrics('league waivers', leagueName, rows.length, buffer.length, startTime);
+    return {
+      buffer,
+      fileName: `${sanitizedName}-waivers.csv`,
     };
   }
 
@@ -222,7 +267,14 @@ export class CsvExportService {
   private mapRosterToExportRows(data: dbRosterExportData[], seasonId: bigint): RosterExportRow[] {
     return data.map((item) => {
       const contact = item.roster.contacts;
-      const dues = item.roster.playerseasonaffiliationdues.find((d) => d.seasonid === seasonId);
+      const registeredTeams = [
+        ...new Set(
+          item.roster.rosterseason
+            .filter((rs) => !rs.inactive && rs.teamsseason.leagueseason.seasonid === seasonId)
+            .map((rs) => `${rs.teamsseason.leagueseason.league.name} / ${rs.teamsseason.name}`)
+            .sort(),
+        ),
+      ].join('; ');
       return {
         fullName: this.formatFullName(contact.firstname, contact.middlename, contact.lastname),
         email: contact.email ?? '',
@@ -230,9 +282,30 @@ export class CsvExportService {
         city: contact.city ?? '',
         state: contact.state ?? '',
         zip: contact.zip ?? '',
-        affiliationDuesPaid: dues?.affiliationduespaid ?? '',
+        submittedWaiver: item.submittedwaiver ? 'Yes' : 'No',
+        registeredTeams,
       };
     });
+  }
+
+  private mapWaiversToExportRows(data: dbWaiverExportData[]): WaiverExportRow[] {
+    return data
+      .filter((item) => {
+        const email = item.roster.contacts.email;
+        return email !== null && email.trim() !== '';
+      })
+      .map((item) => {
+        const contact = item.roster.contacts;
+        return {
+          fullName: this.formatFullName(contact.firstname, contact.middlename, contact.lastname),
+          email: contact.email ?? '',
+          streetAddress: contact.streetaddress ?? '',
+          city: contact.city ?? '',
+          state: contact.state ?? '',
+          zip: contact.zip ?? '',
+          team: item.teamsseason.name,
+        };
+      });
   }
 
   private mapManagersToExportRows(data: dbManagerExportData[]): ManagerExportRow[] {

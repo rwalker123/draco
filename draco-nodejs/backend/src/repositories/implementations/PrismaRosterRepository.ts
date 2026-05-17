@@ -6,6 +6,7 @@ import {
   dbRosterPlayer,
   dbRosterSeason,
   dbRosterSeasonContactReference,
+  dbWaiverExportData,
 } from '../types/dbTypes.js';
 import { NotFoundError } from '../../utils/customErrors.js';
 
@@ -238,6 +239,7 @@ export class PrismaRosterRepository implements IRosterRepository {
 
   private readonly exportSelect = {
     playerid: true,
+    submittedwaiver: true,
     roster: {
       select: {
         contacts: {
@@ -252,10 +254,24 @@ export class PrismaRosterRepository implements IRosterRepository {
             zip: true,
           },
         },
-        playerseasonaffiliationdues: {
+        rosterseason: {
           select: {
-            affiliationduespaid: true,
-            seasonid: true,
+            inactive: true,
+            teamsseason: {
+              select: {
+                name: true,
+                leagueseason: {
+                  select: {
+                    seasonid: true,
+                    league: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -343,6 +359,102 @@ export class PrismaRosterRepository implements IRosterRepository {
         { roster: { contacts: { firstname: 'asc' } } },
       ],
       distinct: ['playerid'],
+    });
+  }
+
+  private readonly waiverExportSelect = {
+    submittedwaiver: true,
+    teamsseason: {
+      select: {
+        name: true,
+      },
+    },
+    roster: {
+      select: {
+        contacts: {
+          select: {
+            firstname: true,
+            lastname: true,
+            middlename: true,
+            email: true,
+            streetaddress: true,
+            city: true,
+            state: true,
+            zip: true,
+          },
+        },
+      },
+    },
+  } as const;
+
+  async findTeamWaiverRosterForExport(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<dbWaiverExportData[]> {
+    const teamSeason = await this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: { seasonid: seasonId },
+      },
+      select: { id: true },
+    });
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found or does not belong to the specified season');
+    }
+
+    return this.prisma.rosterseason.findMany({
+      where: {
+        teamseasonid: teamSeasonId,
+        inactive: false,
+        submittedwaiver: true,
+        roster: {
+          contacts: {
+            email: { not: null },
+          },
+        },
+      },
+      select: this.waiverExportSelect,
+      orderBy: [
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
+    });
+  }
+
+  async findLeagueWaiverRosterForExport(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<dbWaiverExportData[]> {
+    const leagueSeason = await this.prisma.leagueseason.findFirst({
+      where: {
+        id: leagueSeasonId,
+        seasonid: seasonId,
+      },
+      select: { id: true },
+    });
+
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found or does not belong to the specified season');
+    }
+
+    return this.prisma.rosterseason.findMany({
+      where: {
+        teamsseason: { leagueseasonid: leagueSeasonId },
+        inactive: false,
+        submittedwaiver: true,
+        roster: {
+          contacts: {
+            email: { not: null },
+          },
+        },
+      },
+      select: this.waiverExportSelect,
+      orderBy: [
+        { teamsseason: { name: 'asc' } },
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
     });
   }
 }

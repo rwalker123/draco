@@ -11,6 +11,7 @@ import {
   dbRosterExportData,
   dbManagerExportData,
   dbContactExportData,
+  dbWaiverExportData,
   dbAspnetRole,
 } from '../../repositories/types/dbTypes.js';
 import { PayloadTooLargeError } from '../../utils/customErrors.js';
@@ -33,6 +34,8 @@ class RosterRepositoryStub implements IRosterRepository {
   findRosterMembersForExport = vi.fn<IRosterRepository['findRosterMembersForExport']>();
   findLeagueRosterForExport = vi.fn<IRosterRepository['findLeagueRosterForExport']>();
   findSeasonRosterForExport = vi.fn<IRosterRepository['findSeasonRosterForExport']>();
+  findTeamWaiverRosterForExport = vi.fn<IRosterRepository['findTeamWaiverRosterForExport']>();
+  findLeagueWaiverRosterForExport = vi.fn<IRosterRepository['findLeagueWaiverRosterForExport']>();
 }
 
 class ManagerRepositoryStub implements IManagerRepository {
@@ -108,8 +111,10 @@ const createMockRosterExportData = (
     city: string | null;
     state: string | null;
     zip: string | null;
-    affiliationduespaid: string;
+    submittedwaiver: boolean;
     seasonid: bigint;
+    leagueName: string;
+    teamName: string;
   }> = {},
 ): dbRosterExportData => {
   const contacts = {
@@ -123,19 +128,59 @@ const createMockRosterExportData = (
     zip: overrides.zip ?? '62701',
   };
 
+  const seasonId = overrides.seasonid ?? 1n;
+  const rosterseasonEntry = {
+    inactive: false,
+    teamsseason: {
+      name: overrides.teamName ?? 'Panthers',
+      leagueseason: {
+        seasonid: seasonId,
+        league: {
+          name: overrides.leagueName ?? 'Spring League',
+        },
+      },
+    },
+  };
+
   return {
     playerid: overrides.playerid ?? mockPlayerIdCounter++,
+    submittedwaiver: overrides.submittedwaiver ?? true,
     roster: {
       contacts: contacts as dbRosterExportData['roster']['contacts'],
-      playerseasonaffiliationdues:
-        overrides.affiliationduespaid !== undefined
-          ? [
-              {
-                affiliationduespaid: overrides.affiliationduespaid,
-                seasonid: overrides.seasonid ?? 1n,
-              },
-            ]
-          : [],
+      rosterseason: [rosterseasonEntry] as dbRosterExportData['roster']['rosterseason'],
+    },
+  };
+};
+
+const createMockWaiverExportData = (
+  overrides: Partial<{
+    firstname: string | null;
+    lastname: string | null;
+    middlename: string | null;
+    email: string | null;
+    streetaddress: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    teamName: string;
+  }> = {},
+): dbWaiverExportData => {
+  return {
+    submittedwaiver: true,
+    teamsseason: {
+      name: overrides.teamName ?? 'Panthers',
+    },
+    roster: {
+      contacts: {
+        firstname: 'firstname' in overrides ? overrides.firstname : 'John',
+        lastname: 'lastname' in overrides ? overrides.lastname : 'Doe',
+        middlename: 'middlename' in overrides ? overrides.middlename : null,
+        email: 'email' in overrides ? overrides.email : 'john@example.com',
+        streetaddress: 'streetaddress' in overrides ? overrides.streetaddress : '123 Main St',
+        city: 'city' in overrides ? overrides.city : 'Springfield',
+        state: 'state' in overrides ? overrides.state : 'IL',
+        zip: 'zip' in overrides ? overrides.zip : '62701',
+      } as dbWaiverExportData['roster']['contacts'],
     },
   };
 };
@@ -238,7 +283,7 @@ describe('CsvExportService', () => {
   describe('exportTeamRoster', () => {
     it('should export team roster with correct filename', async () => {
       rosterRepository.findRosterMembersForExport.mockResolvedValue([
-        createMockRosterExportData({ seasonid: 1n, affiliationduespaid: 'Yes' }),
+        createMockRosterExportData({ seasonid: 1n, submittedwaiver: true }),
       ]);
 
       const result = await service.exportTeamRoster(100n, 1n, 'Panthers');
@@ -266,7 +311,7 @@ describe('CsvExportService', () => {
           city: 'Springfield',
           state: 'IL',
           zip: '62701',
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
           seasonid: 1n,
         }),
       ]);
@@ -309,7 +354,7 @@ describe('CsvExportService', () => {
           middlename: 'Michael',
           lastname: 'Doe',
           seasonid: 1n,
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
         }),
       ]);
 
@@ -319,32 +364,48 @@ describe('CsvExportService', () => {
       expect(csvContent).toContain('John Michael Doe');
     });
 
-    it('should include affiliation dues status when present', async () => {
+    it('should show Yes for submitted waiver', async () => {
       rosterRepository.findRosterMembersForExport.mockResolvedValue([
-        createMockRosterExportData({ affiliationduespaid: 'Paid', seasonid: 1n }),
+        createMockRosterExportData({ submittedwaiver: true, seasonid: 1n }),
       ]);
 
       const result = await service.exportTeamRoster(100n, 1n, 'Panthers');
       const csvContent = result.buffer.toString();
 
-      expect(csvContent).toContain('Paid');
+      expect(csvContent).toContain('Yes');
     });
 
-    it('should handle missing dues information', async () => {
+    it('should show No for unsubmitted waiver', async () => {
       rosterRepository.findRosterMembersForExport.mockResolvedValue([
-        createMockRosterExportData(), // No dues info
+        createMockRosterExportData({ submittedwaiver: false, seasonid: 1n }),
       ]);
 
       const result = await service.exportTeamRoster(100n, 1n, 'Panthers');
+      const csvContent = result.buffer.toString();
 
-      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+      expect(csvContent).toContain('No');
+    });
+
+    it('should include registered teams in CSV', async () => {
+      rosterRepository.findRosterMembersForExport.mockResolvedValue([
+        createMockRosterExportData({
+          seasonid: 1n,
+          leagueName: 'Spring League',
+          teamName: 'Panthers',
+        }),
+      ]);
+
+      const result = await service.exportTeamRoster(100n, 1n, 'Panthers');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('Spring League / Panthers');
     });
   });
 
   describe('exportLeagueRoster', () => {
     it('should export league roster with correct filename', async () => {
       rosterRepository.findLeagueRosterForExport.mockResolvedValue([
-        createMockRosterExportData({ seasonid: 1n, affiliationduespaid: 'Yes' }),
+        createMockRosterExportData({ seasonid: 1n, submittedwaiver: true }),
       ]);
 
       const result = await service.exportLeagueRoster(50n, 1n, 'Spring League');
@@ -366,13 +427,174 @@ describe('CsvExportService', () => {
   describe('exportSeasonRoster', () => {
     it('should export season roster with correct filename', async () => {
       rosterRepository.findSeasonRosterForExport.mockResolvedValue([
-        createMockRosterExportData({ seasonid: 1n, affiliationduespaid: 'Yes' }),
+        createMockRosterExportData({ seasonid: 1n, submittedwaiver: true }),
       ]);
 
       const result = await service.exportSeasonRoster(1n, 10n, 'Spring 2024');
 
       expect(result.fileName).toBe('spring-2024-roster.csv');
       expect(rosterRepository.findSeasonRosterForExport).toHaveBeenCalledWith(1n, 10n);
+    });
+  });
+
+  describe('exportTeamWaivers', () => {
+    it('should export team waivers with correct filename', async () => {
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData(),
+      ]);
+
+      const result = await service.exportTeamWaivers(100n, 1n, 'Panthers');
+
+      expect(result.fileName).toBe('panthers-waivers.csv');
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+      expect(rosterRepository.findTeamWaiverRosterForExport).toHaveBeenCalledWith(100n, 1n);
+    });
+
+    it('should include waiver data in CSV', async () => {
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData({
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'john@example.com',
+          streetaddress: '123 Main St',
+          city: 'Springfield',
+          state: 'IL',
+          zip: '62701',
+          teamName: 'Panthers',
+        }),
+      ]);
+
+      const result = await service.exportTeamWaivers(100n, 1n, 'Panthers');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('John Doe');
+      expect(csvContent).toContain('john@example.com');
+      expect(csvContent).toContain('123 Main St');
+      expect(csvContent).toContain('Springfield');
+      expect(csvContent).toContain('IL');
+      expect(csvContent).toContain('62701');
+      expect(csvContent).toContain('Panthers');
+    });
+
+    it('should include Team column header', async () => {
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData(),
+      ]);
+
+      const result = await service.exportTeamWaivers(100n, 1n, 'Panthers');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('Team');
+    });
+
+    it('should filter out records with null email', async () => {
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData({ email: null }),
+        createMockWaiverExportData({
+          firstname: 'Jane',
+          lastname: 'Smith',
+          email: 'jane@example.com',
+        }),
+      ]);
+
+      const result = await service.exportTeamWaivers(100n, 1n, 'Panthers');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).not.toContain('John Doe');
+      expect(csvContent).toContain('Jane Smith');
+    });
+
+    it('should filter out records with empty email', async () => {
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData({ email: '' }),
+        createMockWaiverExportData({
+          firstname: 'Jane',
+          lastname: 'Smith',
+          email: 'jane@example.com',
+        }),
+      ]);
+
+      const result = await service.exportTeamWaivers(100n, 1n, 'Panthers');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).not.toContain('John Doe');
+      expect(csvContent).toContain('Jane Smith');
+    });
+
+    it('should handle empty waiver list', async () => {
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue([]);
+
+      const result = await service.exportTeamWaivers(100n, 1n, 'Empty Team');
+
+      expect(result.fileName).toBe('empty-team-waivers.csv');
+      expect(result.buffer.toString()).toBe('');
+    });
+
+    it('should throw PayloadTooLargeError when waivers exceed 10,000 rows', async () => {
+      const largeDataset = Array.from({ length: 10001 }, (_, i) =>
+        createMockWaiverExportData({ firstname: `User${i}`, email: `user${i}@example.com` }),
+      );
+      rosterRepository.findTeamWaiverRosterForExport.mockResolvedValue(largeDataset);
+
+      await expect(service.exportTeamWaivers(100n, 1n, 'Large Team')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
+    });
+  });
+
+  describe('exportLeagueWaivers', () => {
+    it('should export league waivers with correct filename', async () => {
+      rosterRepository.findLeagueWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData(),
+      ]);
+
+      const result = await service.exportLeagueWaivers(50n, 1n, 'Spring League');
+
+      expect(result.fileName).toBe('spring-league-waivers.csv');
+      expect(rosterRepository.findLeagueWaiverRosterForExport).toHaveBeenCalledWith(50n, 1n);
+    });
+
+    it('should include team name in exported data', async () => {
+      rosterRepository.findLeagueWaiverRosterForExport.mockResolvedValue([
+        createMockWaiverExportData({
+          teamName: 'Tigers',
+          firstname: 'Alice',
+          lastname: 'Jones',
+          email: 'alice@example.com',
+        }),
+        createMockWaiverExportData({
+          teamName: 'Panthers',
+          firstname: 'Bob',
+          lastname: 'Smith',
+          email: 'bob@example.com',
+        }),
+      ]);
+
+      const result = await service.exportLeagueWaivers(50n, 1n, 'Spring League');
+      const csvContent = result.buffer.toString();
+
+      expect(csvContent).toContain('Tigers');
+      expect(csvContent).toContain('Panthers');
+    });
+
+    it('should handle empty league waiver list', async () => {
+      rosterRepository.findLeagueWaiverRosterForExport.mockResolvedValue([]);
+
+      const result = await service.exportLeagueWaivers(50n, 1n, 'Empty League');
+
+      expect(result.fileName).toBe('empty-league-waivers.csv');
+      expect(result.buffer.toString()).toBe('');
+    });
+
+    it('should throw PayloadTooLargeError when league waivers exceed 10,000 rows', async () => {
+      const largeDataset = Array.from({ length: 10001 }, (_, i) =>
+        createMockWaiverExportData({ firstname: `User${i}`, email: `user${i}@example.com` }),
+      );
+      rosterRepository.findLeagueWaiverRosterForExport.mockResolvedValue(largeDataset);
+
+      await expect(service.exportLeagueWaivers(50n, 1n, 'Large League')).rejects.toThrow(
+        PayloadTooLargeError,
+      );
     });
   });
 
@@ -506,7 +728,7 @@ describe('CsvExportService', () => {
           middlename: null,
           lastname: 'Doe',
           seasonid: 1n,
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
         }),
       ]);
 
@@ -523,7 +745,7 @@ describe('CsvExportService', () => {
           middlename: null,
           lastname: null,
           seasonid: 1n,
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
         }),
       ]);
 
@@ -540,7 +762,7 @@ describe('CsvExportService', () => {
           middlename: null,
           lastname: 'Doe',
           seasonid: 1n,
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
         }),
       ]);
 
@@ -557,7 +779,7 @@ describe('CsvExportService', () => {
           middlename: 'Michael',
           lastname: 'Doe',
           seasonid: 1n,
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
         }),
       ]);
 
@@ -575,7 +797,7 @@ describe('CsvExportService', () => {
           firstname: `User${i}`,
           lastname: 'Test',
           seasonid: 1n,
-          affiliationduespaid: 'Yes',
+          submittedwaiver: true,
         }),
       );
     };

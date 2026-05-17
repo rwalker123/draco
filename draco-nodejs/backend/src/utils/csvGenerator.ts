@@ -53,7 +53,8 @@ export interface RosterExportRow {
   city: string;
   state: string;
   zip: string;
-  affiliationDuesPaid: string;
+  submittedWaiver: string;
+  registeredTeams: string;
 }
 
 export const ROSTER_EXPORT_HEADERS: CsvHeader<RosterExportRow>[] = [
@@ -63,7 +64,28 @@ export const ROSTER_EXPORT_HEADERS: CsvHeader<RosterExportRow>[] = [
   { key: 'city', header: 'City' },
   { key: 'state', header: 'State' },
   { key: 'zip', header: 'Zip' },
-  { key: 'affiliationDuesPaid', header: 'Affiliation Dues Paid' },
+  { key: 'submittedWaiver', header: 'Submitted Waiver' },
+  { key: 'registeredTeams', header: 'Registered Teams' },
+];
+
+export interface WaiverExportRow {
+  fullName: string;
+  email: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zip: string;
+  team: string;
+}
+
+export const WAIVER_EXPORT_HEADERS: CsvHeader<WaiverExportRow>[] = [
+  { key: 'fullName', header: 'Full Name' },
+  { key: 'email', header: 'Email' },
+  { key: 'streetAddress', header: 'Street Address' },
+  { key: 'city', header: 'City' },
+  { key: 'state', header: 'State' },
+  { key: 'zip', header: 'Zip' },
+  { key: 'team', header: 'Team' },
 ];
 
 export interface ManagerExportRow {

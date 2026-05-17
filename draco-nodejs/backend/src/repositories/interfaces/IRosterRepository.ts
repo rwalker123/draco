@@ -4,6 +4,7 @@ import {
   dbRosterPlayer,
   dbRosterSeason,
   dbRosterSeasonContactReference,
+  dbWaiverExportData,
 } from '../types/dbTypes.js';
 
 export interface IRosterRepository {
@@ -63,4 +64,12 @@ export interface IRosterRepository {
     seasonId: bigint,
   ): Promise<dbRosterExportData[]>;
   findSeasonRosterForExport(seasonId: bigint, accountId: bigint): Promise<dbRosterExportData[]>;
+  findTeamWaiverRosterForExport(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<dbWaiverExportData[]>;
+  findLeagueWaiverRosterForExport(
+    leagueSeasonId: bigint,
+    seasonId: bigint,
+  ): Promise<dbWaiverExportData[]>;
 }

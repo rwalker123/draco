@@ -12,6 +12,90 @@ const routeProtection = ServiceFactory.getRouteProtection();
 const csvExportService = ServiceFactory.getCsvExportService();
 
 router.get(
+  '/teams/:teamSeasonId/roster/waivers/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('manage-users'),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+    );
+
+    const teamSeason = await prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: { accountid: accountId },
+        },
+      },
+      select: { name: true },
+    });
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const result = await csvExportService.exportTeamWaivers(
+      teamSeasonId,
+      seasonId,
+      teamSeason.name,
+    );
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
+  }),
+);
+
+router.get(
+  '/leagues/:leagueSeasonId/roster/waivers/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('manage-users'),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'leagueSeasonId',
+    );
+
+    const leagueSeason = await prisma.leagueseason.findFirst({
+      where: {
+        id: leagueSeasonId,
+        seasonid: seasonId,
+        league: { accountid: accountId },
+      },
+      include: { league: true },
+    });
+
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found');
+    }
+
+    const result = await csvExportService.exportLeagueWaivers(
+      leagueSeasonId,
+      seasonId,
+      leagueSeason.league.name,
+    );
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
+  }),
+);
+
+router.get(
   '/leagues/:leagueSeasonId/roster/export',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
