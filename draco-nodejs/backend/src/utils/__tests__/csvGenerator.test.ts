@@ -158,6 +158,43 @@ describe('csvGenerator', () => {
       expect(csvString).toContain('Jane,false');
     });
 
+    it('should neutralize CSV formula injection in cell values', async () => {
+      interface TestRow {
+        team: string;
+        name: string;
+      }
+      const headers: CsvHeader<TestRow>[] = [
+        { key: 'team', header: 'Team' },
+        { key: 'name', header: 'Name' },
+      ];
+      const data: TestRow[] = [
+        { team: '=HYPERLINK(1)', name: '+1-555-0100' },
+        { team: '-2+3', name: '@SUM(A1)' },
+      ];
+
+      const result = await generateCsv(data, headers);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      // Leading =, +, -, @ are prefixed with a single quote so spreadsheets treat them as text
+      expect(lines[1]).toBe(`'=HYPERLINK(1),'+1-555-0100`);
+      expect(lines[2]).toBe(`'-2+3,'@SUM(A1)`);
+    });
+
+    it('should not modify values that do not start with a formula character', async () => {
+      interface TestRow {
+        name: string;
+      }
+      const headers: CsvHeader<TestRow>[] = [{ key: 'name', header: 'Name' }];
+      const data: TestRow[] = [{ name: 'John = Doe' }];
+
+      const result = await generateCsv(data, headers);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[1]).toBe('John = Doe');
+    });
+
     it('should return a Buffer', async () => {
       interface TestRow {
         name: string;

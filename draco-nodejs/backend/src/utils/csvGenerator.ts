@@ -5,6 +5,15 @@ export interface CsvHeader<T> {
   header: string;
 }
 
+const CSV_INJECTION_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+
+function neutralizeCsvValue(value: string): string {
+  if (value.length > 0 && CSV_INJECTION_PREFIXES.includes(value[0])) {
+    return `'${value}`;
+  }
+  return value;
+}
+
 export async function generateCsv<T extends object>(
   data: T[],
   headers: CsvHeader<T>[],
@@ -37,7 +46,7 @@ export async function generateCsv<T extends object>(
         if (value === null || value === undefined) {
           return '';
         }
-        return String(value);
+        return neutralizeCsvValue(String(value));
       });
       csvStream.write(rowData);
     }
