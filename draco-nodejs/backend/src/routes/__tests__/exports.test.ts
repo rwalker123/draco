@@ -80,6 +80,8 @@ const csvExportServiceMock = {
   exportSeasonRoster: vi.fn(),
   exportLeagueManagers: vi.fn(),
   exportSeasonManagers: vi.fn(),
+  exportTeamWaivers: vi.fn(),
+  exportLeagueWaivers: vi.fn(),
 };
 
 let app: Express;
@@ -257,6 +259,50 @@ describe('Exports routes', () => {
     });
   });
 
+  describe('GET /teams/:teamSeasonId/roster/waivers/export', () => {
+    it('exports team waivers as CSV', async () => {
+      const csvBuffer = Buffer.from('Full Name,Email,Team\nJohn Doe,john@example.com,Tigers');
+      csvExportServiceMock.exportTeamWaivers.mockResolvedValue({
+        buffer: csvBuffer,
+        fileName: 'tigers-waivers.csv',
+      });
+
+      const { res } = await runRoute('get', '/teams/:teamSeasonId/roster/waivers/export', {
+        params: { accountId: '1', seasonId: '1', teamSeasonId: '75' },
+        headers: { authorization: 'Bearer token' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['Content-Type']).toBe('text/csv');
+      expect(res.headers['Content-Disposition']).toContain('tigers-waivers.csv');
+      expect(res.body).toEqual(csvBuffer);
+      expect(csvExportServiceMock.exportTeamWaivers).toHaveBeenCalledWith(1n, 1n, 75n);
+      expect(lastPermissionRequested).toBe('manage-users');
+    });
+  });
+
+  describe('GET /leagues/:leagueSeasonId/roster/waivers/export', () => {
+    it('exports league waivers as CSV', async () => {
+      const csvBuffer = Buffer.from('Full Name,Email,Team\nJane Smith,jane@example.com,Panthers');
+      csvExportServiceMock.exportLeagueWaivers.mockResolvedValue({
+        buffer: csvBuffer,
+        fileName: 'spring-league-waivers.csv',
+      });
+
+      const { res } = await runRoute('get', '/leagues/:leagueSeasonId/roster/waivers/export', {
+        params: { accountId: '1', seasonId: '1', leagueSeasonId: '50' },
+        headers: { authorization: 'Bearer token' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['Content-Type']).toBe('text/csv');
+      expect(res.headers['Content-Disposition']).toContain('spring-league-waivers.csv');
+      expect(res.body).toEqual(csvBuffer);
+      expect(csvExportServiceMock.exportLeagueWaivers).toHaveBeenCalledWith(1n, 1n, 50n);
+      expect(lastPermissionRequested).toBe('manage-users');
+    });
+  });
+
   describe('GET /leagues/:leagueSeasonId/managers/export', () => {
     it('exports league managers as CSV', async () => {
       const csvBuffer = Buffer.from('Full Name,Email\nJane Smith,jane@example.com');
@@ -324,6 +370,34 @@ describe('Exports routes', () => {
   });
 
   describe('authorization', () => {
+    it('requires manage-users permission for team waivers export', async () => {
+      csvExportServiceMock.exportTeamWaivers.mockResolvedValue({
+        buffer: Buffer.from(''),
+        fileName: 'test.csv',
+      });
+
+      await runRoute('get', '/teams/:teamSeasonId/roster/waivers/export', {
+        params: { accountId: '1', seasonId: '1', teamSeasonId: '75' },
+        headers: { authorization: 'Bearer token' },
+      });
+
+      expect(lastPermissionRequested).toBe('manage-users');
+    });
+
+    it('requires manage-users permission for league waivers export', async () => {
+      csvExportServiceMock.exportLeagueWaivers.mockResolvedValue({
+        buffer: Buffer.from(''),
+        fileName: 'test.csv',
+      });
+
+      await runRoute('get', '/leagues/:leagueSeasonId/roster/waivers/export', {
+        params: { accountId: '1', seasonId: '1', leagueSeasonId: '50' },
+        headers: { authorization: 'Bearer token' },
+      });
+
+      expect(lastPermissionRequested).toBe('manage-users');
+    });
+
     it('requires manage-users permission for league roster export', async () => {
       csvExportServiceMock.exportLeagueRoster.mockResolvedValue({
         buffer: Buffer.from(''),

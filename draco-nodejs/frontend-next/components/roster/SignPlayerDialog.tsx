@@ -80,6 +80,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [seasonTeamWaivers, setSeasonTeamWaivers] = useState<RosterMemberSeasonTeamWaiver[]>([]);
+  const [seasonTeamWaiversLoaded, setSeasonTeamWaiversLoaded] = useState(false);
 
   // Use custom hooks for debouncing and delayed loading
   const debouncedSearchInput = useDebouncedValue(searchInput, 400);
@@ -274,6 +275,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     setSignMultiplePlayers(false);
     setError(null);
     setSeasonTeamWaivers([]);
+    setSeasonTeamWaiversLoaded(false);
     reset(getDefaultFormValues());
 
     if (abortControllerRef.current) {
@@ -288,6 +290,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     }
 
     const controller = new AbortController();
+    setSeasonTeamWaiversLoaded(false);
 
     const loadWaiverSummaries = async () => {
       try {
@@ -308,6 +311,10 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       } catch {
         if (controller.signal.aborted) return;
         setSeasonTeamWaivers([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setSeasonTeamWaiversLoaded(true);
+        }
       }
     };
 
@@ -483,6 +490,11 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     Boolean(enableWaiverTracking) &&
     otherTeamsWithWaiver.length > 0 &&
     !currentTeamHasWaiver;
+  const waiverSummaryPending =
+    mode === 'edit' &&
+    Boolean(enableWaiverTracking) &&
+    Boolean(rosterMemberId) &&
+    !seasonTeamWaiversLoaded;
 
   return (
     <Dialog open={open} onClose={isSubmitting ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -631,6 +643,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                           onChange={(event) => field.onChange(event.target.checked)}
                           disabled={
                             waiverLockedToOtherTeam ||
+                            waiverSummaryPending ||
                             (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
                             isSubmitting
                           }

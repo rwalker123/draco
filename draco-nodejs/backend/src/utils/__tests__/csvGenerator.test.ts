@@ -4,8 +4,10 @@ import {
   CsvHeader,
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
+  WAIVER_EXPORT_HEADERS,
   RosterExportRow,
   ManagerExportRow,
+  WaiverExportRow,
 } from '../csvGenerator.js';
 
 describe('csvGenerator', () => {
@@ -273,6 +275,62 @@ describe('csvGenerator', () => {
 
       expect(lines[1]).toBe(
         'John Doe,john@example.com,123 Main St,Springfield,IL,62701,Yes,Spring League / Panthers',
+      );
+    });
+  });
+
+  describe('WAIVER_EXPORT_HEADERS', () => {
+    it('should have correct header definitions', () => {
+      expect(WAIVER_EXPORT_HEADERS).toHaveLength(7);
+      expect(WAIVER_EXPORT_HEADERS.map((h) => h.header)).toEqual([
+        'Full Name',
+        'Email',
+        'Street Address',
+        'City',
+        'State',
+        'Zip',
+        'Team',
+      ]);
+    });
+
+    it('should include headers in output when there is data', async () => {
+      const data: WaiverExportRow[] = [
+        {
+          fullName: 'Test User',
+          email: 'test@example.com',
+          streetAddress: '123 Test St',
+          city: 'Test City',
+          state: 'TS',
+          zip: '12345',
+          team: 'Spring League / Tigers',
+        },
+      ];
+      const result = await generateCsv(data, WAIVER_EXPORT_HEADERS);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[0]).toBe('Full Name,Email,Street Address,City,State,Zip,Team');
+    });
+
+    it('should generate correct waiver export row', async () => {
+      const data: WaiverExportRow[] = [
+        {
+          fullName: 'John Doe',
+          email: 'john@example.com',
+          streetAddress: '123 Main St',
+          city: 'Springfield',
+          state: 'IL',
+          zip: '62701',
+          team: 'Spring League / Panthers',
+        },
+      ];
+
+      const result = await generateCsv(data, WAIVER_EXPORT_HEADERS);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[1]).toBe(
+        'John Doe,john@example.com,123 Main St,Springfield,IL,62701,Spring League / Panthers',
       );
     });
   });

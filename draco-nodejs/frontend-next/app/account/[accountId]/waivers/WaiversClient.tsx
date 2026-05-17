@@ -60,8 +60,8 @@ type TeamWaiverDataItem = { teamSeasonId: string; members: WaiverMember[] };
 
 function computeLeagueSummary(data: TeamWaiverDataItem[], leagueSeasonId: string) {
   const seenContactIds = new Set<string>();
-  let inLeague = 0;
-  let anotherLeague = 0;
+  let withWaiver = 0;
+  let otherWaiver = 0;
   let noWaiver = 0;
 
   for (const team of data) {
@@ -76,57 +76,59 @@ function computeLeagueSummary(data: TeamWaiverDataItem[], leagueSeasonId: string
       const hasWaiverAnywhere = member.seasonTeams.some((t) => t.submittedWaiver);
 
       if (hasWaiverInLeague) {
-        inLeague++;
+        withWaiver++;
       } else if (hasWaiverAnywhere) {
-        anotherLeague++;
+        otherWaiver++;
       } else {
         noWaiver++;
       }
     }
   }
 
-  return { inLeague, anotherLeague, noWaiver, total: seenContactIds.size };
+  return { withWaiver, otherWaiver, noWaiver, total: seenContactIds.size };
 }
 
-function computeTeamSummary(members: WaiverMember[], leagueSeasonId: string) {
-  let inLeague = 0;
-  let anotherLeague = 0;
+function computeTeamSummary(members: WaiverMember[], teamSeasonId: string) {
+  let withWaiver = 0;
+  let otherWaiver = 0;
   let noWaiver = 0;
 
   for (const member of members) {
-    const hasWaiverInLeague = member.seasonTeams.some(
-      (t) => t.leagueSeasonId === leagueSeasonId && t.submittedWaiver,
+    const hasWaiverOnTeam = member.seasonTeams.some(
+      (t) => t.teamSeasonId === teamSeasonId && t.submittedWaiver,
     );
     const hasWaiverAnywhere = member.seasonTeams.some((t) => t.submittedWaiver);
 
-    if (hasWaiverInLeague) {
-      inLeague++;
+    if (hasWaiverOnTeam) {
+      withWaiver++;
     } else if (hasWaiverAnywhere) {
-      anotherLeague++;
+      otherWaiver++;
     } else {
       noWaiver++;
     }
   }
 
-  return { inLeague, anotherLeague, noWaiver, total: members.length };
+  return { withWaiver, otherWaiver, noWaiver, total: members.length };
 }
 
 interface SummaryCardsProps {
-  inLeague: number;
-  anotherLeague: number;
+  withWaiver: number;
+  otherWaiver: number;
   noWaiver: number;
   total: number;
   label: string;
   firstStatLabel: string;
+  secondStatLabel: string;
 }
 
 function SummaryCards({
-  inLeague,
-  anotherLeague,
+  withWaiver,
+  otherWaiver,
   noWaiver,
   total,
   label,
   firstStatLabel,
+  secondStatLabel,
 }: SummaryCardsProps) {
   return (
     <Box>
@@ -137,7 +139,7 @@ function SummaryCards({
         <Card variant="outlined" sx={{ flex: 1 }}>
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Typography variant="h5" color="success.main" align="center">
-              {inLeague}
+              {withWaiver}
             </Typography>
             <Typography variant="caption" color="text.secondary" align="center" display="block">
               {firstStatLabel}
@@ -147,10 +149,10 @@ function SummaryCards({
         <Card variant="outlined" sx={{ flex: 1 }}>
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Typography variant="h5" color="warning.main" align="center">
-              {anotherLeague}
+              {otherWaiver}
             </Typography>
             <Typography variant="caption" color="text.secondary" align="center" display="block">
-              Waiver for Another League
+              {secondStatLabel}
             </Typography>
           </CardContent>
         </Card>
@@ -270,7 +272,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
 
   const teamSummary =
     selectedTeamSeasonId && selectedLeagueSeasonId
-      ? computeTeamSummary(displayMembers, selectedLeagueSeasonId)
+      ? computeTeamSummary(displayMembers, selectedTeamSeasonId)
       : null;
 
   const handleToggleDriversLicense = async (member: WaiverMember) => {
@@ -650,23 +652,25 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
                   <>
                     {leagueSummary && (
                       <SummaryCards
-                        inLeague={leagueSummary.inLeague}
-                        anotherLeague={leagueSummary.anotherLeague}
+                        withWaiver={leagueSummary.withWaiver}
+                        otherWaiver={leagueSummary.otherWaiver}
                         noWaiver={leagueSummary.noWaiver}
                         total={leagueSummary.total}
                         label="League Waiver Summary"
                         firstStatLabel="Waiver in This League"
+                        secondStatLabel="Waiver for Another League"
                       />
                     )}
 
                     {teamSummary && selectedTeamSeasonId && (
                       <SummaryCards
-                        inLeague={teamSummary.inLeague}
-                        anotherLeague={teamSummary.anotherLeague}
+                        withWaiver={teamSummary.withWaiver}
+                        otherWaiver={teamSummary.otherWaiver}
                         noWaiver={teamSummary.noWaiver}
                         total={teamSummary.total}
                         label="Team Waiver Summary"
                         firstStatLabel="Waiver in This Team"
+                        secondStatLabel="Waiver for Another Team"
                       />
                     )}
 
