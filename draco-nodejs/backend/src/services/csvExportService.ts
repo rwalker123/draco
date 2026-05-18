@@ -56,7 +56,7 @@ export class CsvExportService {
       seasonId,
     );
     this.checkExportLimit(rosterData.length, 'team roster', teamName);
-    const rows = this.mapRosterToExportRows(rosterData, seasonId);
+    const rows = this.mapRosterToExportRows(rosterData);
     const buffer = await generateCsv(rows, ROSTER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(teamName);
     this.logExportMetrics('team roster', teamName, rows.length, buffer.length, startTime);
@@ -78,7 +78,7 @@ export class CsvExportService {
       leagueSeasonId,
     );
     this.checkExportLimit(members.length, 'league roster', leagueName);
-    const rows = this.mapRosterToExportRows(members, seasonId);
+    const rows = this.mapRosterToExportRows(members);
     const buffer = await generateCsv(rows, ROSTER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(leagueName);
     this.logExportMetrics('league roster', leagueName, rows.length, buffer.length, startTime);
@@ -139,7 +139,7 @@ export class CsvExportService {
       seasonId,
     );
     this.checkExportLimit(members.length, 'season roster', seasonName);
-    const rows = this.mapRosterToExportRows(members, seasonId);
+    const rows = this.mapRosterToExportRows(members);
     const buffer = await generateCsv(rows, ROSTER_EXPORT_HEADERS);
     const sanitizedName = this.sanitizeFileName(seasonName);
     this.logExportMetrics('season roster', seasonName, rows.length, buffer.length, startTime);
@@ -270,16 +270,14 @@ export class CsvExportService {
     }));
   }
 
-  private mapRosterToExportRows(data: dbRosterExportData[], seasonId: bigint): RosterExportRow[] {
+  private mapRosterToExportRows(data: dbRosterExportData[]): RosterExportRow[] {
     return data.map((item) => {
       const contact = item.roster.contacts;
-      const seasonRosterSeasons = item.roster.rosterseason.filter(
-        (rs) => !rs.inactive && rs.teamsseason.leagueseason.seasonid === seasonId,
-      );
-      const submittedWaiver = seasonRosterSeasons.some((rs) => rs.submittedwaiver);
+      const rosterSeasons = item.roster.rosterseason;
+      const submittedWaiver = rosterSeasons.some((rs) => rs.submittedwaiver);
       const registeredTeams = [
         ...new Set(
-          seasonRosterSeasons
+          rosterSeasons
             .map((rs) => `${rs.teamsseason.leagueseason.league.name} / ${rs.teamsseason.name}`)
             .sort(),
         ),

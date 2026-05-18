@@ -176,7 +176,6 @@ describe('csvGenerator', () => {
       const csvString = result.toString();
       const lines = csvString.trim().split('\n');
 
-      // Leading =, +, -, @ are prefixed with a single quote so spreadsheets treat them as text
       expect(lines[1]).toBe(`'=HYPERLINK(1),'+1-555-0100`);
       expect(lines[2]).toBe(`'-2+3,'@SUM(A1)`);
     });

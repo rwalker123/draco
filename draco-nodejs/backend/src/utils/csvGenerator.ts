@@ -5,7 +5,7 @@ export interface CsvHeader<T> {
   header: string;
 }
 
-const CSV_INJECTION_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+const CSV_INJECTION_PREFIXES = ['=', '+', '-', '@', '\t', '\r', '\n'];
 
 function neutralizeCsvValue(value: string): string {
   if (value.length > 0 && CSV_INJECTION_PREFIXES.includes(value[0])) {

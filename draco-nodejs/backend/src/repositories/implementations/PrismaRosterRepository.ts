@@ -237,35 +237,41 @@ export class PrismaRosterRepository implements IRosterRepository {
     }));
   }
 
-  private readonly exportSelect = {
-    playerid: true,
-    roster: {
-      select: {
-        contacts: {
-          select: {
-            firstname: true,
-            lastname: true,
-            middlename: true,
-            email: true,
-            streetaddress: true,
-            city: true,
-            state: true,
-            zip: true,
+  private buildExportSelect(seasonId: bigint) {
+    return {
+      playerid: true,
+      roster: {
+        select: {
+          contacts: {
+            select: {
+              firstname: true,
+              lastname: true,
+              middlename: true,
+              email: true,
+              streetaddress: true,
+              city: true,
+              state: true,
+              zip: true,
+            },
           },
-        },
-        rosterseason: {
-          select: {
-            inactive: true,
-            submittedwaiver: true,
-            teamsseason: {
-              select: {
-                name: true,
-                leagueseason: {
-                  select: {
-                    seasonid: true,
-                    league: {
-                      select: {
-                        name: true,
+          rosterseason: {
+            where: {
+              inactive: false,
+              teamsseason: { leagueseason: { seasonid: seasonId } },
+            },
+            select: {
+              inactive: true,
+              submittedwaiver: true,
+              teamsseason: {
+                select: {
+                  name: true,
+                  leagueseason: {
+                    select: {
+                      seasonid: true,
+                      league: {
+                        select: {
+                          name: true,
+                        },
                       },
                     },
                   },
@@ -275,8 +281,8 @@ export class PrismaRosterRepository implements IRosterRepository {
           },
         },
       },
-    },
-  } as const;
+    } as const;
+  }
 
   async findRosterMembersForExport(
     teamSeasonId: bigint,
@@ -299,7 +305,7 @@ export class PrismaRosterRepository implements IRosterRepository {
         teamseasonid: teamSeasonId,
         inactive: false,
       },
-      select: this.exportSelect,
+      select: this.buildExportSelect(seasonId),
       orderBy: [
         { roster: { contacts: { lastname: 'asc' } } },
         { roster: { contacts: { firstname: 'asc' } } },
@@ -332,7 +338,7 @@ export class PrismaRosterRepository implements IRosterRepository {
         },
         inactive: false,
       },
-      select: this.exportSelect,
+      select: this.buildExportSelect(seasonId),
       orderBy: [
         { roster: { contacts: { lastname: 'asc' } } },
         { roster: { contacts: { firstname: 'asc' } } },
@@ -366,7 +372,7 @@ export class PrismaRosterRepository implements IRosterRepository {
         },
         inactive: false,
       },
-      select: this.exportSelect,
+      select: this.buildExportSelect(seasonId),
       orderBy: [
         { roster: { contacts: { lastname: 'asc' } } },
         { roster: { contacts: { firstname: 'asc' } } },
