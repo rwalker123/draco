@@ -58,6 +58,62 @@ router.get(
 );
 
 router.get(
+  '/teams/:teamSeasonId/roster/waivers/missing/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('manage-users'),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+    );
+
+    const result = await csvExportService.exportTeamMissingWaivers(
+      accountId,
+      seasonId,
+      teamSeasonId,
+    );
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
+  }),
+);
+
+router.get(
+  '/leagues/:leagueSeasonId/roster/waivers/missing/export',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('manage-users'),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, leagueSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'leagueSeasonId',
+    );
+
+    const result = await csvExportService.exportLeagueMissingWaivers(
+      accountId,
+      seasonId,
+      leagueSeasonId,
+    );
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      contentDisposition(result.fileName, { type: 'attachment' }),
+    );
+    res.send(result.buffer);
+  }),
+);
+
+router.get(
   '/leagues/:leagueSeasonId/roster/export',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),

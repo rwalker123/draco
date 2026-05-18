@@ -488,4 +488,91 @@ export class PrismaRosterRepository implements IRosterRepository {
 
     return { leagueName: leagueSeason.league.name, members };
   }
+
+  async findTeamMissingWaiverRosterForExport(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<{ teamName: string; members: dbWaiverExportData[] }> {
+    const teamSeason = await this.prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: { accountid: accountId },
+        },
+      },
+      select: { name: true },
+    });
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const members = await this.prisma.rosterseason.findMany({
+      where: {
+        teamseasonid: teamSeasonId,
+        inactive: false,
+        roster: {
+          rosterseason: {
+            none: {
+              submittedwaiver: true,
+              inactive: false,
+              teamsseason: { leagueseason: { seasonid: seasonId } },
+            },
+          },
+        },
+      },
+      select: this.waiverExportSelect,
+      orderBy: [
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
+    });
+
+    return { teamName: teamSeason.name, members };
+  }
+
+  async findLeagueMissingWaiverRosterForExport(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<{ leagueName: string; members: dbWaiverExportData[] }> {
+    const leagueSeason = await this.prisma.leagueseason.findFirst({
+      where: {
+        id: leagueSeasonId,
+        seasonid: seasonId,
+        league: { accountid: accountId },
+      },
+      select: { league: { select: { name: true } } },
+    });
+
+    if (!leagueSeason) {
+      throw new NotFoundError('League season not found');
+    }
+
+    const members = await this.prisma.rosterseason.findMany({
+      where: {
+        teamsseason: { leagueseasonid: leagueSeasonId },
+        inactive: false,
+        roster: {
+          rosterseason: {
+            none: {
+              submittedwaiver: true,
+              inactive: false,
+              teamsseason: { leagueseason: { seasonid: seasonId } },
+            },
+          },
+        },
+      },
+      select: this.waiverExportSelect,
+      orderBy: [
+        { teamsseason: { name: 'asc' } },
+        { roster: { contacts: { lastname: 'asc' } } },
+        { roster: { contacts: { firstname: 'asc' } } },
+      ],
+    });
+
+    return { leagueName: leagueSeason.league.name, members };
+  }
 }

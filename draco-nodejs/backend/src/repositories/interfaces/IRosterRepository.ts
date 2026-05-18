@@ -78,4 +78,14 @@ export interface IRosterRepository {
     seasonId: bigint,
     leagueSeasonId: bigint,
   ): Promise<{ leagueName: string; members: dbWaiverExportData[] }>;
+  findTeamMissingWaiverRosterForExport(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<{ teamName: string; members: dbWaiverExportData[] }>;
+  findLeagueMissingWaiverRosterForExport(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<{ leagueName: string; members: dbWaiverExportData[] }>;
 }
