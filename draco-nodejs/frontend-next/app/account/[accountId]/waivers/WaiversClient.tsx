@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
   CircularProgress,
@@ -32,7 +33,9 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
+  exportLeagueMissingWaivers,
   exportLeagueWaivers,
+  exportTeamMissingWaivers,
   exportTeamWaivers,
   getTeamRosterWaiverSummaries,
   updateRosterMember,
@@ -44,6 +47,7 @@ import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { unwrapApiResult } from '../../../../utils/apiResult';
 import { downloadBlob } from '../../../../utils/downloadUtils';
 import { useLeagueWaiverData, type WaiverMember } from './useLeagueWaiverData';
+import NoWaiverPlayersDialog, { type NoWaiverPlayer } from './NoWaiverPlayersDialog';
 import { useSeasonLeaguesAndTeams } from './useSeasonLeaguesAndTeams';
 
 interface WaiversClientProps {
@@ -62,7 +66,6 @@ function computeLeagueSummary(data: TeamWaiverDataItem[], leagueSeasonId: string
   const seenContactIds = new Set<string>();
   let withWaiver = 0;
   let otherWaiver = 0;
-  let noWaiver = 0;
 
   for (const team of data) {
     for (const member of team.members) {
@@ -79,19 +82,25 @@ function computeLeagueSummary(data: TeamWaiverDataItem[], leagueSeasonId: string
         withWaiver++;
       } else if (hasWaiverAnywhere) {
         otherWaiver++;
-      } else {
-        noWaiver++;
       }
     }
   }
 
-  return { withWaiver, otherWaiver, noWaiver, total: seenContactIds.size };
+  const noWaiverMembers = getLeagueNoWaiverMembers(data);
+
+  return {
+    withWaiver,
+    otherWaiver,
+    noWaiver: noWaiverMembers.length,
+    total: seenContactIds.size,
+  };
 }
 
 function computeTeamSummary(members: WaiverMember[], teamSeasonId: string) {
   let withWaiver = 0;
   let otherWaiver = 0;
-  let noWaiver = 0;
+
+  const noWaiverMembers = getTeamNoWaiverMembers(members);
 
   for (const member of members) {
     const hasWaiverOnTeam = member.seasonTeams.some(
@@ -103,12 +112,34 @@ function computeTeamSummary(members: WaiverMember[], teamSeasonId: string) {
       withWaiver++;
     } else if (hasWaiverAnywhere) {
       otherWaiver++;
-    } else {
-      noWaiver++;
     }
   }
 
-  return { withWaiver, otherWaiver, noWaiver, total: members.length };
+  return { withWaiver, otherWaiver, noWaiver: noWaiverMembers.length, total: members.length };
+}
+
+export function getLeagueNoWaiverMembers(data: TeamWaiverDataItem[]): WaiverMember[] {
+  const seenContactIds = new Set<string>();
+  const result: WaiverMember[] = [];
+
+  for (const team of data) {
+    for (const member of team.members) {
+      const contactId = member.rosterMember.player.contact.id;
+      if (seenContactIds.has(contactId)) continue;
+      seenContactIds.add(contactId);
+
+      const hasWaiverAnywhere = member.seasonTeams.some((t) => t.submittedWaiver);
+      if (!hasWaiverAnywhere) {
+        result.push(member);
+      }
+    }
+  }
+
+  return result;
+}
+
+export function getTeamNoWaiverMembers(members: WaiverMember[]): WaiverMember[] {
+  return members.filter((member) => !member.seasonTeams.some((t) => t.submittedWaiver));
 }
 
 interface SummaryCardsProps {
@@ -119,6 +150,7 @@ interface SummaryCardsProps {
   label: string;
   firstStatLabel: string;
   secondStatLabel: string;
+  onNoWaiverClick?: () => void;
 }
 
 function SummaryCards({
@@ -129,6 +161,7 @@ function SummaryCards({
   label,
   firstStatLabel,
   secondStatLabel,
+  onNoWaiverClick,
 }: SummaryCardsProps) {
   return (
     <Box>
@@ -157,14 +190,31 @@ function SummaryCards({
           </CardContent>
         </Card>
         <Card variant="outlined" sx={{ flex: 1 }}>
-          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-            <Typography variant="h5" color="error.main" align="center">
-              {noWaiver}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" align="center" display="block">
-              No Waiver
-            </Typography>
-          </CardContent>
+          {onNoWaiverClick ? (
+            <CardActionArea
+              onClick={onNoWaiverClick}
+              aria-label="View players with no waiver"
+              sx={{ height: '100%' }}
+            >
+              <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Typography variant="h5" color="error.main" align="center">
+                  {noWaiver}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" align="center" display="block">
+                  No Waiver
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          ) : (
+            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+              <Typography variant="h5" color="error.main" align="center">
+                {noWaiver}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" align="center" display="block">
+                No Waiver
+              </Typography>
+            </CardContent>
+          )}
         </Card>
         <Card variant="outlined" sx={{ flex: 1 }}>
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -231,6 +281,10 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
 
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+
+  const [noWaiverScope, setNoWaiverScope] = useState<'league' | 'team' | null>(null);
+  const [missingExportLoading, setMissingExportLoading] = useState(false);
+  const [missingExportError, setMissingExportError] = useState<string | null>(null);
 
   const teamsForSelectedLeague = selectedLeagueSeasonId
     ? (teamsByLeague.get(selectedLeagueSeasonId) ?? [])
@@ -504,6 +558,85 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
     }
   };
 
+  const handleExportMissingWaivers = async () => {
+    if (!currentSeasonId || !noWaiverScope) return;
+    setMissingExportLoading(true);
+    setMissingExportError(null);
+    try {
+      if (noWaiverScope === 'team' && selectedTeamSeasonId) {
+        const selectedTeam = teamsForSelectedLeague.find(
+          (t) => t.teamSeasonId === selectedTeamSeasonId,
+        );
+        const result = await exportTeamMissingWaivers({
+          client: apiClient,
+          path: {
+            accountId,
+            seasonId: currentSeasonId,
+            teamSeasonId: selectedTeamSeasonId,
+          },
+          throwOnError: false,
+          parseAs: 'blob',
+        });
+        const blob = unwrapApiResult(result, 'Failed to export missing waivers') as Blob;
+        const teamName = selectedTeam?.teamName ?? 'team';
+        const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+        downloadBlob(blob, `${sanitizedName}-missing-waivers.csv`);
+      } else if (noWaiverScope === 'league' && selectedLeagueSeasonId) {
+        const selectedLeague = leagues.find((l) => l.leagueSeasonId === selectedLeagueSeasonId);
+        const result = await exportLeagueMissingWaivers({
+          client: apiClient,
+          path: {
+            accountId,
+            seasonId: currentSeasonId,
+            leagueSeasonId: selectedLeagueSeasonId,
+          },
+          throwOnError: false,
+          parseAs: 'blob',
+        });
+        const blob = unwrapApiResult(result, 'Failed to export missing waivers') as Blob;
+        const leagueName = selectedLeague?.leagueName ?? 'league';
+        const sanitizedName = leagueName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+        downloadBlob(blob, `${sanitizedName}-missing-waivers.csv`);
+      }
+    } catch (err) {
+      setMissingExportError(
+        err instanceof Error ? err.message : 'Failed to export missing waivers',
+      );
+    } finally {
+      setMissingExportLoading(false);
+    }
+  };
+
+  const noWaiverPlayers: NoWaiverPlayer[] =
+    noWaiverScope === 'league'
+      ? getLeagueNoWaiverMembers(localTeamWaiverData).map((member) => {
+          const contact = member.rosterMember.player.contact;
+          const fullName =
+            `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim() || 'Unknown';
+          const teams = member.seasonTeams
+            .filter((t) => t.leagueSeasonId === selectedLeagueSeasonId)
+            .map((t) => ({ leagueName: t.leagueName, teamName: t.teamName }));
+          return { contactId: contact.id, fullName, teams };
+        })
+      : noWaiverScope === 'team'
+        ? getTeamNoWaiverMembers(displayMembers).map((member) => {
+            const contact = member.rosterMember.player.contact;
+            const fullName =
+              `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim() || 'Unknown';
+            const teams = member.seasonTeams
+              .filter((t) => t.teamSeasonId === selectedTeamSeasonId)
+              .map((t) => ({ leagueName: t.leagueName, teamName: t.teamName }));
+            return { contactId: contact.id, fullName, teams };
+          })
+        : [];
+
+  const noWaiverDialogTitle =
+    noWaiverScope === 'league'
+      ? `Players With No Waiver — ${leagues.find((l) => l.leagueSeasonId === selectedLeagueSeasonId)?.leagueName ?? 'League'}`
+      : noWaiverScope === 'team'
+        ? `Players With No Waiver — ${teamsForSelectedLeague.find((t) => t.teamSeasonId === selectedTeamSeasonId)?.teamName ?? 'Team'}`
+        : 'Players With No Waiver';
+
   return (
     <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId}>
@@ -659,6 +792,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
                         label="League Waiver Summary"
                         firstStatLabel="Waiver in This League"
                         secondStatLabel="Waiver for Another League"
+                        onNoWaiverClick={() => setNoWaiverScope('league')}
                       />
                     )}
 
@@ -671,6 +805,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
                         label="Team Waiver Summary"
                         firstStatLabel="Waiver in This Team"
                         secondStatLabel="Waiver for Another Team"
+                        onNoWaiverClick={() => setNoWaiverScope('team')}
                       />
                     )}
 
@@ -865,6 +1000,19 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      <NoWaiverPlayersDialog
+        open={noWaiverScope !== null}
+        onClose={() => {
+          setNoWaiverScope(null);
+          setMissingExportError(null);
+        }}
+        title={noWaiverDialogTitle}
+        players={noWaiverPlayers}
+        onExport={() => void handleExportMissingWaivers()}
+        exporting={missingExportLoading}
+        exportError={missingExportError}
+      />
     </main>
   );
 }

@@ -132,6 +132,57 @@ export class CsvExportService {
     };
   }
 
+  async exportTeamMissingWaivers(
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<CsvExportResult> {
+    const startTime = Date.now();
+    const { teamName, members } = await this.rosterRepository.findTeamMissingWaiverRosterForExport(
+      accountId,
+      seasonId,
+      teamSeasonId,
+    );
+    const rows = this.mapMissingWaiversToExportRows(members);
+    this.checkExportLimit(rows.length, 'team missing waivers', teamName);
+    const buffer = await generateCsv(rows, WAIVER_EXPORT_HEADERS);
+    const sanitizedName = this.sanitizeFileName(teamName);
+    this.logExportMetrics('team missing waivers', teamName, rows.length, buffer.length, startTime);
+    return {
+      buffer,
+      fileName: `${sanitizedName}-missing-waivers.csv`,
+    };
+  }
+
+  async exportLeagueMissingWaivers(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<CsvExportResult> {
+    const startTime = Date.now();
+    const { leagueName, members } =
+      await this.rosterRepository.findLeagueMissingWaiverRosterForExport(
+        accountId,
+        seasonId,
+        leagueSeasonId,
+      );
+    const rows = this.mapMissingWaiversToExportRows(members);
+    this.checkExportLimit(rows.length, 'league missing waivers', leagueName);
+    const buffer = await generateCsv(rows, WAIVER_EXPORT_HEADERS);
+    const sanitizedName = this.sanitizeFileName(leagueName);
+    this.logExportMetrics(
+      'league missing waivers',
+      leagueName,
+      rows.length,
+      buffer.length,
+      startTime,
+    );
+    return {
+      buffer,
+      fileName: `${sanitizedName}-missing-waivers.csv`,
+    };
+  }
+
   async exportSeasonRoster(accountId: bigint, seasonId: bigint): Promise<CsvExportResult> {
     const startTime = Date.now();
     const { seasonName, members } = await this.rosterRepository.findSeasonRosterForExport(
@@ -295,24 +346,30 @@ export class CsvExportService {
     });
   }
 
+  private mapWaiverItemToExportRow(item: dbWaiverExportData): WaiverExportRow {
+    const contact = item.roster.contacts;
+    return {
+      fullName: this.formatFullName(contact.firstname, contact.middlename, contact.lastname),
+      email: contact.email ?? '',
+      streetAddress: contact.streetaddress ?? '',
+      city: contact.city ?? '',
+      state: contact.state ?? '',
+      zip: contact.zip ?? '',
+      team: item.teamsseason.name,
+    };
+  }
+
   private mapWaiversToExportRows(data: dbWaiverExportData[]): WaiverExportRow[] {
     return data
       .filter((item) => {
         const email = item.roster.contacts.email;
         return email !== null && email.trim() !== '';
       })
-      .map((item) => {
-        const contact = item.roster.contacts;
-        return {
-          fullName: this.formatFullName(contact.firstname, contact.middlename, contact.lastname),
-          email: contact.email ?? '',
-          streetAddress: contact.streetaddress ?? '',
-          city: contact.city ?? '',
-          state: contact.state ?? '',
-          zip: contact.zip ?? '',
-          team: item.teamsseason.name,
-        };
-      });
+      .map((item) => this.mapWaiverItemToExportRow(item));
+  }
+
+  private mapMissingWaiversToExportRows(data: dbWaiverExportData[]): WaiverExportRow[] {
+    return data.map((item) => this.mapWaiverItemToExportRow(item));
   }
 
   private mapManagersToExportRows(data: dbManagerExportData[]): ManagerExportRow[] {
