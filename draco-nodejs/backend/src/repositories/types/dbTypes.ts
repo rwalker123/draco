@@ -2419,10 +2419,52 @@ export type dbRosterExportData = Prisma.rosterseasonGetPayload<{
             zip: true;
           };
         };
-        playerseasonaffiliationdues: {
+        rosterseason: {
           select: {
-            affiliationduespaid: true;
-            seasonid: true;
+            inactive: true;
+            submittedwaiver: true;
+            teamsseason: {
+              select: {
+                name: true;
+                leagueseason: {
+                  select: {
+                    seasonid: true;
+                    league: {
+                      select: {
+                        name: true;
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbWaiverExportData = Prisma.rosterseasonGetPayload<{
+  select: {
+    submittedwaiver: true;
+    teamsseason: {
+      select: {
+        name: true;
+      };
+    };
+    roster: {
+      select: {
+        contacts: {
+          select: {
+            firstname: true;
+            lastname: true;
+            middlename: true;
+            email: true;
+            streetaddress: true;
+            city: true;
+            state: true;
+            zip: true;
           };
         };
       };

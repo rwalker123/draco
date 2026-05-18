@@ -52,6 +52,48 @@ export const registerExportsEndpoints = ({ registry, schemaRefs }: RegisterConte
 
   registry.registerPath({
     method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers/export',
+    description:
+      'Export team waiver roster to CSV file (only players with submitted waiver and email)',
+    summary: 'Export team waivers',
+    operationId: 'exportTeamWaivers',
+    security: [{ bearerAuth: [] }],
+    tags: ['Exports'],
+    parameters: [
+      ...pathParams,
+      {
+        name: 'teamSeasonId',
+        in: 'path' as const,
+        required: true,
+        schema: { type: 'string' as const, format: 'number' },
+      },
+    ],
+    responses: csvResponse,
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/roster/waivers/export',
+    description:
+      'Export league waiver roster to CSV file (only players with submitted waiver and email, ordered by team)',
+    summary: 'Export league waivers',
+    operationId: 'exportLeagueWaivers',
+    security: [{ bearerAuth: [] }],
+    tags: ['Exports'],
+    parameters: [
+      ...pathParams,
+      {
+        name: 'leagueSeasonId',
+        in: 'path' as const,
+        required: true,
+        schema: { type: 'string' as const, format: 'number' },
+      },
+    ],
+    responses: csvResponse,
+  });
+
+  registry.registerPath({
+    method: 'get',
     path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/export',
     description: 'Export team roster to CSV file',
     summary: 'Export team roster',

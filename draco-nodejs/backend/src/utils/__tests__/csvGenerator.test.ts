@@ -4,8 +4,10 @@ import {
   CsvHeader,
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
+  WAIVER_EXPORT_HEADERS,
   RosterExportRow,
   ManagerExportRow,
+  WaiverExportRow,
 } from '../csvGenerator.js';
 
 describe('csvGenerator', () => {
@@ -156,6 +158,42 @@ describe('csvGenerator', () => {
       expect(csvString).toContain('Jane,false');
     });
 
+    it('should neutralize CSV formula injection in cell values', async () => {
+      interface TestRow {
+        team: string;
+        name: string;
+      }
+      const headers: CsvHeader<TestRow>[] = [
+        { key: 'team', header: 'Team' },
+        { key: 'name', header: 'Name' },
+      ];
+      const data: TestRow[] = [
+        { team: '=HYPERLINK(1)', name: '+1-555-0100' },
+        { team: '-2+3', name: '@SUM(A1)' },
+      ];
+
+      const result = await generateCsv(data, headers);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[1]).toBe(`'=HYPERLINK(1),'+1-555-0100`);
+      expect(lines[2]).toBe(`'-2+3,'@SUM(A1)`);
+    });
+
+    it('should not modify values that do not start with a formula character', async () => {
+      interface TestRow {
+        name: string;
+      }
+      const headers: CsvHeader<TestRow>[] = [{ key: 'name', header: 'Name' }];
+      const data: TestRow[] = [{ name: 'John = Doe' }];
+
+      const result = await generateCsv(data, headers);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[1]).toBe('John = Doe');
+    });
+
     it('should return a Buffer', async () => {
       interface TestRow {
         name: string;
@@ -218,7 +256,7 @@ describe('csvGenerator', () => {
 
   describe('ROSTER_EXPORT_HEADERS', () => {
     it('should have correct header definitions', () => {
-      expect(ROSTER_EXPORT_HEADERS).toHaveLength(7);
+      expect(ROSTER_EXPORT_HEADERS).toHaveLength(8);
       expect(ROSTER_EXPORT_HEADERS.map((h) => h.header)).toEqual([
         'Full Name',
         'Email',
@@ -226,7 +264,8 @@ describe('csvGenerator', () => {
         'City',
         'State',
         'Zip',
-        'Affiliation Dues Paid',
+        'Submitted Waiver',
+        'Registered Teams',
       ]);
     });
 
@@ -239,14 +278,17 @@ describe('csvGenerator', () => {
           city: 'Test City',
           state: 'TS',
           zip: '12345',
-          affiliationDuesPaid: 'Yes',
+          submittedWaiver: 'Yes',
+          registeredTeams: 'Spring League / Tigers',
         },
       ];
       const result = await generateCsv(data, ROSTER_EXPORT_HEADERS);
       const csvString = result.toString();
       const lines = csvString.trim().split('\n');
 
-      expect(lines[0]).toBe('Full Name,Email,Street Address,City,State,Zip,Affiliation Dues Paid');
+      expect(lines[0]).toBe(
+        'Full Name,Email,Street Address,City,State,Zip,Submitted Waiver,Registered Teams',
+      );
     });
 
     it('should generate correct roster export row', async () => {
@@ -258,7 +300,8 @@ describe('csvGenerator', () => {
           city: 'Springfield',
           state: 'IL',
           zip: '62701',
-          affiliationDuesPaid: 'Yes',
+          submittedWaiver: 'Yes',
+          registeredTeams: 'Spring League / Panthers',
         },
       ];
 
@@ -266,7 +309,65 @@ describe('csvGenerator', () => {
       const csvString = result.toString();
       const lines = csvString.trim().split('\n');
 
-      expect(lines[1]).toBe('John Doe,john@example.com,123 Main St,Springfield,IL,62701,Yes');
+      expect(lines[1]).toBe(
+        'John Doe,john@example.com,123 Main St,Springfield,IL,62701,Yes,Spring League / Panthers',
+      );
+    });
+  });
+
+  describe('WAIVER_EXPORT_HEADERS', () => {
+    it('should have correct header definitions', () => {
+      expect(WAIVER_EXPORT_HEADERS).toHaveLength(7);
+      expect(WAIVER_EXPORT_HEADERS.map((h) => h.header)).toEqual([
+        'Full Name',
+        'Email',
+        'Street Address',
+        'City',
+        'State',
+        'Zip',
+        'Team',
+      ]);
+    });
+
+    it('should include headers in output when there is data', async () => {
+      const data: WaiverExportRow[] = [
+        {
+          fullName: 'Test User',
+          email: 'test@example.com',
+          streetAddress: '123 Test St',
+          city: 'Test City',
+          state: 'TS',
+          zip: '12345',
+          team: 'Spring League / Tigers',
+        },
+      ];
+      const result = await generateCsv(data, WAIVER_EXPORT_HEADERS);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[0]).toBe('Full Name,Email,Street Address,City,State,Zip,Team');
+    });
+
+    it('should generate correct waiver export row', async () => {
+      const data: WaiverExportRow[] = [
+        {
+          fullName: 'John Doe',
+          email: 'john@example.com',
+          streetAddress: '123 Main St',
+          city: 'Springfield',
+          state: 'IL',
+          zip: '62701',
+          team: 'Spring League / Panthers',
+        },
+      ];
+
+      const result = await generateCsv(data, WAIVER_EXPORT_HEADERS);
+      const csvString = result.toString();
+      const lines = csvString.trim().split('\n');
+
+      expect(lines[1]).toBe(
+        'John Doe,john@example.com,123 Main St,Springfield,IL,62701,Spring League / Panthers',
+      );
     });
   });
 

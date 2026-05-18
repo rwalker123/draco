@@ -22,6 +22,13 @@ export interface IManagerRepository extends IBaseRepository<teamseasonmanager> {
   findManagersForTeams(teamSeasonIds: bigint[]): Promise<dbTeamManagerWithContact[]>;
   createTeamManager(teamSeasonId: bigint, contactId: bigint): Promise<dbTeamManagerWithContact>;
   findTeamManager(teamSeasonId: bigint, contactId: bigint): Promise<teamseasonmanager | null>;
-  findLeagueManagersForExport(leagueSeasonId: bigint): Promise<dbManagerExportData[]>;
-  findSeasonManagersForExport(seasonId: bigint, accountId: bigint): Promise<dbManagerExportData[]>;
+  findLeagueManagersForExport(
+    accountId: bigint,
+    seasonId: bigint,
+    leagueSeasonId: bigint,
+  ): Promise<{ leagueName: string; managers: dbManagerExportData[] }>;
+  findSeasonManagersForExport(
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<{ seasonName: string; managers: dbManagerExportData[] }>;
 }

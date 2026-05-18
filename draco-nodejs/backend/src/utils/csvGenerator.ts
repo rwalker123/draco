@@ -5,6 +5,15 @@ export interface CsvHeader<T> {
   header: string;
 }
 
+const CSV_INJECTION_PREFIXES = ['=', '+', '-', '@', '\t', '\r', '\n'];
+
+function neutralizeCsvValue(value: string): string {
+  if (value.length > 0 && CSV_INJECTION_PREFIXES.includes(value[0])) {
+    return `'${value}`;
+  }
+  return value;
+}
+
 export async function generateCsv<T extends object>(
   data: T[],
   headers: CsvHeader<T>[],
@@ -37,7 +46,7 @@ export async function generateCsv<T extends object>(
         if (value === null || value === undefined) {
           return '';
         }
-        return String(value);
+        return neutralizeCsvValue(String(value));
       });
       csvStream.write(rowData);
     }
@@ -53,7 +62,8 @@ export interface RosterExportRow {
   city: string;
   state: string;
   zip: string;
-  affiliationDuesPaid: string;
+  submittedWaiver: string;
+  registeredTeams: string;
 }
 
 export const ROSTER_EXPORT_HEADERS: CsvHeader<RosterExportRow>[] = [
@@ -63,7 +73,28 @@ export const ROSTER_EXPORT_HEADERS: CsvHeader<RosterExportRow>[] = [
   { key: 'city', header: 'City' },
   { key: 'state', header: 'State' },
   { key: 'zip', header: 'Zip' },
-  { key: 'affiliationDuesPaid', header: 'Affiliation Dues Paid' },
+  { key: 'submittedWaiver', header: 'Submitted Waiver' },
+  { key: 'registeredTeams', header: 'Registered Teams' },
+];
+
+export interface WaiverExportRow {
+  fullName: string;
+  email: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zip: string;
+  team: string;
+}
+
+export const WAIVER_EXPORT_HEADERS: CsvHeader<WaiverExportRow>[] = [
+  { key: 'fullName', header: 'Full Name' },
+  { key: 'email', header: 'Email' },
+  { key: 'streetAddress', header: 'Street Address' },
+  { key: 'city', header: 'City' },
+  { key: 'state', header: 'State' },
+  { key: 'zip', header: 'Zip' },
+  { key: 'team', header: 'Team' },
 ];
 
 export interface ManagerExportRow {

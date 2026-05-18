@@ -24,10 +24,16 @@ import {
   SignRosterMemberType,
   UpdateRosterMemberType,
 } from '@draco/shared-schemas';
+import {
+  getTeamRosterWaiverSummaries,
+  type RosterMemberSeasonTeamWaiver,
+} from '@draco/shared-api-client';
 import { useRosterPlayer, RosterPlayerMutationResult } from '../../hooks/roster/useRosterPlayer';
+import { useApiClient } from '../../hooks/useApiClient';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useDelayedLoading } from '../../hooks/useDelayedLoading';
 import { getContactDisplayName } from '../../utils/contactUtils';
+import { unwrapApiResult } from '../../utils/apiResult';
 import { Controller, Resolver, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -66,11 +72,15 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
   enableWaiverTracking = true,
   enableIdentificationTracking = true,
 }) => {
+  const apiClient = useApiClient();
+
   // Search states - contained within this component
   const [searchInput, setSearchInput] = useState('');
   const [availablePlayers, setAvailablePlayers] = useState<BaseContactType[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [seasonTeamWaivers, setSeasonTeamWaivers] = useState<RosterMemberSeasonTeamWaiver[]>([]);
+  const [seasonTeamWaiversLoaded, setSeasonTeamWaiversLoaded] = useState(false);
 
   // Use custom hooks for debouncing and delayed loading
   const debouncedSearchInput = useDebouncedValue(searchInput, 400);
@@ -264,6 +274,8 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
     setLoadingPlayerRoster(false);
     setSignMultiplePlayers(false);
     setError(null);
+    setSeasonTeamWaivers([]);
+    setSeasonTeamWaiversLoaded(false);
     reset(getDefaultFormValues());
 
     if (abortControllerRef.current) {
@@ -271,6 +283,56 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
       abortControllerRef.current = null;
     }
   }, [open, reset]);
+
+  useEffect(() => {
+    if (!open || mode !== 'edit' || !enableWaiverTracking || !rosterMemberId) {
+      return;
+    }
+
+    const controller = new AbortController();
+    setSeasonTeamWaiversLoaded(false);
+
+    const loadWaiverSummaries = async () => {
+      try {
+        const result = await getTeamRosterWaiverSummaries({
+          client: apiClient,
+          path: { accountId, seasonId, teamSeasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const data = unwrapApiResult(result, 'Failed to load waiver summaries');
+        const match = data.members.find((m) => m.rosterMember.id === rosterMemberId);
+
+        if (controller.signal.aborted) return;
+        setSeasonTeamWaivers(match?.seasonTeams ?? []);
+      } catch {
+        if (controller.signal.aborted) return;
+        setSeasonTeamWaivers([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setSeasonTeamWaiversLoaded(true);
+        }
+      }
+    };
+
+    void loadWaiverSummaries();
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    open,
+    mode,
+    enableWaiverTracking,
+    rosterMemberId,
+    accountId,
+    seasonId,
+    teamSeasonId,
+    apiClient,
+  ]);
 
   // Handle player selection
   const handlePlayerSelect = async (newValue: BaseContactType | null) => {
@@ -417,6 +479,23 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
 
   const handleDialogSubmit = submitForm(onValidSubmit);
 
+  const otherTeamsWithWaiver = seasonTeamWaivers.filter(
+    (t) => t.teamSeasonId !== teamSeasonId && t.submittedWaiver,
+  );
+  const currentTeamHasWaiver = seasonTeamWaivers.some(
+    (t) => t.teamSeasonId === teamSeasonId && t.submittedWaiver,
+  );
+  const waiverLockedToOtherTeam =
+    mode === 'edit' &&
+    Boolean(enableWaiverTracking) &&
+    otherTeamsWithWaiver.length > 0 &&
+    !currentTeamHasWaiver;
+  const waiverSummaryPending =
+    mode === 'edit' &&
+    Boolean(enableWaiverTracking) &&
+    Boolean(rosterMemberId) &&
+    !seasonTeamWaiversLoaded;
+
   return (
     <Dialog open={open} onClose={isSubmitting ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
@@ -556,19 +635,28 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                 name="submittedWaiver"
                 control={control}
                 render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={field.value ?? false}
-                        onChange={(event) => field.onChange(event.target.checked)}
-                        disabled={
-                          (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
-                          isSubmitting
-                        }
-                      />
-                    }
-                    label="Submitted Waiver"
-                  />
+                  <Box>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.value ?? false}
+                          onChange={(event) => field.onChange(event.target.checked)}
+                          disabled={
+                            waiverLockedToOtherTeam ||
+                            waiverSummaryPending ||
+                            (isSigningNewPlayer && (!selectedPlayer || loadingPlayerRoster)) ||
+                            isSubmitting
+                          }
+                        />
+                      }
+                      label="Submitted Waiver"
+                    />
+                    {waiverLockedToOtherTeam && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {`Waiver already submitted for ${otherTeamsWithWaiver.map((t) => `${t.leagueName} / ${t.teamName}`).join('; ')}`}
+                      </Typography>
+                    )}
+                  </Box>
                 )}
               />
             ) : null}
