@@ -626,7 +626,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
                     onClick={() => void handleCheckMultipleRegistrations()}
                     disabled={leaguesLoading || leagues.length === 0}
                   >
-                    Check for Multiple Registrations
+                    Check for Multiple Submitted Waivers
                   </Button>
 
                   <Button
