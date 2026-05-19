@@ -572,7 +572,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                 <TextField
                   {...field}
                   label="Player Number"
-                  type="number"
+                  type="text"
                   value={field.value ?? ''}
                   onChange={(event) => {
                     const { value } = event.target;
@@ -581,10 +581,9 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                       return;
                     }
 
-                    const parsed = Number.parseInt(value, 10);
-                    field.onChange(Number.isNaN(parsed) ? undefined : parsed);
+                    field.onChange(value);
                   }}
-                  inputProps={{ min: 0, max: 99 }}
+                  inputProps={{ maxLength: 2, inputMode: 'numeric' }}
                   fullWidth
                   variant="outlined"
                   helperText={errors.playerNumber?.message ?? "Enter the player's jersey number"}

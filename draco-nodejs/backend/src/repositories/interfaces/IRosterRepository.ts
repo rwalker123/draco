@@ -47,12 +47,12 @@ export interface IRosterRepository {
   createRosterSeasonEntry(
     playerId: bigint,
     teamSeasonId: bigint,
-    playerNumber: number,
+    playerNumber: string,
     submittedWaiver: boolean,
   ): Promise<dbRosterMember>;
   updateRosterSeasonEntry(
     rosterSeasonId: bigint,
-    playerNumber?: number,
+    playerNumber?: string,
     submittedWaiver?: boolean,
     inactive?: boolean,
   ): Promise<dbRosterMember>;

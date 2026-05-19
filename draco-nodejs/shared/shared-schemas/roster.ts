@@ -29,7 +29,10 @@ export const RosterPlayerSchema = z
 export const RosterMemberSchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
-    playerNumber: z.number().min(0).max(99).optional(),
+    playerNumber: z
+      .string()
+      .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+      .optional(),
     inactive: z.boolean().default(false),
     submittedWaiver: z.boolean().optional(),
     dateAdded: isoDateStringSchema.nullable().default(null),
@@ -95,7 +98,10 @@ export const CreateRosterMemberSchema = RosterMemberSchema.omit({
 
 export const UpdateRosterMemberSchema = z
   .object({
-    playerNumber: z.number().min(0).max(99).optional(),
+    playerNumber: z
+      .string()
+      .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+      .optional(),
     submittedWaiver: z.boolean().optional(),
     player: z
       .object({
@@ -135,7 +141,11 @@ export const PublicRosterMemberSchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
     contactId: z.bigint().transform((val) => val.toString()),
-    playerNumber: z.number().min(0).max(99).nullable().optional(),
+    playerNumber: z
+      .string()
+      .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+      .nullable()
+      .optional(),
     firstName: z.string().trim().nullable().optional(),
     lastName: z.string().trim().nullable().optional(),
     middleName: z.string().trim().nullable().optional(),
@@ -157,7 +167,11 @@ export const PublicTeamRosterResponseSchema = z.object({
 
 export const RosterCardPlayerSchema = z.object({
   id: z.bigint().transform((val) => val.toString()),
-  playerNumber: z.number().min(0).max(99).nullable().optional(),
+  playerNumber: z
+    .string()
+    .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+    .nullable()
+    .optional(),
   firstName: z.string().trim(),
   lastName: z.string().trim(),
 });

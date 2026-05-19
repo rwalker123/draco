@@ -23,7 +23,7 @@ export class PrismaRosterRepository implements IRosterRepository {
         ...(includeInactive ? {} : { inactive: false }),
       },
       include: { roster: { include: { contacts: true } } },
-      orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
+      orderBy: { inactive: 'asc' },
     });
   }
 
@@ -150,7 +150,7 @@ export class PrismaRosterRepository implements IRosterRepository {
   async createRosterSeasonEntry(
     playerId: bigint,
     teamSeasonId: bigint,
-    playerNumber: number,
+    playerNumber: string,
     submittedWaiver: boolean,
   ): Promise<dbRosterMember> {
     return this.prisma.rosterseason.create({
@@ -168,7 +168,7 @@ export class PrismaRosterRepository implements IRosterRepository {
 
   async updateRosterSeasonEntry(
     rosterSeasonId: bigint,
-    playerNumber?: number,
+    playerNumber?: string,
     submittedWaiver?: boolean,
     inactive?: boolean,
   ): Promise<dbRosterMember> {

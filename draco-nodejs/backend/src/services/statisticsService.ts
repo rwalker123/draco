@@ -214,8 +214,6 @@ export class StatisticsService {
       throw new NotFoundError('Player not found for account');
     }
 
-    const rosterEntry = await this.contactRepository.findRosterByContactId(playerId);
-
     const [battingRowsRaw, pitchingRowsRaw] = await Promise.all([
       this.battingStatisticsRepository.findPlayerCareerBattingStats(accountId, playerId),
       this.pitchingStatisticsRepository.findPlayerCareerPitchingStats(accountId, playerId),
@@ -230,10 +228,7 @@ export class StatisticsService {
       pitchingRowsRaw[0]?.playerName ??
       (nameFallback !== '' ? nameFallback : 'Unknown');
 
-    const playerNumber =
-      rosterEntry && 'playernumber' in rosterEntry && rosterEntry.playernumber !== null
-        ? Number(rosterEntry.playernumber)
-        : null;
+    const playerNumber: string | null = null;
 
     return {
       playerId: playerId.toString(),

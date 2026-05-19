@@ -476,7 +476,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
 
             return (
               <TableRow key={member.id} hover>
-                <TableCell>{member.playerNumber ?? '-'}</TableCell>
+                <TableCell>{member.playerNumber || '-'}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <UserAvatar user={user} size={32} />

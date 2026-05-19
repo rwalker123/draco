@@ -72,7 +72,7 @@ const createSourceSeason = (): dbSeasonCopySource => ({
           rosterseason: [
             {
               playerid: 500n,
-              playernumber: 12,
+              playernumber: '12',
               dateadded: new Date('2024-02-01T00:00:00.000Z'),
             },
           ],

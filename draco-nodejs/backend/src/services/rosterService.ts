@@ -275,7 +275,7 @@ export class RosterService {
     const rosterMember = await this.rosterRepository.createRosterSeasonEntry(
       rosterPlayer.id,
       teamSeasonId,
-      playerNumber ?? 0,
+      playerNumber ?? '',
       submittedWaiver ?? false,
     );
 

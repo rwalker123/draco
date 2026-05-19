@@ -1642,7 +1642,7 @@ model rosterseason {
   id              BigInt          @id @default(autoincrement())
   playerid        BigInt
   teamseasonid    BigInt
-  playernumber    Int
+  playernumber    String          @default("") @db.VarChar(2)
   inactive        Boolean
   submittedwaiver Boolean
   dateadded       DateTime?       @db.Timestamptz(6)
