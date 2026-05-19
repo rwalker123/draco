@@ -1,6 +1,6 @@
 ALTER TABLE "rosterseason"
   ALTER COLUMN "playernumber" TYPE varchar(2)
-  USING (CASE WHEN "playernumber" = 0 THEN '' ELSE "playernumber"::varchar END);
+  USING (CASE WHEN "playernumber" BETWEEN 1 AND 99 THEN "playernumber"::varchar ELSE '' END);
 
 ALTER TABLE "rosterseason"
   ALTER COLUMN "playernumber" SET DEFAULT '';

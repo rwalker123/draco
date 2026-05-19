@@ -10,8 +10,11 @@ import {
   IRosterRepository,
   ISeasonsRepository,
   ITeamRepository,
+  dbRosterMember,
+  dbRosterPlayer,
 } from '../../repositories/index.js';
 import { ServiceFactory } from '../serviceFactory.js';
+import { partialMock } from '../../test-utils/partialMock.js';
 
 class RosterRepositoryStub implements IRosterRepository {
   findRosterMembersByTeamSeason = vi.fn<IRosterRepository['findRosterMembersByTeamSeason']>();
@@ -137,17 +140,16 @@ describe('RosterService.addPlayerToRoster', () => {
     divisionseasonid: null,
   };
 
-  const mockRosterPlayer = {
+  const mockRosterPlayer: dbRosterPlayer = partialMock<dbRosterPlayer>({
     id: 1n,
     contactid: 2n,
     submitteddriverslicense: false,
     firstyear: 2020,
-    contacts: {
+    contacts: partialMock<dbRosterPlayer['contacts']>({
       id: 2n,
       userid: 'user-abc',
       firstname: 'Jane',
       lastname: 'Doe',
-      middlename: null,
       email: null,
       phone1: null,
       phone2: null,
@@ -156,12 +158,11 @@ describe('RosterService.addPlayerToRoster', () => {
       city: null,
       state: null,
       zip: null,
-      dateofbirth: null,
       creatoraccountid: accountId,
-    },
-  };
+    }),
+  });
 
-  const mockRosterMember = {
+  const mockRosterMember: dbRosterMember = partialMock<dbRosterMember>({
     id: 100n,
     playerid: 1n,
     teamseasonid: teamSeasonId,
@@ -169,41 +170,33 @@ describe('RosterService.addPlayerToRoster', () => {
     inactive: false,
     submittedwaiver: false,
     dateadded: new Date(),
-    roster: {
-      ...mockRosterPlayer,
-    },
-  };
+    roster: mockRosterPlayer,
+  });
 
   beforeEach(() => {
     rosterRepo = new RosterRepositoryStub();
 
-    teamRepo = {
+    teamRepo = partialMock<ITeamRepository>({
       findTeamSeason: vi.fn().mockResolvedValue(mockTeamSeason),
-    } as unknown as ITeamRepository;
+    });
 
-    contactRepo = {
+    contactRepo = partialMock<IContactRepository>({
       findContactInAccount: vi.fn().mockResolvedValue({ id: mockRosterPlayer.contactid }),
-    } as unknown as IContactRepository;
-    seasonsRepo = {} as unknown as ISeasonsRepository;
+    });
+    seasonsRepo = partialMock<ISeasonsRepository>({});
 
     vi.spyOn(ServiceFactory, 'getAccountsService').mockReturnValue(
       {} as ReturnType<typeof ServiceFactory.getAccountsService>,
     );
-    vi.spyOn(ServiceFactory, 'getDiscordIntegrationService').mockReturnValue({
-      updateTeamForumMemberForContact: vi.fn().mockResolvedValue(undefined),
-    } as unknown as ReturnType<typeof ServiceFactory.getDiscordIntegrationService>);
+    vi.spyOn(ServiceFactory, 'getDiscordIntegrationService').mockReturnValue(
+      partialMock<ReturnType<typeof ServiceFactory.getDiscordIntegrationService>>({
+        updateTeamForumMemberForContact: vi.fn().mockResolvedValue(undefined),
+      }),
+    );
 
-    rosterRepo.findRosterPlayerByContactId.mockResolvedValue(
-      mockRosterPlayer as unknown as Awaited<
-        ReturnType<IRosterRepository['findRosterPlayerByContactId']>
-      >,
-    );
+    rosterRepo.findRosterPlayerByContactId.mockResolvedValue(mockRosterPlayer);
     rosterRepo.findRosterMemberInLeagueSeason.mockResolvedValue(null);
-    rosterRepo.createRosterSeasonEntry.mockResolvedValue(
-      mockRosterMember as unknown as Awaited<
-        ReturnType<IRosterRepository['createRosterSeasonEntry']>
-      >,
-    );
+    rosterRepo.createRosterSeasonEntry.mockResolvedValue(mockRosterMember);
 
     service = new RosterService(rosterRepo, teamRepo, contactRepo, seasonsRepo);
   });
