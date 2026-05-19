@@ -81,7 +81,7 @@ export class RosterResponseFormatter {
       return {
         id: member.id.toString(),
         contactId: contact.id.toString(),
-        playerNumber: member.playernumber ?? null,
+        playerNumber: member.playernumber,
         firstName: contact.firstname ?? null,
         lastName: contact.lastname ?? null,
         middleName: contact.middlename ?? null,
@@ -152,7 +152,7 @@ export class RosterResponseFormatter {
       .filter((member) => !member.inactive)
       .map((member) => ({
         id: member.id.toString(),
-        playerNumber: member.playernumber ?? null,
+        playerNumber: member.playernumber,
         firstName: member.roster.contacts.firstname ?? '',
         lastName: member.roster.contacts.lastname ?? '',
       }))

@@ -111,7 +111,7 @@ type BattingNewRow = {
   id: typeof NEW_ROW_ID;
   isNew: true;
   playerName: string;
-  playerNumber: number | null;
+  playerNumber: string | null;
   rosterSeasonId: string;
 } & Record<EditableBattingField, number>;
 

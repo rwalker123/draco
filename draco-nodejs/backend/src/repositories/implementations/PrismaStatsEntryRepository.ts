@@ -118,16 +118,7 @@ export class PrismaStatsEntryRepository implements IStatsEntryRepository {
         teamid: teamSeasonId,
       },
       include: battingInclude,
-      orderBy: [
-        {
-          rosterseason: {
-            playernumber: 'asc',
-          },
-        },
-        {
-          id: 'asc',
-        },
-      ],
+      orderBy: { id: 'asc' },
     });
   }
 
@@ -197,16 +188,7 @@ export class PrismaStatsEntryRepository implements IStatsEntryRepository {
         teamid: teamSeasonId,
       },
       include: pitchingInclude,
-      orderBy: [
-        {
-          rosterseason: {
-            playernumber: 'asc',
-          },
-        },
-        {
-          id: 'asc',
-        },
-      ],
+      orderBy: { id: 'asc' },
     });
   }
 

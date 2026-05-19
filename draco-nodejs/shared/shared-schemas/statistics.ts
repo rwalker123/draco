@@ -209,7 +209,7 @@ export const LeaderCategoriesSchema = z.object({
 export const PlayerCareerStatisticsSchema = z.object({
   playerId: bigintToStringSchema,
   playerName: nameSchema,
-  playerNumber: z.number().int().min(0).nullable().optional(),
+  playerNumber: z.string().nullable().optional(),
   photoUrl: z.string().url().nullable().optional(),
   batting: z.object({
     rows: PlayerCareerBattingRowSchema.array(),
@@ -239,7 +239,7 @@ export const TeamStatsPlayerSummarySchema = z.object({
   playerId: bigintToStringSchema,
   contactId: bigintToStringSchema,
   playerName: nameSchema,
-  playerNumber: z.number().int().min(0).nullable(),
+  playerNumber: z.string().nullable(),
   photoUrl: z.string().url().nullable().optional(),
 });
 
@@ -273,7 +273,7 @@ export const GameBattingStatLineSchema = GameBattingStatInputSchema.extend({
   playerId: bigintToStringSchema,
   contactId: bigintToStringSchema,
   playerName: nameSchema,
-  playerNumber: z.number().int().min(0).nullable(),
+  playerNumber: z.string().nullable(),
   tb: z.number().min(0),
   pa: z.number().min(0),
   avg: z.number().min(0),
@@ -348,7 +348,7 @@ export const GamePitchingStatLineSchema = GamePitchingStatInputSchema.extend({
   playerId: bigintToStringSchema,
   contactId: bigintToStringSchema,
   playerName: nameSchema,
-  playerNumber: z.number().int().min(0).nullable(),
+  playerNumber: z.string().nullable(),
   ip: z.number().min(0),
   ip2: z.number().int().min(0),
   era: z.number().min(0),

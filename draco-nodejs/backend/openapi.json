@@ -35,9 +35,8 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "inactive": {
             "type": "boolean",
@@ -315,9 +314,8 @@
         "type": "object",
         "properties": {
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "submittedWaiver": {
             "type": "boolean"
@@ -460,9 +458,8 @@
         "type": "object",
         "properties": {
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "submittedWaiver": {
             "type": "boolean"
@@ -2621,9 +2618,8 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 99
+                  "type": "string",
+                  "pattern": "^\\d{0,2}$"
                 },
                 "inactive": {
                   "type": "boolean",
@@ -2826,9 +2822,8 @@
                 "pattern": "^d+$"
               },
               "playerNumber": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 99
+                "type": "string",
+                "pattern": "^\\d{0,2}$"
               },
               "inactive": {
                 "type": "boolean",
@@ -3055,9 +3050,8 @@
                       "pattern": "^d+$"
                     },
                     "playerNumber": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 99
+                      "type": "string",
+                      "pattern": "^\\d{0,2}$"
                     },
                     "inactive": {
                       "type": "boolean",
@@ -3272,10 +3266,9 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
+            "type": "string",
             "nullable": true,
-            "minimum": 0,
-            "maximum": 99
+            "pattern": "^\\d{0,2}$"
           },
           "firstName": {
             "type": "string",
@@ -3338,10 +3331,9 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
+                  "type": "string",
                   "nullable": true,
-                  "minimum": 0,
-                  "maximum": 99
+                  "pattern": "^\\d{0,2}$"
                 },
                 "firstName": {
                   "type": "string",
@@ -3386,10 +3378,9 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
+            "type": "string",
             "nullable": true,
-            "minimum": 0,
-            "maximum": 99
+            "pattern": "^\\d{0,2}$"
           },
           "firstName": {
             "type": "string"
@@ -3455,10 +3446,9 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
+                  "type": "string",
                   "nullable": true,
-                  "minimum": 0,
-                  "maximum": 99
+                  "pattern": "^\\d{0,2}$"
                 },
                 "firstName": {
                   "type": "string"
@@ -10922,9 +10912,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "photoUrl": {
             "type": "string",
@@ -11560,9 +11549,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "photoUrl": {
             "type": "string",
@@ -11675,9 +11663,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "tb": {
             "type": "number",
@@ -11848,9 +11835,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "tb": {
                   "type": "number",
@@ -12058,9 +12044,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "photoUrl": {
                   "type": "string",
@@ -12183,9 +12168,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "ip": {
             "type": "number",
@@ -12366,9 +12350,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "ip": {
                   "type": "number",
@@ -12596,9 +12579,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "photoUrl": {
                   "type": "string",

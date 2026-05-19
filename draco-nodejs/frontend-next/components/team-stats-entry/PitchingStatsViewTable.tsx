@@ -51,10 +51,7 @@ const PitchingStatsViewTable: React.FC<PitchingStatsViewTableProps> = ({ stats, 
       id: stat.statId,
       playerName:
         typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
-      playerNumber:
-        typeof resolvedPlayerNumber === 'number' || typeof resolvedPlayerNumber === 'string'
-          ? resolvedPlayerNumber
-          : null,
+      playerNumber: typeof resolvedPlayerNumber === 'string' ? resolvedPlayerNumber : null,
       ip: stat.ip ?? null,
       ip2: stat.ip2 ?? null,
       playerId: stat.playerId ?? null,
