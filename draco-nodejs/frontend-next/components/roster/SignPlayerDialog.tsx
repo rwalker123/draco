@@ -574,15 +574,7 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                   label="Player Number"
                   type="text"
                   value={field.value ?? ''}
-                  onChange={(event) => {
-                    const { value } = event.target;
-                    if (value === '') {
-                      field.onChange(undefined);
-                      return;
-                    }
-
-                    field.onChange(value);
-                  }}
+                  onChange={(event) => field.onChange(event.target.value)}
                   inputProps={{ maxLength: 2, inputMode: 'numeric' }}
                   fullWidth
                   variant="outlined"
