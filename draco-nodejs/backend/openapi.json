@@ -35,9 +35,8 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "inactive": {
             "type": "boolean",
@@ -315,9 +314,8 @@
         "type": "object",
         "properties": {
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "submittedWaiver": {
             "type": "boolean"
@@ -460,9 +458,8 @@
         "type": "object",
         "properties": {
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "submittedWaiver": {
             "type": "boolean"
@@ -2715,9 +2712,8 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 99
+                  "type": "string",
+                  "pattern": "^\\d{0,2}$"
                 },
                 "inactive": {
                   "type": "boolean",
@@ -2874,6 +2870,484 @@
           "rosterMembers"
         ]
       },
+      "RosterMemberSeasonTeamWaiver": {
+        "type": "object",
+        "properties": {
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "leagueSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "leagueName": {
+            "type": "string"
+          },
+          "submittedWaiver": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "teamSeasonId",
+          "teamId",
+          "teamName",
+          "leagueSeasonId",
+          "leagueName",
+          "submittedWaiver"
+        ],
+        "description": "Per-team waiver status for one of a player’s season teams. Admin-only data."
+      },
+      "RosterMemberWaiverSummary": {
+        "type": "object",
+        "properties": {
+          "rosterMember": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "playerNumber": {
+                "type": "string",
+                "pattern": "^\\d{0,2}$"
+              },
+              "inactive": {
+                "type": "boolean",
+                "default": false
+              },
+              "submittedWaiver": {
+                "type": "boolean"
+              },
+              "dateAdded": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time",
+                "default": null
+              },
+              "gamesPlayed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "player": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^d+$"
+                  },
+                  "submittedDriversLicense": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "minimum": 1900,
+                    "maximum": 2026
+                  },
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^\\d+$",
+                        "example": "12345"
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "middleName": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "email"
+                      },
+                      "userId": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "loginEmail": {
+                        "type": "string",
+                        "maxLength": 256,
+                        "format": "email"
+                      },
+                      "photoUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "contactDetails": {
+                        "type": "object",
+                        "properties": {
+                          "phone1": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "phone2": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "phone3": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "streetAddress": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 100,
+                            "default": ""
+                          },
+                          "city": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50,
+                            "default": ""
+                          },
+                          "state": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50,
+                            "default": ""
+                          },
+                          "zip": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 10,
+                            "default": ""
+                          },
+                          "dateOfBirth": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "firstYear": {
+                            "type": "number",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "firstName",
+                      "lastName"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "firstYear",
+                  "contact"
+                ],
+                "description": "Schema for a player who is or was on a team roster. This contains details that only ever need to be supplied once"
+              }
+            },
+            "required": [
+              "id",
+              "player"
+            ],
+            "description": "Schema for a roster member including player details"
+          },
+          "seasonTeams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "teamName": {
+                  "type": "string"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "leagueName": {
+                  "type": "string"
+                },
+                "submittedWaiver": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "teamSeasonId",
+                "teamId",
+                "teamName",
+                "leagueSeasonId",
+                "leagueName",
+                "submittedWaiver"
+              ],
+              "description": "Per-team waiver status for one of a player’s season teams. Admin-only data."
+            }
+          }
+        },
+        "required": [
+          "rosterMember",
+          "seasonTeams"
+        ],
+        "description": "Roster member augmented with the set of teams in the current season where the player has a roster row, including the submittedWaiver flag for each. Admin-only."
+      },
+      "TeamRosterWaiverSummaries": {
+        "type": "object",
+        "properties": {
+          "teamSeason": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rosterMember": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "playerNumber": {
+                      "type": "string",
+                      "pattern": "^\\d{0,2}$"
+                    },
+                    "inactive": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "submittedWaiver": {
+                      "type": "boolean"
+                    },
+                    "dateAdded": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "date-time",
+                      "default": null
+                    },
+                    "gamesPlayed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "player": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^d+$"
+                        },
+                        "submittedDriversLicense": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "firstYear": {
+                          "type": "number",
+                          "minimum": 1900,
+                          "maximum": 2026
+                        },
+                        "contact": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^\\d+$",
+                              "example": "12345"
+                            },
+                            "firstName": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "lastName": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "middleName": {
+                              "type": "string",
+                              "maxLength": 50
+                            },
+                            "email": {
+                              "type": "string",
+                              "maxLength": 100,
+                              "format": "email"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "maxLength": 50
+                            },
+                            "loginEmail": {
+                              "type": "string",
+                              "maxLength": 256,
+                              "format": "email"
+                            },
+                            "photoUrl": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "contactDetails": {
+                              "type": "object",
+                              "properties": {
+                                "phone1": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "phone2": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "phone3": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "streetAddress": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 100,
+                                  "default": ""
+                                },
+                                "city": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 50,
+                                  "default": ""
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 50,
+                                  "default": ""
+                                },
+                                "zip": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 10,
+                                  "default": ""
+                                },
+                                "dateOfBirth": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "firstYear": {
+                                  "type": "number",
+                                  "nullable": true
+                                }
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "firstName",
+                            "lastName"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstYear",
+                        "contact"
+                      ],
+                      "description": "Schema for a player who is or was on a team roster. This contains details that only ever need to be supplied once"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "player"
+                  ],
+                  "description": "Schema for a roster member including player details"
+                },
+                "seasonTeams": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "teamSeasonId": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "teamId": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "teamName": {
+                        "type": "string"
+                      },
+                      "leagueSeasonId": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "leagueName": {
+                        "type": "string"
+                      },
+                      "submittedWaiver": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "teamSeasonId",
+                      "teamId",
+                      "teamName",
+                      "leagueSeasonId",
+                      "leagueName",
+                      "submittedWaiver"
+                    ],
+                    "description": "Per-team waiver status for one of a player’s season teams. Admin-only data."
+                  }
+                }
+              },
+              "required": [
+                "rosterMember",
+                "seasonTeams"
+              ],
+              "description": "Roster member augmented with the set of teams in the current season where the player has a roster row, including the submittedWaiver flag for each. Admin-only."
+            }
+          }
+        },
+        "required": [
+          "teamSeason",
+          "members"
+        ],
+        "description": "Admin view of a team roster including cross-team waiver status per player for the current season."
+      },
       "PublicRosterMember": {
         "type": "object",
         "properties": {
@@ -2886,10 +3360,9 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
+            "type": "string",
             "nullable": true,
-            "minimum": 0,
-            "maximum": 99
+            "pattern": "^\\d{0,2}$"
           },
           "firstName": {
             "type": "string",
@@ -2952,10 +3425,9 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
+                  "type": "string",
                   "nullable": true,
-                  "minimum": 0,
-                  "maximum": 99
+                  "pattern": "^\\d{0,2}$"
                 },
                 "firstName": {
                   "type": "string",
@@ -3000,10 +3472,9 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
+            "type": "string",
             "nullable": true,
-            "minimum": 0,
-            "maximum": 99
+            "pattern": "^\\d{0,2}$"
           },
           "firstName": {
             "type": "string"
@@ -3069,10 +3540,9 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
+                  "type": "string",
                   "nullable": true,
-                  "minimum": 0,
-                  "maximum": 99
+                  "pattern": "^\\d{0,2}$"
                 },
                 "firstName": {
                   "type": "string"
@@ -10536,9 +11006,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "photoUrl": {
             "type": "string",
@@ -11174,9 +11643,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "photoUrl": {
             "type": "string",
@@ -11289,9 +11757,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "tb": {
             "type": "number",
@@ -11462,9 +11929,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "tb": {
                   "type": "number",
@@ -11672,9 +12138,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "photoUrl": {
                   "type": "string",
@@ -11797,9 +12262,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "ip": {
             "type": "number",
@@ -11980,9 +12444,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "ip": {
                   "type": "number",
@@ -12210,9 +12673,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "photoUrl": {
                   "type": "string",
@@ -12760,7 +13222,7 @@
           },
           "minAB": {
             "type": "string",
-            "default": 10
+            "default": 0
           },
           "sortField": {
             "type": "string",
@@ -12806,7 +13268,7 @@
           },
           "minIP": {
             "type": "string",
-            "default": 1
+            "default": 0
           },
           "sortField": {
             "type": "string",
@@ -47938,6 +48400,394 @@
         }
       }
     },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers/export": {
+      "get": {
+        "description": "Export team waiver roster to CSV file (only players with submitted waiver and email)",
+        "summary": "Export team waivers",
+        "operationId": "exportTeamWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/roster/waivers/export": {
+      "get": {
+        "description": "Export league waiver roster to CSV file (only players with submitted waiver and email, ordered by team)",
+        "summary": "Export league waivers",
+        "operationId": "exportLeagueWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers/missing/export": {
+      "get": {
+        "description": "Export team players missing a submitted waiver to CSV file",
+        "summary": "Export team players missing a waiver",
+        "operationId": "exportTeamMissingWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/roster/waivers/missing/export": {
+      "get": {
+        "description": "Export league players missing a submitted waiver to CSV file (ordered by team, includes players without an email)",
+        "summary": "Export league players missing a waiver",
+        "operationId": "exportLeagueMissingWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/export": {
       "get": {
         "description": "Export team roster to CSV file",
@@ -65869,6 +66719,102 @@
         }
       }
     },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers": {
+      "get": {
+        "description": "Get roster members for a team season augmented with per-team waiver status for every team the player is on in the current season. Admin only.",
+        "summary": "Get team roster waiver summaries",
+        "operationId": "getTeamRosterWaiverSummaries",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roster members with waiver summaries returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRosterWaiverSummaries"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-public": {
       "get": {
         "description": "Get public-safe roster members (name, jersey number, photo) for a specific team season.",
@@ -73716,7 +74662,7 @@
           {
             "schema": {
               "type": "string",
-              "default": 10
+              "default": 0
             },
             "required": false,
             "name": "minAB",
@@ -73872,7 +74818,7 @@
           {
             "schema": {
               "type": "string",
-              "default": 1
+              "default": 0
             },
             "required": false,
             "name": "minIP",

@@ -139,6 +139,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     accountType,
     filterType,
     filterDate,
+    timeZone,
     onError: setError,
     mode: 'manage',
   });

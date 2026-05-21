@@ -310,7 +310,7 @@ export type StatsRowBase = {
   playerId?: string | number | null;
   contactId?: string | number | null;
   playerName?: string | null;
-  playerNumber?: number | string | null;
+  playerNumber?: string | null;
   teamName?: string | null;
   teams?: string[] | null;
   ip?: number | null;

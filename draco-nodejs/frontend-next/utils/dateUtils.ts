@@ -35,23 +35,28 @@ const getDateTimePartsInTimezone = (
     return null;
   }
 
-  const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+  let parts: Record<string, string>;
+  try {
+    const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
 
-  const parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
-    if (part.type !== 'literal') {
-      acc[part.type] = part.value;
-    }
-    return acc;
-  }, {});
+    parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+      if (part.type !== 'literal') {
+        acc[part.type] = part.value;
+      }
+      return acc;
+    }, {});
+  } catch {
+    return null;
+  }
 
   const requiredParts = ['year', 'month', 'day', 'hour', 'minute', 'second'] as const;
   const hasAllParts = requiredParts.every((part) => parts[part] !== undefined);
@@ -332,6 +337,49 @@ export function isSameDayInTimezone(
   }
 
   return partsA.year === partsB.year && partsA.month === partsB.month && partsA.day === partsB.day;
+}
+
+export function startOfDayInTimezone(date: Date, timeZone: string): Date {
+  if (Number.isNaN(date.getTime())) {
+    return new Date(NaN);
+  }
+  const zonedParts = getDateTimePartsInTimezone(date, timeZone);
+  if (!zonedParts) {
+    return new Date(NaN);
+  }
+  return convertZonedPartsToUTCDate(
+    {
+      year: zonedParts.year,
+      month: zonedParts.month,
+      day: zonedParts.day,
+      hour: 0,
+      minute: 0,
+      second: 0,
+    },
+    timeZone,
+  );
+}
+
+export function endOfDayInTimezone(date: Date, timeZone: string): Date {
+  if (Number.isNaN(date.getTime())) {
+    return new Date(NaN);
+  }
+  const zonedParts = getDateTimePartsInTimezone(date, timeZone);
+  if (!zonedParts) {
+    return new Date(NaN);
+  }
+  const lastSecond = convertZonedPartsToUTCDate(
+    {
+      year: zonedParts.year,
+      month: zonedParts.month,
+      day: zonedParts.day,
+      hour: 23,
+      minute: 59,
+      second: 59,
+    },
+    timeZone,
+  );
+  return new Date(lastSecond.getTime() + 999);
 }
 
 /**

@@ -99,7 +99,7 @@ test.describe('Game Recap Flow - Page Stability', () => {
       0,
     );
 
-    const closeButton = dialog.getByRole('button', { name: /close/i });
+    const closeButton = dialog.getByRole('button', { name: /^(close|cancel)$/i });
     await closeButton.click();
     await expect(dialog).not.toBeVisible();
 

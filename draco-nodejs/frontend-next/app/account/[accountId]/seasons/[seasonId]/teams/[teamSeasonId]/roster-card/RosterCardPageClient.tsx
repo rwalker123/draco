@@ -277,7 +277,7 @@ const RosterCardPageClient: React.FC<RosterCardPageClientProps> = ({
                 <TableBody>
                   {rosterPlayers.map((player) => (
                     <TableRow key={player.id}>
-                      <TableCell>{player.playerNumber ?? '-'}</TableCell>
+                      <TableCell>{player.playerNumber || '-'}</TableCell>
                       <TableCell>{`${player.firstName} ${player.lastName}`.trim()}</TableCell>
                     </TableRow>
                   ))}

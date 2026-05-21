@@ -6,6 +6,7 @@ import {
   SignRosterMemberType,
   TeamRosterCardType,
   TeamRosterMembersType,
+  TeamRosterWaiverSummariesType,
   UpdateRosterMemberType,
 } from '@draco/shared-schemas';
 import { RosterResponseFormatter, ContactResponseFormatter } from '../responseFormatters/index.js';
@@ -69,6 +70,52 @@ export class RosterService {
     return RosterResponseFormatter.formatRosterMembersResponse(
       teamSeason,
       rosterMembers,
+      gamesPlayedMap,
+    );
+  }
+
+  async getTeamRosterWaiverSummaries(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    includeGamesPlayed = false,
+    includeInactive = false,
+  ): Promise<TeamRosterWaiverSummariesType> {
+    const teamSeason: dbTeamSeason | null = await this.teamRepository.findTeamSeasonSummary(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+      teamSeasonId,
+      includeInactive,
+    );
+
+    let gamesPlayedMap: Map<string, number> | undefined;
+    if (includeGamesPlayed) {
+      const gamesPlayedCounts =
+        await this.rosterRepository.countGamesPlayedByTeamSeason(teamSeasonId);
+      gamesPlayedMap = new Map(
+        gamesPlayedCounts.map((row) => [row.rosterSeasonId.toString(), row.gamesPlayed]),
+      );
+    }
+
+    const contactIds = rosterMembers.map((member) => member.roster.contacts.id);
+    const waiverRows = await this.contactRepository.findSeasonTeamWaiversForContacts(
+      accountId,
+      seasonId,
+      contactIds,
+    );
+
+    return RosterResponseFormatter.formatTeamRosterWaiverSummariesResponse(
+      teamSeason,
+      rosterMembers,
+      waiverRows,
       gamesPlayedMap,
     );
   }
@@ -228,7 +275,7 @@ export class RosterService {
     const rosterMember = await this.rosterRepository.createRosterSeasonEntry(
       rosterPlayer.id,
       teamSeasonId,
-      playerNumber ?? 0,
+      playerNumber ?? '',
       submittedWaiver ?? false,
     );
 

@@ -13,6 +13,7 @@ import {
 import Grid from '@mui/material/Grid';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import { AccountSettingKey } from '@draco/shared-schemas';
 import { AdminSubItemCard } from './index';
 import { type AdminSearchItem, searchAdminItems } from '../../lib/admin-hub-registry';
 
@@ -22,6 +23,7 @@ interface AdminHubSearchProps {
   isGlobalAdmin: boolean;
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  enabledSettings: ReadonlySet<AccountSettingKey>;
 }
 
 const AdminHubSearch: React.FC<AdminHubSearchProps> = ({
@@ -30,10 +32,11 @@ const AdminHubSearch: React.FC<AdminHubSearchProps> = ({
   isGlobalAdmin,
   searchTerm,
   onSearchChange,
+  enabledSettings,
 }) => {
   const theme = useTheme();
 
-  const results = searchAdminItems(items, searchTerm, isGlobalAdmin);
+  const results = searchAdminItems(items, searchTerm, isGlobalAdmin, enabledSettings);
   const isSearching = searchTerm.trim().length > 0;
 
   return (

@@ -165,7 +165,7 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             {stats.playerName}
           </Typography>
-          {stats.playerNumber !== null && stats.playerNumber !== undefined ? (
+          {stats.playerNumber ? (
             <Typography variant="subtitle2" color="text.secondary">
               #{stats.playerNumber}
             </Typography>

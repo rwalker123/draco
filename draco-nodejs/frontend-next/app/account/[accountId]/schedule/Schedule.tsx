@@ -100,6 +100,7 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     accountType,
     filterType,
     filterDate,
+    timeZone,
     onError: setError,
   });
 

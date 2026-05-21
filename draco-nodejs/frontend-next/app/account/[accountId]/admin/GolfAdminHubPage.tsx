@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Container, Typography, Divider } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Divider, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -11,9 +11,11 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import { getCurrentSeason } from '@draco/shared-api-client';
+import { AccountSettingKey } from '@draco/shared-schemas';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { AdminCategoryCard, AdminHubSearch } from '../../../../components/admin';
 import { useRole } from '../../../../context/RoleContext';
+import { useAccountSettings } from '../../../../hooks/useAccountSettings';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { getGolfAdminItems } from '../../../../lib/admin-hub-registry';
 import { unwrapApiResult } from '../../../../utils/apiResult';
@@ -35,6 +37,17 @@ const GolfAdminHubPage: React.FC = () => {
   const isGlobalAdmin = hasRole('Administrator');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentSeasonId, setCurrentSeasonId] = useState<string | undefined>(undefined);
+  const {
+    settings: accountSettings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useAccountSettings(accountId);
+
+  const enabledSettings = new Set<AccountSettingKey>(
+    (accountSettings ?? [])
+      .filter((setting) => Boolean(setting.effectiveValue ?? setting.value))
+      .map((setting) => setting.definition.key),
+  );
 
   useEffect(() => {
     if (!accountId) return;
@@ -111,13 +124,25 @@ const GolfAdminHubPage: React.FC = () => {
       </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <AdminHubSearch
-          items={golfItems}
-          accountId={accountId}
-          isGlobalAdmin={isGlobalAdmin}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
+        {settingsError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Unable to load account settings: {settingsError}
+          </Alert>
+        )}
+        {settingsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : settingsError ? null : (
+          <AdminHubSearch
+            items={golfItems}
+            accountId={accountId}
+            isGlobalAdmin={isGlobalAdmin}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            enabledSettings={enabledSettings}
+          />
+        )}
 
         {!isSearching && (
           <>

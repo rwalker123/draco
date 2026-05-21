@@ -13,6 +13,7 @@ import {
 } from './StatisticsTable';
 import LeaderCard from './LeaderCard';
 import TeamBadges from './TeamBadges';
+import { getLeaderForCard, processLeadersForTable } from './leaderTransforms';
 import type { LeaderCategoryType, LeaderRowType } from '@draco/shared-schemas';
 
 type LeaderRow = LeaderRowType;
@@ -27,53 +28,6 @@ const formatters: Record<string, (value: unknown) => string> = {
 
 const getFormatter = (format: string) => {
   return formatters[format] ?? ((value: unknown) => String(value ?? '0'));
-};
-
-const getLeaderForCard = (leaders: LeaderRow[]): LeaderRow | null => {
-  const firstPlaceEntries = leaders.filter((row) => row.rank === 1 && !row.isTie);
-
-  if (firstPlaceEntries.length === 1) {
-    return firstPlaceEntries[0];
-  }
-
-  if (firstPlaceEntries.length > 1) {
-    return {
-      playerId: 'tie-entry',
-      playerName: `${firstPlaceEntries.length} tied`,
-      teams: [],
-      teamName: '',
-      statValue: firstPlaceEntries[0].statValue,
-      category: firstPlaceEntries[0].category,
-      rank: 1,
-      isTie: true,
-      tieCount: firstPlaceEntries.length,
-    };
-  }
-
-  return null;
-};
-
-const processLeadersForTable = (
-  leaders: LeaderRow[],
-  leaderCard: LeaderRow | null,
-): LeaderRow[] => {
-  const processed = leaders.map((leader) => {
-    if (leader.isTie) {
-      return {
-        ...leader,
-        playerName: `${leader.tieCount} tied`,
-        teamName: '',
-        teams: [],
-      };
-    }
-    return leader;
-  });
-
-  if (leaderCard && !leaderCard.isTie) {
-    return processed.filter((leader) => leader.rank !== 1 || leader.isTie);
-  }
-
-  return processed;
 };
 
 const createLeaderColumns = (

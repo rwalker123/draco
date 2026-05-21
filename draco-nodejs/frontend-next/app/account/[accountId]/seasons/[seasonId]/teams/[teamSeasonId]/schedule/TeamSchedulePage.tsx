@@ -148,6 +148,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     accountType,
     filterType,
     filterDate,
+    timeZone,
     onError: setError,
   });
 

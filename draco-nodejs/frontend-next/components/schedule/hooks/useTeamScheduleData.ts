@@ -26,6 +26,7 @@ interface UseTeamScheduleDataProps {
   accountType?: string;
   filterType: FilterType;
   filterDate?: Date;
+  timeZone?: string;
   onError?: (message: string) => void;
 }
 
@@ -55,6 +56,7 @@ export const useTeamScheduleData = ({
   accountType,
   filterType,
   filterDate,
+  timeZone,
   onError,
 }: UseTeamScheduleDataProps): UseTeamScheduleDataReturn => {
   const { loading: authLoading } = useAuth();
@@ -80,7 +82,7 @@ export const useTeamScheduleData = ({
   const [latestGameDate, setLatestGameDate] = useState<Date | null>(null);
 
   const referenceDate = filterDate ?? new Date();
-  const { startDate, endDate } = computeDateRange(filterType, referenceDate);
+  const { startDate, endDate } = computeDateRange(filterType, referenceDate, timeZone);
 
   useEffect(() => {
     gamesCacheRef.current.clear();
@@ -200,7 +202,11 @@ export const useTeamScheduleData = ({
 
     const controller = new AbortController();
     const requestCache = gamesRequestCacheRef.current;
-    const { startDate: rangeStart, endDate: rangeEnd } = computeDateRange(filterType, filterDate);
+    const { startDate: rangeStart, endDate: rangeEnd } = computeDateRange(
+      filterType,
+      filterDate,
+      timeZone,
+    );
 
     const runLoadGamesData = async () => {
       try {
@@ -281,6 +287,7 @@ export const useTeamScheduleData = ({
     adapter,
     filterType,
     filterDate,
+    timeZone,
     supportsTeamSchedule,
   ]);
 
