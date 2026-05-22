@@ -8,7 +8,7 @@ const EnvSchema = z.object({
   MCP_AUDIENCE: z.string().default('mcp'),
   OAUTH_RESOURCE_METADATA_URL: z
     .string()
-    .default('http://localhost:3001/.well-known/oauth-protected-resource'),
+    .default('https://localhost:3001/.well-known/oauth-protected-resource'),
   LOG_LEVEL: z.string().default('info'),
   NODE_ENV: z.string().default('development'),
   MCP_RATE_LIMIT_PER_MIN: z.coerce.number().default(60),

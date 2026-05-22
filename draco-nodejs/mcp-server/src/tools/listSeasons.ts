@@ -1,45 +1,31 @@
 import { z } from 'zod';
-import { listTeamManagers } from '@draco/shared-api-client';
+import { listAccountSeasons } from '@draco/shared-api-client';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { getDracoClient } from '../sdkClient/createDracoClient.js';
 import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
-import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
-import { shapeManagers } from './helpers/shapeManagers.js';
+import { shapeSeasons } from './helpers/shapeSeasons.js';
 import { jsonResult } from './helpers/jsonResult.js';
 
-const TOOL_NAME = 'get_team_managers';
+const TOOL_NAME = 'list_seasons';
 
-export const getTeamManagersInputSchema = {
+export const listSeasonsInputSchema = {
   account_id: z.string().min(1),
-  team_season_id: z.string().min(1),
-  season_id: z.string().optional(),
 };
 
-export async function getTeamManagersHandler(args: {
-  account_id: string;
-  team_season_id: string;
-  season_id?: string;
-}): Promise<CallToolResult> {
+export async function listSeasonsHandler(args: { account_id: string }): Promise<CallToolResult> {
   const ctx = getContext();
   const start = Date.now();
   const client = getDracoClient();
 
   try {
-    let seasonId = args.season_id;
-    if (!seasonId) {
-      const resolved = await resolveCurrentSeason(client, args.account_id);
-      seasonId = resolved.seasonId;
-    }
-
-    const { data } = await listTeamManagers({
+    const { data } = await listAccountSeasons({
       client,
-      path: { accountId: args.account_id, seasonId, teamSeasonId: args.team_season_id },
+      path: { accountId: args.account_id },
+      query: { includeDivisions: true },
       throwOnError: true,
     });
-
-    const teamName = data.length > 0 ? data[0].team.name : undefined;
 
     auditLog({
       tool: TOOL_NAME,
@@ -51,7 +37,7 @@ export async function getTeamManagersHandler(args: {
       requestId: ctx.requestId,
     });
 
-    return jsonResult(shapeManagers(data, teamName));
+    return jsonResult(shapeSeasons(data));
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

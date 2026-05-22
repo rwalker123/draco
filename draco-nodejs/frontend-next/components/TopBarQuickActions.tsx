@@ -21,6 +21,8 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import CreateIcon from '@mui/icons-material/Create';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import HubIcon from '@mui/icons-material/Hub';
+import { SHOW_AI_INTEGRATIONS } from '@/constants/featureFlags';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -1342,6 +1344,19 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
             </>
           )}
           <ThemeSwitcher />
+          {user && SHOW_AI_INTEGRATIONS ? (
+            <Tooltip title="AI Integrations">
+              <IconButton
+                size="small"
+                color="inherit"
+                component={NextLink}
+                href="/integrations"
+                aria-label="AI Integrations"
+              >
+                <HubIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
         </Box>
         {announcementDialog}
       </>

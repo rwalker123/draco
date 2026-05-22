@@ -34,6 +34,7 @@ import { useRole } from '../context/RoleContext';
 import { useAccount, useIsIndividualGolfAccount } from '../context/AccountContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLogout } from '../hooks/useLogout';
+import { SHOW_AI_INTEGRATIONS } from '../constants/featureFlags';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
@@ -261,20 +262,22 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </MenuItem>,
         );
       }
-      items.push(
-        <MenuItem
-          key="ai-integrations"
-          onClick={() => {
-            handleMenuClose();
-            router.push('/account/integrations');
-          }}
-        >
-          <ListItemIcon>
-            <HubIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>AI Integrations</ListItemText>
-        </MenuItem>,
-      );
+      if (SHOW_AI_INTEGRATIONS) {
+        items.push(
+          <MenuItem
+            key="ai-integrations"
+            onClick={() => {
+              handleMenuClose();
+              router.push('/integrations');
+            }}
+          >
+            <ListItemIcon>
+              <HubIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>AI Integrations</ListItemText>
+          </MenuItem>,
+        );
+      }
       items.push(
         <MenuItem
           key="sign-out"

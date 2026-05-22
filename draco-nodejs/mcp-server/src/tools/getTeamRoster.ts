@@ -6,7 +6,8 @@ import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
 import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
-import { shapeRosterText } from './helpers/shapeRoster.js';
+import { shapeRoster } from './helpers/shapeRoster.js';
+import { jsonResult } from './helpers/jsonResult.js';
 
 const TOOL_NAME = 'get_team_roster';
 
@@ -38,8 +39,6 @@ export async function getTeamRosterHandler(args: {
       throwOnError: true,
     });
 
-    const text = shapeRosterText(data);
-
     auditLog({
       tool: TOOL_NAME,
       userId: ctx.userId,
@@ -50,7 +49,7 @@ export async function getTeamRosterHandler(args: {
       requestId: ctx.requestId,
     });
 
-    return { content: [{ type: 'text', text }] };
+    return jsonResult(shapeRoster(data));
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

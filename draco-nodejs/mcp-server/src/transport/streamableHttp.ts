@@ -100,7 +100,7 @@ export function mountMcp(app: Express): void {
     };
 
     await requestContext.run(ctx, async () => {
-      const server = new McpServer({ name: 'draco', version: '0.1.0' });
+      const server = new McpServer({ name: 'ezRecSports', version: '0.1.0' });
       registerTools(server);
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
       await server.connect(transport);

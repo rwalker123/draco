@@ -28,7 +28,7 @@ const USER_B = 'user-uuid-bbb';
 
 function makeRosterSeasonRow(overrides: Record<string, unknown> = {}) {
   return {
-    playernumber: 7,
+    playernumber: '7',
     teamsseason: {
       id: 1001n,
       name: 'Red Sox',
@@ -71,7 +71,7 @@ describe('PrismaContactRepository.findMyTeamSeasons', () => {
       leagueName: 'Summer League',
       divisionSeasonId: 501n,
       divisionName: 'Division A',
-      jerseyNumber: 7,
+      jerseyNumber: '7',
     });
   });
 
@@ -79,7 +79,7 @@ describe('PrismaContactRepository.findMyTeamSeasons', () => {
     prisma.rosterseason.findMany = vi.fn().mockResolvedValue([
       makeRosterSeasonRow(),
       makeRosterSeasonRow({
-        playernumber: 22,
+        playernumber: '22',
         teamsseason: {
           id: 1002n,
           name: 'Yankees',
@@ -106,7 +106,7 @@ describe('PrismaContactRepository.findMyTeamSeasons', () => {
       teamName: 'Yankees',
       divisionSeasonId: null,
       divisionName: null,
-      jerseyNumber: 22,
+      jerseyNumber: '22',
     });
   });
 

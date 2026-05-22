@@ -8,9 +8,16 @@ import CheckIcon from '@mui/icons-material/Check';
 interface CopyableUrlProps {
   url: string;
   onCopy: () => void;
+  label?: string;
+  multiline?: boolean;
 }
 
-export default function CopyableUrl({ url, onCopy }: CopyableUrlProps) {
+export default function CopyableUrl({
+  url,
+  onCopy,
+  label = 'URL',
+  multiline = false,
+}: CopyableUrlProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -25,14 +32,18 @@ export default function CopyableUrl({ url, onCopy }: CopyableUrlProps) {
       value={url}
       size="small"
       fullWidth
+      multiline={multiline}
       slotProps={{
         input: {
           readOnly: true,
           sx: { fontFamily: 'monospace', fontSize: '0.8rem' },
           endAdornment: (
-            <InputAdornment position="end">
-              <Tooltip title={copied ? 'Copied!' : 'Copy URL'}>
-                <IconButton size="small" onClick={handleCopy} aria-label="copy URL">
+            <InputAdornment
+              position="end"
+              sx={multiline ? { alignItems: 'flex-start' } : undefined}
+            >
+              <Tooltip title={copied ? 'Copied!' : `Copy ${label}`}>
+                <IconButton size="small" onClick={handleCopy} aria-label={`copy ${label}`}>
                   {copied ? (
                     <CheckIcon fontSize="small" color="success" />
                   ) : (

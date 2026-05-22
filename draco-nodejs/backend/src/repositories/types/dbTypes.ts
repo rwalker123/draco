@@ -56,7 +56,7 @@ export interface dbRosterSeasonMembership {
   leagueName: string;
   divisionSeasonId: bigint | null;
   divisionName: string | null;
-  jerseyNumber: number | null;
+  jerseyNumber: string | null;
 }
 
 export type dbWelcomeMessage = Prisma.accountwelcomeGetPayload<{

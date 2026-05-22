@@ -15,8 +15,43 @@ function extractStatus(err: unknown): number | undefined {
   return undefined;
 }
 
+function safeSerializeError(err: unknown): unknown {
+  if (err instanceof Error) {
+    return {
+      name: err.name,
+      message: err.message,
+      cause: err.cause ? safeSerializeError(err.cause) : undefined,
+      stack: err.stack,
+    };
+  }
+  if (err && typeof err === 'object') {
+    try {
+      return JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err as object)));
+    } catch {
+      return Object.fromEntries(
+        Object.getOwnPropertyNames(err as object).map((k) => [
+          k,
+          (err as Record<string, unknown>)[k],
+        ]),
+      );
+    }
+  }
+  return String(err);
+}
+
 export function mapSdkError(err: unknown, opts: { tool: string }): never {
   const status = extractStatus(err);
+
+  console.error(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      event: 'sdk_error',
+      tool: opts.tool,
+      status,
+      errorName: err instanceof Error ? err.name : typeof err,
+      error: safeSerializeError(err),
+    }),
+  );
 
   if (status === 401 || status === 403) {
     throw new McpError(
@@ -32,7 +67,7 @@ export function mapSdkError(err: unknown, opts: { tool: string }): never {
   if (status !== undefined && status >= 500) {
     throw new McpError(
       ErrorCode.InternalError,
-      `Draco API unavailable. Please try again. (tool: ${opts.tool})`,
+      `ezRecSports API unavailable. Please try again. (tool: ${opts.tool})`,
     );
   }
 

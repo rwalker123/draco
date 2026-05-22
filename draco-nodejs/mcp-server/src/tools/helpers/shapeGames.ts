@@ -11,22 +11,28 @@ type GameEntry = {
   gameType?: number;
 };
 
-export function shapeGamesText(games: GameEntry[], timezone: string): string {
-  if (games.length === 0) {
-    return '';
-  }
+export interface ShapedGame {
+  game_id: string;
+  game_date_iso: string;
+  game_date_local: string;
+  home_team: string;
+  visitor_team: string;
+  league_name: string;
+  field_name: string | null;
+  status: string | null;
+  game_type: 'regular' | 'playoff' | 'exhibition';
+}
 
-  const lines = games.map((g) => {
-    const home = g.homeTeam.name ?? 'Home';
-    const visitor = g.visitorTeam.name ?? 'Visitor';
-    const dateStr = formatGameDate(g.gameDate, timezone);
-    const field = g.field?.name ? ` at ${g.field.name}` : '';
-    const status =
-      g.gameStatusText && g.gameStatusText !== 'Scheduled' ? ` [${g.gameStatusText}]` : '';
-    const gameTypeSuffix =
-      g.gameType === 1 ? ' (Playoff)' : g.gameType === 2 ? ' (Exhibition)' : '';
-    return `- ${home} vs ${visitor}${gameTypeSuffix}, ${dateStr}${field}${status}`;
-  });
-
-  return lines.join('\n');
+export function shapeGames(games: GameEntry[], timezone: string): ShapedGame[] {
+  return games.map((g) => ({
+    game_id: g.id,
+    game_date_iso: g.gameDate,
+    game_date_local: formatGameDate(g.gameDate, timezone),
+    home_team: g.homeTeam.name ?? 'Home',
+    visitor_team: g.visitorTeam.name ?? 'Visitor',
+    league_name: g.league.name,
+    field_name: g.field?.name ?? null,
+    status: g.gameStatusText ?? null,
+    game_type: g.gameType === 1 ? 'playoff' : g.gameType === 2 ? 'exhibition' : 'regular',
+  }));
 }

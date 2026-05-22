@@ -511,7 +511,7 @@
             "nullable": true
           },
           "jerseyNumber": {
-            "type": "integer",
+            "type": "string",
             "nullable": true
           }
         },
@@ -558,7 +558,7 @@
               "nullable": true
             },
             "jerseyNumber": {
-              "type": "integer",
+              "type": "string",
               "nullable": true
             }
           },

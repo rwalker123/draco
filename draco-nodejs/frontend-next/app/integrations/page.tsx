@@ -5,8 +5,8 @@ export async function generateMetadata() {
   return buildSeoMetadata({
     title: `AI Integrations | ${DEFAULT_SITE_NAME}`,
     description:
-      'Connect your favorite AI assistant to Draco for read-only access to your teams, schedules, and stats.',
-    path: '/account/integrations',
+      'Connect your favorite AI assistant to ezRecSports for read-only access to your teams, schedules, and stats.',
+    path: '/integrations',
     index: false,
   });
 }

@@ -7,7 +7,8 @@ import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
 import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
 import { getAccountTimezone } from './helpers/accountTimezone.js';
-import { shapeGamesText } from './helpers/shapeGames.js';
+import { shapeGames } from './helpers/shapeGames.js';
+import { jsonResult } from './helpers/jsonResult.js';
 
 const TOOL_NAME = 'get_team_schedule';
 
@@ -61,13 +62,15 @@ export async function getTeamScheduleHandler(args: {
         count: 0,
         requestId: ctx.requestId,
       });
-      return {
-        content: [{ type: 'text', text: 'No games found for the specified date range.' }],
-      };
+      return jsonResult({
+        summary: 'No games found for the specified date range.',
+        count: 0,
+        games: [],
+      });
     }
 
     const timezone = await getAccountTimezone(client, args.account_id);
-    const text = `Team schedule (${games.length} game${games.length === 1 ? '' : 's'}):\n\n${shapeGamesText(games, timezone)}`;
+    const shaped = shapeGames(games, timezone);
 
     auditLog({
       tool: TOOL_NAME,
@@ -79,7 +82,12 @@ export async function getTeamScheduleHandler(args: {
       requestId: ctx.requestId,
     });
 
-    return { content: [{ type: 'text', text }] };
+    return jsonResult({
+      summary: `Team schedule with ${games.length} game${games.length === 1 ? '' : 's'}.`,
+      timezone,
+      count: games.length,
+      games: shaped,
+    });
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

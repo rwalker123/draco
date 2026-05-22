@@ -204,7 +204,7 @@ function makeMembership(overrides: Record<string, unknown> = {}) {
     leagueName: 'Summer League',
     divisionSeasonId: 501n,
     divisionName: 'Division A',
-    jerseyNumber: 7,
+    jerseyNumber: '7',
     ...overrides,
   };
 }

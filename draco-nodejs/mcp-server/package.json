@@ -8,7 +8,7 @@
   },
   "main": "dist/src/server.js",
   "scripts": {
-    "dev": "nodemon --exec tsx src/server.ts",
+    "dev": "sh -c 'if command -v mkcert >/dev/null 2>&1; then export NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\"; fi; nodemon --exec tsx src/server.ts'",
     "build": "tsc",
     "start": "node dist/src/server.js",
     "test": "vitest run",
@@ -22,6 +22,7 @@
     "@draco/shared-schemas": "workspace:*",
     "@modelcontextprotocol/sdk": "1.29.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^7.5.1",
     "helmet": "^8.1.0",

@@ -136,7 +136,7 @@ describe('listMyTeamsHandler', () => {
       expect(text).toContain('Tigers');
       expect(text).toContain('Adult League');
       expect(text).toContain('Division B');
-      expect(text).toContain('jersey #14');
+      expect(text).toContain('"jersey_number": 14');
     });
 
     it('handles teams without division', async () => {
@@ -159,7 +159,7 @@ describe('listMyTeamsHandler', () => {
 
       const result = await withCtx(() => listMyTeamsHandler({ account_id: 'acc-1' }));
       const text = (result.content[0] as { type: string; text: string }).text;
-      expect(text).toContain('no jersey');
+      expect(text).toContain('"jersey_number": null');
     });
 
     it('returns not-on-any-teams message for empty result', async () => {

@@ -148,7 +148,8 @@ router.get(
  */
 router.get(
   '/:accountId/contacts/me',
-  authenticateToken,
+  authenticateAny,
+  requireGet,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);

@@ -1,14 +1,27 @@
 import type { Account } from '@draco/shared-api-client';
 
-export function shapeAccountsText(accounts: Account[]): string {
+export interface ShapedAccount {
+  account_id: string;
+  name: string;
+  type: string | null;
+}
+
+export interface ShapedAccountsResult {
+  summary: string;
+  accounts: ShapedAccount[];
+}
+
+export function shapeAccounts(accounts: Account[]): ShapedAccountsResult {
   if (accounts.length === 0) {
-    return "You don't belong to any Draco accounts.";
+    return { summary: "You don't belong to any ezRecSports accounts.", accounts: [] };
   }
 
-  const lines = accounts.map((a) => {
-    const type = a.configuration?.accountType?.name;
-    return type ? `- "${a.name}" (${type})` : `- "${a.name}"`;
-  });
-
-  return `You belong to ${accounts.length} Draco account${accounts.length === 1 ? '' : 's'}:\n${lines.join('\n')}`;
+  return {
+    summary: `You belong to ${accounts.length} ezRecSports account${accounts.length === 1 ? '' : 's'}.`,
+    accounts: accounts.map((a) => ({
+      account_id: a.id,
+      name: a.name,
+      type: a.configuration?.accountType?.name ?? null,
+    })),
+  };
 }

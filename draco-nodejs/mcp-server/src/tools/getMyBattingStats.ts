@@ -6,7 +6,8 @@ import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
 import { resolveContact } from './helpers/resolveContact.js';
-import { shapeBattingStatsText } from './helpers/shapeStats.js';
+import { shapeBattingStats } from './helpers/shapeStats.js';
+import { jsonResult } from './helpers/jsonResult.js';
 
 const TOOL_NAME = 'get_my_batting_stats';
 
@@ -33,9 +34,11 @@ export async function getMyBattingStatsHandler(args: {
         status: 'ok',
         requestId: ctx.requestId,
       });
-      return {
-        content: [{ type: 'text', text: "You don't have player stats in this account." }],
-      };
+      return jsonResult({
+        summary: "You don't have player stats in this account.",
+        player_name: null,
+        rows: [],
+      });
     }
 
     const { data } = await getPlayerCareerStatistics({
@@ -43,8 +46,6 @@ export async function getMyBattingStatsHandler(args: {
       path: { accountId: args.account_id, playerId: rosterId },
       throwOnError: true,
     });
-
-    const text = shapeBattingStatsText(data);
 
     auditLog({
       tool: TOOL_NAME,
@@ -55,7 +56,7 @@ export async function getMyBattingStatsHandler(args: {
       requestId: ctx.requestId,
     });
 
-    return { content: [{ type: 'text', text }] };
+    return jsonResult(shapeBattingStats(data));
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

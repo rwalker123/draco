@@ -1,45 +1,37 @@
 import { z } from 'zod';
-import { listTeamManagers } from '@draco/shared-api-client';
+import { getPlayerCareerStatistics } from '@draco/shared-api-client';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { getDracoClient } from '../sdkClient/createDracoClient.js';
 import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
-import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
-import { shapeManagers } from './helpers/shapeManagers.js';
+import { shapeBattingStats, shapePitchingStats } from './helpers/shapeStats.js';
 import { jsonResult } from './helpers/jsonResult.js';
 
-const TOOL_NAME = 'get_team_managers';
+const TOOL_NAME = 'get_player_career_stats';
 
-export const getTeamManagersInputSchema = {
+export const getPlayerCareerStatsInputSchema = {
   account_id: z.string().min(1),
-  team_season_id: z.string().min(1),
-  season_id: z.string().optional(),
+  player_id: z.string().min(1),
 };
 
-export async function getTeamManagersHandler(args: {
+export async function getPlayerCareerStatsHandler(args: {
   account_id: string;
-  team_season_id: string;
-  season_id?: string;
+  player_id: string;
 }): Promise<CallToolResult> {
   const ctx = getContext();
   const start = Date.now();
   const client = getDracoClient();
 
   try {
-    let seasonId = args.season_id;
-    if (!seasonId) {
-      const resolved = await resolveCurrentSeason(client, args.account_id);
-      seasonId = resolved.seasonId;
-    }
-
-    const { data } = await listTeamManagers({
+    const { data } = await getPlayerCareerStatistics({
       client,
-      path: { accountId: args.account_id, seasonId, teamSeasonId: args.team_season_id },
+      path: { accountId: args.account_id, playerId: args.player_id },
       throwOnError: true,
     });
 
-    const teamName = data.length > 0 ? data[0].team.name : undefined;
+    const batting = shapeBattingStats(data);
+    const pitching = shapePitchingStats(data);
 
     auditLog({
       tool: TOOL_NAME,
@@ -47,11 +39,22 @@ export async function getTeamManagersHandler(args: {
       accountId: args.account_id,
       durationMs: Date.now() - start,
       status: 'ok',
-      count: data.length,
       requestId: ctx.requestId,
     });
 
-    return jsonResult(shapeManagers(data, teamName));
+    return jsonResult({
+      summary: `Career statistics for ${data.playerName}.`,
+      player_id: args.player_id,
+      player_name: data.playerName,
+      batting: {
+        count: batting.rows.length,
+        rows: batting.rows,
+      },
+      pitching: {
+        count: pitching.rows.length,
+        rows: pitching.rows,
+      },
+    });
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

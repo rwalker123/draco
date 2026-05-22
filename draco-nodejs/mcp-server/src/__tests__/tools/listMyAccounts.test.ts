@@ -66,7 +66,7 @@ describe('listMyAccountsHandler', () => {
       expect(result.content).toHaveLength(1);
       expect(result.content[0]).toMatchObject({ type: 'text' });
       const text = (result.content[0] as { type: string; text: string }).text;
-      expect(text).toContain('2 Draco accounts');
+      expect(text).toContain('2 ezRecSports accounts');
       expect(text).toContain('"Diamond League"');
       expect(text).toContain('"Pickup Crew"');
     });

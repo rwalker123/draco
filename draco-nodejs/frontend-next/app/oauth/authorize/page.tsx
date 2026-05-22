@@ -33,6 +33,23 @@ interface ErrorResponse {
   error_description?: string;
 }
 
+function coerceErrorResponse(data: unknown, status: number): ErrorResponse {
+  if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    const oauthErr = typeof d.error === 'string' ? d.error : undefined;
+    const oauthDesc = typeof d.error_description === 'string' ? d.error_description : undefined;
+    if (oauthErr) return { error: oauthErr, error_description: oauthDesc };
+
+    const envelopeErr =
+      d.error && typeof d.error === 'object' ? (d.error as Record<string, unknown>) : undefined;
+    const message =
+      (typeof d.message === 'string' && d.message) ||
+      (envelopeErr && typeof envelopeErr.message === 'string' ? envelopeErr.message : undefined);
+    if (message) return { error: `http_${status}`, error_description: message };
+  }
+  return { error: `http_${status}`, error_description: `Request failed with status ${status}` };
+}
+
 type ValidateResponse = ValidateSuccessResponse | RedirectResponse | ErrorResponse;
 
 interface DecisionResponse {
@@ -145,8 +162,7 @@ function OAuthAuthorizeContent() {
         if (controller.signal.aborted) return;
 
         if (!response.ok) {
-          const err = data as ErrorResponse;
-          setValidateError({ error: err.error, error_description: err.error_description });
+          setValidateError(coerceErrorResponse(data, response.status));
           return;
         }
 
@@ -210,10 +226,7 @@ function OAuthAuthorizeContent() {
       const data = (await response.json()) as DecisionResponse;
 
       if (!response.ok) {
-        setDecisionError({
-          error: data.error ?? 'request_failed',
-          error_description: data.error_description,
-        });
+        setDecisionError(coerceErrorResponse(data, response.status));
         return;
       }
 

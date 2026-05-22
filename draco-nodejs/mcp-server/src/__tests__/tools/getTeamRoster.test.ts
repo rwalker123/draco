@@ -108,8 +108,8 @@ describe('getTeamRosterHandler', () => {
 
       expect(text).toContain('Alice Cooper');
       expect(text).toContain('Bob Smith');
-      expect(text).toContain('#7');
-      expect(text).toContain('#14');
+      expect(text).toContain('"jersey_number": 7');
+      expect(text).toContain('"jersey_number": 14');
       expect(text).not.toContain('email');
       expect(text).not.toContain('phone');
       expect(text).not.toContain('address');

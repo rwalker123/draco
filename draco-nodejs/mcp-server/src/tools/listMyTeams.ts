@@ -6,6 +6,7 @@ import { getDracoClient } from '../sdkClient/createDracoClient.js';
 import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
+import { jsonResult } from './helpers/jsonResult.js';
 
 const TOOL_NAME = 'list_my_teams';
 
@@ -14,18 +15,39 @@ export const listMyTeamsInputSchema = {
   season_id: z.string().optional(),
 };
 
-function shapeTeamsText(teams: RosterSeasonMembership[], seasonName: string): string {
-  if (teams.length === 0) {
-    return `You're not on any teams in ${seasonName}.`;
-  }
+interface ShapedTeamMembership {
+  team_season_id: string;
+  team_name: string;
+  league_season_id: string;
+  league_name: string;
+  division_season_id: string | null;
+  division_name: string | null;
+  jersey_number: string | null;
+}
 
-  const lines = teams.map((t) => {
-    const division = t.divisionName ? `, ${t.divisionName}` : '';
-    const jersey = t.jerseyNumber != null ? `, jersey #${t.jerseyNumber}` : ', no jersey';
-    return `- ${t.teamName} (${t.leagueName}${division})${jersey}`;
-  });
+function shapeTeams(teams: RosterSeasonMembership[], seasonId: string, seasonName: string) {
+  const shaped: ShapedTeamMembership[] = teams.map((t) => ({
+    team_season_id: t.teamSeasonId,
+    team_name: t.teamName,
+    league_season_id: t.leagueSeasonId,
+    league_name: t.leagueName,
+    division_season_id: t.divisionSeasonId ?? null,
+    division_name: t.divisionName ?? null,
+    jersey_number: t.jerseyNumber ?? null,
+  }));
 
-  return `You're on ${teams.length} team${teams.length === 1 ? '' : 's'} in ${seasonName}:\n${lines.join('\n')}`;
+  const summary =
+    shaped.length === 0
+      ? `You're not on any teams in ${seasonName}.`
+      : `You're on ${shaped.length} team${shaped.length === 1 ? '' : 's'} in ${seasonName}.`;
+
+  return {
+    summary,
+    season_id: seasonId,
+    season_name: seasonName,
+    count: shaped.length,
+    teams: shaped,
+  };
 }
 
 export async function listMyTeamsHandler(args: {
@@ -66,9 +88,7 @@ export async function listMyTeamsHandler(args: {
       requestId: ctx.requestId,
     });
 
-    return {
-      content: [{ type: 'text', text: shapeTeamsText(teams, seasonName) }],
-    };
+    return jsonResult(shapeTeams(teams, seasonId, seasonName));
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

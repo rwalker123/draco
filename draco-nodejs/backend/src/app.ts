@@ -337,6 +337,7 @@ app.use('/api/accounts/:accountId/golf/closest-to-pin', golfClosestToPinRouter);
 app.use('/api/accounts/:accountId/golf/player/:contactId/scores', golfPlayerScoresRouter);
 app.use('/api/contacts/:contactId/golf', contactsGolfRouter);
 app.use('/', oauthRouter);
+app.use('/api', oauthRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

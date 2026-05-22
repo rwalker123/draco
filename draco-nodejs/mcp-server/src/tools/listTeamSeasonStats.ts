@@ -1,25 +1,27 @@
 import { z } from 'zod';
-import { listTeamManagers } from '@draco/shared-api-client';
+import { listTeamSeasonBattingStats, listTeamSeasonPitchingStats } from '@draco/shared-api-client';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { getDracoClient } from '../sdkClient/createDracoClient.js';
 import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
 import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
-import { shapeManagers } from './helpers/shapeManagers.js';
+import { shapeTeamBattingStats, shapeTeamPitchingStats } from './helpers/shapeTeamSeasonStats.js';
 import { jsonResult } from './helpers/jsonResult.js';
 
-const TOOL_NAME = 'get_team_managers';
+const TOOL_NAME = 'list_team_season_stats';
 
-export const getTeamManagersInputSchema = {
+export const listTeamSeasonStatsInputSchema = {
   account_id: z.string().min(1),
   team_season_id: z.string().min(1),
+  stat_type: z.enum(['batting', 'pitching']),
   season_id: z.string().optional(),
 };
 
-export async function getTeamManagersHandler(args: {
+export async function listTeamSeasonStatsHandler(args: {
   account_id: string;
   team_season_id: string;
+  stat_type: 'batting' | 'pitching';
   season_id?: string;
 }): Promise<CallToolResult> {
   const ctx = getContext();
@@ -33,14 +35,29 @@ export async function getTeamManagersHandler(args: {
       seasonId = resolved.seasonId;
     }
 
-    const { data } = await listTeamManagers({
+    if (args.stat_type === 'batting') {
+      const { data } = await listTeamSeasonBattingStats({
+        client,
+        path: { accountId: args.account_id, seasonId, teamSeasonId: args.team_season_id },
+        throwOnError: true,
+      });
+      auditLog({
+        tool: TOOL_NAME,
+        userId: ctx.userId,
+        accountId: args.account_id,
+        durationMs: Date.now() - start,
+        status: 'ok',
+        count: data.length,
+        requestId: ctx.requestId,
+      });
+      return jsonResult(shapeTeamBattingStats(data));
+    }
+
+    const { data } = await listTeamSeasonPitchingStats({
       client,
       path: { accountId: args.account_id, seasonId, teamSeasonId: args.team_season_id },
       throwOnError: true,
     });
-
-    const teamName = data.length > 0 ? data[0].team.name : undefined;
-
     auditLog({
       tool: TOOL_NAME,
       userId: ctx.userId,
@@ -50,8 +67,7 @@ export async function getTeamManagersHandler(args: {
       count: data.length,
       requestId: ctx.requestId,
     });
-
-    return jsonResult(shapeManagers(data, teamName));
+    return jsonResult(shapeTeamPitchingStats(data));
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

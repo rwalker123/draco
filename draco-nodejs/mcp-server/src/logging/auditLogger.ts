@@ -7,6 +7,8 @@ interface AuditEntry {
   durationMs: number;
   status: 'ok' | 'error';
   errorCode?: string;
+  errorMessage?: string;
+  errorStatus?: number;
   count?: number;
 }
 

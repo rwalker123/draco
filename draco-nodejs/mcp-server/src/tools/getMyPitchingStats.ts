@@ -6,7 +6,8 @@ import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
 import { resolveContact } from './helpers/resolveContact.js';
-import { shapePitchingStatsText } from './helpers/shapeStats.js';
+import { shapePitchingStats } from './helpers/shapeStats.js';
+import { jsonResult } from './helpers/jsonResult.js';
 
 const TOOL_NAME = 'get_my_pitching_stats';
 
@@ -33,9 +34,11 @@ export async function getMyPitchingStatsHandler(args: {
         status: 'ok',
         requestId: ctx.requestId,
       });
-      return {
-        content: [{ type: 'text', text: "You don't have player stats in this account." }],
-      };
+      return jsonResult({
+        summary: "You don't have player stats in this account.",
+        player_name: null,
+        rows: [],
+      });
     }
 
     const { data } = await getPlayerCareerStatistics({
@@ -43,8 +46,6 @@ export async function getMyPitchingStatsHandler(args: {
       path: { accountId: args.account_id, playerId: rosterId },
       throwOnError: true,
     });
-
-    const text = shapePitchingStatsText(data);
 
     auditLog({
       tool: TOOL_NAME,
@@ -55,7 +56,7 @@ export async function getMyPitchingStatsHandler(args: {
       requestId: ctx.requestId,
     });
 
-    return { content: [{ type: 'text', text }] };
+    return jsonResult(shapePitchingStats(data));
   } catch (err) {
     auditLog({
       tool: TOOL_NAME,

@@ -4,7 +4,8 @@ import { getDracoClient } from '../sdkClient/createDracoClient.js';
 import { mapSdkError } from '../sdkClient/errorMapping.js';
 import { auditLog } from '../logging/auditLogger.js';
 import { getContext } from '../auth/perRequestContext.js';
-import { shapeAccountsText } from './helpers/shapeAccount.js';
+import { shapeAccounts } from './helpers/shapeAccount.js';
+import { jsonResult } from './helpers/jsonResult.js';
 
 const TOOL_NAME = 'list_my_accounts';
 
@@ -24,16 +25,17 @@ export async function listMyAccountsHandler(): Promise<CallToolResult> {
       count: data.length,
       requestId: ctx.requestId,
     });
-    return {
-      content: [{ type: 'text', text: shapeAccountsText(data) }],
-    };
+    return jsonResult(shapeAccounts(data));
   } catch (err) {
+    const e = err as { message?: string; status?: number; response?: { status?: number } };
     auditLog({
       tool: TOOL_NAME,
       userId: ctx.userId,
       durationMs: Date.now() - start,
       status: 'error',
       requestId: ctx.requestId,
+      errorMessage: e?.message ?? String(err),
+      errorStatus: e?.response?.status ?? e?.status,
     });
     mapSdkError(err, { tool: TOOL_NAME });
   }

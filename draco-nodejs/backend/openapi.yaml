@@ -382,7 +382,7 @@ components:
           type: string
           nullable: true
         jerseyNumber:
-          type: integer
+          type: string
           nullable: true
       required:
         - teamSeasonId
@@ -420,7 +420,7 @@ components:
             type: string
             nullable: true
           jerseyNumber:
-            type: integer
+            type: string
             nullable: true
         required:
           - teamSeasonId

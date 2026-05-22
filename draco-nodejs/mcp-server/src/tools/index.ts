@@ -8,6 +8,25 @@ import { getTeamManagersInputSchema, getTeamManagersHandler } from './getTeamMan
 import { getTeamRosterInputSchema, getTeamRosterHandler } from './getTeamRoster.js';
 import { getTeamScheduleInputSchema, getTeamScheduleHandler } from './getTeamSchedule.js';
 import { getUpcomingGamesInputSchema, getUpcomingGamesHandler } from './getUpcomingGames.js';
+import { listSeasonsInputSchema, listSeasonsHandler } from './listSeasons.js';
+import {
+  listLeaderCategoriesInputSchema,
+  listLeaderCategoriesHandler,
+} from './listLeaderCategories.js';
+import {
+  getStatisticalLeadersInputSchema,
+  getStatisticalLeadersHandler,
+} from './getStatisticalLeaders.js';
+import { searchPlayersInputSchema, searchPlayersHandler } from './searchPlayers.js';
+import {
+  getPlayerCareerStatsInputSchema,
+  getPlayerCareerStatsHandler,
+} from './getPlayerCareerStats.js';
+import {
+  listTeamSeasonStatsInputSchema,
+  listTeamSeasonStatsHandler,
+} from './listTeamSeasonStats.js';
+import { getStandingsInputSchema, getStandingsHandler } from './getStandings.js';
 
 export function registerTools(server: McpServer): void {
   server.registerTool(
@@ -84,7 +103,7 @@ export function registerTools(server: McpServer): void {
     'list_my_accounts',
     {
       description:
-        'List all Draco accounts that the authenticated user belongs to. Use this first to discover account IDs needed by other tools.',
+        'List all ezRecSports accounts that the authenticated user belongs to. Use this first to discover account IDs needed by other tools.',
     },
     async () => listMyAccountsHandler(),
   );
@@ -97,5 +116,75 @@ export function registerTools(server: McpServer): void {
       inputSchema: listMyTeamsInputSchema,
     },
     async (args) => listMyTeamsHandler(args),
+  );
+
+  server.registerTool(
+    'list_seasons',
+    {
+      description:
+        'List all seasons in an account, including each season’s leagues and divisions. Use this to find season_id, league_season_id (used as league_id by other stats tools), and division_season_id.',
+      inputSchema: listSeasonsInputSchema,
+    },
+    async (args) => listSeasonsHandler(args),
+  );
+
+  server.registerTool(
+    'list_leader_categories',
+    {
+      description:
+        'List the batting and pitching leader categories available for the get_statistical_leaders tool (e.g., hr, rbi, avg, era, whip). Each category has a key, human label, and numeric format.',
+      inputSchema: listLeaderCategoriesInputSchema,
+    },
+    async (args) => listLeaderCategoriesHandler(args),
+  );
+
+  server.registerTool(
+    'get_statistical_leaders',
+    {
+      description:
+        'Return the top players in a league for a given statistical category (e.g., "hr", "avg", "era"). league_id is the league_season_id from list_seasons. Use list_leader_categories first to see valid category keys. Set is_historical=true for all-time leaders.',
+      inputSchema: getStatisticalLeadersInputSchema,
+    },
+    async (args) => getStatisticalLeadersHandler(args),
+  );
+
+  server.registerTool(
+    'search_players',
+    {
+      description:
+        'Search for players in an account by name. Returns a list of matching players with player_id values that can be used with get_player_career_stats. Query must be at least 2 characters.',
+      inputSchema: searchPlayersInputSchema,
+    },
+    async (args) => searchPlayersHandler(args),
+  );
+
+  server.registerTool(
+    'get_player_career_stats',
+    {
+      description:
+        "Retrieve a specific player's career batting and pitching statistics broken down by season. Use search_players to find a player_id by name.",
+      inputSchema: getPlayerCareerStatsInputSchema,
+    },
+    async (args) => getPlayerCareerStatsHandler(args),
+  );
+
+  server.registerTool(
+    'list_team_season_stats',
+    {
+      description:
+        'List per-player batting or pitching statistics for a specific team in a season. Set stat_type to "batting" or "pitching". Omit season_id to use the current season.',
+      inputSchema: listTeamSeasonStatsInputSchema,
+    },
+    async (args) => listTeamSeasonStatsHandler(args),
+  );
+
+  server.registerTool(
+    'get_standings',
+    {
+      description:
+        'Return league standings for a season. By default returns standings grouped by league and division (`grouped=true`). Set `grouped=false` for a flat list of all teams. Optionally pass `league_id` (the league_season_id from list_seasons) to filter to a single league. Omit season_id to use the current season.',
+      inputSchema: getStandingsInputSchema,
+    },
+    async (args) => getStandingsHandler(args),
   );
 }

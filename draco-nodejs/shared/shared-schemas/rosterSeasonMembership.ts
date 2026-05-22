@@ -12,7 +12,7 @@ export const RosterSeasonMembershipSchema = z
     leagueName: z.string().trim(),
     divisionSeasonId: bigintToStringSchema.nullable(),
     divisionName: z.string().trim().nullable(),
-    jerseyNumber: z.number().int().nullable(),
+    jerseyNumber: z.string().nullable(),
   })
   .openapi({
     description:
