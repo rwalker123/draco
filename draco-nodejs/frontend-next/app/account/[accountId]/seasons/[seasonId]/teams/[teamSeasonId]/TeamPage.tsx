@@ -357,6 +357,22 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       fieldId: game.field?.id ?? null,
       fieldName: game.field?.name ?? null,
       fieldShortName: game.field?.shortName ?? null,
+      fieldDetails: game.field
+        ? {
+            id: game.field.id ?? null,
+            name: game.field.name ?? null,
+            shortName: game.field.shortName ?? null,
+            address: game.field.address ?? null,
+            city: game.field.city ?? null,
+            state: game.field.state ?? null,
+            zip: game.field.zip ?? null,
+            rainoutNumber: game.field.rainoutNumber ?? null,
+            comment: game.field.comment ?? null,
+            directions: game.field.directions ?? null,
+            latitude: typeof game.field.latitude === 'string' ? game.field.latitude : null,
+            longitude: typeof game.field.longitude === 'string' ? game.field.longitude : null,
+          }
+        : null,
       hasGameRecap: game.hasGameRecap ?? false,
       gameRecaps: [],
       gameType: game.gameType ? Number(game.gameType) : undefined,

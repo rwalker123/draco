@@ -842,19 +842,26 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
       // Legacy callback pattern - build contact details and simplified state
       const allSelectedContactDetails: RecipientContact[] = [];
       const allContactIds = new Set<string>();
+      let hierarchicalContactCount = 0;
 
-      // Process all groups in mergedContactGroups (includes both manual and hierarchical)
-      mergedContactGroups.forEach((groups) => {
+      // Process all groups in mergedContactGroups (includes both manual and hierarchical).
+      // Hierarchical groups (season/league/division/team) store the hierarchy node id in
+      // `group.ids`, not individual contact ids, so we rely on `group.totalCount` for
+      // their recipient totals and assume the resolved emails are server-side valid.
+      mergedContactGroups.forEach((groups, groupType) => {
+        if (hierarchicalGroupTypes.has(groupType)) {
+          groups.forEach((group) => {
+            hierarchicalContactCount += group.totalCount;
+          });
+          return;
+        }
+
         groups.forEach((group) => {
           group.ids.forEach((contactId) => {
             if (!allContactIds.has(contactId)) {
               allContactIds.add(contactId);
 
-              // Get contact details
               const contact = getContactDetails(contactId);
-
-              // Note: Manager data conversion removed since 'managers' is no longer a group type
-              // Managers are handled via the managersOnly flag on hierarchical groups
 
               if (contact) {
                 allSelectedContactDetails.push(contact);
@@ -866,7 +873,9 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
       // Create simplified state for the compose page
       const validContactsCount = allSelectedContactDetails.filter((c) => c.hasValidEmail).length;
-      const totalRecipients = allSelectedContactDetails.length + totalWorkoutSelected;
+      const totalIndividualContacts = allSelectedContactDetails.length;
+      const totalRecipients =
+        totalIndividualContacts + hierarchicalContactCount + totalWorkoutSelected;
       const validWorkoutCount = totalWorkoutSelected; // assume workout registrants already filtered to valid emails server-side
       const validTeamsWantedCount = totalTeamsWantedSelected; // assume resolved emails will be valid server-side
       const validUmpireCount = totalUmpireSelected; // assume umpire emails are valid
@@ -878,12 +887,20 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
         workoutManagersOnly,
         totalRecipients: totalRecipients + totalTeamsWantedSelected + totalUmpireSelected,
         validEmailCount:
-          validContactsCount + validWorkoutCount + validTeamsWantedCount + validUmpireCount,
+          validContactsCount +
+          hierarchicalContactCount +
+          validWorkoutCount +
+          validTeamsWantedCount +
+          validUmpireCount,
         invalidEmailCount:
           totalRecipients +
           totalTeamsWantedSelected +
           totalUmpireSelected -
-          (validContactsCount + validWorkoutCount + validTeamsWantedCount + validUmpireCount),
+          (validContactsCount +
+            hierarchicalContactCount +
+            validWorkoutCount +
+            validTeamsWantedCount +
+            validUmpireCount),
         searchQuery: '',
         activeTab: 'contacts',
         expandedSections: new Set(),
