@@ -187,7 +187,11 @@ const runRoute = async (
               }
             });
         } else if (!settled) {
-          queueMicrotask(() => {
+          // asyncHandler-wrapped handlers return void while their internal
+          // Promise.resolve(fn).catch(next) chain is still pending. setImmediate
+          // runs after all queued microtasks, so any next(err) from an async
+          // rejection has fired and caughtError is populated before we resolve.
+          setImmediate(() => {
             if (!settled) {
               settled = true;
               resolve();
@@ -314,23 +318,24 @@ describe('Accounts player classifieds routes', () => {
       expect(playerClassifiedServiceMock.getTeamsWantedContactInfo).toHaveBeenCalledWith(42n, 1n);
     });
 
-    it('does not return contact info when an authenticated non-member access-code verification fails', async () => {
+    it('rejects an authenticated non-member when access-code verification fails', async () => {
       boundaryBehavior = 'deny';
-      let verifyCalled = false;
-      playerClassifiedServiceMock.verifyTeamsWantedAccess.mockImplementation(async () => {
-        verifyCalled = true;
-        throw new AuthorizationError('Invalid access code');
-      });
+      playerClassifiedServiceMock.verifyTeamsWantedAccess.mockRejectedValue(
+        new AuthorizationError('Invalid access code'),
+      );
 
-      await runRoute('get', path, {
+      const { error } = await runRoute('get', path, {
         params,
         query: { accessCode: VALID_ACCESS_CODE },
         headers: { authorization: 'Bearer token' },
       });
 
-      await new Promise((resolve) => setImmediate(resolve));
-
-      expect(verifyCalled).toBe(true);
+      expect(error).toBeInstanceOf(AuthorizationError);
+      expect(playerClassifiedServiceMock.verifyTeamsWantedAccess).toHaveBeenCalledWith(
+        42n,
+        VALID_ACCESS_CODE,
+        1n,
+      );
       expect(playerClassifiedServiceMock.getTeamsWantedContactInfo).not.toHaveBeenCalled();
     });
 
