@@ -22,13 +22,13 @@ export async function authenticateAny(
 ): Promise<void> {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ success: false, message: 'Access token required' });
+    sendOauthUnauthorized(res, 'Bearer token required');
     return;
   }
 
   const rawToken = authHeader.slice('Bearer '.length).trim();
   if (!rawToken) {
-    res.status(401).json({ success: false, message: 'Access token required' });
+    sendOauthUnauthorized(res, 'Bearer token required');
     return;
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IconButton, InputAdornment, TextField, Tooltip } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
@@ -21,6 +21,15 @@ export default function CopyableUrl({
   multiline = false,
 }: CopyableUrlProps) {
   const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current !== null) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCopy = async () => {
     try {
@@ -32,7 +41,13 @@ export default function CopyableUrl({
     }
     setCopied(true);
     onCopy();
-    setTimeout(() => setCopied(false), 2000);
+    if (copiedTimeoutRef.current !== null) {
+      clearTimeout(copiedTimeoutRef.current);
+    }
+    copiedTimeoutRef.current = setTimeout(() => {
+      copiedTimeoutRef.current = null;
+      setCopied(false);
+    }, 2000);
   };
 
   return (

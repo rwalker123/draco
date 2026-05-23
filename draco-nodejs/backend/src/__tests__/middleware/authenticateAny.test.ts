@@ -75,13 +75,17 @@ describe('authenticateAny', () => {
     vi.clearAllMocks();
   });
 
-  it('returns 401 when no Authorization header', async () => {
+  it('returns 401 with WWW-Authenticate when no Authorization header', async () => {
     const req = makeReq();
-    const { res, statusSpy } = makeRes();
+    const { res, statusSpy, setSpy } = makeRes();
 
     await authenticateAny(req, res, nextFn);
 
     expect(statusSpy).toHaveBeenCalledWith(401);
+    expect(setSpy).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      expect.stringContaining('resource_metadata='),
+    );
   });
 
   it('routes to OAuth verifier when aud=mcp', async () => {
