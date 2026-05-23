@@ -85,6 +85,27 @@ describe('oauthAuthMiddleware', () => {
     expect(statusSpy).toHaveBeenCalledWith(401);
   });
 
+  it('sanitizes CR/LF in error_description on WWW-Authenticate header', async () => {
+    vi.mocked(ServiceFactory.getOauthService).mockReturnValue({
+      verifyAccessToken: vi
+        .fn()
+        .mockRejectedValue(new OauthAuthenticationError('Bad\r\nInjected: header\r\n"quoted"')),
+    } as never);
+
+    vi.mocked(RepositoryFactory.getUserRepository).mockReturnValue({
+      findByUserId: vi.fn().mockResolvedValue(null),
+    } as never);
+
+    const req = mockReq('Bearer validtoken');
+    const { res, setSpy } = mockRes();
+
+    await oauthAuthMiddleware(req, res, mockNext);
+
+    const wwwHeader = vi.mocked(setSpy).mock.calls[0][1] as string;
+    expect(wwwHeader).not.toMatch(/[\r\n]/);
+    expect(wwwHeader).toContain('error_description="Bad  Injected: header  \\"quoted\\""');
+  });
+
   it('returns 401 with error=invalid_token when OauthAuthenticationError thrown', async () => {
     vi.mocked(ServiceFactory.getOauthService).mockReturnValue({
       verifyAccessToken: vi.fn().mockRejectedValue(new OauthAuthenticationError('Token revoked')),

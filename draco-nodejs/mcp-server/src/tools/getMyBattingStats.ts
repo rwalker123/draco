@@ -23,7 +23,7 @@ export async function getMyBattingStatsHandler(args: {
   const client = getDracoClient();
 
   try {
-    const { rosterId } = await resolveContact(client, args.account_id);
+    const { contactId, rosterId } = await resolveContact(client, args.account_id);
 
     if (!rosterId) {
       auditLog({
@@ -43,7 +43,7 @@ export async function getMyBattingStatsHandler(args: {
 
     const { data } = await getPlayerCareerStatistics({
       client,
-      path: { accountId: args.account_id, playerId: rosterId },
+      path: { accountId: args.account_id, playerId: contactId },
       throwOnError: true,
     });
 

@@ -25,7 +25,9 @@ vi.mock('../../sdkClient/createDracoClient.js', () => ({
 
 vi.mock('../../logging/auditLogger.js', () => ({ auditLog: vi.fn() }));
 
-const { searchPlayersHandler } = await import('../../tools/searchPlayers.js');
+import { z } from 'zod';
+const { searchPlayersHandler, searchPlayersInputSchema } =
+  await import('../../tools/searchPlayers.js');
 
 const fixtureCtx = {
   userId: 'u-1',
@@ -91,9 +93,10 @@ describe('searchPlayersHandler', () => {
     expect(parsed.summary).toContain('No players found');
   });
 
-  it('rejects too-short queries (min length 2)', async () => {
-    await expect(
-      withCtx(() => searchPlayersHandler({ account_id: '1', query: 'a' })),
-    ).rejects.toBeTruthy();
+  it('input schema rejects queries shorter than 2 characters', () => {
+    const schema = z.object(searchPlayersInputSchema);
+    expect(schema.safeParse({ account_id: '1', query: 'a' }).success).toBe(false);
+    expect(schema.safeParse({ account_id: '1', query: '' }).success).toBe(false);
+    expect(schema.safeParse({ account_id: '1', query: 'ab' }).success).toBe(true);
   });
 });

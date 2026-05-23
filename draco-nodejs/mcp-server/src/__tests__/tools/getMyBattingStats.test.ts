@@ -119,7 +119,7 @@ describe('getMyBattingStatsHandler', () => {
       expect(text).toContain('Spring 2026');
       expect(mockGetPlayerCareerStatistics).toHaveBeenCalledWith(
         expect.objectContaining({
-          path: { accountId: 'acc-1', playerId: 'player-99' },
+          path: { accountId: 'acc-1', playerId: 'contact-1' },
         }),
       );
     });

@@ -25,13 +25,20 @@ export async function verifyOauthBearer(rawToken: string, req: Request): Promise
   req.oauthClientId = clientId;
 }
 
+function sanitizeHeaderValue(value: string): string {
+  return value
+    .replace(/\p{Cc}/gu, ' ')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"');
+}
+
 export function buildWwwAuthenticate(errorCode?: string, errorDescription?: string): string {
   let header = `Bearer realm="draco"`;
   if (errorCode) {
-    header += `, error="${errorCode}"`;
+    header += `, error="${sanitizeHeaderValue(errorCode)}"`;
   }
   if (errorDescription) {
-    header += `, error_description="${errorDescription.replace(/"/g, '\\"')}"`;
+    header += `, error_description="${sanitizeHeaderValue(errorDescription)}"`;
   }
   header += `, resource_metadata="${RESOURCE_METADATA_URL}"`;
   return header;

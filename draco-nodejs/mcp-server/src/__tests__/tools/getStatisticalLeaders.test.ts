@@ -26,7 +26,9 @@ vi.mock('../../sdkClient/createDracoClient.js', () => ({
 
 vi.mock('../../logging/auditLogger.js', () => ({ auditLog: vi.fn() }));
 
-const { getStatisticalLeadersHandler } = await import('../../tools/getStatisticalLeaders.js');
+import { z } from 'zod';
+const { getStatisticalLeadersHandler, getStatisticalLeadersInputSchema } =
+  await import('../../tools/getStatisticalLeaders.js');
 
 const fixtureCtx = {
   userId: 'u-1',
@@ -140,16 +142,16 @@ describe('getStatisticalLeadersHandler', () => {
     expect(parsed.summary).toContain('No leaders');
   });
 
-  it('rejects invalid input (missing category)', async () => {
-    await expect(
-      withCtx(() =>
-        getStatisticalLeadersHandler({
-          account_id: '1',
-          league_id: '500',
-          category: '',
-        }),
-      ),
-    ).rejects.toBeTruthy();
+  it('input schema rejects empty category and missing required fields', () => {
+    const schema = z.object(getStatisticalLeadersInputSchema);
+    expect(schema.safeParse({ account_id: '1', league_id: '500', category: '' }).success).toBe(
+      false,
+    );
+    expect(schema.safeParse({ account_id: '1', league_id: '500' }).success).toBe(false);
+    expect(schema.safeParse({ account_id: '1', category: 'hr' }).success).toBe(false);
+    expect(schema.safeParse({ account_id: '1', league_id: '500', category: 'hr' }).success).toBe(
+      true,
+    );
   });
 
   it('maps SDK 404 to McpError InvalidParams', async () => {
