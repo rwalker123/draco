@@ -83,6 +83,7 @@ class ContactRepositoryStub implements IContactRepository {
   findSeasonTeamWaiversForContacts =
     vi.fn<IContactRepository['findSeasonTeamWaiversForContacts']>();
   hasCareerStatistics = vi.fn<IContactRepository['hasCareerStatistics']>();
+  findMyTeamSeasons = vi.fn<IContactRepository['findMyTeamSeasons']>();
 }
 
 class RoleRepositoryStub implements IRoleRepository {

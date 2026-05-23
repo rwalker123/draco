@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateAny, requireGet } from '../middleware/authenticateAny.js';
 import { accountCreationRateLimit, signupRateLimit } from '../middleware/rateLimitMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import {
@@ -69,7 +70,8 @@ router.get(
  */
 router.get(
   '/my-accounts',
-  authenticateToken,
+  authenticateAny,
+  requireGet,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const accounts = await accountsService.getAccountsForUser(userId);

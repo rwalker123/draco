@@ -21,6 +21,7 @@ import {
   Menu as MenuIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Home as HomeIcon,
+  Hub as HubIcon,
   Key as KeyIcon,
   Person as PersonIcon,
   Handshake as HandshakeIcon,
@@ -33,6 +34,7 @@ import { useRole } from '../context/RoleContext';
 import { useAccount, useIsIndividualGolfAccount } from '../context/AccountContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLogout } from '../hooks/useLogout';
+import { SHOW_AI_INTEGRATIONS } from '../constants/featureFlags';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
@@ -257,6 +259,22 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
               <HandshakeIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Register</ListItemText>
+          </MenuItem>,
+        );
+      }
+      if (SHOW_AI_INTEGRATIONS) {
+        items.push(
+          <MenuItem
+            key="ai-integrations"
+            onClick={() => {
+              handleMenuClose();
+              router.push('/integrations');
+            }}
+          >
+            <ListItemIcon>
+              <HubIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>AI Integrations</ListItemText>
           </MenuItem>,
         );
       }

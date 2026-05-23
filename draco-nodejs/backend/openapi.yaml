@@ -358,6 +358,81 @@ components:
               maximum: 2026
       additionalProperties: false
       description: Schema for updating a roster member
+    RosterSeasonMembership:
+      type: object
+      properties:
+        teamSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        teamName:
+          type: string
+        leagueSeasonId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        leagueName:
+          type: string
+        divisionSeasonId:
+          type: string
+          nullable: true
+          pattern: ^\d+$
+          example: "12345"
+        divisionName:
+          type: string
+          nullable: true
+        jerseyNumber:
+          type: string
+          nullable: true
+      required:
+        - teamSeasonId
+        - teamName
+        - leagueSeasonId
+        - leagueName
+        - divisionSeasonId
+        - divisionName
+        - jerseyNumber
+      description: A player's membership in a team for a specific season, including
+        league and division context.
+    RosterSeasonMembershipList:
+      type: array
+      items:
+        type: object
+        properties:
+          teamSeasonId:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          teamName:
+            type: string
+          leagueSeasonId:
+            type: string
+            pattern: ^\d+$
+            example: "12345"
+          leagueName:
+            type: string
+          divisionSeasonId:
+            type: string
+            nullable: true
+            pattern: ^\d+$
+            example: "12345"
+          divisionName:
+            type: string
+            nullable: true
+          jerseyNumber:
+            type: string
+            nullable: true
+        required:
+          - teamSeasonId
+          - teamName
+          - leagueSeasonId
+          - leagueName
+          - divisionSeasonId
+          - divisionName
+          - jerseyNumber
+        description: A player's membership in a team for a specific season, including
+          league and division context.
+      description: List of a player's team memberships for a season.
     Contact:
       type: object
       properties:
@@ -33198,6 +33273,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactIndividualGolfAccount"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/contacts/me/teams:
+    get:
+      summary: List my team memberships for a season
+      description: Returns the authenticated user's team memberships within a specific
+        season. Accepts both user JWT and OAuth bearer tokens.
+      operationId: listMyTeamSeasons
+      security:
+        - bearerAuth: []
+      tags:
+        - Contacts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: User's team memberships for the season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterSeasonMembershipList"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Access denied - user does not belong to account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
         "500":
           description: Internal server error
           content:

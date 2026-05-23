@@ -419,6 +419,8 @@ import {
   IndividualSseTicketResponseSchema,
   GetBaseballLiveScoringTicketSchema,
   AllTimeTeamSummarySchema,
+  RosterSeasonMembershipSchema,
+  RosterSeasonMembershipListSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -428,6 +430,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const UpdateRosterMemberSchemaRef = registry.register(
     'UpdateRosterMember',
     UpdateRosterMemberSchema,
+  );
+  const RosterSeasonMembershipSchemaRef = registry.register(
+    'RosterSeasonMembership',
+    RosterSeasonMembershipSchema,
+  );
+  const RosterSeasonMembershipListSchemaRef = registry.register(
+    'RosterSeasonMembershipList',
+    RosterSeasonMembershipListSchema,
   );
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
@@ -1652,6 +1662,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RosterPlayerSchemaRef,
     SignRosterMemberSchemaRef,
     UpdateRosterMemberSchemaRef,
+    RosterSeasonMembershipSchemaRef,
+    RosterSeasonMembershipListSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
     NamedContactSchemaRef,

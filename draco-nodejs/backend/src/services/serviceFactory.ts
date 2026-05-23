@@ -114,6 +114,7 @@ import { IndividualLiveScoringService } from './individualLiveScoringService.js'
 import { BaseballLiveScoringService } from './baseballLiveScoringService.js';
 import { createStorageService, StorageService } from './storageService.js';
 import { CalendarService } from './calendarService.js';
+import { OauthService } from './oauthService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -218,6 +219,7 @@ export class ServiceFactory {
   private static baseballLiveScoringService: BaseballLiveScoringService;
   private static storageService: StorageService;
   private static calendarService: CalendarService;
+  private static oauthService: OauthService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -1138,5 +1140,12 @@ export class ServiceFactory {
       this.calendarService = new CalendarService();
     }
     return this.calendarService;
+  }
+
+  static getOauthService(): OauthService {
+    if (!this.oauthService) {
+      this.oauthService = new OauthService();
+    }
+    return this.oauthService;
   }
 }

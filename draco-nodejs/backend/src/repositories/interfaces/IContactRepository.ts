@@ -9,6 +9,7 @@ import {
   dbContactExportData,
   dbPlayerCurrentSeasonTeam,
   dbContactSeasonTeamWaiver,
+  dbRosterSeasonMembership,
 } from '../types/dbTypes.js';
 import { ContactQueryOptions, AdvancedFilterOptions } from '../../interfaces/contactInterfaces.js';
 
@@ -71,4 +72,9 @@ export interface IContactRepository extends IBaseRepository<contacts> {
     contactIds: bigint[],
   ): Promise<dbContactSeasonTeamWaiver[]>;
   hasCareerStatistics(accountId: bigint, contactId: bigint): Promise<boolean>;
+  findMyTeamSeasons(input: {
+    userId: string;
+    accountId: bigint;
+    seasonId: bigint;
+  }): Promise<dbRosterSeasonMembership[]>;
 }
