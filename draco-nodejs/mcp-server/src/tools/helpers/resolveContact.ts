@@ -31,11 +31,21 @@ export async function resolveContact(client: Client, accountId: string): Promise
       throwOnError: true,
     });
     rosterId = roster.id;
-  } catch {
-    rosterId = null;
+  } catch (err) {
+    if (!isNotFoundError(err)) {
+      throw err;
+    }
   }
 
   const result: ContactInfo = { contactId: contact.id, rosterId };
   ctx.cache.set(cacheKey, result);
   return result;
+}
+
+function isNotFoundError(err: unknown): boolean {
+  if (err && typeof err === 'object') {
+    const e = err as { response?: { status?: number }; status?: number };
+    return (e.response?.status ?? e.status) === 404;
+  }
+  return false;
 }

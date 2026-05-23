@@ -4,6 +4,10 @@ import { partialMock } from '../../test-utils/partialMock.js';
 
 vi.mock('../../middleware/oauthAuthMiddleware.js', () => ({
   verifyOauthBearer: vi.fn(),
+  buildWwwAuthenticate: vi.fn(
+    (code?: string, desc?: string) =>
+      `Bearer realm="draco"${code ? `, error="${code}"` : ''}${desc ? `, error_description="${desc}"` : ''}, resource_metadata="test"`,
+  ),
 }));
 
 vi.mock('../../middleware/authMiddleware.js', () => ({
@@ -32,12 +36,15 @@ function makeRes(): {
   res: Response;
   statusSpy: ReturnType<typeof vi.fn>;
   jsonSpy: ReturnType<typeof vi.fn>;
+  setSpy: ReturnType<typeof vi.fn>;
 } {
   const jsonSpy = vi.fn().mockReturnThis();
+  const setSpy = vi.fn();
   const statusSpy = vi.fn();
-  const res = partialMock<Response>({ status: statusSpy, json: jsonSpy });
+  const res = partialMock<Response>({ status: statusSpy, json: jsonSpy, set: setSpy });
   statusSpy.mockReturnValue(res);
-  return { res, statusSpy, jsonSpy };
+  setSpy.mockReturnValue(res);
+  return { res, statusSpy, jsonSpy, setSpy };
 }
 
 function makeOauthToken(): string {
@@ -62,7 +69,7 @@ function makeUserToken(): string {
 }
 
 describe('authenticateAny', () => {
-  const nextFn = vi.fn() as unknown as NextFunction;
+  const nextFn: NextFunction = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -138,10 +145,34 @@ describe('authenticateAny', () => {
 
     expect(statusSpy).toHaveBeenCalledWith(401);
   });
+
+  it('sets WWW-Authenticate header with resource_metadata on OAuth verifier failure', async () => {
+    const token = makeOauthToken();
+
+    vi.mocked(verifyOauthBearer).mockRejectedValue(new OauthAuthenticationError('Token revoked'));
+
+    const req = makeReq(`Bearer ${token}`);
+    const { res, setSpy, jsonSpy } = makeRes();
+
+    await authenticateAny(req, res, nextFn);
+
+    expect(setSpy).toHaveBeenCalledWith('WWW-Authenticate', expect.stringContaining('Bearer'));
+    expect(setSpy).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      expect.stringContaining('resource_metadata='),
+    );
+    expect(setSpy).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      expect.stringContaining('error="invalid_token"'),
+    );
+    expect(jsonSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'invalid_token', error_description: 'Token revoked' }),
+    );
+  });
 });
 
 describe('requireGet', () => {
-  const nextFn = vi.fn() as unknown as NextFunction;
+  const nextFn: NextFunction = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -205,7 +236,8 @@ describe('authenticateAny enforceAccountBoundary compatibility', () => {
     const req = makeReq(`Bearer ${token}`);
     const { res } = makeRes();
 
-    await authenticateAny(req, res, vi.fn() as unknown as NextFunction);
+    const localNext: NextFunction = vi.fn();
+    await authenticateAny(req, res, localNext);
 
     expect(req.user?.id).toBe('user-fixed-id');
     expect(req.user?.username).toBe('fixeduser');

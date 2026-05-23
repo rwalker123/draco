@@ -332,6 +332,9 @@ function makeOauthRepo(
     revokeRefreshChain: vi
       .fn()
       .mockResolvedValue({ revokedTokenHashes: [], affectedAccessTokenJtis: [] }),
+    revokeRefreshChainsByUserAndClient: vi
+      .fn()
+      .mockResolvedValue({ revokedTokenHashes: [], affectedAccessTokenJtis: [] }),
     rotateRefreshToken: vi.fn().mockResolvedValue(undefined),
     createConsentRequest: vi.fn().mockResolvedValue(undefined),
     findConsentRequestByRid: vi.fn().mockResolvedValue(null),
@@ -931,24 +934,20 @@ describe('OAuth routes integration', () => {
         .mockResolvedValueOnce(refreshRow)
         .mockResolvedValueOnce({ ...refreshRow, revoked_at: new Date() });
 
-      const first = await request(app)
-        .post('/oauth/token')
-        .send({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: 'mcp_testclient',
-        });
+      const first = await request(app).post('/oauth/token').send({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: 'mcp_testclient',
+      });
 
       expect(first.status).toBe(200);
       expect(first.body.refresh_token).toBeTruthy();
 
-      const second = await request(app)
-        .post('/oauth/token')
-        .send({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: 'mcp_testclient',
-        });
+      const second = await request(app).post('/oauth/token').send({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: 'mcp_testclient',
+      });
 
       expect(second.status).toBe(400);
       expect(second.body.error).toBe('invalid_grant');
@@ -974,13 +973,11 @@ describe('OAuth routes integration', () => {
         affectedAccessTokenJtis: ['jti1'],
       });
 
-      const res = await request(app)
-        .post('/oauth/token')
-        .send({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: 'mcp_testclient',
-        });
+      const res = await request(app).post('/oauth/token').send({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: 'mcp_testclient',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('invalid_grant');
@@ -1100,13 +1097,11 @@ describe('OAuth routes integration', () => {
         makeRefreshTokenRow({ token_hash: refreshHash }),
       );
 
-      const res = await request(app)
-        .post('/oauth/revoke')
-        .send({
-          token: refreshToken,
-          token_type_hint: 'refresh_token',
-          client_id: 'mcp_testclient',
-        });
+      const res = await request(app).post('/oauth/revoke').send({
+        token: refreshToken,
+        token_type_hint: 'refresh_token',
+        client_id: 'mcp_testclient',
+      });
 
       expect(res.status).toBe(200);
       expect(oauthRepo.markRefreshTokenRevoked).toHaveBeenCalled();

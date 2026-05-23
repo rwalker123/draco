@@ -2,36 +2,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { Express, Request, Response, NextFunction } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { verifyAccessToken, AuthenticationError } from '../auth/verifyAccessToken.js';
 import { requestContext } from '../auth/perRequestContext.js';
 import type { RequestContext } from '../auth/perRequestContext.js';
 import { registerTools } from '../tools/index.js';
 
-function decodeJti(token: string): string | undefined {
-  try {
-    const decoded = jwt.decode(token);
-    if (decoded && typeof decoded === 'object' && typeof decoded.jti === 'string') {
-      return decoded.jti;
-    }
-  } catch {
-    // fall through
-  }
-  return undefined;
-}
-
 function buildRateLimiters() {
-  const keyGenerator = (req: Request): string => {
-    const auth = req.headers.authorization;
-    const token = auth?.startsWith('Bearer ') ? auth.slice(7) : undefined;
-    if (token) {
-      const jti = decodeJti(token);
-      if (jti) return `jti:${jti}`;
-    }
-    return `ip:${req.ip ?? 'unknown'}`;
-  };
-
   const onLimitReached = (_req: Request, res: Response, _next: NextFunction): void => {
     res.status(429).json({
       error: 'rate_limited',
@@ -42,7 +19,6 @@ function buildRateLimiters() {
   const perMin = rateLimit({
     windowMs: 60 * 1000,
     max: env.MCP_RATE_LIMIT_PER_MIN,
-    keyGenerator,
     handler: onLimitReached,
     standardHeaders: true,
     legacyHeaders: false,
@@ -51,7 +27,6 @@ function buildRateLimiters() {
   const perHour = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: env.MCP_RATE_LIMIT_PER_HOUR,
-    keyGenerator,
     handler: onLimitReached,
     standardHeaders: true,
     legacyHeaders: false,

@@ -8,6 +8,7 @@ import CheckIcon from '@mui/icons-material/Check';
 interface CopyableUrlProps {
   url: string;
   onCopy: () => void;
+  onError?: (message: string) => void;
   label?: string;
   multiline?: boolean;
 }
@@ -15,13 +16,20 @@ interface CopyableUrlProps {
 export default function CopyableUrl({
   url,
   onCopy,
+  onError,
   label = 'URL',
   multiline = false,
 }: CopyableUrlProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(url);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to copy to clipboard';
+      onError?.(message);
+      return;
+    }
     setCopied(true);
     onCopy();
     setTimeout(() => setCopied(false), 2000);

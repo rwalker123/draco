@@ -263,6 +263,9 @@ describe('GET /api/accounts/:accountId/seasons/:seasonId/contacts/me/teams', () 
       revokeRefreshChain: vi
         .fn()
         .mockResolvedValue({ revokedTokenHashes: [], affectedAccessTokenJtis: [] }),
+      revokeRefreshChainsByUserAndClient: vi
+        .fn()
+        .mockResolvedValue({ revokedTokenHashes: [], affectedAccessTokenJtis: [] }),
       rotateRefreshToken: vi.fn(),
       createConsentRequest: vi.fn(),
       findConsentRequestByRid: vi.fn().mockResolvedValue(null),

@@ -25,7 +25,7 @@ export async function verifyOauthBearer(rawToken: string, req: Request): Promise
   req.oauthClientId = clientId;
 }
 
-function buildWwwAuthenticate(errorCode?: string, errorDescription?: string): string {
+export function buildWwwAuthenticate(errorCode?: string, errorDescription?: string): string {
   let header = `Bearer realm="draco"`;
   if (errorCode) {
     header += `, error="${errorCode}"`;

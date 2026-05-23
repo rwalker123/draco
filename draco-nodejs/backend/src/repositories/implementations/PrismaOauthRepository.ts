@@ -235,10 +235,28 @@ export class PrismaOauthRepository implements IOauthRepository {
   }
 
   async revokeRefreshChain(chainId: string, reason: string): Promise<RevokeRefreshChainResult> {
+    return this.revokeRefreshTokensWhere({ chain_id: chainId, revoked_at: null }, reason);
+  }
+
+  async revokeRefreshChainsByUserAndClient(
+    userId: string,
+    clientId: string,
+    reason: string,
+  ): Promise<RevokeRefreshChainResult> {
+    return this.revokeRefreshTokensWhere(
+      { user_id: userId, client_id: clientId, revoked_at: null },
+      reason,
+    );
+  }
+
+  private async revokeRefreshTokensWhere(
+    where: Prisma.oauth_refresh_tokenWhereInput,
+    reason: string,
+  ): Promise<RevokeRefreshChainResult> {
     const now = new Date();
 
     const tokens = await this.prisma.oauth_refresh_token.findMany({
-      where: { chain_id: chainId, revoked_at: null },
+      where,
       select: { token_hash: true, current_access_token_jti: true },
     });
 

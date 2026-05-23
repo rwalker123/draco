@@ -241,8 +241,9 @@ export class OauthService {
     const consumed = await this.repository.consumeAuthorizationCode(codeHash);
 
     if (!consumed) {
-      const chainResult = await this.repository.revokeRefreshChain(
-        `${codeRow.client_id}:${codeRow.user_id}`,
+      const chainResult = await this.repository.revokeRefreshChainsByUserAndClient(
+        codeRow.user_id,
+        codeRow.client_id,
         'code_replay_detected',
       );
       await this.repository.revokeAccessTokensByJtis(

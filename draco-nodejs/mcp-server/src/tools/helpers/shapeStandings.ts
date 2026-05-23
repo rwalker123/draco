@@ -97,18 +97,11 @@ export function shapeGroupedStandings(
     .map((l) => ({
       league_season_id: l.league.id,
       league_name: l.league.name,
-      divisions: l.divisions.map((d) => {
-        const divEntry = d.division;
-        const divisionName =
-          (divEntry as unknown as { division?: { name?: string } }).division?.name ?? 'Unknown';
-        return {
-          division_season_id: divEntry.id,
-          division_name: divisionName,
-          teams: d.teams.map((t, idx) =>
-            shapeFlatTeam(t as Parameters<typeof shapeFlatTeam>[0], idx + 1),
-          ),
-        };
-      }),
+      divisions: l.divisions.map((d) => ({
+        division_season_id: d.division.id,
+        division_name: d.division.division?.name ?? 'Unknown',
+        teams: d.teams.map((t, idx) => shapeFlatTeam(t, idx + 1)),
+      })),
     }));
 
   const totalTeams = shapedLeagues.reduce(

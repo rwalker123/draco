@@ -175,6 +175,11 @@ export interface IOauthRepository {
   findRefreshTokenByHash(tokenHash: string): Promise<OauthRefreshToken | null>;
   markRefreshTokenRevoked(tokenHash: string, reason: string): Promise<void>;
   revokeRefreshChain(chainId: string, reason: string): Promise<RevokeRefreshChainResult>;
+  revokeRefreshChainsByUserAndClient(
+    userId: string,
+    clientId: string,
+    reason: string,
+  ): Promise<RevokeRefreshChainResult>;
   rotateRefreshToken(input: {
     oldHash: string;
     newToken: CreateRefreshTokenInput;

@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { PrismaClient } from '#prisma/client';
-import type { MockedObject } from 'vitest';
+import type { Mock } from 'vitest';
+import { partialPrismaMock } from '../../test-utils/partialMock.js';
 
-type PrismaMock = MockedObject<PrismaClient>;
+interface RosterSeasonMock {
+  findMany: Mock;
+  findFirst: Mock;
+}
+
+interface PrismaMock {
+  rosterseason: RosterSeasonMock;
+}
 
 function makePrisma(): PrismaMock {
   return {
@@ -10,13 +17,13 @@ function makePrisma(): PrismaMock {
       findMany: vi.fn(),
       findFirst: vi.fn(),
     },
-  } as unknown as PrismaMock;
+  };
 }
 
 async function makeRepo(prisma: PrismaMock) {
   const { PrismaContactRepository } =
     await import('../../repositories/implementations/PrismaContactRepository.js');
-  return new PrismaContactRepository(prisma as unknown as PrismaClient);
+  return new PrismaContactRepository(partialPrismaMock(prisma));
 }
 
 const ACCOUNT_A = 100n;

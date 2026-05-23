@@ -38,13 +38,12 @@ function mockRes(): {
 } {
   const jsonSpy = vi.fn().mockReturnThis();
   const setSpy = vi.fn().mockReturnThis();
-  const statusSpy = vi.fn().mockReturnValue({ json: jsonSpy, set: setSpy });
+  const statusSpy = vi.fn();
   const res = partialMock<Response>({
     status: statusSpy,
     json: jsonSpy,
     set: setSpy,
   });
-  (res as unknown as { status: typeof statusSpy }).status = statusSpy;
   statusSpy.mockReturnValue(res);
   setSpy.mockReturnValue(res);
   return { res, statusSpy, jsonSpy, setSpy };

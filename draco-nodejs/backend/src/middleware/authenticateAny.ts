@@ -1,8 +1,19 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { verifyOauthBearer } from './oauthAuthMiddleware.js';
+import { verifyOauthBearer, buildWwwAuthenticate } from './oauthAuthMiddleware.js';
 import { OauthAuthenticationError } from '../services/oauthErrors.js';
 import { authenticateToken } from './authMiddleware.js';
+
+function sendOauthUnauthorized(
+  res: Response,
+  description: string,
+  errorCode = 'invalid_token',
+): void {
+  res.status(401).set('WWW-Authenticate', buildWwwAuthenticate(errorCode, description)).json({
+    error: errorCode,
+    error_description: description,
+  });
+}
 
 export async function authenticateAny(
   req: Request,
@@ -37,7 +48,7 @@ export async function authenticateAny(
       next();
     } catch (err) {
       if (err instanceof OauthAuthenticationError) {
-        res.status(401).json({ success: false, message: err.message });
+        sendOauthUnauthorized(res, err.message);
         return;
       }
       next(err);

@@ -65,6 +65,9 @@ function makeRepo(
     revokeRefreshChain: vi
       .fn()
       .mockResolvedValue({ revokedTokenHashes: [], affectedAccessTokenJtis: [] }),
+    revokeRefreshChainsByUserAndClient: vi
+      .fn()
+      .mockResolvedValue({ revokedTokenHashes: [], affectedAccessTokenJtis: [] }),
     rotateRefreshToken: vi.fn().mockResolvedValue(undefined),
     disableClient: vi.fn().mockResolvedValue(undefined),
     createConsentRequest: vi.fn().mockResolvedValue(undefined),
@@ -453,6 +456,46 @@ describe('OauthService', () => {
       ).rejects.toMatchObject({ error: 'invalid_grant' });
 
       expect(revokeAccessByJtis).toHaveBeenCalled();
+    });
+
+    it('revokes refresh chains for user+client on code reuse', async () => {
+      const rawCode = 'testcode123456789012345678901234567890123';
+      const codeHash = crypto.createHash('sha256').update(rawCode).digest('hex');
+
+      const revokeChainsByUserAndClient = vi
+        .fn()
+        .mockResolvedValue({ revokedTokenHashes: ['h1'], affectedAccessTokenJtis: ['jti-rt'] });
+      const revokeByJtis = vi.fn().mockResolvedValue(undefined);
+
+      repo = makeRepo({
+        findClientById: vi.fn().mockResolvedValue(makeClient()),
+        findAuthorizationCodeByHash: vi
+          .fn()
+          .mockResolvedValue(
+            makeAuthCode({ code_hash: codeHash, user_id: 'user-xyz', client_id: 'mcp_testclient' }),
+          ),
+        consumeAuthorizationCode: vi.fn().mockResolvedValue(false),
+        revokeRefreshChainsByUserAndClient: revokeChainsByUserAndClient,
+        revokeAccessTokensByJtis: revokeByJtis,
+      });
+      vi.mocked(RepositoryFactory.getOauthRepository).mockReturnValue(repo);
+
+      const svc = await buildService();
+      await expect(
+        svc.exchangeCode({
+          code: rawCode,
+          codeVerifier: 'verifier',
+          clientId: 'mcp_testclient',
+          redirectUri: 'https://example.com/callback',
+        }),
+      ).rejects.toMatchObject({ error: 'invalid_grant' });
+
+      expect(revokeChainsByUserAndClient).toHaveBeenCalledWith(
+        'user-xyz',
+        'mcp_testclient',
+        'code_replay_detected',
+      );
+      expect(revokeByJtis).toHaveBeenCalledWith(['jti-rt'], 'code_replay_detected');
     });
 
     it('throws invalid_grant when code expired', async () => {
