@@ -61,10 +61,14 @@ export async function authenticateAny(
 
 export function requireGet(req: Request, res: Response, next: NextFunction): void {
   if (req.isOauth === true && req.method !== 'GET') {
-    res.status(403).json({
-      error: 'insufficient_scope',
-      error_description: 'OAuth tokens are read-only',
-    });
+    const description = 'OAuth tokens are read-only';
+    res
+      .status(403)
+      .set('WWW-Authenticate', buildWwwAuthenticate('insufficient_scope', description))
+      .json({
+        error: 'insufficient_scope',
+        error_description: description,
+      });
     return;
   }
   next();

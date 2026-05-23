@@ -196,11 +196,15 @@ describe('requireGet', () => {
   it('blocks POST requests from OAuth tokens with 403', () => {
     const req = makeReq(undefined, 'POST');
     req.isOauth = true;
-    const { res, statusSpy, jsonSpy } = makeRes();
+    const { res, statusSpy, jsonSpy, setSpy } = makeRes();
 
     requireGet(req, res, nextFn);
 
     expect(statusSpy).toHaveBeenCalledWith(403);
+    expect(setSpy).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      expect.stringContaining('error="insufficient_scope"'),
+    );
     expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ error: 'insufficient_scope' }));
     expect(nextFn).not.toHaveBeenCalled();
   });

@@ -19,7 +19,7 @@ const BACKEND_PER_TEAM_LIMIT = 20;
 export const getRecentGamesInputSchema = {
   account_id: z.string().min(1),
   team_season_id: z.string().optional(),
-  limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT).optional(),
+  limit: z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
 };
 
 export async function getRecentGamesHandler(args: {

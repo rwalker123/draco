@@ -18,7 +18,7 @@ MCP SDK version pinned to **1.29.0** — revisit quarterly.
 | `list_my_accounts` | All ezRecSports accounts the user belongs to |
 | `list_my_teams` | Teams the user is on for a given account/season |
 
-All date output is rendered in the account's local timezone (`accounts.timezoneid`).
+All date output is rendered in the account's local timezone (`account.configuration.timeZone`, falling back to `UTC`).
 
 ## Environment Variables
 
@@ -32,12 +32,12 @@ All date output is rendered in the account's local timezone (`accounts.timezonei
 | `OAUTH_RESOURCE_METADATA_URL` | No | `https://localhost:3001/.well-known/oauth-protected-resource` | Used in WWW-Authenticate headers |
 | `NODE_EXTRA_CA_CERTS` | Locally | — | Path to mkcert rootCA.pem so Node trusts the backend's local HTTPS cert |
 | `LOG_LEVEL` | No | `info` | Log level |
-| `MCP_RATE_LIMIT_PER_MIN` | No | `60` | Max requests per minute per token (`jti`) |
-| `MCP_RATE_LIMIT_PER_HOUR` | No | `600` | Max requests per hour per token (`jti`) |
+| `MCP_RATE_LIMIT_PER_MIN` | No | `60` | Max requests per minute per client IP |
+| `MCP_RATE_LIMIT_PER_HOUR` | No | `600` | Max requests per hour per client IP |
 
 ## Rate Limiting
 
-Two sliding-window limits are applied per `jti` (per OAuth access token):
+Two sliding-window limits are applied per client IP (Express trusts one proxy hop for Railway, so `X-Forwarded-For` is honored):
 
 - **60 calls / minute** (configurable via `MCP_RATE_LIMIT_PER_MIN`)
 - **600 calls / hour** (configurable via `MCP_RATE_LIMIT_PER_HOUR`)
@@ -50,8 +50,6 @@ When a limit is exceeded, the server responds with `429 Too Many Requests` and `
   "error_description": "Too many requests. Try again later."
 }
 ```
-
-If the bearer token can't be decoded (malformed), the rate limit falls back to IP address.
 
 ## How to Test Locally
 
