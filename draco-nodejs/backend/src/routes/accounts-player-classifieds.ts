@@ -61,6 +61,11 @@ const requireAccessCodeForRequest = (req: Request): string => {
   return parseAccessCodeValue(candidate);
 };
 
+const clearAuthenticatedUser = (req: Request): void => {
+  (req as Request & { user?: unknown }).user = undefined;
+  (req as Request & { accountBoundary?: unknown }).accountBoundary = undefined;
+};
+
 const createTeamsWantedAuthMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
@@ -68,6 +73,7 @@ const createTeamsWantedAuthMiddleware = () => {
 
     const fallbackToAccessCode = () => {
       try {
+        clearAuthenticatedUser(req);
         requireAccessCodeForRequest(req);
         next();
       } catch (error) {
@@ -116,6 +122,7 @@ const createTeamsWantedContactAuthMiddleware = () => {
 
     const fallbackToAccessCode = () => {
       try {
+        clearAuthenticatedUser(req);
         requireAccessCodeForRequest(req);
         next();
       } catch (error) {

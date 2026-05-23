@@ -91,12 +91,34 @@ const runRoute = async (
     throw new Error(`Route ${method.toUpperCase()} ${path} not found`);
   }
 
-  const layerRoute = (layer as { route: { stack: Array<{ handle: unknown }> } }).route;
-  const handlers = layerRoute.stack.map(
-    (s) => s.handle as (req: Request, res: Response, next: NextFunction) => unknown,
-  );
+  type MinimalRequest = {
+    method: string;
+    params: Record<string, string>;
+    body: unknown;
+    query: Record<string, unknown>;
+    headers: Record<string, string>;
+    get: (headerName: string) => string | undefined;
+    user?: Request['user'];
+    accountBoundary?: Request['accountBoundary'];
+  };
 
-  const req = {
+  type MockResponse = {
+    body: unknown;
+    statusCode: number;
+    headers: Record<string, unknown>;
+    status(code: number): MockResponse;
+    json(payload: unknown): MockResponse;
+    send(payload: unknown): MockResponse;
+    set(field: string, value: unknown): MockResponse;
+    setHeader(field: string, value: unknown): void;
+  };
+
+  type RouteHandler = (req: MinimalRequest, res: MockResponse, next: NextFunction) => unknown;
+
+  const layerRoute = (layer as { route: { stack: Array<{ handle: unknown }> } }).route;
+  const handlers = layerRoute.stack.map((s) => s.handle as RouteHandler);
+
+  const req: MinimalRequest = {
     method: method.toUpperCase(),
     params,
     body,
@@ -106,38 +128,32 @@ const runRoute = async (
       const key = headerName.toLowerCase();
       return headers[headerName] ?? headers[key];
     },
-  } as unknown as Request;
-
-  type MockResponse = Response & {
-    body: unknown;
-    statusCode: number;
-    headers: Record<string, unknown>;
   };
 
-  const res = {
+  const res: MockResponse = {
     statusCode: 200,
-    headers: {} as Record<string, unknown>,
-    body: undefined as unknown,
+    headers: {},
+    body: undefined,
     status(code: number) {
-      (this as MockResponse).statusCode = code;
+      this.statusCode = code;
       return this;
     },
     json(payload: unknown) {
-      (this as MockResponse).body = payload;
+      this.body = payload;
       return this;
     },
     send(payload: unknown) {
-      (this as MockResponse).body = payload;
+      this.body = payload;
       return this;
     },
     set(field: string, value: unknown) {
-      (this as MockResponse).headers[field] = value;
+      this.headers[field] = value;
       return this;
     },
     setHeader(field: string, value: unknown) {
-      (this as MockResponse).headers[field] = value;
+      this.headers[field] = value;
     },
-  } as unknown as MockResponse;
+  };
 
   let caughtError: unknown = null;
 
@@ -277,12 +293,9 @@ describe('Accounts player classifieds routes', () => {
       expect(playerClassifiedServiceMock.getTeamsWantedContactInfo).not.toHaveBeenCalled();
     });
 
-    it('allows an authenticated non-member to use a valid access-code format', async () => {
-      // Pre-existing route behavior: when an authenticated user fails the boundary
-      // and falls back via access code, the handler short-circuits on req.user and
-      // returns contact info without verifying the access code against the classified.
-      // This test pins the current behavior so the gate change does not regress it.
+    it('requires server-side access-code verification when an authenticated non-member supplies an access code', async () => {
       boundaryBehavior = 'deny';
+      playerClassifiedServiceMock.verifyTeamsWantedAccess.mockResolvedValue({});
       playerClassifiedServiceMock.getTeamsWantedContactInfo.mockResolvedValue(contactInfo);
 
       const { res, error } = await runRoute('get', path, {
@@ -293,7 +306,32 @@ describe('Accounts player classifieds routes', () => {
 
       expect(error).toBeNull();
       expect(res.statusCode).toBe(200);
+      expect(playerClassifiedServiceMock.verifyTeamsWantedAccess).toHaveBeenCalledWith(
+        42n,
+        VALID_ACCESS_CODE,
+        1n,
+      );
       expect(playerClassifiedServiceMock.getTeamsWantedContactInfo).toHaveBeenCalledWith(42n, 1n);
+    });
+
+    it('does not return contact info when an authenticated non-member access-code verification fails', async () => {
+      boundaryBehavior = 'deny';
+      let verifyCalled = false;
+      playerClassifiedServiceMock.verifyTeamsWantedAccess.mockImplementation(async () => {
+        verifyCalled = true;
+        throw new AuthorizationError('Invalid access code');
+      });
+
+      await runRoute('get', path, {
+        params,
+        query: { accessCode: VALID_ACCESS_CODE },
+        headers: { authorization: 'Bearer token' },
+      });
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(verifyCalled).toBe(true);
+      expect(playerClassifiedServiceMock.getTeamsWantedContactInfo).not.toHaveBeenCalled();
     });
 
     it('returns contact info for an unauthenticated request with a valid access code', async () => {
