@@ -57,6 +57,17 @@ import Button from '@mui/material/Button';
 import type { DiscordLinkStatusType } from '@draco/shared-schemas';
 import { useCurrentSeason } from '../../../../../../../hooks/useCurrentSeason';
 
+const normalizeCoordinate = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toString();
+  }
+  return null;
+};
+
 interface TeamPageProps {
   accountId: string;
   seasonId: string;
@@ -357,6 +368,22 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       fieldId: game.field?.id ?? null,
       fieldName: game.field?.name ?? null,
       fieldShortName: game.field?.shortName ?? null,
+      fieldDetails: game.field
+        ? {
+            id: game.field.id ?? null,
+            name: game.field.name ?? null,
+            shortName: game.field.shortName ?? null,
+            address: game.field.address ?? null,
+            city: game.field.city ?? null,
+            state: game.field.state ?? null,
+            zip: game.field.zip ?? null,
+            rainoutNumber: game.field.rainoutNumber ?? null,
+            comment: game.field.comment ?? null,
+            directions: game.field.directions ?? null,
+            latitude: normalizeCoordinate(game.field.latitude),
+            longitude: normalizeCoordinate(game.field.longitude),
+          }
+        : null,
       hasGameRecap: game.hasGameRecap ?? false,
       gameRecaps: [],
       gameType: game.gameType ? Number(game.gameType) : undefined,

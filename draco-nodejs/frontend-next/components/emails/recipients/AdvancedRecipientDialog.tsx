@@ -139,6 +139,70 @@ export function buildSelectedIndividualIds(
   return new Set<string>(individualsGroups.flatMap((g) => Array.from(g.ids)));
 }
 
+export const HIERARCHICAL_GROUP_TYPES: ReadonlySet<GroupType> = new Set<GroupType>([
+  'season',
+  'league',
+  'division',
+  'team',
+]);
+
+export interface AggregatedRecipientCounts {
+  individualContactDetails: RecipientContact[];
+  hierarchicalContactCount: number;
+  totalRecipients: number;
+  validEmailCount: number;
+  invalidEmailCount: number;
+}
+
+export function aggregateRecipientCounts(
+  mergedContactGroups: Map<GroupType, ContactGroup[]>,
+  workoutCount: number,
+  teamsWantedCount: number,
+  umpireCount: number,
+  getContact: (contactId: string) => RecipientContact | null | undefined,
+): AggregatedRecipientCounts {
+  const seenContactIds = new Set<string>();
+  const individualContactDetails: RecipientContact[] = [];
+  let hierarchicalContactCount = 0;
+
+  mergedContactGroups.forEach((groups, groupType) => {
+    if (HIERARCHICAL_GROUP_TYPES.has(groupType)) {
+      groups.forEach((group) => {
+        hierarchicalContactCount += group.totalCount;
+      });
+      return;
+    }
+
+    groups.forEach((group) => {
+      group.ids.forEach((contactId) => {
+        if (seenContactIds.has(contactId)) {
+          return;
+        }
+        seenContactIds.add(contactId);
+        const contact = getContact(contactId);
+        if (contact) {
+          individualContactDetails.push(contact);
+        }
+      });
+    });
+  });
+
+  const validIndividualCount = individualContactDetails.filter((c) => c.hasValidEmail).length;
+  const totalIndividualCount = individualContactDetails.length;
+  const totalRecipients =
+    totalIndividualCount + hierarchicalContactCount + workoutCount + teamsWantedCount + umpireCount;
+  const validEmailCount =
+    validIndividualCount + hierarchicalContactCount + workoutCount + teamsWantedCount + umpireCount;
+
+  return {
+    individualContactDetails,
+    hierarchicalContactCount,
+    totalRecipients,
+    validEmailCount,
+    invalidEmailCount: totalRecipients - validEmailCount,
+  };
+}
+
 /**
  * Wrapper component that provides the ManagerStateProvider context
  */
@@ -805,12 +869,6 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
     // Define which group types are manual (preserved) vs hierarchical (replaced)
     const manualGroupTypes: Set<GroupType> = new Set(['individuals']);
-    const hierarchicalGroupTypes: Set<GroupType> = new Set([
-      'season',
-      'league',
-      'division',
-      'team',
-    ]);
 
     // Start with a copy of selectedGroups, but filter out old hierarchical groups
     const mergedContactGroups = new Map<GroupType, ContactGroup[]>();
@@ -825,7 +883,7 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
 
     // Add/replace hierarchical ContactGroups (replace old hierarchical groups)
     hierarchicalContactGroups.forEach((contactGroups: ContactGroup[], groupType: GroupType) => {
-      if (contactGroups.length > 0 && hierarchicalGroupTypes.has(groupType)) {
+      if (contactGroups.length > 0 && HIERARCHICAL_GROUP_TYPES.has(groupType)) {
         // Replace any existing hierarchical groups of this type
         mergedContactGroups.set(groupType, contactGroups);
       }
@@ -839,58 +897,30 @@ const AdvancedRecipientDialog: React.FC<AdvancedRecipientDialogProps> = ({
     }
 
     if (onApply) {
-      // Legacy callback pattern - build contact details and simplified state
-      const allSelectedContactDetails: RecipientContact[] = [];
-      const allContactIds = new Set<string>();
+      const aggregated = aggregateRecipientCounts(
+        mergedContactGroups,
+        totalWorkoutSelected,
+        totalTeamsWantedSelected,
+        totalUmpireSelected,
+        getContactDetails,
+      );
 
-      // Process all groups in mergedContactGroups (includes both manual and hierarchical)
-      mergedContactGroups.forEach((groups) => {
-        groups.forEach((group) => {
-          group.ids.forEach((contactId) => {
-            if (!allContactIds.has(contactId)) {
-              allContactIds.add(contactId);
-
-              // Get contact details
-              const contact = getContactDetails(contactId);
-
-              // Note: Manager data conversion removed since 'managers' is no longer a group type
-              // Managers are handled via the managersOnly flag on hierarchical groups
-
-              if (contact) {
-                allSelectedContactDetails.push(contact);
-              }
-            }
-          });
-        });
-      });
-
-      // Create simplified state for the compose page
-      const validContactsCount = allSelectedContactDetails.filter((c) => c.hasValidEmail).length;
-      const totalRecipients = allSelectedContactDetails.length + totalWorkoutSelected;
-      const validWorkoutCount = totalWorkoutSelected; // assume workout registrants already filtered to valid emails server-side
-      const validTeamsWantedCount = totalTeamsWantedSelected; // assume resolved emails will be valid server-side
-      const validUmpireCount = totalUmpireSelected; // assume umpire emails are valid
       const simplifiedState: SimplifiedRecipientSelectionState = {
         selectedGroups: mergedContactGroups,
         selectedWorkoutRecipients: workoutSelections,
         selectedTeamsWantedRecipients: teamsWantedSelections,
         selectedUmpireRecipients: umpireSelections,
         workoutManagersOnly,
-        totalRecipients: totalRecipients + totalTeamsWantedSelected + totalUmpireSelected,
-        validEmailCount:
-          validContactsCount + validWorkoutCount + validTeamsWantedCount + validUmpireCount,
-        invalidEmailCount:
-          totalRecipients +
-          totalTeamsWantedSelected +
-          totalUmpireSelected -
-          (validContactsCount + validWorkoutCount + validTeamsWantedCount + validUmpireCount),
+        totalRecipients: aggregated.totalRecipients,
+        validEmailCount: aggregated.validEmailCount,
+        invalidEmailCount: aggregated.invalidEmailCount,
         searchQuery: '',
         activeTab: 'contacts',
         expandedSections: new Set(),
         groupSearchQueries: {},
       };
 
-      onApply(simplifiedState, allSelectedContactDetails);
+      onApply(simplifiedState, aggregated.individualContactDetails);
       onClose();
       return;
     }

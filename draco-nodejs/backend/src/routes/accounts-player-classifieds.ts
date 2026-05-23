@@ -61,6 +61,11 @@ const requireAccessCodeForRequest = (req: Request): string => {
   return parseAccessCodeValue(candidate);
 };
 
+const clearAuthenticatedUser = (req: Request): void => {
+  (req as Request & { user?: unknown }).user = undefined;
+  (req as Request & { accountBoundary?: unknown }).accountBoundary = undefined;
+};
+
 const createTeamsWantedAuthMiddleware = () => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
@@ -68,6 +73,7 @@ const createTeamsWantedAuthMiddleware = () => {
 
     const fallbackToAccessCode = () => {
       try {
+        clearAuthenticatedUser(req);
         requireAccessCodeForRequest(req);
         next();
       } catch (error) {
@@ -105,6 +111,44 @@ const createTeamsWantedAuthMiddleware = () => {
       }
 
       fallbackToAccessCode();
+    });
+  };
+};
+
+const createTeamsWantedContactAuthMiddleware = () => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const authHeader = req.headers.authorization;
+    const hasToken = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
+
+    const fallbackToAccessCode = () => {
+      try {
+        clearAuthenticatedUser(req);
+        requireAccessCodeForRequest(req);
+        next();
+      } catch (error) {
+        next(error);
+      }
+    };
+
+    if (!hasToken) {
+      fallbackToAccessCode();
+      return;
+    }
+
+    authenticateToken(req, res, (authError?: unknown) => {
+      if (authError) {
+        fallbackToAccessCode();
+        return;
+      }
+
+      routeProtection.enforceAccountBoundary()(req, res, (boundaryError?: unknown) => {
+        if (boundaryError) {
+          fallbackToAccessCode();
+          return;
+        }
+
+        next();
+      });
     });
   };
 };
@@ -399,12 +443,12 @@ router.get(
  *
  * GET /api/accounts/:accountId/player-classifieds/teams-wanted/:classifiedId/contact
  * Retrieve the contact information for a teams wanted classified
- * Requires either authentication with 'player-classified.manage' permission
+ * Requires either authentication as a member of the account
  * or a valid access code for the classified
  */
 router.get(
   '/teams-wanted/:classifiedId/contact',
-  createTeamsWantedAuthMiddleware(),
+  createTeamsWantedContactAuthMiddleware(),
   teamsWantedRateLimit,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, classifiedId } = extractClassifiedParams(req.params);
