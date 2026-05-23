@@ -10,13 +10,20 @@ MCP SDK version pinned to **1.29.0** — revisit quarterly.
 |---|---|
 | `get_my_batting_stats` | Career batting stats (AB, H, R, HR, RBI, AVG, OBP, SLG, OPS) |
 | `get_my_pitching_stats` | Career pitching stats (IP, W, L, S, ERA, WHIP, K/9) |
+| `get_player_career_stats` | Career batting + pitching stats for a specific player_id (use `search_players` to find ids) |
 | `get_recent_games` | Most recently played games for the user's team(s) |
+| `get_standings` | League standings for a season (grouped by league/division or flat) |
+| `get_statistical_leaders` | Top players in a league for a given category (e.g. `hr`, `avg`, `era`) |
 | `get_team_managers` | Managers/coaches for a specific team season |
 | `get_team_roster` | Public roster (name + jersey number; no PII) |
 | `get_team_schedule` | Full team schedule with optional date range filter |
 | `get_upcoming_games` | Next upcoming games for the user's team(s) |
+| `list_leader_categories` | Batting and pitching leader categories available for `get_statistical_leaders` |
 | `list_my_accounts` | All ezRecSports accounts the user belongs to |
 | `list_my_teams` | Teams the user is on for a given account/season |
+| `list_seasons` | All seasons in an account, including each season's leagues and divisions |
+| `list_team_season_stats` | Per-player batting or pitching stats for a specific team in a season |
+| `search_players` | Search players in an account by name (returns player_ids for `get_player_career_stats`) |
 
 All date output is rendered in the account's local timezone (`account.configuration.timeZone`, falling back to `UTC`).
 
