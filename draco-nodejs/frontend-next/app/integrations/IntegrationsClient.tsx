@@ -71,7 +71,7 @@ const buildFaqItems = (brandName: string) => [
   {
     question: 'What can the AI see?',
     answer:
-      'Read-only access to your accounts, teams, schedules, stats, and team managers. It cannot make changes, send messages, or see other users’ data.',
+      'Read-only access to your accounts, teams, schedules, stats, and team managers. It cannot make changes or send messages.',
   },
   {
     question: 'What does it cost me?',

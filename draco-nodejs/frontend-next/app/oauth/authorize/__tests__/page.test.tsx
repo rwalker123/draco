@@ -69,6 +69,14 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: () => mockAuthValue,
 }));
 
+vi.mock('@/context/AccountContext', () => ({
+  useAccount: () => ({
+    currentAccount: null,
+    loading: false,
+    initialized: true,
+  }),
+}));
+
 const theme = createTheme();
 
 const renderPage = () =>
@@ -155,7 +163,7 @@ describe('OAuthAuthorizePage', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('My MCP Client wants to connect to your Draco account'),
+          screen.getByText('My MCP Client wants to connect to your ezRecSports account'),
         ).toBeInTheDocument();
       });
 
@@ -221,7 +229,7 @@ describe('OAuthAuthorizePage', () => {
 
       expect(screen.getByText('Unknown client identifier')).toBeInTheDocument();
       expect(screen.getByText('invalid_client')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Return to Draco' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Return to ezRecSports' })).toBeInTheDocument();
     });
   });
 

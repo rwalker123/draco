@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAccount } from '@/context/AccountContext';
 import { useAuth } from '@/context/AuthContext';
 
 interface ValidateSuccessResponse {
@@ -61,9 +62,10 @@ interface DecisionResponse {
 interface OAuthErrorStateProps {
   error: string;
   errorDescription?: string;
+  brandName: string;
 }
 
-function OAuthErrorState({ error, errorDescription }: OAuthErrorStateProps) {
+function OAuthErrorState({ error, errorDescription, brandName }: OAuthErrorStateProps) {
   return (
     <Box
       sx={{
@@ -84,7 +86,7 @@ function OAuthErrorState({ error, errorDescription }: OAuthErrorStateProps) {
             {error}
           </Typography>
           <MuiLink component={NextLink} href="/" underline="hover">
-            Return to Draco
+            Return to {brandName}
           </MuiLink>
         </Stack>
       </Paper>
@@ -96,6 +98,8 @@ function OAuthAuthorizeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, token, initialized: authInitialized, loading: authLoading } = useAuth();
+  const { currentAccount } = useAccount();
+  const brandName = currentAccount?.name ?? 'ezRecSports';
 
   const [validateResult, setValidateResult] = useState<ValidateSuccessResponse | null>(null);
   const [validateError, setValidateError] = useState<{
@@ -285,6 +289,7 @@ function OAuthAuthorizeContent() {
       <OAuthErrorState
         error={validateError.error}
         errorDescription={validateError.error_description}
+        brandName={brandName}
       />
     );
   }
@@ -294,6 +299,7 @@ function OAuthAuthorizeContent() {
       <OAuthErrorState
         error={decisionError.error}
         errorDescription={decisionError.error_description}
+        brandName={brandName}
       />
     );
   }
@@ -317,7 +323,7 @@ function OAuthAuthorizeContent() {
       <Paper elevation={2} sx={{ p: 4, width: '100%', maxWidth: 480 }}>
         <Stack spacing={3}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            {validateResult.client_name} wants to connect to your Draco account
+            {validateResult.client_name} wants to connect to your {brandName} account
           </Typography>
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
