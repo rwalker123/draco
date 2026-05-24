@@ -161,7 +161,7 @@ router.get(
   '/.well-known/oauth-authorization-server',
   asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     const issuer = process.env.OAUTH_ISSUER ?? '';
-    const frontendBaseUrl = process.env.FRONTEND_BASE_URL ?? '';
+    const frontendBaseUrl = (process.env.FRONTEND_URL ?? '').replace(/\/+$/, '');
     const serviceDocumentation = process.env.OAUTH_SERVICE_DOCUMENTATION;
 
     const metadata: Record<string, unknown> = {
