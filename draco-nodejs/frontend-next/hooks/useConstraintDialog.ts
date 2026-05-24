@@ -41,8 +41,14 @@ export const useConstraintDialog = <TEntity extends { id: string }, TUpsert>(
   const close = () => setOpen(false);
 
   const handleSave = async (input: TUpsert) => {
-    if (mode === 'create') await onCreate(input);
-    else if (editing) await onEdit(editing.id, input);
+    if (mode === 'create') {
+      await onCreate(input);
+      return;
+    }
+    if (!editing) {
+      throw new Error('Cannot save: edit mode is active but no entity is selected.');
+    }
+    await onEdit(editing.id, input);
   };
 
   return { open, dialogKey, mode, editing, openCreate, openEdit, close, handleSave };

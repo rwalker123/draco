@@ -707,7 +707,7 @@ describe('SchedulerEngineService', () => {
     expect(result.unscheduled).toHaveLength(0);
   });
 
-  it('field exclusion date: game is scheduled when the slot is present, unscheduled when the slot is absent (as if excluded)', () => {
+  it('field slot availability: game scheduled when a matching-day slot is present, unscheduled when only wrong-day slots are present (proxy for an expanded exclusion-date)', () => {
     const service = new SchedulerEngineService();
 
     const slottedSpec: SchedulerProblemSpec = {
@@ -767,7 +767,7 @@ describe('SchedulerEngineService', () => {
     expect(withWrongDaySlot.unscheduled[0]?.reason).toBeTruthy();
   });
 
-  it('field availability rule DOW/time-window: game scheduled when slot exists for the rule, unscheduled when rule produces no viable slot', () => {
+  it('field slot day mismatch: game scheduled when a slot exists on the game date, unscheduled when only off-day slots exist (proxy for an availability rule that expanded to no viable slot)', () => {
     const service = new SchedulerEngineService();
 
     const saturdaySlotSpec: SchedulerProblemSpec = {

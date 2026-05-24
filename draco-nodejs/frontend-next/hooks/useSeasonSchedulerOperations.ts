@@ -56,9 +56,9 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
         return await fn();
       } catch (err) {
         if (isAbortError(err, signal)) throw err;
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        throw new Error(message);
+        const normalized = err instanceof Error ? err : new Error(String(err));
+        setError(normalized.message);
+        throw normalized;
       } finally {
         inFlightRef.current -= 1;
         if (inFlightRef.current <= 0) {
