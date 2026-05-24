@@ -1,6 +1,6 @@
 # Season Scheduler — Specification
 
-> **Status:** Experimental, unfinished. Currently gated to `NODE_ENV === 'development'` and `canEdit`. Not exposed in staging or production.
+> **Status:** Experimental, unfinished. Currently gated to the `SHOW_SEASON_SCHEDULER` feature-flag constant in `frontend-next/constants/featureFlags.ts` (default `false`) and `canEdit`. Not exposed in staging or production.
 >
 > **Purpose of this document:** Capture what exists today, define an immediate cleanup phase before any further feature work, and reserve a section for the completion roadmap that will be written after cleanup.
 
@@ -15,7 +15,7 @@ Automate the assignment of games in a season to fields and umpires while respect
 ### 1.2 User Flow (`/account/[accountId]/schedule-management`)
 
 1. Admin opens **Schedule Management**.
-2. Below the schedule filter bar, an **"Open Scheduler"** card is rendered by `SeasonSchedulerAdapter` only when running in development with edit permission.
+2. Below the schedule filter bar, an **"Open Scheduler"** card is rendered by `SeasonSchedulerAdapter` only when the `SHOW_SEASON_SCHEDULER` feature flag is enabled and the user has edit permission.
 3. Clicking it mounts `SeasonSchedulerWidget`, which loads constraint data on mount.
 4. The user works through four conceptual stages, all in the same widget:
    - **Configure** — set the season scheduling window (start/end dates), select which leagues to schedule, set umpires-per-game (1–4) and optional max-games-per-umpire-per-day; save.

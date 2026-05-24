@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { SchedulerProblemSpecPreview, SchedulerSolveResult } from '@draco/shared-schemas';
+import { formatDateInTimezone, getDateKeyInTimezone } from '../../utils/dateUtils';
 import { ProposalAssignmentRow } from './ProposalAssignmentRow';
 import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
 
@@ -33,26 +34,10 @@ interface SeasonSchedulerProposalReviewProps {
   onCloseSpecPreview: () => void;
 }
 
-const formatIsoDateKey = (isoString: string, timeZone: string): string => {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return isoString;
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-};
-
-const formatLocalDateHeader = (isoString: string, timeZone: string): string => {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return isoString;
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
+const dateHeaderOptions: Intl.DateTimeFormatOptions = {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
 };
 
 type Assignment = SchedulerSolveResult['assignments'][number];
@@ -69,13 +54,13 @@ const groupAssignmentsByDate = (
   if (!proposal) return [];
   const groups = new Map<string, { dateLabel: string; assignments: Assignment[] }>();
   proposal.assignments.forEach((assignment) => {
-    const dateKey = formatIsoDateKey(assignment.startTime, timeZone);
+    const dateKey = getDateKeyInTimezone(assignment.startTime, timeZone) ?? assignment.startTime;
     const existing = groups.get(dateKey);
     if (existing) {
       existing.assignments.push(assignment);
     } else {
       groups.set(dateKey, {
-        dateLabel: formatLocalDateHeader(assignment.startTime, timeZone),
+        dateLabel: formatDateInTimezone(assignment.startTime, timeZone, dateHeaderOptions),
         assignments: [assignment],
       });
     }
