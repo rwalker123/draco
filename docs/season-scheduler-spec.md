@@ -49,7 +49,7 @@ Automate the assignment of games in a season to fields and umpires while respect
 | `components/scheduler/SchedulerFieldAvailabilityRuleDialog.tsx` | ~200 | Create/edit a field availability rule (days-of-week mask + time window). |
 | `hooks/useSeasonSchedulerOperations.ts` | ~160 | Single shared loading/error state; auto-binds every scheduler service method with internal `list`/`mutate` helpers. |
 | `hooks/useSeasonSchedulerConstraintHandlers.ts` | ~520 | Owns the per-list constraint state plus create/edit/delete handlers shared by the constraint dialogs. |
-| `hooks/useEntityNameMaps.ts` | n/a | Memoization-stable lookup maps for fields, teams, umpires, and a game-summary label. |
+| `hooks/useEntityNameMaps.ts` | n/a | Builds lookup maps for fields, teams, umpires, and a game-summary label from the supplied entity arrays (fresh `Map` instances per call; consumers don't rely on stable identities). |
 | `hooks/useConstraintDialog.ts` | ~50 | Generic create/edit dialog state hook reused by all five constraint dialogs. |
 | `utils/daysOfWeekUtils.ts` | n/a | `DAYS`, `maskToSelectedBits`, `selectedBitsToMask`, `formatDaysOfWeekMask`. |
 | `utils/schedulerTimeFormat.ts` | n/a | `formatLocalHhmmTo12Hour`, `formatLocalTimeRange` (timezone-aware). |

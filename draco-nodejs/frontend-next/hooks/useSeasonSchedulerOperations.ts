@@ -39,6 +39,8 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
   const depsRef = useRef({ token, apiClient, accountId, seasonId });
   depsRef.current = { token, apiClient, accountId, seasonId };
 
+  const inFlightRef = useRef(0);
+
   const [operations] = useState(() => {
     const getContext = () => {
       const { seasonId: sid, token: t, apiClient: c, accountId: aid } = depsRef.current;
@@ -47,6 +49,7 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
     };
 
     const run = async <T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> => {
+      inFlightRef.current += 1;
       setLoading(true);
       setError(null);
       try {
@@ -57,7 +60,11 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
         setError(message);
         throw new Error(message);
       } finally {
-        setLoading(false);
+        inFlightRef.current -= 1;
+        if (inFlightRef.current <= 0) {
+          inFlightRef.current = 0;
+          setLoading(false);
+        }
       }
     };
 

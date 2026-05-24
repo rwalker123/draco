@@ -18,7 +18,7 @@ export interface BaseSchedulerDialogProps {
   mode: 'create' | 'edit';
   loading?: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: () => void | Promise<void>;
   submitDisabled?: boolean;
   apiError?: string | null;
   children: React.ReactNode;
