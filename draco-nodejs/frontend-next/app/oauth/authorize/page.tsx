@@ -18,6 +18,7 @@ import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAccount } from '@/context/AccountContext';
 import { useAuth } from '@/context/AuthContext';
+import { DEFAULT_SITE_NAME } from '@/lib/seoConstants';
 
 interface ValidateSuccessResponse {
   rid: string;
@@ -99,7 +100,9 @@ function OAuthAuthorizeContent() {
   const searchParams = useSearchParams();
   const { user, token, initialized: authInitialized, loading: authLoading } = useAuth();
   const { currentAccount } = useAccount();
-  const brandName = currentAccount?.name ?? 'ezRecSports';
+  const trimmedAccountName = currentAccount?.name?.trim();
+  const brandName =
+    trimmedAccountName && trimmedAccountName.length > 0 ? trimmedAccountName : DEFAULT_SITE_NAME;
 
   const [validateResult, setValidateResult] = useState<ValidateSuccessResponse | null>(null);
   const [validateError, setValidateError] = useState<{
