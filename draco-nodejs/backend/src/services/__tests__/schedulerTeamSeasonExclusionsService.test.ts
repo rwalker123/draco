@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { SchedulerTeamSeasonExclusionsService } from '../schedulerTeamSeasonExclusionsService.js';
 import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
+import { partialMock } from '../../test-utils/partialMock.js';
 import type { ISchedulerTeamSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
 import type { ISeasonsRepository } from '../../repositories/interfaces/ISeasonsRepository.js';
 import type { ITeamRepository } from '../../repositories/interfaces/ITeamRepository.js';
@@ -85,9 +86,9 @@ describe('SchedulerTeamSeasonExclusionsService', () => {
       updateScheduleVisibility: vi.fn(),
     } as Mocked<ISeasonsRepository>;
 
-    teamRepo = {
+    teamRepo = partialMock<ITeamRepository>({
       findTeamSeasonForValidation: vi.fn(),
-    } as unknown as Mocked<ITeamRepository>;
+    });
 
     vi.spyOn(RepositoryFactory, 'getSchedulerTeamSeasonExclusionsRepository').mockReturnValue(
       exclusionsRepo,

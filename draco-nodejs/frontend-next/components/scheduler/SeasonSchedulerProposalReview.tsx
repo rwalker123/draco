@@ -7,18 +7,13 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
-  IconButton,
   Stack,
   Typography,
 } from '@mui/material';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import type { SchedulerProblemSpecPreview, SchedulerSolveResult } from '@draco/shared-schemas';
+import { ProposalAssignmentRow } from './ProposalAssignmentRow';
+import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
 
 interface SeasonSchedulerProposalReviewProps {
   proposal: SchedulerSolveResult | null;
@@ -40,9 +35,7 @@ interface SeasonSchedulerProposalReviewProps {
 
 const formatIsoDateKey = (isoString: string, timeZone: string): string => {
   const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) {
-    return isoString;
-  }
+  if (Number.isNaN(date.getTime())) return isoString;
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -53,9 +46,7 @@ const formatIsoDateKey = (isoString: string, timeZone: string): string => {
 
 const formatLocalDateHeader = (isoString: string, timeZone: string): string => {
   const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) {
-    return isoString;
-  }
+  if (Number.isNaN(date.getTime())) return isoString;
   return new Intl.DateTimeFormat('en-US', {
     timeZone,
     weekday: 'short',
@@ -64,46 +55,40 @@ const formatLocalDateHeader = (isoString: string, timeZone: string): string => {
   }).format(date);
 };
 
-const formatLocalTimeRange = (startIso: string, endIso: string, timeZone: string): string => {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return `${startIso}–${endIso}`;
-  }
+type Assignment = SchedulerSolveResult['assignments'][number];
+type GroupedAssignments = Array<{
+  dateKey: string;
+  dateLabel: string;
+  assignments: Assignment[];
+}>;
 
-  try {
-    const dateLabel = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    }).format(start);
-
-    const startTime = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    }).format(start);
-
-    const endTime = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    }).format(end);
-
-    const tzLabel = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      timeZoneName: 'short',
-    })
-      .formatToParts(start)
-      .find((part) => part.type === 'timeZoneName')?.value;
-
-    return `${dateLabel} • ${startTime} – ${endTime}${tzLabel ? ` (${tzLabel})` : ''}`;
-  } catch {
-    return `${start.toISOString()}–${end.toISOString()}`;
-  }
+const groupAssignmentsByDate = (
+  proposal: SchedulerSolveResult | null,
+  timeZone: string,
+): GroupedAssignments => {
+  if (!proposal) return [];
+  const groups = new Map<string, { dateLabel: string; assignments: Assignment[] }>();
+  proposal.assignments.forEach((assignment) => {
+    const dateKey = formatIsoDateKey(assignment.startTime, timeZone);
+    const existing = groups.get(dateKey);
+    if (existing) {
+      existing.assignments.push(assignment);
+    } else {
+      groups.set(dateKey, {
+        dateLabel: formatLocalDateHeader(assignment.startTime, timeZone),
+        assignments: [assignment],
+      });
+    }
+  });
+  return Array.from(groups.keys())
+    .sort()
+    .map((dateKey) => {
+      const group = groups.get(dateKey) ?? { dateLabel: dateKey, assignments: [] };
+      const sortedGroup = [...group.assignments].sort((a, b) =>
+        a.startTime.localeCompare(b.startTime),
+      );
+      return { dateKey, dateLabel: group.dateLabel, assignments: sortedGroup };
+    });
 };
 
 export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalReviewProps> = ({
@@ -142,47 +127,13 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   const toggleExpanded = (gameId: string) => {
     setExpandedGameIds((prev) => {
       const next = new Set(prev);
-      if (next.has(gameId)) {
-        next.delete(gameId);
-      } else {
-        next.add(gameId);
-      }
+      if (next.has(gameId)) next.delete(gameId);
+      else next.add(gameId);
       return next;
     });
   };
 
-  const groupedAssignments = ((): Array<{
-    dateKey: string;
-    dateLabel: string;
-    assignments: typeof assignments;
-  }> => {
-    if (!proposal) {
-      return [];
-    }
-
-    const groups = new Map<string, { dateLabel: string; assignments: typeof assignments }>();
-    proposal.assignments.forEach((assignment) => {
-      const dateKey = formatIsoDateKey(assignment.startTime, timeZone);
-      const existing = groups.get(dateKey);
-      if (existing) {
-        existing.assignments.push(assignment);
-      } else {
-        groups.set(dateKey, {
-          dateLabel: formatLocalDateHeader(assignment.startTime, timeZone),
-          assignments: [assignment],
-        });
-      }
-    });
-
-    const sortedKeys = Array.from(groups.keys()).sort();
-    return sortedKeys.map((dateKey) => {
-      const group = groups.get(dateKey) ?? { dateLabel: dateKey, assignments: [] };
-      const sortedGroup = [...group.assignments].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime),
-      );
-      return { dateKey, dateLabel: group.dateLabel, assignments: sortedGroup };
-    });
-  })();
+  const groupedAssignments = groupAssignmentsByDate(proposal, timeZone);
 
   return (
     <>
@@ -246,137 +197,23 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                       <Typography variant="subtitle2" color="text.secondary">
                         {group.dateLabel}
                       </Typography>
-
-                      {group.assignments.map((assignment) => {
-                        const game = gameRequestById.get(assignment.gameId);
-                        const home =
-                          (game?.homeTeamSeasonId
-                            ? teamNameById.get(game.homeTeamSeasonId)
-                            : null) ?? 'Unknown Home';
-                        const visitor =
-                          (game?.visitorTeamSeasonId
-                            ? teamNameById.get(game.visitorTeamSeasonId)
-                            : null) ?? 'Unknown Visitor';
-                        const title = game ? `${home} vs ${visitor}` : `Game ${assignment.gameId}`;
-
-                        const leagueLabel =
-                          game?.leagueSeasonId && leagueNameById.get(game.leagueSeasonId)
-                            ? leagueNameById.get(game.leagueSeasonId)
-                            : null;
-
-                        const umpireNames = assignment.umpireIds
-                          .map(
-                            (id) =>
-                              schedulerUmpireNameById.get(id) ??
-                              umpireNameById.get(id) ??
-                              `Umpire ${id}`,
-                          )
-                          .filter((name) => name.trim().length > 0);
-
-                        const secondaryParts: string[] = [];
-                        if (leagueLabel) {
-                          secondaryParts.push(leagueLabel);
-                        }
-                        secondaryParts.push(
-                          `Field: ${fieldNameById.get(assignment.fieldId) ?? `Field ${assignment.fieldId}`}`,
-                        );
-                        secondaryParts.push(
-                          formatLocalTimeRange(assignment.startTime, assignment.endTime, timeZone),
-                        );
-                        if (umpireNames.length === 1) {
-                          secondaryParts.push(`Umpire: ${umpireNames[0]}`);
-                        } else if (umpireNames.length > 1) {
-                          secondaryParts.push(`Umpires: ${umpireNames.join(', ')}`);
-                        } else {
-                          secondaryParts.push('Umpire: Unassigned');
-                        }
-
-                        const expanded = expandedGameIds.has(assignment.gameId);
-
-                        return (
-                          <Box
-                            key={assignment.gameId}
-                            sx={{
-                              borderRadius: 1,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                p: 1,
-                              }}
-                            >
-                              <Checkbox
-                                checked={selectedGameIds.has(assignment.gameId)}
-                                onChange={() => onToggleSelection(assignment.gameId)}
-                              />
-                              <Box sx={{ minWidth: 0, flex: 1 }}>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                                  {title}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap>
-                                  {secondaryParts.join(' • ')}
-                                </Typography>
-                              </Box>
-                              <IconButton
-                                size="small"
-                                aria-label={expanded ? 'Collapse details' : 'Expand details'}
-                                onClick={() => toggleExpanded(assignment.gameId)}
-                              >
-                                {expanded ? (
-                                  <ExpandLess fontSize="small" />
-                                ) : (
-                                  <ExpandMore fontSize="small" />
-                                )}
-                              </IconButton>
-                            </Box>
-
-                            <Collapse in={expanded} timeout="auto" unmountOnExit>
-                              <Box sx={{ px: 2, pb: 1 }}>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  display="block"
-                                >
-                                  Game ID: {assignment.gameId}
-                                </Typography>
-                                {game && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    display="block"
-                                  >
-                                    Home Team Season ID: {game.homeTeamSeasonId} • Visitor Team
-                                    Season ID: {game.visitorTeamSeasonId}
-                                  </Typography>
-                                )}
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  display="block"
-                                >
-                                  Start (UTC): {assignment.startTime} • End (UTC):{' '}
-                                  {assignment.endTime}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  display="block"
-                                >
-                                  Field ID: {assignment.fieldId} • Umpire IDs:{' '}
-                                  {assignment.umpireIds.length
-                                    ? assignment.umpireIds.join(', ')
-                                    : 'None'}
-                                </Typography>
-                              </Box>
-                            </Collapse>
-                          </Box>
-                        );
-                      })}
+                      {group.assignments.map((assignment) => (
+                        <ProposalAssignmentRow
+                          key={assignment.gameId}
+                          assignment={assignment}
+                          game={gameRequestById.get(assignment.gameId)}
+                          timeZone={timeZone}
+                          selected={selectedGameIds.has(assignment.gameId)}
+                          expanded={expandedGameIds.has(assignment.gameId)}
+                          fieldNameById={fieldNameById}
+                          teamNameById={teamNameById}
+                          umpireNameById={umpireNameById}
+                          schedulerUmpireNameById={schedulerUmpireNameById}
+                          leagueNameById={leagueNameById}
+                          onToggleSelection={() => onToggleSelection(assignment.gameId)}
+                          onToggleExpanded={() => toggleExpanded(assignment.gameId)}
+                        />
+                      ))}
                     </Box>
                   ))}
                 </Stack>
@@ -422,42 +259,11 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
         </Box>
       )}
 
-      <Dialog open={specPreviewOpen} onClose={onCloseSpecPreview} fullWidth maxWidth="md">
-        <DialogTitle>Scheduler Problem Spec Preview</DialogTitle>
-        <DialogContent dividers>
-          {specPreview ? (
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Loaded {specPreview.games.length} game(s).
-              </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  m: 0,
-                  p: 2,
-                  borderRadius: 1,
-                  bgcolor: 'background.default',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  overflowX: 'auto',
-                  fontSize: 12,
-                  lineHeight: 1.4,
-                  maxHeight: 520,
-                }}
-              >
-                {JSON.stringify(specPreview, null, 2)}
-              </Box>
-            </Box>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              No preview loaded.
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onCloseSpecPreview}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      <SchedulerSpecPreviewDialog
+        open={specPreviewOpen}
+        specPreview={specPreview}
+        onClose={onCloseSpecPreview}
+      />
     </>
   );
 };

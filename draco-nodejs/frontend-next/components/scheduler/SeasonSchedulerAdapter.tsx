@@ -5,6 +5,7 @@ import { Box, Button, Typography } from '@mui/material';
 import type { TeamSeasonType } from '@draco/shared-schemas';
 import type { Game, League } from '@/types/schedule';
 import { useEntityNameMaps } from '../../hooks/useEntityNameMaps';
+import { SHOW_SEASON_SCHEDULER } from '../../constants/featureFlags';
 import { SeasonSchedulerWidget } from './SeasonSchedulerWidget';
 
 interface NamedEntity {
@@ -68,9 +69,7 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
 
   const { getGameSummaryLabel } = useEntityNameMaps({ teams: schedulerTeams, games });
 
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  if (!canEdit || !isDevelopment) {
+  if (!canEdit || !SHOW_SEASON_SCHEDULER) {
     return null;
   }
 

@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { SchedulerSeasonApplyService } from '../schedulerSeasonApplyService.js';
 import { ServiceFactory } from '../serviceFactory.js';
+import { partialMock } from '../../test-utils/partialMock.js';
 import type { SchedulerProblemSpecService } from '../schedulerProblemSpecService.js';
 import type { SchedulerApplyService } from '../schedulerApplyService.js';
 import type { SchedulerSeasonApplyRequest, SchedulerApplyResult } from '@draco/shared-schemas';
@@ -58,8 +59,8 @@ const makeApplyResult = (overrides: Partial<SchedulerApplyResult> = {}): Schedul
 });
 
 describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
-  let problemSpecService: Mocked<Pick<SchedulerProblemSpecService, 'buildProblemSpec'>>;
-  let applyService: Mocked<Pick<SchedulerApplyService, 'applyProposal'>>;
+  let problemSpecService: Mocked<SchedulerProblemSpecService>;
+  let applyService: Mocked<SchedulerApplyService>;
   let service: SchedulerSeasonApplyService;
 
   const baseRequest: SchedulerSeasonApplyRequest = {
@@ -78,15 +79,13 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
   };
 
   beforeEach(() => {
-    problemSpecService = { buildProblemSpec: vi.fn() };
-    applyService = { applyProposal: vi.fn() };
+    problemSpecService = partialMock<SchedulerProblemSpecService>({
+      buildProblemSpec: vi.fn(),
+    });
+    applyService = partialMock<SchedulerApplyService>({ applyProposal: vi.fn() });
 
-    vi.spyOn(ServiceFactory, 'getSchedulerProblemSpecService').mockReturnValue(
-      problemSpecService as unknown as SchedulerProblemSpecService,
-    );
-    vi.spyOn(ServiceFactory, 'getSchedulerApplyService').mockReturnValue(
-      applyService as unknown as SchedulerApplyService,
-    );
+    vi.spyOn(ServiceFactory, 'getSchedulerProblemSpecService').mockReturnValue(problemSpecService);
+    vi.spyOn(ServiceFactory, 'getSchedulerApplyService').mockReturnValue(applyService);
 
     problemSpecService.buildProblemSpec.mockResolvedValue(baseSpec);
 

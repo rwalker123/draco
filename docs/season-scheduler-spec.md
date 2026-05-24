@@ -33,14 +33,26 @@ Automate the assignment of games in a season to fields and umpires while respect
 | File | Lines | Role |
 | --- | --- | --- |
 | `app/account/[accountId]/schedule-management/ScheduleManagement.tsx` | ~520 | Mounts the adapter; passes shared schedule context (teams, fields, leagues, umpires, games) so the scheduler reuses existing data. |
-| `components/scheduler/SeasonSchedulerAdapter.tsx` | 146 | Dev-only/edit gate; normalizes inbound name shapes; renders the widget once opened. |
-| `components/scheduler/SeasonSchedulerWidget.tsx` | **1,911** | Monolith: window config UI, five constraint lists with dialogs, problem-spec preview, proposal review, apply controls, all state and load effects. |
-| `components/scheduler/SchedulerSeasonExclusionDialog.tsx` | 123 | Create/edit a season exclusion. |
-| `components/scheduler/SchedulerTeamExclusionDialog.tsx` | 148 | Create/edit a team exclusion. |
-| `components/scheduler/SchedulerUmpireExclusionDialog.tsx` | 149 | Create/edit an umpire exclusion. |
-| `components/scheduler/SchedulerFieldExclusionDateDialog.tsx` | 133 | Create/edit a field exclusion date. |
-| `components/scheduler/SchedulerFieldAvailabilityRuleDialog.tsx` | 236 | Create/edit a field availability rule (days-of-week mask + time window). |
-| `hooks/useSeasonSchedulerOperations.ts` | 519 | Thin wrapper around the OpenAPI client for every scheduler endpoint, with per-call loading/error state. |
+| `components/scheduler/SeasonSchedulerAdapter.tsx` | ~115 | Feature-flag (`SHOW_SEASON_SCHEDULER`) + edit gate; normalizes inbound name shapes; renders the widget once opened. |
+| `components/scheduler/SeasonSchedulerWidget.tsx` | ~460 | Slim orchestrator: owns widget-level state, load effects, toolbar (Preview Spec / Generate / Apply), and composes the config / constraints / proposal sub-panels. |
+| `components/scheduler/SeasonSchedulerConfigPanel.tsx` | ~240 | Window-config form: season dates, league selection, umpires-per-game, max-games-per-umpire-per-day, save action, empty-state hint when not configured. |
+| `components/scheduler/SeasonSchedulerConstraintLists.tsx` | ~345 | Renders the five constraint sections + their add/edit/delete buttons + dialog instances; delegates row layout to `ConstraintListSection`. |
+| `components/scheduler/SeasonSchedulerProposalReview.tsx` | ~270 | Group-by-date proposal rendering, selection state, apply controls, unscheduled-reasons summary. |
+| `components/scheduler/ConstraintListSection.tsx` | ~60 | Reusable section + row + `ListRowActions` building blocks shared by all five constraint lists. |
+| `components/scheduler/ProposalAssignmentRow.tsx` | ~115 | Per-assignment row with checkbox + collapsible technical-details panel. |
+| `components/scheduler/SchedulerSpecPreviewDialog.tsx` | ~60 | Modal that JSON-dumps the assembled problem spec for inspection. |
+| `components/scheduler/BaseSchedulerDialog.tsx` | ~60 | Shared dialog shell (title, mode, error Alert, submit/cancel, loading wired to disabled + spinner). |
+| `components/scheduler/SchedulerSeasonExclusionDialog.tsx` | ~100 | Create/edit a season exclusion (wraps `BaseSchedulerDialog`). |
+| `components/scheduler/SchedulerTeamExclusionDialog.tsx` | ~130 | Create/edit a team exclusion. |
+| `components/scheduler/SchedulerUmpireExclusionDialog.tsx` | ~130 | Create/edit an umpire exclusion. |
+| `components/scheduler/SchedulerFieldExclusionDateDialog.tsx` | ~115 | Create/edit a field exclusion date. |
+| `components/scheduler/SchedulerFieldAvailabilityRuleDialog.tsx` | ~200 | Create/edit a field availability rule (days-of-week mask + time window). |
+| `hooks/useSeasonSchedulerOperations.ts` | ~160 | Single shared loading/error state; auto-binds every scheduler service method with internal `list`/`mutate` helpers. |
+| `hooks/useSeasonSchedulerConstraintHandlers.ts` | ~520 | Owns the per-list constraint state plus create/edit/delete handlers shared by the constraint dialogs. |
+| `hooks/useEntityNameMaps.ts` | n/a | Memoization-stable lookup maps for fields, teams, umpires, and a game-summary label. |
+| `hooks/useConstraintDialog.ts` | ~50 | Generic create/edit dialog state hook reused by all five constraint dialogs. |
+| `utils/daysOfWeekUtils.ts` | n/a | `DAYS`, `maskToSelectedBits`, `selectedBitsToMask`, `formatDaysOfWeekMask`. |
+| `utils/schedulerTimeFormat.ts` | n/a | `formatLocalHhmmTo12Hour`, `formatLocalTimeRange` (timezone-aware). |
 
 ### 1.4 Backend Architecture
 
@@ -84,7 +96,7 @@ Validation: `backend/src/utils/schedulerValidationUtils.ts`. Response shaping: `
 
 **Tests**
 
-Only three test files exist: `schedulerEngineService.test.ts`, `schedulerProblemSpecService.test.ts`, `schedulerApplyService.test.ts`. Coverage of the per-table CRUD services and of the season-level apply wrapper is missing.
+Backend Vitest coverage now includes the engine, problem-spec assembly, lower-level apply, season-level apply wrapper, window-config service, and all five per-table CRUD services (`schedulerEngineService`, `schedulerProblemSpecService`, `schedulerApplyService`, `schedulerSeasonApplyService`, `schedulerSeasonWindowConfigService`, `schedulerSeasonExclusionsService`, `schedulerTeamSeasonExclusionsService`, `schedulerUmpireExclusionsService`, `schedulerFieldAvailabilityRulesService`, `schedulerFieldExclusionDatesService`). Per-constraint engine assertions and over-constrained / unscheduled-with-reason cases are still thin.
 
 ### 1.5 Data Model
 
@@ -111,17 +123,12 @@ The solver output is *not* stored as a separate "proposal" entity — it is held
 
 ### 1.7 Known Rough Edges
 
-The detailed list lives in §2 (cleanup); at a high level:
+The Phase 0 cleanup in §2 closed most of the structural items. Outstanding:
 
-- The widget is a 1,911-line monolith that owns every concern.
-- The five dialogs are 80–90% structural duplicates of each other.
-- Days-of-week bitmask helpers are duplicated between the widget and the rule dialog.
-- The operations hook repeats the same loading/error/abort pattern ~15 times.
-- Backend test coverage is thin and skewed to the engine.
-- First-time load of the window config can throw `NotFoundError` (the widget does not currently render a clean empty-state for that case).
-- The dev-only gate is the only rollout control — there is no permission, feature flag, or environment flag suitable for staging.
+- The rollout gate is the `SHOW_SEASON_SCHEDULER` feature-flag constant in `constants/featureFlags.ts` (currently `false`). A permission- or role-metadata-driven flag is still preferable for per-account piloting (§2.5).
 - No persisted notion of a proposal — re-opening the widget loses the last solve.
-- No pre-submit validation in dialogs (e.g. `start < end`); errors only surface from the backend.
+- Engine test coverage is still happy-path / single-constraint; over-constrained "unscheduled with reasons" cases are thin.
+- `useSeasonSchedulerConstraintHandlers` still owns a large per-list state graph (~520 lines) that could be split per-constraint when the proposal-lifecycle work lands.
 
 ---
 
