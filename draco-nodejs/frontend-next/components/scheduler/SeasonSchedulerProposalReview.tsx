@@ -99,8 +99,11 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
 
   const schedulerUmpireNameById = new Map<string, string>(
     (specPreview?.umpires ?? [])
-      .filter((umpire) => Boolean(umpire.name))
-      .map((umpire) => [umpire.id, umpire.name as string]),
+      .filter(
+        (umpire): umpire is typeof umpire & { name: string } =>
+          typeof umpire.name === 'string' && umpire.name.length > 0,
+      )
+      .map((umpire) => [umpire.id, umpire.name]),
   );
 
   const gameRequestById = new Map<string, SchedulerProblemSpecPreview['games'][number]>(

@@ -48,7 +48,7 @@ Automate the assignment of games in a season to fields and umpires while respect
 | `components/scheduler/SchedulerFieldExclusionDateDialog.tsx` | ~115 | Create/edit a field exclusion date. |
 | `components/scheduler/SchedulerFieldAvailabilityRuleDialog.tsx` | ~200 | Create/edit a field availability rule (days-of-week mask + time window). |
 | `hooks/useSeasonSchedulerOperations.ts` | ~160 | Single shared loading/error state; auto-binds every scheduler service method with internal `list`/`mutate` helpers. |
-| `hooks/useSeasonSchedulerConstraintHandlers.ts` | ~520 | Owns the per-list constraint state plus create/edit/delete handlers shared by the constraint dialogs. |
+| `hooks/useSeasonSchedulerConstraintHandlers.ts` | ~385 | Owns the per-list constraint state plus create/edit/delete handlers shared by the constraint dialogs. |
 | `hooks/useEntityNameMaps.ts` | n/a | Builds lookup maps for fields, teams, umpires, and a game-summary label from the supplied entity arrays (fresh `Map` instances per call; consumers don't rely on stable identities). |
 | `hooks/useConstraintDialog.ts` | ~50 | Generic create/edit dialog state hook reused by all five constraint dialogs. |
 | `utils/daysOfWeekUtils.ts` | n/a | `DAYS`, `maskToSelectedBits`, `selectedBitsToMask`, `formatDaysOfWeekMask`. |
@@ -128,7 +128,7 @@ The Phase 0 cleanup in §2 closed most of the structural items. Outstanding:
 - The rollout gate is the `SHOW_SEASON_SCHEDULER` feature-flag constant in `constants/featureFlags.ts` (currently `false`). A permission- or role-metadata-driven flag is still preferable for per-account piloting (§2.5).
 - No persisted notion of a proposal — re-opening the widget loses the last solve.
 - Engine test coverage is still happy-path / single-constraint; over-constrained "unscheduled with reasons" cases are thin.
-- `useSeasonSchedulerConstraintHandlers` still owns a large per-list state graph (~520 lines) that could be split per-constraint when the proposal-lifecycle work lands.
+- `useSeasonSchedulerConstraintHandlers` still owns a large per-list state graph (~385 lines) that could be split per-constraint when the proposal-lifecycle work lands.
 
 ---
 
