@@ -13,8 +13,18 @@ export async function proxy(request: NextRequest) {
       requestHeaders.set('Accept-Encoding', 'gzip, deflate, br');
     }
 
-    const forwardedHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
-    const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
+    const firstHeaderValue = (value: string | null): string | null => {
+      if (!value) return null;
+      const first = value.split(',')[0]?.trim();
+      return first ? first : null;
+    };
+
+    const forwardedHost =
+      firstHeaderValue(request.headers.get('x-forwarded-host')) ??
+      firstHeaderValue(request.headers.get('host'));
+    const forwardedProto =
+      firstHeaderValue(request.headers.get('x-forwarded-proto')) ??
+      request.nextUrl.protocol.replace(/:$/, '');
     const origin = forwardedHost
       ? normalizeOrigin(`${forwardedProto}://${forwardedHost}`)
       : normalizeOrigin(request.nextUrl.origin);
