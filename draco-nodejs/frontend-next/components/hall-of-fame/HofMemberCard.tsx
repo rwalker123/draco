@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import NextLink from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Avatar,
   Box,
@@ -16,21 +18,50 @@ import { alpha, useTheme } from '@mui/material/styles';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import type { HofMemberType } from '@draco/shared-schemas';
 import { sanitizeRichContent } from '@/utils/sanitization';
+import { buildPlayerStatisticsHref } from '@/utils/playerLinks';
 import RichTextContent from '../common/RichTextContent';
 
 export interface HofMemberCardProps {
   member: HofMemberType;
+  accountId?: string;
+  playerLinkLabel?: string;
   elevation?: number;
   sx?: SxProps<Theme>;
 }
 
-const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx }) => {
+const HofMemberCard: React.FC<HofMemberCardProps> = ({
+  member,
+  accountId,
+  playerLinkLabel = 'Hall of Fame',
+  elevation = 1,
+  sx,
+}) => {
   const theme = useTheme();
-  const { contact, biographyHtml, yearInducted } = member;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { contact, contactId, biographyHtml, yearInducted } = member;
   const sanitized = biographyHtml ? sanitizeRichContent(biographyHtml) : null;
   const sanitizedBio = sanitized && sanitized.length > 0 ? sanitized : null;
 
   const displayName = contact.displayName ?? `${contact.firstName} ${contact.lastName}`.trim();
+
+  const currentLocation = (() => {
+    if (!pathname) {
+      return null;
+    }
+    const query = searchParams?.toString() ?? '';
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  })();
+
+  const playerHref = accountId
+    ? buildPlayerStatisticsHref({
+        accountId,
+        contactId,
+        returnTo: currentLocation,
+        returnLabel: playerLinkLabel,
+      })
+    : null;
+
   const baseColor = theme.palette.primary.main;
   const avatarShadow = theme.shadows[4];
   const avatarBorderColor = alpha(baseColor, theme.palette.mode === 'dark' ? 0.6 : 0.25);
@@ -67,14 +98,35 @@ const HofMemberCard: React.FC<HofMemberCardProps> = ({ member, elevation = 1, sx
           </Avatar>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant="h6"
-              component="h3"
-              sx={{ fontWeight: 700, color: 'text.primary' }}
-              noWrap
-            >
-              {displayName}
-            </Typography>
+            {playerHref ? (
+              <Typography
+                component={NextLink}
+                href={playerHref}
+                prefetch={false}
+                variant="h6"
+                sx={{
+                  display: 'block',
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                {displayName}
+              </Typography>
+            ) : (
+              <Typography
+                variant="h6"
+                component="h3"
+                sx={{ fontWeight: 700, color: 'text.primary' }}
+                noWrap
+              >
+                {displayName}
+              </Typography>
+            )}
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
               <Chip
                 icon={<EmojiEventsIcon fontSize="small" />}

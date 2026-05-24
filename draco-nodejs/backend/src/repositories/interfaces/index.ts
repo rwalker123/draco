@@ -69,3 +69,4 @@ export * from './IGolferRepository.js';
 export * from './ILiveScoringRepository.js';
 export * from './IIndividualLiveScoringRepository.js';
 export * from './IBaseballLiveScoringRepository.js';
+export * from './IOauthRepository.js';

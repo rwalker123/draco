@@ -114,7 +114,7 @@ type PitchingNewRow = {
   id: typeof NEW_ROW_ID;
   isNew: true;
   playerName: string;
-  playerNumber: number | null;
+  playerNumber: string | null;
   rosterSeasonId: string;
 } & Record<EditablePitchingField, number>;
 

@@ -21,6 +21,7 @@ import {
   Menu as MenuIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Home as HomeIcon,
+  Hub as HubIcon,
   Key as KeyIcon,
   Person as PersonIcon,
   Handshake as HandshakeIcon,
@@ -33,9 +34,11 @@ import { useRole } from '../context/RoleContext';
 import { useAccount, useIsIndividualGolfAccount } from '../context/AccountContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useLogout } from '../hooks/useLogout';
+import { SHOW_AI_INTEGRATIONS } from '../constants/featureFlags';
 import BaseballMenu from './BaseballMenu';
 import { useAccountMembership } from '../hooks/useAccountMembership';
 import RegistrationDialog from './account/RegistrationDialog';
+import GlobalPlayerSearch from './layout/GlobalPlayerSearch';
 const TopBarQuickActions = dynamic(() => import('./TopBarQuickActions'), {
   ssr: false,
 });
@@ -259,6 +262,22 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </MenuItem>,
         );
       }
+      if (SHOW_AI_INTEGRATIONS) {
+        items.push(
+          <MenuItem
+            key="ai-integrations"
+            onClick={() => {
+              handleMenuClose();
+              router.push('/integrations');
+            }}
+          >
+            <ListItemIcon>
+              <HubIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>AI Integrations</ListItemText>
+          </MenuItem>,
+        );
+      }
       items.push(
         <MenuItem
           key="sign-out"
@@ -423,6 +442,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
           {/* Right side - User info and actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <GlobalPlayerSearch />
             {/* Hamburger menu for overflow items */}
             {(sportOverflowItems.length > 0 ||
               (isSmallScreen && authMenuItems.length > 0) ||

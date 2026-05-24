@@ -35,9 +35,8 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "inactive": {
             "type": "boolean",
@@ -102,6 +101,11 @@
                   "userId": {
                     "type": "string",
                     "maxLength": 50
+                  },
+                  "loginEmail": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "format": "email"
                   },
                   "photoUrl": {
                     "type": "string",
@@ -229,6 +233,11 @@
                 "type": "string",
                 "maxLength": 50
               },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
+              },
               "photoUrl": {
                 "type": "string",
                 "format": "uri"
@@ -305,9 +314,8 @@
         "type": "object",
         "properties": {
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "submittedWaiver": {
             "type": "boolean"
@@ -360,6 +368,11 @@
                       "email": {
                         "type": "string",
                         "maxLength": 100,
+                        "format": "email"
+                      },
+                      "loginEmail": {
+                        "type": "string",
+                        "maxLength": 256,
                         "format": "email"
                       },
                       "contactDetails": {
@@ -445,9 +458,8 @@
         "type": "object",
         "properties": {
           "playerNumber": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 99
+            "type": "string",
+            "pattern": "^\\d{0,2}$"
           },
           "submittedWaiver": {
             "type": "boolean"
@@ -468,6 +480,100 @@
         },
         "additionalProperties": false,
         "description": "Schema for updating a roster member"
+      },
+      "RosterSeasonMembership": {
+        "type": "object",
+        "properties": {
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "leagueSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueName": {
+            "type": "string"
+          },
+          "divisionSeasonId": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "divisionName": {
+            "type": "string",
+            "nullable": true
+          },
+          "jerseyNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "teamSeasonId",
+          "teamName",
+          "leagueSeasonId",
+          "leagueName",
+          "divisionSeasonId",
+          "divisionName",
+          "jerseyNumber"
+        ],
+        "description": "A player's membership in a team for a specific season, including league and division context."
+      },
+      "RosterSeasonMembershipList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "teamSeasonId": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "12345"
+            },
+            "teamName": {
+              "type": "string"
+            },
+            "leagueSeasonId": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "12345"
+            },
+            "leagueName": {
+              "type": "string"
+            },
+            "divisionSeasonId": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^\\d+$",
+              "example": "12345"
+            },
+            "divisionName": {
+              "type": "string",
+              "nullable": true
+            },
+            "jerseyNumber": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "required": [
+            "teamSeasonId",
+            "teamName",
+            "leagueSeasonId",
+            "leagueName",
+            "divisionSeasonId",
+            "divisionName",
+            "jerseyNumber"
+          ],
+          "description": "A player's membership in a team for a specific season, including league and division context."
+        },
+        "description": "List of a player's team memberships for a season."
       },
       "Contact": {
         "type": "object",
@@ -499,6 +605,11 @@
           "userId": {
             "type": "string",
             "maxLength": 50
+          },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
+            "format": "email"
           },
           "photoUrl": {
             "type": "string",
@@ -636,6 +747,11 @@
             "type": "string",
             "maxLength": 50
           },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
+            "format": "email"
+          },
           "photoUrl": {
             "type": "string",
             "format": "uri"
@@ -759,6 +875,11 @@
           "userId": {
             "type": "string",
             "maxLength": 50
+          },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
+            "format": "email"
           },
           "photoUrl": {
             "type": "string",
@@ -1238,6 +1359,11 @@
             "maxLength": 100,
             "format": "email"
           },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
+            "format": "email"
+          },
           "contactDetails": {
             "type": "object",
             "properties": {
@@ -1372,6 +1498,11 @@
               "userId": {
                 "type": "string",
                 "maxLength": 50
+              },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
               },
               "photoUrl": {
                 "type": "string",
@@ -1551,6 +1682,11 @@
               "userId": {
                 "type": "string",
                 "maxLength": 50
+              },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
               },
               "photoUrl": {
                 "type": "string",
@@ -1968,6 +2104,11 @@
               "userId": {
                 "type": "string",
                 "maxLength": 50
+              },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
               },
               "photoUrl": {
                 "type": "string",
@@ -2465,6 +2606,11 @@
                 "type": "string",
                 "maxLength": 50
               },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
+              },
               "photoUrl": {
                 "type": "string",
                 "format": "uri"
@@ -2566,9 +2712,8 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 99
+                  "type": "string",
+                  "pattern": "^\\d{0,2}$"
                 },
                 "inactive": {
                   "type": "boolean",
@@ -2633,6 +2778,11 @@
                         "userId": {
                           "type": "string",
                           "maxLength": 50
+                        },
+                        "loginEmail": {
+                          "type": "string",
+                          "maxLength": 256,
+                          "format": "email"
                         },
                         "photoUrl": {
                           "type": "string",
@@ -2720,6 +2870,484 @@
           "rosterMembers"
         ]
       },
+      "RosterMemberSeasonTeamWaiver": {
+        "type": "object",
+        "properties": {
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "leagueSeasonId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
+          "leagueName": {
+            "type": "string"
+          },
+          "submittedWaiver": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "teamSeasonId",
+          "teamId",
+          "teamName",
+          "leagueSeasonId",
+          "leagueName",
+          "submittedWaiver"
+        ],
+        "description": "Per-team waiver status for one of a player’s season teams. Admin-only data."
+      },
+      "RosterMemberWaiverSummary": {
+        "type": "object",
+        "properties": {
+          "rosterMember": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "playerNumber": {
+                "type": "string",
+                "pattern": "^\\d{0,2}$"
+              },
+              "inactive": {
+                "type": "boolean",
+                "default": false
+              },
+              "submittedWaiver": {
+                "type": "boolean"
+              },
+              "dateAdded": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time",
+                "default": null
+              },
+              "gamesPlayed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "player": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^d+$"
+                  },
+                  "submittedDriversLicense": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "firstYear": {
+                    "type": "number",
+                    "minimum": 1900,
+                    "maximum": 2026
+                  },
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^\\d+$",
+                        "example": "12345"
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "middleName": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "format": "email"
+                      },
+                      "userId": {
+                        "type": "string",
+                        "maxLength": 50
+                      },
+                      "loginEmail": {
+                        "type": "string",
+                        "maxLength": 256,
+                        "format": "email"
+                      },
+                      "photoUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "contactDetails": {
+                        "type": "object",
+                        "properties": {
+                          "phone1": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "phone2": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "phone3": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "streetAddress": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 100,
+                            "default": ""
+                          },
+                          "city": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50,
+                            "default": ""
+                          },
+                          "state": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50,
+                            "default": ""
+                          },
+                          "zip": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 10,
+                            "default": ""
+                          },
+                          "dateOfBirth": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": ""
+                          },
+                          "firstYear": {
+                            "type": "number",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "firstName",
+                      "lastName"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "firstYear",
+                  "contact"
+                ],
+                "description": "Schema for a player who is or was on a team roster. This contains details that only ever need to be supplied once"
+              }
+            },
+            "required": [
+              "id",
+              "player"
+            ],
+            "description": "Schema for a roster member including player details"
+          },
+          "seasonTeams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "teamName": {
+                  "type": "string"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
+                "leagueName": {
+                  "type": "string"
+                },
+                "submittedWaiver": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "teamSeasonId",
+                "teamId",
+                "teamName",
+                "leagueSeasonId",
+                "leagueName",
+                "submittedWaiver"
+              ],
+              "description": "Per-team waiver status for one of a player’s season teams. Admin-only data."
+            }
+          }
+        },
+        "required": [
+          "rosterMember",
+          "seasonTeams"
+        ],
+        "description": "Roster member augmented with the set of teams in the current season where the player has a roster row, including the submittedWaiver flag for each. Admin-only."
+      },
+      "TeamRosterWaiverSummaries": {
+        "type": "object",
+        "properties": {
+          "teamSeason": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^d+$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rosterMember": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^d+$"
+                    },
+                    "playerNumber": {
+                      "type": "string",
+                      "pattern": "^\\d{0,2}$"
+                    },
+                    "inactive": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "submittedWaiver": {
+                      "type": "boolean"
+                    },
+                    "dateAdded": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "date-time",
+                      "default": null
+                    },
+                    "gamesPlayed": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "player": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^d+$"
+                        },
+                        "submittedDriversLicense": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "firstYear": {
+                          "type": "number",
+                          "minimum": 1900,
+                          "maximum": 2026
+                        },
+                        "contact": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^\\d+$",
+                              "example": "12345"
+                            },
+                            "firstName": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "lastName": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "middleName": {
+                              "type": "string",
+                              "maxLength": 50
+                            },
+                            "email": {
+                              "type": "string",
+                              "maxLength": 100,
+                              "format": "email"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "maxLength": 50
+                            },
+                            "loginEmail": {
+                              "type": "string",
+                              "maxLength": 256,
+                              "format": "email"
+                            },
+                            "photoUrl": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "contactDetails": {
+                              "type": "object",
+                              "properties": {
+                                "phone1": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "phone2": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "phone3": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "streetAddress": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 100,
+                                  "default": ""
+                                },
+                                "city": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 50,
+                                  "default": ""
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 50,
+                                  "default": ""
+                                },
+                                "zip": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "maxLength": 10,
+                                  "default": ""
+                                },
+                                "dateOfBirth": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "default": ""
+                                },
+                                "firstYear": {
+                                  "type": "number",
+                                  "nullable": true
+                                }
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "firstName",
+                            "lastName"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstYear",
+                        "contact"
+                      ],
+                      "description": "Schema for a player who is or was on a team roster. This contains details that only ever need to be supplied once"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "player"
+                  ],
+                  "description": "Schema for a roster member including player details"
+                },
+                "seasonTeams": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "teamSeasonId": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "teamId": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "teamName": {
+                        "type": "string"
+                      },
+                      "leagueSeasonId": {
+                        "type": "string",
+                        "pattern": "^d+$"
+                      },
+                      "leagueName": {
+                        "type": "string"
+                      },
+                      "submittedWaiver": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "teamSeasonId",
+                      "teamId",
+                      "teamName",
+                      "leagueSeasonId",
+                      "leagueName",
+                      "submittedWaiver"
+                    ],
+                    "description": "Per-team waiver status for one of a player’s season teams. Admin-only data."
+                  }
+                }
+              },
+              "required": [
+                "rosterMember",
+                "seasonTeams"
+              ],
+              "description": "Roster member augmented with the set of teams in the current season where the player has a roster row, including the submittedWaiver flag for each. Admin-only."
+            }
+          }
+        },
+        "required": [
+          "teamSeason",
+          "members"
+        ],
+        "description": "Admin view of a team roster including cross-team waiver status per player for the current season."
+      },
       "PublicRosterMember": {
         "type": "object",
         "properties": {
@@ -2727,11 +3355,14 @@
             "type": "string",
             "pattern": "^d+$"
           },
+          "contactId": {
+            "type": "string",
+            "pattern": "^d+$"
+          },
           "playerNumber": {
-            "type": "number",
+            "type": "string",
             "nullable": true,
-            "minimum": 0,
-            "maximum": 99
+            "pattern": "^\\d{0,2}$"
           },
           "firstName": {
             "type": "string",
@@ -2756,9 +3387,10 @@
           }
         },
         "required": [
-          "id"
+          "id",
+          "contactId"
         ],
-        "description": "Public-safe roster member payload exposing only jersey number, player name, and optional photo URL."
+        "description": "Public-safe roster member payload exposing jersey number, player name, optional photo URL, and the contact identifier needed to link to public player statistics."
       },
       "PublicTeamRosterResponse": {
         "type": "object",
@@ -2788,11 +3420,14 @@
                   "type": "string",
                   "pattern": "^d+$"
                 },
+                "contactId": {
+                  "type": "string",
+                  "pattern": "^d+$"
+                },
                 "playerNumber": {
-                  "type": "number",
+                  "type": "string",
                   "nullable": true,
-                  "minimum": 0,
-                  "maximum": 99
+                  "pattern": "^\\d{0,2}$"
                 },
                 "firstName": {
                   "type": "string",
@@ -2817,9 +3452,10 @@
                 }
               },
               "required": [
-                "id"
+                "id",
+                "contactId"
               ],
-              "description": "Public-safe roster member payload exposing only jersey number, player name, and optional photo URL."
+              "description": "Public-safe roster member payload exposing jersey number, player name, optional photo URL, and the contact identifier needed to link to public player statistics."
             }
           }
         },
@@ -2836,10 +3472,9 @@
             "pattern": "^d+$"
           },
           "playerNumber": {
-            "type": "number",
+            "type": "string",
             "nullable": true,
-            "minimum": 0,
-            "maximum": 99
+            "pattern": "^\\d{0,2}$"
           },
           "firstName": {
             "type": "string"
@@ -2905,10 +3540,9 @@
                   "pattern": "^d+$"
                 },
                 "playerNumber": {
-                  "type": "number",
+                  "type": "string",
                   "nullable": true,
-                  "minimum": 0,
-                  "maximum": 99
+                  "pattern": "^\\d{0,2}$"
                 },
                 "firstName": {
                   "type": "string"
@@ -3229,6 +3863,11 @@
           "email": {
             "type": "string",
             "maxLength": 100,
+            "format": "email"
+          },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
             "format": "email"
           },
           "contactDetails": {
@@ -4112,6 +4751,11 @@
                   "type": "string",
                   "maxLength": 50
                 },
+                "loginEmail": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "format": "email"
+                },
                 "photoUrl": {
                   "type": "string",
                   "format": "uri"
@@ -4268,6 +4912,11 @@
             "maxLength": 100,
             "format": "email"
           },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
+            "format": "email"
+          },
           "photoUrl": {
             "type": "string",
             "format": "uri"
@@ -4370,6 +5019,11 @@
                 "email": {
                   "type": "string",
                   "maxLength": 100,
+                  "format": "email"
+                },
+                "loginEmail": {
+                  "type": "string",
+                  "maxLength": 256,
                   "format": "email"
                 },
                 "photoUrl": {
@@ -4671,6 +5325,11 @@
                       "userId": {
                         "type": "string",
                         "maxLength": 50
+                      },
+                      "loginEmail": {
+                        "type": "string",
+                        "maxLength": 256,
+                        "format": "email"
                       },
                       "photoUrl": {
                         "type": "string",
@@ -4988,6 +5647,11 @@
                             "type": "string",
                             "maxLength": 50
                           },
+                          "loginEmail": {
+                            "type": "string",
+                            "maxLength": 256,
+                            "format": "email"
+                          },
                           "photoUrl": {
                             "type": "string",
                             "format": "uri"
@@ -5237,6 +5901,11 @@
                 "type": "string",
                 "maxLength": 50
               },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
+              },
               "photoUrl": {
                 "type": "string",
                 "format": "uri"
@@ -5333,6 +6002,11 @@
                 "userId": {
                   "type": "string",
                   "maxLength": 50
+                },
+                "loginEmail": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "format": "email"
                 },
                 "photoUrl": {
                   "type": "string",
@@ -5636,6 +6310,11 @@
                 "maxLength": 100,
                 "format": "email"
               },
+              "loginEmail": {
+                "type": "string",
+                "maxLength": 256,
+                "format": "email"
+              },
               "contactDetails": {
                 "type": "object",
                 "properties": {
@@ -5910,6 +6589,11 @@
                           "userId": {
                             "type": "string",
                             "maxLength": 50
+                          },
+                          "loginEmail": {
+                            "type": "string",
+                            "maxLength": 256,
+                            "format": "email"
                           },
                           "photoUrl": {
                             "type": "string",
@@ -6211,6 +6895,11 @@
                           "userId": {
                             "type": "string",
                             "maxLength": 50
+                          },
+                          "loginEmail": {
+                            "type": "string",
+                            "maxLength": 256,
+                            "format": "email"
                           },
                           "photoUrl": {
                             "type": "string",
@@ -10317,9 +11006,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "photoUrl": {
             "type": "string",
@@ -10788,6 +11476,149 @@
           "query"
         ]
       },
+      "PublicPlayerTeamAffiliation": {
+        "type": "object",
+        "properties": {
+          "teamSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "teamId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "seasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueSeasonId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          },
+          "leagueName": {
+            "type": "string"
+          },
+          "teamName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "teamSeasonId",
+          "teamId",
+          "seasonId",
+          "leagueSeasonId",
+          "leagueName",
+          "teamName"
+        ]
+      },
+      "PublicPlayerProfile": {
+        "type": "object",
+        "properties": {
+          "contact": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "firstName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "photoUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "firstName",
+              "lastName"
+            ]
+          },
+          "currentSeason": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^\\d+$",
+                "example": "12345"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamSeasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "seasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "leagueName": {
+                  "type": "string"
+                },
+                "teamName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "teamSeasonId",
+                "teamId",
+                "seasonId",
+                "leagueSeasonId",
+                "leagueName",
+                "teamName"
+              ]
+            }
+          },
+          "hasCareerStatistics": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contact",
+          "currentSeason",
+          "teams",
+          "hasCareerStatistics"
+        ],
+        "title": "PublicPlayerProfile",
+        "description": "Public-safe player profile: identity, current-season team affiliations, and a flag indicating whether career statistics exist."
+      },
       "TeamStatsPlayerSummary": {
         "type": "object",
         "properties": {
@@ -10812,9 +11643,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "photoUrl": {
             "type": "string",
@@ -10927,9 +11757,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "tb": {
             "type": "number",
@@ -11100,9 +11929,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "tb": {
                   "type": "number",
@@ -11310,9 +12138,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "photoUrl": {
                   "type": "string",
@@ -11435,9 +12262,8 @@
             "maxLength": 100
           },
           "playerNumber": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
+            "type": "string",
+            "nullable": true
           },
           "ip": {
             "type": "number",
@@ -11618,9 +12444,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "ip": {
                   "type": "number",
@@ -11848,9 +12673,8 @@
                   "maxLength": 100
                 },
                 "playerNumber": {
-                  "type": "integer",
-                  "nullable": true,
-                  "minimum": 0
+                  "type": "string",
+                  "nullable": true
                 },
                 "photoUrl": {
                   "type": "string",
@@ -12398,7 +13222,7 @@
           },
           "minAB": {
             "type": "string",
-            "default": 10
+            "default": 0
           },
           "sortField": {
             "type": "string",
@@ -12444,7 +13268,7 @@
           },
           "minIP": {
             "type": "string",
-            "default": 1
+            "default": 0
           },
           "sortField": {
             "type": "string",
@@ -18102,6 +18926,52 @@
         "title": "UpdatePhotoGalleryPhoto",
         "description": "JSON payload for updating gallery photo metadata"
       },
+      "CreateTeamGalleryPhoto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Title for the approved team gallery photo"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Optional caption describing the team gallery photo"
+          },
+          "photo": {
+            "type": "string",
+            "format": "binary",
+            "description": "Photo file to upload"
+          }
+        },
+        "required": [
+          "title",
+          "photo"
+        ],
+        "title": "CreateTeamGalleryPhoto",
+        "description": "Multipart payload used by team administrators to upload a team gallery photo. The album is auto-managed by the backend."
+      },
+      "UpdateTeamGalleryPhoto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Updated title for the team gallery photo"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "Updated caption for the team gallery photo"
+          }
+        },
+        "title": "UpdateTeamGalleryPhoto",
+        "description": "JSON payload to update title or caption on a team gallery photo. Album reassignment is not supported."
+      },
       "PhotoGalleryPhoto": {
         "type": "object",
         "properties": {
@@ -21030,6 +21900,9 @@
             "required": [
               "id"
             ]
+          },
+          "notifyTeams": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -21052,6 +21925,18 @@
         },
         "required": [
           "recap"
+        ]
+      },
+      "GameTeamRecipientCount": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "count"
         ]
       },
       "UpsertSeason": {
@@ -21418,6 +22303,122 @@
           "currentPassword",
           "newPassword"
         ]
+      },
+      "ChangeLoginEmailRequest": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "minLength": 6
+          },
+          "newLoginEmail": {
+            "type": "string",
+            "maxLength": 256,
+            "format": "email"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newLoginEmail"
+        ]
+      },
+      "AdminUserSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "contactCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "accessFailedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lockoutEndDateUtc": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasPassword": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "contactCount",
+          "accessFailedCount",
+          "lockoutEndDateUtc",
+          "hasPassword"
+        ],
+        "title": "AdminUserSummary",
+        "description": "Summary of an aspnetusers row, used by the global Administrator user list."
+      },
+      "AdminUserListResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "username": {
+                  "type": "string"
+                },
+                "contactCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "accessFailedCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "lockoutEndDateUtc": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "hasPassword": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "username",
+                "contactCount",
+                "accessFailedCount",
+                "lockoutEndDateUtc",
+                "hasPassword"
+              ],
+              "title": "AdminUserSummary",
+              "description": "Summary of an aspnetusers row, used by the global Administrator user list."
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "hasPrev": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "users",
+          "total",
+          "hasNext",
+          "hasPrev"
+        ],
+        "title": "AdminUserListResponse",
+        "description": "Paged response of admin user summaries."
       },
       "SchedulerProblemSpec": {
         "type": "object",
@@ -24429,6 +25430,11 @@
           "email": {
             "type": "string",
             "maxLength": 100,
+            "format": "email"
+          },
+          "loginEmail": {
+            "type": "string",
+            "maxLength": 256,
             "format": "email"
           },
           "contactDetails": {
@@ -33304,6 +34310,679 @@
         }
       }
     },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos": {
+      "get": {
+        "operationId": "listTeamGalleryPhotosAdmin",
+        "summary": "List team gallery photos for administration",
+        "description": "Returns approved gallery photos belonging to a specific team for administrative management. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            },
+            "description": "Optional album filter scoped to this team."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team gallery photos available for administrative management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving team gallery photos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeamGalleryPhoto",
+        "summary": "Upload a team gallery photo as an administrator",
+        "description": "Uploads a new photo into the team’s auto-managed gallery album. The album is selected by the backend; callers cannot target a specific album. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamGalleryPhoto"
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/*"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Team gallery photo created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "500": {
+            "description": "Unexpected server error while creating the team gallery photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/photos/{photoId}": {
+      "patch": {
+        "operationId": "updateTeamGalleryPhoto",
+        "summary": "Update team gallery photo metadata",
+        "description": "Updates the title or caption for a team gallery photo. Album reassignment is not supported. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamGalleryPhoto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated team gallery photo metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "404": {
+            "description": "Team gallery photo not found."
+          },
+          "500": {
+            "description": "Unexpected server error while updating the team gallery photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTeamGalleryPhoto",
+        "summary": "Delete a team gallery photo",
+        "description": "Removes a team gallery photo and its associated assets. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team gallery photo deleted."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery photos."
+          },
+          "404": {
+            "description": "Team gallery photo not found."
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the team gallery photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums": {
+      "get": {
+        "operationId": "listTeamGalleryAlbumsAdmin",
+        "summary": "List team gallery albums for administration",
+        "description": "Retrieves albums belonging to the specified team for administrative management. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team gallery albums available for administrative management.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryAdminAlbumList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "500": {
+            "description": "Unexpected server error while retrieving team gallery albums.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeamGalleryAlbum",
+        "summary": "Create a team gallery album",
+        "description": "Creates a new album owned by the specified team. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25,
+                    "description": "Title for the team album"
+                  },
+                  "parentAlbumId": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Optional parent album identifier scoped to the same team. Null nests at the team root."
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "title": "CreateTeamGalleryAlbum",
+                "description": "JSON payload to create a team gallery album. The owning team is taken from the URL path."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Team gallery album created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryAdminAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "409": {
+            "description": "Album title conflicts with an existing album."
+          },
+          "500": {
+            "description": "Unexpected server error while creating the team gallery album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/teams/{teamId}/photo-gallery/albums/{albumId}": {
+      "patch": {
+        "operationId": "updateTeamGalleryAlbum",
+        "summary": "Update team gallery album metadata",
+        "description": "Updates the title or parent album of a team gallery album. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 25,
+                    "description": "Updated title for the team album"
+                  },
+                  "parentAlbumId": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Updated parent album identifier scoped to the same team"
+                  }
+                },
+                "title": "UpdateTeamGalleryAlbum",
+                "description": "JSON payload to update a team gallery album. The owning team cannot be changed."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Team gallery album updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoGalleryAdminAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "404": {
+            "description": "Team gallery album not found."
+          },
+          "409": {
+            "description": "Album title conflicts with an existing album."
+          },
+          "500": {
+            "description": "Unexpected server error while updating the team gallery album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTeamGalleryAlbum",
+        "summary": "Delete a team gallery album",
+        "description": "Deletes an album owned by the specified team. Requires team photo management permissions.",
+        "tags": [
+          "Photo Gallery"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Team gallery album deleted."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Insufficient permissions to manage team gallery albums."
+          },
+          "404": {
+            "description": "Team gallery album not found."
+          },
+          "409": {
+            "description": "Album cannot be deleted while it contains photos."
+          },
+          "500": {
+            "description": "Unexpected server error while deleting the team gallery album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/by-domain": {
       "get": {
         "operationId": "getAccountByDomain",
@@ -33614,6 +35293,11 @@
                       "email": {
                         "type": "string",
                         "maxLength": 100,
+                        "format": "email"
+                      },
+                      "loginEmail": {
+                        "type": "string",
+                        "maxLength": 256,
                         "format": "email"
                       },
                       "contactDetails": {
@@ -40080,6 +41764,173 @@
         }
       }
     },
+    "/api/admin/users": {
+      "get": {
+        "operationId": "listAdminUsers",
+        "summary": "List authentication users for global Administrator login management.",
+        "description": "Returns paged aspnetusers rows along with a per-user contact count. Filter to orphan users (zero linked contacts) via `orphansOnly=true`.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "nullable": true
+            },
+            "required": false,
+            "name": "orphansOnly",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged admin user summaries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Query parameters are invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error while listing admin users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{userId}": {
+      "delete": {
+        "operationId": "deleteAdminUser",
+        "summary": "Delete an authentication user (orphans only).",
+        "description": "Permanently removes an aspnetusers row. Refused with 409 when the user is still linked to one or more contacts.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully."
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "User is still linked to one or more contacts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error while deleting the user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/alerts": {
       "get": {
         "summary": "List active alerts",
@@ -41762,6 +43613,82 @@
         }
       }
     },
+    "/api/auth/change-login-email": {
+      "post": {
+        "operationId": "changeLoginEmail",
+        "summary": "Change login email",
+        "description": "Allows the authenticated user to change the email used to sign in. Requires the current password and a unique new email; returns a refreshed JWT.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeLoginEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login email changed successfully; response includes a refreshed JWT.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisteredUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request is invalid or new email matches current login email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or current password incorrect.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "New email is already in use as a login by another account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error while changing the login email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/refresh": {
       "post": {
         "operationId": "refreshToken",
@@ -42841,6 +44768,68 @@
         }
       }
     },
+    "/api/accounts/{accountId}/players/{contactId}/public-profile": {
+      "get": {
+        "operationId": "getAccountPlayerPublicProfile",
+        "summary": "Public player profile",
+        "description": "Public-safe player profile: identity, current-season team affiliations, and a flag indicating whether career statistics exist. No authentication required.",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public player profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPlayerProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/contacts/public-search": {
       "get": {
         "operationId": "searchPublicContacts",
@@ -43442,6 +45431,11 @@
                     "maxLength": 100,
                     "format": "email"
                   },
+                  "loginEmail": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "format": "email"
+                  },
                   "contactDetails": {
                     "type": "object",
                     "properties": {
@@ -43524,6 +45518,11 @@
                   "email": {
                     "type": "string",
                     "maxLength": 100,
+                    "format": "email"
+                  },
+                  "loginEmail": {
+                    "type": "string",
+                    "maxLength": 256,
                     "format": "email"
                   },
                   "contactDetails": {
@@ -43800,6 +45799,11 @@
                     "maxLength": 100,
                     "format": "email"
                   },
+                  "loginEmail": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "format": "email"
+                  },
                   "contactDetails": {
                     "type": "object",
                     "properties": {
@@ -43882,6 +45886,11 @@
                   "email": {
                     "type": "string",
                     "maxLength": 100,
+                    "format": "email"
+                  },
+                  "loginEmail": {
+                    "type": "string",
+                    "maxLength": 256,
                     "format": "email"
                   },
                   "contactDetails": {
@@ -44532,6 +46541,83 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContactIndividualGolfAccount"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/contacts/me/teams": {
+      "get": {
+        "summary": "List my team memberships for a season",
+        "description": "Returns the authenticated user's team memberships within a specific season. Accepts both user JWT and OAuth bearer tokens.",
+        "operationId": "listMyTeamSeasons",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User's team memberships for the season",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosterSeasonMembershipList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - user does not belong to account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }
@@ -46314,6 +48400,394 @@
         }
       }
     },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers/export": {
+      "get": {
+        "description": "Export team waiver roster to CSV file (only players with submitted waiver and email)",
+        "summary": "Export team waivers",
+        "operationId": "exportTeamWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/roster/waivers/export": {
+      "get": {
+        "description": "Export league waiver roster to CSV file (only players with submitted waiver and email, ordered by team)",
+        "summary": "Export league waivers",
+        "operationId": "exportLeagueWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers/missing/export": {
+      "get": {
+        "description": "Export team players missing a submitted waiver to CSV file",
+        "summary": "Export team players missing a waiver",
+        "operationId": "exportTeamMissingWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/leagues/{leagueSeasonId}/roster/waivers/missing/export": {
+      "get": {
+        "description": "Export league players missing a submitted waiver to CSV file (ordered by team, includes players without an email)",
+        "summary": "Export league players missing a waiver",
+        "operationId": "exportLeagueMissingWaivers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Exports"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "leagueSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/export": {
       "get": {
         "description": "Export team roster to CSV file",
@@ -48084,6 +50558,102 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/games/team-recipient-count": {
+      "get": {
+        "operationId": "getGameTeamRecipientCount",
+        "summary": "Get recipient count for teams",
+        "description": "Return the deduplicated count of active roster members with email addresses across one or more teams in a season. Used to show the approximate notification reach before sending schedule-change emails.",
+        "tags": [
+          "Games"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of team season IDs to count recipients for."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recipient count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameTeamRecipientCount"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }
@@ -64149,6 +66719,102 @@
         }
       }
     },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/waivers": {
+      "get": {
+        "description": "Get roster members for a team season augmented with per-team waiver status for every team the player is on in the current season. Admin only.",
+        "summary": "Get team roster waiver summaries",
+        "operationId": "getTeamRosterWaiverSummaries",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roster members with waiver summaries returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamRosterWaiverSummaries"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - Account admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster-public": {
       "get": {
         "description": "Get public-safe roster members (name, jersey number, photo) for a specific team season.",
@@ -71996,7 +74662,7 @@
           {
             "schema": {
               "type": "string",
-              "default": 10
+              "default": 0
             },
             "required": false,
             "name": "minAB",
@@ -72152,7 +74818,7 @@
           {
             "schema": {
               "type": "string",
-              "default": 1
+              "default": 0
             },
             "required": false,
             "name": "minIP",

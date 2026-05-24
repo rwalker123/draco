@@ -125,7 +125,6 @@ export interface EmailComposeConfig {
   // Limits
   maxAttachments: number;
   maxAttachmentSize: number;
-  maxRecipients: number;
 
   scope?: 'account' | 'team';
   allowAttachments?: boolean;
@@ -248,7 +247,6 @@ export const DEFAULT_COMPOSE_CONFIG: EmailComposeConfig = {
   enableRealTimeValidation: true,
   maxAttachments: 10,
   maxAttachmentSize: 25 * 1024 * 1024,
-  maxRecipients: 500,
   scope: 'account',
   allowAttachments: true,
   allowAdvancedRecipients: true,
@@ -325,15 +323,6 @@ export function validateComposeData(
     errors.push({
       field: 'recipients',
       message: 'At least one recipient is required',
-      severity: 'error',
-    });
-  }
-
-  // Recipient limit validation
-  if (state.recipientState && state.recipientState.totalRecipients > config.maxRecipients) {
-    errors.push({
-      field: 'recipients',
-      message: `Too many recipients. Maximum ${config.maxRecipients} allowed.`,
       severity: 'error',
     });
   }

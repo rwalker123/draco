@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import LockIcon from '@mui/icons-material/Lock';
+import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import DescriptionIcon from '@mui/icons-material/Description';
 import type { BaseContactType } from '@draco/shared-schemas';
 import WidgetShell from '../ui/WidgetShell';
@@ -25,6 +26,8 @@ interface ContactInfoCardProps {
   accountName?: string;
   onEdit?: () => void;
   onChangePassword?: () => void;
+  onChangeLoginEmail?: () => void;
+  loginEmail?: string;
   surveyHref?: string;
   surveyAccountId?: string | null;
   infoMessage?: string | null;
@@ -87,6 +90,8 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
   accountName,
   onEdit,
   onChangePassword,
+  onChangeLoginEmail,
+  loginEmail,
   surveyHref,
   surveyAccountId,
   infoMessage,
@@ -133,6 +138,14 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
     );
   }
 
+  const contactEmail = contact.email ?? '';
+  const normalizedContactEmail = contactEmail.trim().toLowerCase();
+  const normalizedLoginEmail = (loginEmail ?? '').trim().toLowerCase();
+  const showLoginEmail = Boolean(
+    normalizedLoginEmail && normalizedLoginEmail !== normalizedContactEmail,
+  );
+  const emailLabel = showLoginEmail ? 'Account email' : 'Email';
+
   const primaryPhone = contact.contactDetails?.phone1 || '';
   const secondaryPhone = contact.contactDetails?.phone2 || '';
   const tertiaryPhone = contact.contactDetails?.phone3 || '';
@@ -162,9 +175,22 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
     ) : null;
 
   const actionButtons =
-    surveyButton || onEdit || onChangePassword ? (
+    surveyButton || onEdit || onChangePassword || onChangeLoginEmail ? (
       <Stack direction="row" spacing={1}>
         {surveyButton}
+        {onChangeLoginEmail && (
+          <Tooltip title="Change login email">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onChangeLoginEmail}
+              data-testid="profile-change-login-email-header-button"
+              sx={{ minWidth: 36, px: 1 }}
+            >
+              <AlternateEmailIcon fontSize="small" />
+            </Button>
+          </Tooltip>
+        )}
         {onChangePassword && (
           <Tooltip title="Change password">
             <Button
@@ -243,7 +269,33 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
       {!hideDetails && (
         <Stack spacing={2.5}>
           <Stack spacing={1.5}>
-            {renderContactField('Email', contact.email ?? '')}
+            {renderContactField(emailLabel, contactEmail)}
+            {showLoginEmail && (
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                >
+                  Login email
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {loginEmail}
+                  </Typography>
+                  {onChangeLoginEmail && (
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={onChangeLoginEmail}
+                      data-testid="profile-change-login-email-button"
+                      sx={{ minHeight: 0, py: 0, px: 1 }}
+                    >
+                      Change
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+            )}
             {renderContactField('Primary Phone', primaryPhone)}
             {renderContactField('Secondary Phone', secondaryPhone)}
             {renderContactField('Additional Phone', tertiaryPhone)}

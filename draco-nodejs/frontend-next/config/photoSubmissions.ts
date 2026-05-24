@@ -1,7 +1,7 @@
 export const PHOTO_SUBMISSION_CONFIG = {
   MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024, // 10MB
-  ALLOWED_MIME_TYPES: ['image/gif', 'image/jpeg', 'image/png', 'image/bmp'],
-  ALLOWED_EXTENSIONS: ['.gif', '.jpg', '.jpeg', '.png', '.bmp'],
+  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png', 'image/bmp'],
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.bmp'],
 };
 
 const normalizeExtension = (fileName: string): string => {
@@ -26,7 +26,7 @@ export const validatePhotoSubmissionFile = (file: File | null): string | null =>
     PHOTO_SUBMISSION_CONFIG.ALLOWED_MIME_TYPES.includes(normalizedType);
 
   if (!hasAllowedExtension && !hasAllowedMimeType) {
-    return 'Only GIF, JPG, JPEG, PNG, or BMP images are supported.';
+    return 'Only JPG, JPEG, PNG, or BMP images are supported.';
   }
 
   if (file.size > PHOTO_SUBMISSION_CONFIG.MAX_FILE_SIZE_BYTES) {

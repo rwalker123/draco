@@ -45,8 +45,15 @@ import TeamAlbumMenu from '../TeamAlbumMenu';
 import type { TeamAlbumHierarchyGroup } from '../types';
 import { EditIconButton, DeleteIconButton } from '../../common/ActionIconButtons';
 
+export interface PhotoGalleryTeamScope {
+  teamId: string;
+  teamName: string;
+  breadcrumbs?: React.ReactNode;
+}
+
 interface PhotoGalleryAdminManagementProps {
   accountId: string;
+  teamScope?: PhotoGalleryTeamScope;
 }
 
 const encodeAlbumId = (value: string | null | undefined): string =>
@@ -102,8 +109,10 @@ const AlbumCountChip = styled('span')(({ theme }) => ({
 
 export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementProps> = ({
   accountId,
+  teamScope,
 }) => {
   const { token } = useAuth();
+  const teamId = teamScope?.teamId ?? null;
   const [photos, setPhotos] = useState<PhotoGalleryPhotoType[]>([]);
   const [albums, setAlbums] = useState<PhotoGalleryAdminAlbumType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -320,8 +329,8 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
 
       try {
         const [galleryData, albumData] = await Promise.all([
-          listGalleryPhotosAdmin(accountId, token, controller.signal),
-          listGalleryAlbumsAdmin(accountId, token, controller.signal),
+          listGalleryPhotosAdmin(accountId, token, controller.signal, teamId),
+          listGalleryAlbumsAdmin(accountId, token, controller.signal, teamId),
         ]);
 
         if (controller.signal.aborted) return;
@@ -352,7 +361,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     return () => {
       controller.abort();
     };
-  }, [accountId, token]);
+  }, [accountId, token, teamId]);
 
   const handleOpenCreateDialog = () => {
     setPhotoDialogState({ open: true, mode: 'create', photo: null });
@@ -449,7 +458,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     const photoToDelete = deleteConfirmation;
 
     try {
-      await deleteGalleryPhotoAdmin(accountId, photoToDelete.id, token);
+      await deleteGalleryPhotoAdmin(accountId, photoToDelete.id, token, teamId);
       setPhotos((previous) => previous.filter((photo) => photo.id !== photoToDelete.id));
       adjustAlbumPhotoCounts([{ albumId: photoToDelete.albumId ?? null, delta: -1 }]);
       showNotification('Photo deleted successfully', 'success');
@@ -482,6 +491,10 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
       return photos.filter((photo) => photo.albumId === selectedTeamAlbumId);
     }
 
+    if (teamScope) {
+      return photos;
+    }
+
     if (selectedAccountAlbumId === 'all-account') {
       return photos.filter((photo) => {
         const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
@@ -503,11 +516,15 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
     return photos.filter((photo) => photo.albumId === targetAlbumId);
   })();
 
-  const allAccountPhotosCount = photos.filter((photo) => {
-    const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
-    const photoAccountId = photo.accountId ?? null;
-    return normalizedTeamId === null && (photoAccountId === accountId || photoAccountId === '0');
-  }).length;
+  const allAccountPhotosCount = teamScope
+    ? photos.length
+    : photos.filter((photo) => {
+        const normalizedTeamId = normalizeEntityId(photo.teamId ?? null);
+        const photoAccountId = photo.accountId ?? null;
+        return (
+          normalizedTeamId === null && (photoAccountId === accountId || photoAccountId === '0')
+        );
+      }).length;
 
   const hasAnyPhotos = photos.length > 0;
   const hasSelectionPhotos = filteredPhotos.length > 0;
@@ -520,19 +537,23 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
           component="h1"
           sx={{ fontWeight: 'bold', textAlign: 'center', color: 'text.primary' }}
         >
-          Photo Gallery Management
+          {teamScope ? `Photo Gallery — ${teamScope.teamName}` : 'Photo Gallery Management'}
         </Typography>
         <Typography variant="body1" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-          Upload photos, organize albums, and curate your gallery for members and visitors.
+          {teamScope
+            ? `Upload photos for ${teamScope.teamName}.`
+            : 'Upload photos, organize albums, and curate your gallery for members and visitors.'}
         </Typography>
       </AccountPageHeader>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <AdminBreadcrumbs
-          accountId={accountId}
-          category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
-          currentPage="Photo Gallery Management"
-        />
+        {teamScope?.breadcrumbs ?? (
+          <AdminBreadcrumbs
+            accountId={accountId}
+            category={{ name: 'Community', href: `/account/${accountId}/admin/community` }}
+            currentPage="Photo Gallery Management"
+          />
+        )}
         <Box
           sx={{
             display: 'flex',
@@ -548,27 +569,31 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
               selected={selectedTeamAlbumId === '' && selectedAccountAlbumId === 'all-account'}
               onClick={() => handleSelectAccountAlbum('all-account')}
             >
-              <Typography variant="body1">All Photos</Typography>
+              <Typography variant="body1">
+                {teamScope ? `All ${teamScope.teamName} Photos` : 'All Photos'}
+              </Typography>
               <AlbumCountChip>{allAccountPhotosCount}</AlbumCountChip>
             </AlbumPillButton>
 
-            {accountAlbumOptions.map((album) => {
-              const isSelected = selectedTeamAlbumId === '' && selectedAccountAlbumId === album.id;
-              return (
-                <AlbumPillButton
-                  key={album.id}
-                  selected={isSelected}
-                  onClick={() => handleSelectAccountAlbum(album.id)}
-                >
-                  <Typography variant="body1">{album.title}</Typography>
-                  <AlbumCountChip>{album.photoCount}</AlbumCountChip>
-                </AlbumPillButton>
-              );
-            })}
+            {!teamScope &&
+              accountAlbumOptions.map((album) => {
+                const isSelected =
+                  selectedTeamAlbumId === '' && selectedAccountAlbumId === album.id;
+                return (
+                  <AlbumPillButton
+                    key={album.id}
+                    selected={isSelected}
+                    onClick={() => handleSelectAccountAlbum(album.id)}
+                  >
+                    <Typography variant="body1">{album.title}</Typography>
+                    <AlbumCountChip>{album.photoCount}</AlbumCountChip>
+                  </AlbumPillButton>
+                );
+              })}
           </Stack>
 
           <Stack direction="row" spacing={1} alignItems="center">
-            {teamAlbumMenuHierarchy.length > 0 ? (
+            {!teamScope && teamAlbumMenuHierarchy.length > 0 ? (
               <TeamAlbumMenu
                 teamAlbumHierarchy={teamAlbumMenuHierarchy}
                 selectedAlbumKey={selectedTeamAlbumId}
@@ -578,7 +603,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
                 additionalOptions={teamAlbumMenuOptions}
               />
             ) : null}
-            {teamAlbumOptions.length > 0 && (
+            {!teamScope && teamAlbumOptions.length > 0 && (
               <Button
                 variant="outlined"
                 startIcon={<CollectionsBookmarkIcon />}
@@ -711,6 +736,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
 
       <PhotoGalleryAdminPhotoDialog
         accountId={accountId}
+        teamId={teamId}
         open={photoDialogState.open}
         mode={photoDialogState.mode}
         albums={albums}
@@ -723,6 +749,7 @@ export const PhotoGalleryAdminManagement: React.FC<PhotoGalleryAdminManagementPr
 
       <PhotoGalleryAlbumManagerDialog
         accountId={accountId}
+        teamId={teamId}
         open={albumDialogOpen}
         albums={albums}
         albumPhotoCounts={albumPhotoCounts}

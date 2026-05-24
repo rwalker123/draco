@@ -20,16 +20,18 @@ import {
 } from '@mui/icons-material';
 import Image from 'next/image';
 import ConfirmDeleteDialog from './social/ConfirmDeleteDialog';
+import ImageCropDialog from './common/ImageCropDialog';
 import { addCacheBuster } from '../utils/addCacheBuster';
 import {
   AccountLogoOperationSuccess,
   useAccountLogoOperations,
 } from '../hooks/useAccountLogoOperations';
 import { useNotifications } from '../hooks/useNotifications';
+import { IMAGE_CROP_PRESETS } from '../config/imageCropPresets';
+import { ACCOUNT_LOGO_UPLOAD_CONFIG, validateImageFile } from '../utils/imageFileValidation';
 
 const LOGO_WIDTH = 512;
 const LOGO_HEIGHT = 125;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 interface EditAccountLogoDialogProps {
   open: boolean;
@@ -45,15 +47,9 @@ const logoFileSchema = z
     message: 'Please select a logo to upload.',
   })
   .superRefine((file, ctx) => {
-    if (!file.type.startsWith('image/')) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'File must be an image.' });
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'File size must be less than 10MB.',
-      });
+    const validationError = validateImageFile(file, ACCOUNT_LOGO_UPLOAD_CONFIG);
+    if (validationError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: validationError });
     }
   });
 
@@ -111,9 +107,13 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
   );
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (event.target) {
+      event.target.value = '';
+    }
     if (!file) {
       return;
     }
@@ -126,15 +126,24 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
       return;
     }
 
-    setLogoFile(file);
     hideNotification();
     clearError();
+    setPendingCropFile(file);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setPendingCropFile(null);
+    setLogoFile(croppedFile);
     setLogoPreviewError(false);
     const reader = new FileReader();
     reader.onload = (e) => {
       setLogoPreview(e.target?.result as string);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(croppedFile);
+  };
+
+  const handleCropCancel = () => {
+    setPendingCropFile(null);
   };
 
   const handleSave = async () => {
@@ -223,7 +232,12 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
                 startIcon={<CloudUploadIcon />}
                 disabled={uploading || deleting}
               >
-                <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
+                <input
+                  type="file"
+                  hidden
+                  accept={ACCOUNT_LOGO_UPLOAD_CONFIG.allowedMimeTypes.join(',')}
+                  onChange={handleLogoChange}
+                />
               </Button>
               {accountLogoUrl && (
                 <Button
@@ -272,6 +286,13 @@ const LogoEditorContent: React.FC<LogoEditorContentProps> = ({
         cancelButtonProps={{ disabled: deleting }}
       />
       <NotificationSnackbar notification={notification} onClose={hideNotification} />
+      <ImageCropDialog
+        open={pendingCropFile !== null}
+        sourceFile={pendingCropFile}
+        preset={IMAGE_CROP_PRESETS.accountLogo}
+        onClose={handleCropCancel}
+        onCropConfirm={handleCropConfirm}
+      />
     </>
   );
 };

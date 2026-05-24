@@ -36,11 +36,9 @@ test.describe('Social Hub', () => {
   });
 
   test('community messages sub-page loads', async ({ page, accountId }) => {
-    await page.goto(`/account/${accountId}/social-hub/community`, {
-      waitUntil: 'domcontentloaded',
-    });
+    await page.goto(`/account/${accountId}/social-hub/community`);
     await expect(page.getByRole('heading', { name: 'Community Messages' })).toBeVisible({
-      timeout: 30_000,
+      timeout: 15_000,
     });
     await expect(page.getByRole('main')).toBeVisible();
   });

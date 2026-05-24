@@ -6,6 +6,8 @@ import HierarchicalHeader from '../components/HierarchicalHeader';
 import WidgetShell from '../../ui/WidgetShell';
 
 const WeekView: React.FC<ViewComponentProps> = ({
+  accountId,
+  currentTeamSeasonId,
   filteredGames,
   canEditSchedule,
   onEditGame,
@@ -76,6 +78,8 @@ const WeekView: React.FC<ViewComponentProps> = ({
 
       {/* Calendar Grid */}
       <CalendarGrid
+        accountId={accountId}
+        currentTeamSeasonId={currentTeamSeasonId}
         gridType="week"
         showZoomColumn={false}
         days={weekDays}

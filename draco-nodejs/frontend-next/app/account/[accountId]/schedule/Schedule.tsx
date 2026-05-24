@@ -22,8 +22,17 @@ import usePrintAction from '../../../../components/print/usePrintAction';
 import SchedulePrintView from '../../../../components/schedule/SchedulePrintView';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import PrintIcon from '@mui/icons-material/Print';
+import EventIcon from '@mui/icons-material/Event';
+import {
+  buildIcsContent,
+  downloadIcsFile,
+  formatLocalDateStamp,
+  gameToCalendarEvent,
+  sanitizeIcsFilename,
+} from '../../../../utils/calendar';
 
 interface ScheduleProps {
   accountId: string;
@@ -33,7 +42,7 @@ const CALENDAR_VIEW_BREAKPOINT = 900;
 
 const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { token } = useAuth();
-  const { currentSeasonName, currentSeasonScheduleVisible, fetchCurrentSeason } =
+  const { currentSeasonId, currentSeasonName, currentSeasonScheduleVisible, fetchCurrentSeason } =
     useCurrentSeason(accountId);
   const timeZone = useAccountTimezone();
   const { currentAccount } = useAccount();
@@ -91,6 +100,7 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     accountType,
     filterType,
     filterDate,
+    timeZone,
     onError: setError,
   });
 
@@ -155,6 +165,19 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
 
   const printTitle = currentSeasonName ? `${currentSeasonName} Schedule` : 'Schedule';
 
+  const handleDownloadCalendar = () => {
+    if (filteredGames.length === 0) return;
+    const pageHref = `/account/${accountId}/schedule`;
+    const origin = window.location.origin;
+    const events = filteredGames.map((game) =>
+      gameToCalendarEvent(convertGameToGameCardDataWithTeams(game), { origin, pageHref }),
+    );
+    const accountName = currentAccount?.name ?? 'account';
+    const yyyymmdd = formatLocalDateStamp(new Date());
+    const filename = `${sanitizeIcsFilename(`${accountName}_schedule_${yyyymmdd}`)}.ics`;
+    downloadIcsFile(filename, buildIcsContent(events));
+  };
+
   const handleViewModeChange = (mode: ViewMode) => {
     setManualViewMode(mode === defaultViewMode ? null : mode);
   };
@@ -192,7 +215,23 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       title="Schedule"
       seasonName={currentSeasonName}
       breadcrumbs={
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
+          <Tooltip
+            title={filteredGames.length === 0 ? 'No games to export' : 'Download schedule (.ics)'}
+          >
+            <span>
+              <Button
+                className="print-hidden"
+                variant="outlined"
+                size="small"
+                startIcon={<EventIcon />}
+                onClick={handleDownloadCalendar}
+                disabled={filteredGames.length === 0}
+              >
+                Download .ics
+              </Button>
+            </span>
+          </Tooltip>
           <Button
             className="print-hidden"
             variant="outlined"
@@ -242,6 +281,7 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
           open={viewDialogOpen}
           mode="edit"
           accountId={accountId}
+          seasonId={currentSeasonId ?? ''}
           timeZone={timeZone}
           selectedGame={selectedGame}
           leagues={leagues}

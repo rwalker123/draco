@@ -55,7 +55,7 @@ interface UseRosterDataManagerOptions {
 }
 
 interface RosterMemberUpdates {
-  playerNumber?: number;
+  playerNumber?: string;
   submittedWaiver?: boolean;
   player?: {
     submittedDriversLicense?: boolean;

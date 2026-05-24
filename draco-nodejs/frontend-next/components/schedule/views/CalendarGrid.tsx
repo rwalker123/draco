@@ -12,6 +12,9 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 
 export interface CalendarGridProps {
+  accountId?: string;
+  currentTeamSeasonId?: string;
+
   // Grid configuration
   gridType: 'week' | 'month';
   showZoomColumn?: boolean;
@@ -58,6 +61,8 @@ function buildGamesByDateKey(games: Game[], tz: string): Map<string, Game[]> {
 }
 
 const CalendarGrid: React.FC<CalendarGridProps> = ({
+  accountId,
+  currentTeamSeasonId,
   gridType: _gridType,
   showZoomColumn = false,
   currentMonthDate,
@@ -376,6 +381,8 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                                     showActions={showActions}
                                     onClick={() => onGameClick?.(game)}
                                     timeZone={timeZone}
+                                    accountId={accountId}
+                                    currentTeamSeasonId={currentTeamSeasonId}
                                   />
                                 </Box>
                               );
@@ -513,6 +520,8 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                               showActions={showActions}
                               onClick={() => onGameClick?.(game)}
                               timeZone={timeZone}
+                              accountId={accountId}
+                              currentTeamSeasonId={currentTeamSeasonId}
                             />
                           </Box>
                         );

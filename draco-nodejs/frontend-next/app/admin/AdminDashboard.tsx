@@ -7,6 +7,7 @@ import {
   Alert,
   AlertTitle,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -23,6 +24,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import StorageIcon from '@mui/icons-material/Storage';
 import GroupsIcon from '@mui/icons-material/Groups';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
@@ -138,6 +143,7 @@ const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const { hasRole } = useRole();
   const apiClient = useApiClient();
+  const router = useRouter();
 
   const [summary, setSummary] = useState<AdminAnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -249,6 +255,33 @@ const AdminDashboard: React.FC = () => {
 
       {summary && (
         <Stack spacing={3}>
+          <Paper sx={{ p: 3 }}>
+            <PageSectionHeader title="Administrator Tools" gutterBottom />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap flexWrap="wrap">
+              <Button
+                variant="outlined"
+                startIcon={<LockOpenIcon />}
+                onClick={() => router.push('/admin/users')}
+              >
+                Login Management
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<NotificationsActiveIcon />}
+                onClick={() => router.push('/admin/alerts')}
+              >
+                System Alerts
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<GolfCourseIcon />}
+                onClick={() => router.push('/admin/golf/courses')}
+              >
+                Golf Course Master Data
+              </Button>
+            </Stack>
+          </Paper>
+
           <Paper sx={{ p: 3 }}>
             <PageSectionHeader title="Platform Snapshot" gutterBottom />
             <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} useFlexGap flexWrap="wrap">

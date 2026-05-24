@@ -82,32 +82,28 @@ export interface LoadTeamsResult {
 }
 
 export interface GameDialogProps {
-  // Dialog state
   open: boolean;
   mode: 'create' | 'edit';
 
-  // Data
   accountId: string;
+  seasonId: string;
   timeZone: string;
   leagues: Array<{ id: string; name: string }>;
   locations: ScheduleLocation[];
   leagueTeamsCache: Map<string, TeamSeasonType[]>;
   selectedGame?: Game | null;
+  scheduleVisible?: boolean;
 
-  // Defaults for create mode
   defaultLeagueSeasonId?: string;
   defaultGameDate?: Date;
 
-  // Permissions
   canEditSchedule: boolean;
 
-  // Callbacks
   onClose: () => void;
   onSuccess: (result: { message: string; game?: Game; removed?: boolean }) => void;
   onError: (error: string) => void;
   onDelete?: () => void;
 
-  // Sport-specific extensions (optional, used by baseball)
   officials?: ScheduleOfficial[];
 }
 

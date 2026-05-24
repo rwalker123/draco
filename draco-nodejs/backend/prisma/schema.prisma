@@ -236,6 +236,11 @@ model aspnetusers {
   baseballlivescoringsessions_started   baseballlivescoringsession[]
   baseballliveinningscores_entered      baseballliveinningscore[]
   golfclosesttopin_entered              golfclosesttopin[]
+  oauth_clients_registered    oauth_client[]              @relation("OauthClientRegisteredBy")
+  oauth_authorization_codes   oauth_authorization_code[]  @relation("OauthAuthCodeUser")
+  oauth_access_tokens         oauth_access_token[]        @relation("OauthAccessTokenUser")
+  oauth_refresh_tokens        oauth_refresh_token[]       @relation("OauthRefreshTokenUser")
+  oauth_consent_requests      oauth_consent_request[]     @relation("OauthConsentRequestUser")
 }
 
 model accountdiscordsettings {
@@ -1642,7 +1647,7 @@ model rosterseason {
   id              BigInt          @id @default(autoincrement())
   playerid        BigInt
   teamseasonid    BigInt
-  playernumber    Int
+  playernumber    String          @default("") @db.VarChar(2)
   inactive        Boolean
   submittedwaiver Boolean
   dateadded       DateTime?       @db.Timestamptz(6)
@@ -2071,4 +2076,112 @@ model baseballliveinningscore {
 
   @@unique([sessionid, inningnumber, ishometeam], map: "uq_baseballliveinningscore_session_inning_team")
   @@index([sessionid], map: "idx_baseballliveinningscore_session")
+}
+
+model oauth_client {
+  client_id                      String                       @id @db.VarChar(64)
+  name                           String                       @db.VarChar(255)
+  client_secret_hash             String?                      @db.VarChar(64)
+  hash_version                   Int                          @default(1) @db.SmallInt
+  redirect_uris                  String[]
+  grant_types                    String[]
+  scopes                         String[]
+  token_endpoint_auth_method     String                       @db.VarChar(32)
+  registration_access_token_hash String                       @db.VarChar(64)
+  registered_by_user_id          String?                      @db.VarChar(128)
+  software_id                    String?                      @db.VarChar(128)
+  software_version               String?                      @db.VarChar(64)
+  disabled_at                    DateTime?                    @db.Timestamptz(6)
+  created_at                     DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime                     @updatedAt @db.Timestamptz(6)
+
+  registered_by                  aspnetusers?                 @relation("OauthClientRegisteredBy", fields: [registered_by_user_id], references: [id], onDelete: SetNull, map: "fk_oauth_client_aspnetusers")
+  authorization_codes            oauth_authorization_code[]
+  access_tokens                  oauth_access_token[]
+  refresh_tokens                 oauth_refresh_token[]
+  consent_requests               oauth_consent_request[]
+
+  @@index([created_at(sort: Desc)], map: "idx_oauth_client_created_at")
+}
+
+model oauth_authorization_code {
+  code_hash              String       @id @db.Char(64)
+  hash_version           Int          @default(1) @db.SmallInt
+  client_id              String       @db.VarChar(64)
+  user_id                String       @db.VarChar(128)
+  redirect_uri           String       @db.VarChar(2048)
+  scopes                 String[]
+  code_challenge         String       @db.VarChar(128)
+  code_challenge_method  String       @db.VarChar(8)
+  resource               String?      @db.VarChar(2048)
+  expires_at             DateTime     @db.Timestamptz(6)
+  consumed_at            DateTime?    @db.Timestamptz(6)
+  created_at             DateTime     @default(now()) @db.Timestamptz(6)
+
+  client                 oauth_client @relation(fields: [client_id], references: [client_id], onDelete: Cascade, map: "fk_oauth_auth_code_client")
+  user                   aspnetusers  @relation("OauthAuthCodeUser", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_oauth_auth_code_aspnetusers")
+
+  @@index([expires_at], map: "idx_oauth_auth_code_expires_at")
+}
+
+model oauth_access_token {
+  jti               String       @id @db.Uuid
+  client_id         String       @db.VarChar(64)
+  user_id           String       @db.VarChar(128)
+  scopes            String[]
+  audience          String       @db.VarChar(128)
+  security_stamp    String?      @db.VarChar(128)
+  issued_at         DateTime     @default(now()) @db.Timestamptz(6)
+  expires_at        DateTime     @db.Timestamptz(6)
+  revoked_at        DateTime?    @db.Timestamptz(6)
+  revocation_reason String?      @db.VarChar(64)
+
+  client            oauth_client @relation(fields: [client_id], references: [client_id], onDelete: Cascade, map: "fk_oauth_access_token_client")
+  user              aspnetusers  @relation("OauthAccessTokenUser", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_oauth_access_token_aspnetusers")
+
+  @@index([client_id, expires_at], map: "idx_oauth_access_token_client_expires")
+  @@index([expires_at], map: "idx_oauth_access_token_expires_at")
+}
+
+model oauth_refresh_token {
+  token_hash                String       @id @db.Char(64)
+  hash_version              Int          @default(1) @db.SmallInt
+  chain_id                  String       @db.Uuid
+  parent_jti                String?      @db.Uuid
+  current_access_token_jti  String?      @db.Uuid
+  client_id                 String       @db.VarChar(64)
+  user_id                   String       @db.VarChar(128)
+  scopes                    String[]
+  audience                  String       @db.VarChar(128)
+  issued_at                 DateTime     @default(now()) @db.Timestamptz(6)
+  expires_at                DateTime     @db.Timestamptz(6)
+  revoked_at                DateTime?    @db.Timestamptz(6)
+  revocation_reason         String?      @db.VarChar(64)
+
+  client                    oauth_client @relation(fields: [client_id], references: [client_id], onDelete: Cascade, map: "fk_oauth_refresh_token_client")
+  user                      aspnetusers  @relation("OauthRefreshTokenUser", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_oauth_refresh_token_aspnetusers")
+
+  @@index([chain_id], map: "idx_oauth_refresh_token_chain_id")
+  @@index([parent_jti], map: "idx_oauth_refresh_token_parent_jti")
+  @@index([expires_at], map: "idx_oauth_refresh_token_expires_at")
+}
+
+model oauth_consent_request {
+  rid                   String       @id @db.Uuid
+  client_id             String       @db.VarChar(64)
+  user_id               String       @db.VarChar(128)
+  redirect_uri          String       @db.VarChar(2048)
+  scopes                String[]
+  state                 String?      @db.VarChar(2048)
+  code_challenge        String       @db.VarChar(128)
+  code_challenge_method String       @db.VarChar(8)
+  resource              String?      @db.VarChar(2048)
+  expires_at            DateTime     @db.Timestamptz(6)
+  consumed_at           DateTime?    @db.Timestamptz(6)
+  created_at            DateTime     @default(now()) @db.Timestamptz(6)
+
+  client                oauth_client @relation(fields: [client_id], references: [client_id], onDelete: Cascade, map: "fk_oauth_consent_request_client")
+  user                  aspnetusers  @relation("OauthConsentRequestUser", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_oauth_consent_request_aspnetusers")
+
+  @@index([expires_at], map: "idx_oauth_consent_request_expires_at")
 }

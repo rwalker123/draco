@@ -1,13 +1,18 @@
 'use client';
 
 import type { FC } from 'react';
+import NextLink from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Box, Link as MuiLink, Stack, Typography } from '@mui/material';
 import type { MemberBusinessType } from '@draco/shared-schemas';
 import UserAvatar from '@/components/users/UserAvatar';
+import { buildPlayerStatisticsHref } from '@/utils/playerLinks';
 
 interface MemberBusinessSummaryProps {
   business: MemberBusinessType;
   compact?: boolean;
+  accountId?: string;
+  playerLinkLabel?: string;
 }
 
 interface RenderLineOptions {
@@ -40,11 +45,37 @@ const renderLine = (
   );
 };
 
-const MemberBusinessSummary: FC<MemberBusinessSummaryProps> = ({ business, compact = false }) => {
+const MemberBusinessSummary: FC<MemberBusinessSummaryProps> = ({
+  business,
+  compact = false,
+  accountId,
+  playerLinkLabel = 'Member Businesses',
+}) => {
   const titleVariant = compact ? 'subtitle2' : 'h6';
   const descriptionVariant = compact ? 'body2' : 'body1';
   const ownerNameVariant = compact ? 'body2' : 'body1';
   const avatarSize = compact ? 32 : 40;
+
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentLocation = (() => {
+    if (!pathname) {
+      return null;
+    }
+    const query = searchParams?.toString() ?? '';
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  })();
+
+  const playerHref = accountId
+    ? buildPlayerStatisticsHref({
+        accountId,
+        contactId: business.contact.id,
+        returnTo: currentLocation,
+        returnLabel: playerLinkLabel,
+      })
+    : null;
+
+  const ownerName = `${business.contact.firstName} ${business.contact.lastName}`;
 
   return (
     <Stack spacing={1.25}>
@@ -58,9 +89,26 @@ const MemberBusinessSummary: FC<MemberBusinessSummaryProps> = ({ business, compa
           }}
           size={avatarSize}
         />
-        <Typography variant={ownerNameVariant} fontWeight={600}>
-          {business.contact.firstName} {business.contact.lastName}
-        </Typography>
+        {playerHref ? (
+          <Typography
+            component={NextLink}
+            href={playerHref}
+            prefetch={false}
+            variant={ownerNameVariant}
+            sx={{
+              fontWeight: 600,
+              color: 'primary.main',
+              textDecoration: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            {ownerName}
+          </Typography>
+        ) : (
+          <Typography variant={ownerNameVariant} fontWeight={600}>
+            {ownerName}
+          </Typography>
+        )}
       </Stack>
 
       <Box>

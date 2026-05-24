@@ -4,12 +4,14 @@
 import { Router, Request, Response } from 'express';
 import contentDisposition from 'content-disposition';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authenticateAny, requireGet } from '../middleware/authenticateAny.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import {
   extractAccountParams,
   extractContactParams,
+  extractSeasonParams,
   getStringParam,
 } from '../utils/paramExtraction.js';
 import {
@@ -24,10 +26,12 @@ import {
   ContactValidationSchema,
   PublicContactSearchQuerySchema,
   PublicContactSummaryType,
+  PublicPlayerProfileType,
   ContactFilterFieldSchema,
   ContactFilterOpSchema,
   ContactFilterFieldType,
   ContactFilterOpType,
+  RosterSeasonMembershipListType,
 } from '@draco/shared-schemas';
 import {
   handlePhotoUploadMiddleware,
@@ -102,6 +106,24 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/players/:contactId/public-profile
+ * Public-safe player profile (identity + current-season teams + has-stats flag).
+ */
+router.get(
+  '/:accountId/players/:contactId/public-profile',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+
+    const profile: PublicPlayerProfileType = await contactService.getPublicPlayerProfile(
+      accountId,
+      contactId,
+    );
+
+    res.json(profile);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/contacts/:contactId/roster
  * Get contact roster
  */
@@ -126,7 +148,8 @@ router.get(
  */
 router.get(
   '/:accountId/contacts/me',
-  authenticateToken,
+  authenticateAny,
+  requireGet,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -589,6 +612,24 @@ router.delete(
       dependenciesDeleted: dependencyCheck.totalDependencies,
       wasForced: forceDelete,
     });
+  }),
+);
+
+router.get(
+  '/:accountId/seasons/:seasonId/contacts/me/teams',
+  authenticateAny,
+  requireGet,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractSeasonParams(req.params);
+
+    const memberships: RosterSeasonMembershipListType = await contactService.getMyTeamSeasons(
+      req.user!.id,
+      accountId,
+      seasonId,
+    );
+
+    res.json(memberships);
   }),
 );
 

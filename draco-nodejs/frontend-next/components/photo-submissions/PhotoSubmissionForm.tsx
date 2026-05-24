@@ -22,9 +22,14 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { validatePhotoSubmissionFile } from '../../config/photoSubmissions';
+import {
+  PHOTO_SUBMISSION_CONFIG,
+  validatePhotoSubmissionFile,
+} from '../../config/photoSubmissions';
 import { usePhotoSubmission } from '../../hooks/usePhotoSubmission';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
+import ImageCropDialog from '../common/ImageCropDialog';
+import { IMAGE_CROP_PRESETS } from '../../config/imageCropPresets';
 
 export interface PhotoAlbumOption {
   id: string | null;
@@ -125,6 +130,8 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
     control,
     register,
     reset,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<PhotoSubmissionFormValues, unknown, PhotoSubmissionFormSubmitValues>({
     resolver: zodResolver(PhotoSubmissionSchema),
@@ -139,6 +146,7 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
 
   const isProcessing = submitting || isSubmitting;
   const showAlbumSelection = props.variant === 'account';
@@ -246,76 +254,100 @@ const PhotoSubmissionForm: React.FC<PhotoSubmissionFormProps> = (props) => {
         <Controller
           name="photo"
           control={control}
-          render={({ field: { value: _value, onChange, ...field } }) => (
-            <Box>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={selectedFile ? <PhotoCameraIcon /> : <CloudUploadIcon />}
-                disabled={isProcessing}
-              >
-                {selectedFile ? 'Change Photo' : 'Choose Photo'}
-                <input
-                  {...field}
-                  hidden
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null;
-                    setSelectedFile(file);
-                    clearStatus();
-                    onChange(file);
+          render={({ field: { value: _value, onChange, ...field } }) => {
+            const applyCroppedFile = (file: File) => {
+              setSelectedFile(file);
+              onChange(file);
+              clearStatus();
 
-                    if (!file) {
-                      setPreviewUrl(null);
-                      return;
-                    }
+              const reader = new FileReader();
+              reader.onload = (loadEvent) => {
+                const result = (loadEvent.target?.result ?? reader.result) as
+                  | string
+                  | ArrayBuffer
+                  | null;
+                setPreviewUrl(typeof result === 'string' ? result : null);
+              };
+              reader.onerror = () => {
+                setPreviewUrl(null);
+              };
+              reader.readAsDataURL(file);
+            };
 
-                    const reader = new FileReader();
-                    reader.onload = (loadEvent) => {
-                      const result = (loadEvent.target?.result ?? reader.result) as
-                        | string
-                        | ArrayBuffer
-                        | null;
-                      setPreviewUrl(typeof result === 'string' ? result : null);
-                    };
-                    reader.onerror = () => {
-                      setPreviewUrl(null);
-                    };
-                    reader.readAsDataURL(file);
-                  }}
-                  data-testid="photo-input"
-                />
-              </Button>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {selectedFile ? selectedFile.name : 'GIF, JPG, JPEG, PNG, or BMP up to 10MB'}
-              </Typography>
-              {previewUrl && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Photo preview
-                  </Typography>
-                  <Box
-                    component="img"
-                    src={previewUrl}
-                    alt={`Preview of ${selectedFile?.name ?? 'selected photo'}`}
-                    sx={{
-                      width: 160,
-                      height: 160,
-                      borderRadius: 1,
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      objectFit: 'cover',
+            return (
+              <Box>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={selectedFile ? <PhotoCameraIcon /> : <CloudUploadIcon />}
+                  disabled={isProcessing}
+                >
+                  {selectedFile ? 'Change Photo' : 'Choose Photo'}
+                  <input
+                    {...field}
+                    hidden
+                    type="file"
+                    accept={PHOTO_SUBMISSION_CONFIG.ALLOWED_MIME_TYPES.join(',')}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      event.target.value = '';
+                      if (!file) {
+                        return;
+                      }
+                      clearStatus();
+
+                      const validationError = validatePhotoSubmissionFile(file);
+                      if (validationError) {
+                        setError('photo', { type: 'manual', message: validationError });
+                        return;
+                      }
+
+                      clearErrors('photo');
+                      setPendingCropFile(file);
                     }}
+                    data-testid="photo-input"
                   />
-                </Box>
-              )}
-              {errors.photo?.message && (
-                <FormHelperText error sx={{ mt: 1 }}>
-                  {errors.photo.message}
-                </FormHelperText>
-              )}
-            </Box>
-          )}
+                </Button>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {selectedFile ? selectedFile.name : 'JPG, JPEG, PNG, or BMP up to 10MB'}
+                </Typography>
+                {previewUrl && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Photo preview
+                    </Typography>
+                    <Box
+                      component="img"
+                      src={previewUrl}
+                      alt={`Preview of ${selectedFile?.name ?? 'selected photo'}`}
+                      sx={{
+                        width: 160,
+                        height: 160,
+                        borderRadius: 1,
+                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        objectFit: 'cover',
+                      }}
+                    />
+                  </Box>
+                )}
+                {errors.photo?.message && (
+                  <FormHelperText error sx={{ mt: 1 }}>
+                    {errors.photo.message}
+                  </FormHelperText>
+                )}
+                <ImageCropDialog
+                  open={pendingCropFile !== null}
+                  sourceFile={pendingCropFile}
+                  preset={IMAGE_CROP_PRESETS.photoSubmission}
+                  onClose={() => setPendingCropFile(null)}
+                  onCropConfirm={(croppedFile) => {
+                    setPendingCropFile(null);
+                    applyCroppedFile(croppedFile);
+                  }}
+                />
+              </Box>
+            );
+          }}
         />
 
         {(error || successMessage) && (

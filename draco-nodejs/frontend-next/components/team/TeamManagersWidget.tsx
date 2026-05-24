@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import NextLink from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Alert, Box, CircularProgress, Link as MuiLink, Typography } from '@mui/material';
 import EmailIcon from '@mui/icons-material/EmailOutlined';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -12,6 +14,7 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { useAuth } from '@/context/AuthContext';
 import { getContactDisplayName } from '@/utils/contactUtils';
 import { formatPhoneNumber } from '@/utils/phoneNumber';
+import { buildPlayerStatisticsHref } from '@/utils/playerLinks';
 import UserAvatar from '@/components/users/UserAvatar';
 import ContactPhotoUploadDialog from '@/components/users/ContactPhotoUploadDialog';
 import PhotoDeleteDialog from '@/components/users/PhotoDeleteDialog';
@@ -36,6 +39,16 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
 }) => {
   const apiClient = useApiClient();
   const { token } = useAuth();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentLocation = (() => {
+    if (!pathname) {
+      return null;
+    }
+    const query = searchParams?.toString() ?? '';
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  })();
+  const playerLinkLabel = 'Team Managers';
 
   const [managers, setManagers] = React.useState<TeamManagerType[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -177,6 +190,13 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
     const showContactInfo = canViewContactInfo;
     const phoneEntries = showContactInfo ? buildPhoneEntries(manager) : [];
     const canEditManagerPhoto = Boolean(canEditPhotos && token);
+    const displayName = getContactDisplayName(contact);
+    const playerHref = buildPlayerStatisticsHref({
+      accountId,
+      contactId: contact.id,
+      returnTo: currentLocation,
+      returnLabel: playerLinkLabel,
+    });
     return (
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -200,9 +220,27 @@ const TeamManagersWidget: React.FC<TeamManagersWidgetProps> = ({
             }
           />
           <Box>
-            <Typography variant="subtitle1" fontWeight={600}>
-              {getContactDisplayName(contact)}
-            </Typography>
+            {playerHref ? (
+              <Typography
+                component={NextLink}
+                href={playerHref}
+                prefetch={false}
+                variant="subtitle1"
+                sx={{
+                  display: 'block',
+                  fontWeight: 600,
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                {displayName}
+              </Typography>
+            ) : (
+              <Typography variant="subtitle1" fontWeight={600}>
+                {displayName}
+              </Typography>
+            )}
             {manager.team?.name ? (
               <Typography variant="body2" color="text.secondary">
                 {manager.team.name}

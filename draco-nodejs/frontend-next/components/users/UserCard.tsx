@@ -111,6 +111,8 @@ const UserCard: React.FC<UserCardProps> = ({
           canManage={canManageUsers}
           onRevoke={onRevokeRegistration}
           onRequestRegister={handleRegistrationClick}
+          loginEmail={user.loginEmail}
+          contactEmail={user.email}
         />
       </TableCell>
       <TableCell>

@@ -26,6 +26,7 @@ import { Game, League, FilterType, ViewMode, NavigationDirection } from '@/types
 
 export interface ScheduleLayoutProps {
   accountId: string;
+  currentTeamSeasonId?: string;
   title: string;
   subtitle?: string;
   titleExtra?: React.ReactNode;
@@ -74,6 +75,7 @@ export interface ScheduleLayoutProps {
 
 const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   accountId,
+  currentTeamSeasonId,
   title,
   subtitle,
   titleExtra,
@@ -261,6 +263,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
           <ViewFactory
             viewMode={viewMode}
             filterType={filterType}
+            accountId={accountId}
+            currentTeamSeasonId={currentTeamSeasonId}
             loadingGames={loadingGames}
             filteredGames={filteredGames}
             timeZone={timeZone}

@@ -32,9 +32,19 @@ import SeasonSummaryWidget from '../../../../../../../../components/schedule/Sea
 import usePrintAction from '../../../../../../../../components/print/usePrintAction';
 import SchedulePrintView from '../../../../../../../../components/schedule/SchedulePrintView';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import PrintIcon from '@mui/icons-material/Print';
+import EventIcon from '@mui/icons-material/Event';
 import { isGolfLeagueAccountType } from '../../../../../../../../utils/accountTypeUtils';
 import Stack from '@mui/material/Stack';
+import {
+  buildIcsContent,
+  downloadIcsFile,
+  formatLocalDateStamp,
+  gameToCalendarEvent,
+  sanitizeIcsFilename,
+} from '../../../../../../../../utils/calendar';
+import SubscribeToScheduleButton from '../../../../../../../../components/calendar/SubscribeToScheduleButton';
 
 interface TeamSchedulePageProps {
   accountId: string;
@@ -49,7 +59,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
   seasonId,
   teamSeasonId,
 }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const timeZone = useAccountTimezone();
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
@@ -138,6 +148,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     accountType,
     filterType,
     filterDate,
+    timeZone,
     onError: setError,
   });
 
@@ -228,6 +239,19 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
 
   const printTitle = [teamName ?? 'Team', seasonName ?? ''].filter(Boolean).join(' — ');
 
+  const handleDownloadCalendar = () => {
+    if (filteredGames.length === 0) return;
+    const pageHref = `/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/schedule`;
+    const origin = window.location.origin;
+    const events = filteredGames.map((game) =>
+      gameToCalendarEvent(convertGameToGameCardDataWithTeams(game), { origin, pageHref }),
+    );
+    const baseName = teamName ?? 'team';
+    const yyyymmdd = formatLocalDateStamp(new Date());
+    const filename = `${sanitizeIcsFilename(`${baseName}_schedule_${yyyymmdd}`)}.ics`;
+    downloadIcsFile(filename, buildIcsContent(events));
+  };
+
   const handleViewModeChange = (mode: ViewMode) => {
     setManualViewMode(mode === defaultViewMode ? null : mode);
   };
@@ -265,6 +289,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
   return (
     <ScheduleLayout
       accountId={accountId}
+      currentTeamSeasonId={teamSeasonId}
       title={teamName ?? 'Team Schedule'}
       titleExtra={
         seasonName ? (
@@ -290,15 +315,41 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
             </Link>
             <Typography color="text.primary">Schedule</Typography>
           </Breadcrumbs>
-          <Button
-            className="print-hidden"
-            variant="outlined"
-            size="small"
-            startIcon={<PrintIcon />}
-            onClick={triggerPrint}
-          >
-            Print
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {user && (
+              <SubscribeToScheduleButton
+                teamSeasonId={teamSeasonId}
+                teamName={teamName ?? 'Team'}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            <Tooltip
+              title={filteredGames.length === 0 ? 'No games to export' : 'Download schedule (.ics)'}
+            >
+              <span>
+                <Button
+                  className="print-hidden"
+                  variant="outlined"
+                  size="small"
+                  startIcon={<EventIcon />}
+                  onClick={handleDownloadCalendar}
+                  disabled={filteredGames.length === 0}
+                >
+                  Download .ics
+                </Button>
+              </span>
+            </Tooltip>
+            <Button
+              className="print-hidden"
+              variant="outlined"
+              size="small"
+              startIcon={<PrintIcon />}
+              onClick={triggerPrint}
+            >
+              Print
+            </Button>
+          </Stack>
         </Stack>
       }
       seasonName={null}
@@ -350,6 +401,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
         open={viewDialogOpen}
         mode="edit"
         accountId={accountId}
+        seasonId={seasonId}
         timeZone={timeZone}
         selectedGame={selectedGame}
         leagues={seasonLeagues}

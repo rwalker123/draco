@@ -3,12 +3,14 @@ import { RegisterContext } from '../../openapiTypes.js';
 export const registerAuthEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
     AuthenticationErrorSchemaRef,
+    ConflictErrorSchemaRef,
     InternalServerErrorSchemaRef,
     RegisteredUserSchemaRef,
     SignInCredentialsSchemaRef,
     ValidationErrorSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
+    ChangeLoginEmailRequestSchemaRef,
     RoleCheckResponseSchemaRef,
   } = schemaRefs;
 
@@ -277,6 +279,68 @@ export const registerAuthEndpoints = ({ registry, schemaRefs }: RegisterContext)
       },
       500: {
         description: 'Unexpected error while changing the password.',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/auth/change-login-email',
+    operationId: 'changeLoginEmail',
+    summary: 'Change login email',
+    description:
+      'Allows the authenticated user to change the email used to sign in. Requires the current password and a unique new email; returns a refreshed JWT.',
+    tags: ['Auth'],
+    security: [{ bearerAuth: [] }],
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: ChangeLoginEmailRequestSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Login email changed successfully; response includes a refreshed JWT.',
+        content: {
+          'application/json': {
+            schema: RegisteredUserSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Request is invalid or new email matches current login email.',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required or current password incorrect.',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      409: {
+        description: 'New email is already in use as a login by another account.',
+        content: {
+          'application/json': {
+            schema: ConflictErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Unexpected error while changing the login email.',
         content: {
           'application/json': {
             schema: InternalServerErrorSchemaRef,

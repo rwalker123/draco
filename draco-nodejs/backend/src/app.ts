@@ -12,6 +12,7 @@ import { DateUtils } from './utils/dateUtils.js';
 
 import authRouter from './routes/auth.js';
 import passwordResetRouter from './routes/password-reset.js';
+import calendarRouter from './routes/calendar.js';
 import accountsRouter from './routes/accounts.js';
 import seasonsRouter from './routes/seasons.js';
 import leagueSeasonsRouter from './routes/league-seasons.js';
@@ -26,6 +27,7 @@ import teamSponsorsRouter from './routes/team-sponsors.js';
 import teamHandoutsRouter from './routes/team-handouts.js';
 import teamAnnouncementsRouter from './routes/team-announcements.js';
 import teamPhotoSubmissionsRouter from './routes/team-photo-submissions.js';
+import teamPhotoGalleryRouter from './routes/team-photo-gallery.js';
 import accountsWelcomeMessagesRouter from './routes/accounts-welcome-messages.js';
 import teamWelcomeMessagesRouter from './routes/team-welcome-messages.js';
 import gamesRouter from './routes/games.js';
@@ -39,6 +41,7 @@ import seasonSchedulerFieldAvailabilityRouter from './routes/season-scheduler-fi
 import monitoringRouter from './routes/monitoring.js';
 import adminAnalyticsRouter from './routes/admin-analytics.js';
 import adminGolfCoursesRouter from './routes/admin-golf-courses.js';
+import adminUsersRouter from './routes/admin-users.js';
 import alertsRouter from './routes/alerts.js';
 import emailsRouter from './routes/emails.js';
 import teamEmailsRouter from './routes/team-emails.js';
@@ -67,6 +70,7 @@ import exportsRouter from './routes/exports.js';
 import liveScoringRouter from './routes/live-scoring.js';
 import individualLiveScoringRouter from './routes/individual-live-scoring.js';
 import baseballLiveScoringRouter from './routes/baseball-live-scoring.js';
+import oauthRouter from './routes/oauth.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
@@ -262,9 +266,11 @@ app.get('/apidocs', (_req: express.Request, res: express.Response) => {
 // API routes (will be added later)
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
+app.use('/api/calendar', calendarRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/golf/courses', adminGolfCoursesRouter);
+app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/cleanup', cleanupRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
@@ -290,6 +296,7 @@ app.use('/api/accounts/:accountId/teams', teamHandoutsRouter);
 app.use('/api/accounts/:accountId/teams', teamAnnouncementsRouter);
 app.use('/api/accounts', teamWelcomeMessagesRouter);
 app.use('/api/accounts/:accountId/teams', teamPhotoSubmissionsRouter);
+app.use('/api/accounts/:accountId/teams', teamPhotoGalleryRouter);
 app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,
@@ -329,6 +336,8 @@ app.use('/api/accounts/:accountId/golf/stats', golfStatsRouter);
 app.use('/api/accounts/:accountId/golf/closest-to-pin', golfClosestToPinRouter);
 app.use('/api/accounts/:accountId/golf/player/:contactId/scores', golfPlayerScoresRouter);
 app.use('/api/contacts/:contactId/golf', contactsGolfRouter);
+app.use('/', oauthRouter);
+app.use('/api', oauthRouter);
 // Global error handler
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 

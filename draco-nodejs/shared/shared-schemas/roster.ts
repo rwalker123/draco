@@ -29,7 +29,10 @@ export const RosterPlayerSchema = z
 export const RosterMemberSchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
-    playerNumber: z.number().min(0).max(99).optional(),
+    playerNumber: z
+      .string()
+      .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+      .optional(),
     inactive: z.boolean().default(false),
     submittedWaiver: z.boolean().optional(),
     dateAdded: isoDateStringSchema.nullable().default(null),
@@ -49,6 +52,42 @@ export const TeamRosterMembersSchema = z.object({
   rosterMembers: RosterMemberSchema.array(),
 });
 
+export const RosterMemberSeasonTeamWaiverSchema = z
+  .object({
+    teamSeasonId: z.bigint().transform((val) => val.toString()),
+    teamId: z.bigint().transform((val) => val.toString()),
+    teamName: z.string().trim(),
+    leagueSeasonId: z.bigint().transform((val) => val.toString()),
+    leagueName: z.string().trim(),
+    submittedWaiver: z.boolean(),
+  })
+  .openapi({
+    description: 'Per-team waiver status for one of a player’s season teams. Admin-only data.',
+  });
+
+export const RosterMemberWaiverSummarySchema = z
+  .object({
+    rosterMember: RosterMemberSchema,
+    seasonTeams: RosterMemberSeasonTeamWaiverSchema.array(),
+  })
+  .openapi({
+    description:
+      'Roster member augmented with the set of teams in the current season where the player has a roster row, including the submittedWaiver flag for each. Admin-only.',
+  });
+
+export const TeamRosterWaiverSummariesSchema = z
+  .object({
+    teamSeason: z.object({
+      id: z.bigint().transform((val) => val.toString()),
+      name: z.string().trim(),
+    }),
+    members: RosterMemberWaiverSummarySchema.array(),
+  })
+  .openapi({
+    description:
+      'Admin view of a team roster including cross-team waiver status per player for the current season.',
+  });
+
 export const CreateRosterMemberSchema = RosterMemberSchema.omit({
   id: true,
   inactive: true,
@@ -59,7 +98,10 @@ export const CreateRosterMemberSchema = RosterMemberSchema.omit({
 
 export const UpdateRosterMemberSchema = z
   .object({
-    playerNumber: z.number().min(0).max(99).optional(),
+    playerNumber: z
+      .string()
+      .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+      .optional(),
     submittedWaiver: z.boolean().optional(),
     player: z
       .object({
@@ -98,7 +140,12 @@ export const SignRosterMemberSchema = RosterMemberSchema.omit({
 export const PublicRosterMemberSchema = z
   .object({
     id: z.bigint().transform((val) => val.toString()),
-    playerNumber: z.number().min(0).max(99).nullable().optional(),
+    contactId: z.bigint().transform((val) => val.toString()),
+    playerNumber: z
+      .string()
+      .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+      .nullable()
+      .optional(),
     firstName: z.string().trim().nullable().optional(),
     lastName: z.string().trim().nullable().optional(),
     middleName: z.string().trim().nullable().optional(),
@@ -107,7 +154,7 @@ export const PublicRosterMemberSchema = z
   })
   .openapi({
     description:
-      'Public-safe roster member payload exposing only jersey number, player name, and optional photo URL.',
+      'Public-safe roster member payload exposing jersey number, player name, optional photo URL, and the contact identifier needed to link to public player statistics.',
   });
 
 export const PublicTeamRosterResponseSchema = z.object({
@@ -120,7 +167,11 @@ export const PublicTeamRosterResponseSchema = z.object({
 
 export const RosterCardPlayerSchema = z.object({
   id: z.bigint().transform((val) => val.toString()),
-  playerNumber: z.number().min(0).max(99).nullable().optional(),
+  playerNumber: z
+    .string()
+    .regex(/^\d{0,2}$/, 'Player number must be 0-2 digits')
+    .nullable()
+    .optional(),
   firstName: z.string().trim(),
   lastName: z.string().trim(),
 });
@@ -143,6 +194,9 @@ export type CreateRosterMemberType = z.infer<typeof CreateRosterMemberSchema>;
 export type UpdateRosterMemberType = z.infer<typeof UpdateRosterMemberSchema>;
 export type SignRosterMemberType = z.infer<typeof SignRosterMemberSchema>;
 export type TeamRosterMembersType = z.infer<typeof TeamRosterMembersSchema>;
+export type RosterMemberSeasonTeamWaiverType = z.infer<typeof RosterMemberSeasonTeamWaiverSchema>;
+export type RosterMemberWaiverSummaryType = z.infer<typeof RosterMemberWaiverSummarySchema>;
+export type TeamRosterWaiverSummariesType = z.infer<typeof TeamRosterWaiverSummariesSchema>;
 export type PublicRosterMemberType = z.infer<typeof PublicRosterMemberSchema>;
 export type PublicTeamRosterResponseType = z.infer<typeof PublicTeamRosterResponseSchema>;
 export type RosterCardPlayerType = z.infer<typeof RosterCardPlayerSchema>;

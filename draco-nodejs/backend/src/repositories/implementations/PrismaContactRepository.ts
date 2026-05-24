@@ -11,6 +11,9 @@ import {
   dbContactWithRoleAndDetails,
   dbBirthdayContact,
   dbContactExportData,
+  dbPlayerCurrentSeasonTeam,
+  dbRosterSeasonMembership,
+  dbContactSeasonTeamWaiver,
 } from '../types/dbTypes.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { ROLE_IDS } from '../../config/roles.js';
@@ -248,16 +251,96 @@ export class PrismaContactRepository implements IContactRepository {
     `);
   }
 
+  /**
+   * Search contacts with role context resolved per-row.
+   *
+   * When `seasonId` is `null`, team and league role predicates are intentionally
+   * omitted from the query: only account-level (`AccountAdmin`,
+   * `AccountPhotoAdmin`) and global (`Administrator`) roles are returned. This
+   * supports the no-current-season state (e.g., a freshly created account).
+   * Pass a concrete `seasonId` to also resolve `TeamAdmin`, `TeamPhotoAdmin`,
+   * and `LeagueAdmin` roles scoped to that season.
+   */
   async searchContactsWithRoles(
     accountId: bigint,
     options: ContactQueryOptions,
-    seasonId?: bigint | null,
+    seasonId: bigint | null,
   ): Promise<dbContactWithRoleAndDetails[]> {
     const { includeContactDetails, searchQuery, onlyWithRoles, pagination, advancedFilter } =
       options;
 
-    // Build advanced filter condition
     const advancedFilterCondition = this.buildAdvancedFilterCondition(advancedFilter);
+
+    const seasonScopedRolePredicates =
+      seasonId !== null
+        ? Prisma.sql`
+          OR (
+            cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
+            AND EXISTS (
+              SELECT 1 FROM teamsseason ts_v
+              JOIN leagueseason ls_v ON ts_v.leagueseasonid = ls_v.id
+              JOIN league l_v ON ls_v.leagueid = l_v.id
+              WHERE ts_v.id = cr.roledata
+                AND ls_v.seasonid = ${seasonId}
+                AND l_v.accountid = ${accountId}
+            )
+          )
+          OR (
+            cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
+            AND EXISTS (
+              SELECT 1 FROM leagueseason ls_v
+              JOIN league l_v ON ls_v.leagueid = l_v.id
+              WHERE ls_v.id = cr.roledata
+                AND ls_v.seasonid = ${seasonId}
+                AND l_v.accountid = ${accountId}
+            )
+          )
+        `
+        : Prisma.empty;
+
+    const teamLeagueJoins =
+      seasonId !== null
+        ? Prisma.sql`
+      LEFT JOIN teamsseason ts ON (
+        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
+        AND cr.roledata = ts.id
+      )
+      LEFT JOIN leagueseason ls_ts ON (
+        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
+        AND ts.leagueseasonid = ls_ts.id
+        AND ls_ts.seasonid = ${seasonId}
+      )
+      LEFT JOIN league l_ts ON (
+        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
+        AND ls_ts.leagueid = l_ts.id
+        AND l_ts.accountid = ${accountId}
+      )
+      LEFT JOIN leagueseason ls ON (
+        cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
+        AND cr.roledata = ls.id
+        AND ls.seasonid = ${seasonId}
+      )
+      LEFT JOIN league l ON (
+        cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
+        AND ls.leagueid = l.id
+        AND l.accountid = ${accountId}
+      )
+        `
+        : Prisma.sql`
+      LEFT JOIN teamsseason ts ON FALSE
+      LEFT JOIN leagueseason ls_ts ON FALSE
+      LEFT JOIN league l_ts ON FALSE
+      LEFT JOIN leagueseason ls ON FALSE
+      LEFT JOIN league l ON FALSE
+        `;
+
+    const onlyWithRolesSeasonScoped =
+      seasonId !== null
+        ? Prisma.sql`
+          OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}) AND l_ts.id IS NOT NULL)
+          OR (cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]} AND l.id IS NOT NULL)
+        `
+        : Prisma.empty;
 
     // Determine sort field and order
     // Map sort fields to SQL columns (hardcoded for defense in depth)
@@ -286,6 +369,7 @@ export class PrismaContactRepository implements IContactRepository {
         contacts.lastname,
         contacts.email,
         contacts.userid,
+        aspnetusers.username AS login_email,
         ${
           includeContactDetails
             ? Prisma.sql`
@@ -327,43 +411,18 @@ export class PrismaContactRepository implements IContactRepository {
       FROM contacts
       -- Always join roster to get firstYear
       LEFT JOIN roster ON roster.contactid = contacts.id
+      LEFT JOIN aspnetusers ON aspnetusers.id = contacts.userid
       LEFT JOIN contactroles cr ON (
         contacts.id = cr.contactid
         AND cr.accountid = ${accountId}
         AND (
-          -- Include all valid roles based on type-specific validation
-          cr.roleid IS NULL  -- This won't match but keeps structure
-
-          -- Account roles: Validate roledata matches accountId
+          cr.roleid IS NULL
           OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
-
-          -- Global roles: No additional restrictions
           OR cr.roleid = ${ROLE_IDS[RoleNamesType.ADMINISTRATOR]}
-
-          -- Team and League roles: Will be validated by subsequent joins
-          OR cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}, ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]})
+          ${seasonScopedRolePredicates}
         )
       )
-      -- Team roles: Join to teamsseason and validate season
-      LEFT JOIN teamsseason ts ON (
-        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
-        AND cr.roledata = ts.id
-      )
-      LEFT JOIN leagueseason ls_ts ON (
-        cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]})
-        AND ts.leagueseasonid = ls_ts.id
-        AND ls_ts.seasonid = ${seasonId}
-      )
-      -- League role: Join to leagueseason and validate season
-      LEFT JOIN leagueseason ls ON (
-        cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
-        AND cr.roledata = ls.id
-        AND ls.seasonid = ${seasonId}
-      )
-      LEFT JOIN league l ON (
-        cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]}
-        AND ls.leagueid = l.id
-      )
+      ${teamLeagueJoins}
       WHERE
         contacts.creatoraccountid = ${accountId}
         ${
@@ -379,22 +438,10 @@ export class PrismaContactRepository implements IContactRepository {
         }
         ${advancedFilterCondition}
         AND (
-          ${
-            !onlyWithRoles
-              ? Prisma.sql`
-          -- Include contacts with no roles but only for the given account
-          cr.roleid IS NULL OR
-          `
-              : Prisma.empty
-          }
-          -- Include valid team roles (must have valid season)
-          (cr.roleid IN (${ROLE_IDS[RoleNamesType.TEAM_ADMIN]}, ${ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]}) AND ls_ts.id IS NOT NULL)
-
-          -- Include valid league roles (must have valid season)
-          OR (cr.roleid = ${ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]} AND ls.id IS NOT NULL)
-
-          -- Include valid account roles
-          OR (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
+          ${!onlyWithRoles ? Prisma.sql`cr.roleid IS NULL OR` : Prisma.empty}
+          (cr.roleid IN (${ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
+          OR cr.roleid = ${ROLE_IDS[RoleNamesType.ADMINISTRATOR]}
+          ${onlyWithRolesSeasonScoped}
         )
       ORDER BY ${Prisma.raw(sortColumn)} ${Prisma.raw(orderDirection)} ${Prisma.raw(nullsOrder)}, contacts.firstname ${Prisma.raw(orderDirection)}, cr.roleid
       ${pagination ? Prisma.sql`LIMIT ${pagination.limit + 1} OFFSET ${(pagination.page - 1) * pagination.limit}` : Prisma.empty}
@@ -732,6 +779,177 @@ export class PrismaContactRepository implements IContactRepository {
     return Array.from(contactMap.values()).map(({ contact, roleIds }) => ({
       ...contact,
       contactroles: Array.from(roleIds).map((roleid) => ({ roleid })),
+    }));
+  }
+
+  async findCurrentSeasonTeamsForContact(
+    accountId: bigint,
+    contactId: bigint,
+    seasonId: bigint,
+  ): Promise<dbPlayerCurrentSeasonTeam[]> {
+    const rows = await this.prisma.rosterseason.findMany({
+      where: {
+        inactive: false,
+        roster: {
+          contactid: contactId,
+          contacts: { creatoraccountid: accountId },
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+      },
+      select: {
+        teamsseason: {
+          select: {
+            id: true,
+            teamid: true,
+            name: true,
+            leagueseason: {
+              select: {
+                id: true,
+                seasonid: true,
+                league: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { teamsseason: { name: 'asc' } },
+    });
+
+    return rows.map((row) => ({
+      teamSeasonId: row.teamsseason.id,
+      teamId: row.teamsseason.teamid,
+      seasonId: row.teamsseason.leagueseason.seasonid,
+      leagueSeasonId: row.teamsseason.leagueseason.id,
+      leagueName: row.teamsseason.leagueseason.league.name,
+      teamName: row.teamsseason.name,
+    }));
+  }
+
+  async findSeasonTeamWaiversForContacts(
+    accountId: bigint,
+    seasonId: bigint,
+    contactIds: bigint[],
+  ): Promise<dbContactSeasonTeamWaiver[]> {
+    if (contactIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.prisma.rosterseason.findMany({
+      where: {
+        inactive: false,
+        roster: {
+          contactid: { in: contactIds },
+          contacts: { creatoraccountid: accountId },
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: { accountid: accountId },
+          },
+        },
+      },
+      select: {
+        submittedwaiver: true,
+        roster: { select: { contactid: true } },
+        teamsseason: {
+          select: {
+            id: true,
+            teamid: true,
+            name: true,
+            leagueseason: {
+              select: {
+                id: true,
+                league: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { teamsseason: { name: 'asc' } },
+    });
+
+    return rows.map((row) => ({
+      contactId: row.roster.contactid,
+      teamSeasonId: row.teamsseason.id,
+      teamId: row.teamsseason.teamid,
+      leagueSeasonId: row.teamsseason.leagueseason.id,
+      leagueName: row.teamsseason.leagueseason.league.name,
+      teamName: row.teamsseason.name,
+      submittedWaiver: row.submittedwaiver,
+    }));
+  }
+
+  async hasCareerStatistics(accountId: bigint, contactId: bigint): Promise<boolean> {
+    const match = await this.prisma.rosterseason.findFirst({
+      where: {
+        roster: {
+          contactid: contactId,
+          contacts: { creatoraccountid: accountId },
+        },
+        OR: [{ batstatsum: { some: {} } }, { pitchstatsum: { some: {} } }],
+      },
+      select: { id: true },
+    });
+    return match !== null;
+  }
+
+  async findMyTeamSeasons(input: {
+    userId: string;
+    accountId: bigint;
+    seasonId: bigint;
+  }): Promise<dbRosterSeasonMembership[]> {
+    const rows = await this.prisma.rosterseason.findMany({
+      where: {
+        roster: {
+          contacts: {
+            userid: input.userId,
+            creatoraccountid: input.accountId,
+          },
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: input.seasonId,
+            league: { accountid: input.accountId },
+          },
+        },
+      },
+      select: {
+        playernumber: true,
+        teamsseason: {
+          select: {
+            id: true,
+            name: true,
+            divisionseasonid: true,
+            divisionseason: {
+              select: {
+                divisiondefs: { select: { name: true } },
+              },
+            },
+            leagueseason: {
+              select: {
+                id: true,
+                league: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { teamsseason: { name: 'asc' } },
+    });
+
+    return rows.map((row) => ({
+      teamSeasonId: row.teamsseason.id,
+      teamName: row.teamsseason.name,
+      leagueSeasonId: row.teamsseason.leagueseason.id,
+      leagueName: row.teamsseason.leagueseason.league.name,
+      divisionSeasonId: row.teamsseason.divisionseasonid,
+      divisionName: row.teamsseason.divisionseason?.divisiondefs.name ?? null,
+      jerseyNumber: row.playernumber,
     }));
   }
 }

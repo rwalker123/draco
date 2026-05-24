@@ -58,6 +58,7 @@ import { TurnstileService } from './turnstileService.js';
 import { HandoutService } from './handoutService.js';
 import { AdminAnalyticsService } from './adminAnalyticsService.js';
 import { AdminDashboardService } from './adminDashboardService.js';
+import { AdminUserService } from './adminUserService.js';
 import { PhotoSubmissionService } from './photoSubmissionService.js';
 import { PhotoGalleryService } from './photoGalleryService.js';
 import { PhotoGalleryAdminService } from './photoGalleryAdminService.js';
@@ -112,6 +113,8 @@ import { LiveScoringService } from './liveScoringService.js';
 import { IndividualLiveScoringService } from './individualLiveScoringService.js';
 import { BaseballLiveScoringService } from './baseballLiveScoringService.js';
 import { createStorageService, StorageService } from './storageService.js';
+import { CalendarService } from './calendarService.js';
+import { OauthService } from './oauthService.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies
@@ -167,6 +170,7 @@ export class ServiceFactory {
   private static handoutService: HandoutService;
   private static adminAnalyticsService: AdminAnalyticsService;
   private static adminDashboardService: AdminDashboardService;
+  private static adminUserService: AdminUserService;
   private static photoSubmissionService: PhotoSubmissionService;
   private static photoGalleryService: PhotoGalleryService;
   private static photoGalleryAdminService: PhotoGalleryAdminService;
@@ -214,6 +218,8 @@ export class ServiceFactory {
   private static individualLiveScoringService: IndividualLiveScoringService;
   private static baseballLiveScoringService: BaseballLiveScoringService;
   private static storageService: StorageService;
+  private static calendarService: CalendarService;
+  private static oauthService: OauthService;
 
   static getRoleService(): IRoleService {
     if (!this.roleService) {
@@ -569,6 +575,14 @@ export class ServiceFactory {
     }
 
     return this.adminDashboardService;
+  }
+
+  static getAdminUserService(): AdminUserService {
+    if (!this.adminUserService) {
+      this.adminUserService = new AdminUserService();
+    }
+
+    return this.adminUserService;
   }
 
   static getPhotoSubmissionService(): PhotoSubmissionService {
@@ -1119,5 +1133,19 @@ export class ServiceFactory {
       this.storageService = createStorageService();
     }
     return this.storageService;
+  }
+
+  static getCalendarService(): CalendarService {
+    if (!this.calendarService) {
+      this.calendarService = new CalendarService();
+    }
+    return this.calendarService;
+  }
+
+  static getOauthService(): OauthService {
+    if (!this.oauthService) {
+      this.oauthService = new OauthService();
+    }
+    return this.oauthService;
   }
 }

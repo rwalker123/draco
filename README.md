@@ -383,6 +383,12 @@ pnpm frontend:e2e
 
 ## 📦 Deployment
 
+### Services
+
+- **Backend API** — `draco-nodejs/backend` — Railway service at `api.draco.com`
+- **Frontend** — `draco-nodejs/frontend-next` — Railway service at `app.draco.com`
+- **MCP Server** — `draco-nodejs/mcp-server` — Railway service at `mcp.draco.com`. See [draco-nodejs/mcp-server/DEPLOY.md](draco-nodejs/mcp-server/DEPLOY.md) for Railway setup, env vars, DNS, and smoke test instructions.
+
 ### Production Build
 
 ```bash

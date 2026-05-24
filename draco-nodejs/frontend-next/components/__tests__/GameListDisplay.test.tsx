@@ -59,7 +59,7 @@ describe('GameListDisplay', () => {
     renderWithTheme(<GameListDisplay sections={mockSections} />);
 
     expect(screen.getByText('Test Section')).toBeInTheDocument();
-    expect(screen.getByText('Home Team')).toBeInTheDocument();
+    expect(screen.getByText(/@\s*Home Team/)).toBeInTheDocument();
     expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('GameListDisplay', () => {
     renderWithTheme(<GameListDisplay sections={mockSections} layout="horizontal" />);
 
     expect(screen.getByText('Test Section')).toBeInTheDocument();
-    expect(screen.getByText('Home Team')).toBeInTheDocument();
+    expect(screen.getByText(/@\s*Home Team/)).toBeInTheDocument();
     expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe('GameListDisplay', () => {
     renderWithTheme(<GameListDisplay sections={scheduledSections} />);
 
     expect(screen.getByText('Scheduled Games')).toBeInTheDocument();
-    expect(screen.getByText('Home Team')).toBeInTheDocument();
+    expect(screen.getByText(/@\s*Home Team/)).toBeInTheDocument();
     expect(screen.getByText('Visitor Team')).toBeInTheDocument();
     expect(screen.getByText('TF')).toBeInTheDocument();
   });

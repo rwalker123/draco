@@ -5,11 +5,14 @@ import {
   PublicTeamRosterResponseType,
   RosterCardPlayerType,
   RosterMemberType,
+  RosterMemberWaiverSummaryType,
   TeamRosterCardType,
   TeamRosterMembersType,
+  TeamRosterWaiverSummariesType,
 } from '@draco/shared-schemas';
 import {
   dbBaseContact,
+  dbContactSeasonTeamWaiver,
   dbRosterMember,
   dbRosterSeason,
   dbTeamSeason,
@@ -77,7 +80,8 @@ export class RosterResponseFormatter {
         gamesPlayedMap !== undefined ? (gamesPlayedMap.get(member.id.toString()) ?? 0) : null;
       return {
         id: member.id.toString(),
-        playerNumber: member.playernumber ?? null,
+        contactId: contact.id.toString(),
+        playerNumber: member.playernumber,
         firstName: contact.firstname ?? null,
         lastName: contact.lastname ?? null,
         middleName: contact.middlename ?? null,
@@ -95,6 +99,49 @@ export class RosterResponseFormatter {
     };
   }
 
+  static formatTeamRosterWaiverSummariesResponse(
+    dbTeamSeason: dbTeamSeason,
+    dbRosterMembers: dbRosterMember[],
+    waiverRows: dbContactSeasonTeamWaiver[],
+    gamesPlayedMap?: Map<string, number>,
+  ): TeamRosterWaiverSummariesType {
+    const waiverByContact = new Map<string, dbContactSeasonTeamWaiver[]>();
+    for (const row of waiverRows) {
+      const key = row.contactId.toString();
+      const list = waiverByContact.get(key);
+      if (list) {
+        list.push(row);
+      } else {
+        waiverByContact.set(key, [row]);
+      }
+    }
+
+    const members: RosterMemberWaiverSummaryType[] = dbRosterMembers.map((member) => {
+      const rosterMember = this.formatRosterMemberResponse(member, gamesPlayedMap);
+      const contactKey = member.roster.contacts.id.toString();
+      const teams = waiverByContact.get(contactKey) ?? [];
+      return {
+        rosterMember,
+        seasonTeams: teams.map((row) => ({
+          teamSeasonId: row.teamSeasonId.toString(),
+          teamId: row.teamId.toString(),
+          teamName: row.teamName,
+          leagueSeasonId: row.leagueSeasonId.toString(),
+          leagueName: row.leagueName,
+          submittedWaiver: row.submittedWaiver,
+        })),
+      };
+    });
+
+    return {
+      teamSeason: {
+        id: dbTeamSeason.id.toString(),
+        name: dbTeamSeason.name,
+      },
+      members,
+    };
+  }
+
   static formatRosterCardResponse(
     account: Partial<AccountHeaderType> | undefined,
     teamSeason: dbTeamSeason,
@@ -105,7 +152,7 @@ export class RosterResponseFormatter {
       .filter((member) => !member.inactive)
       .map((member) => ({
         id: member.id.toString(),
-        playerNumber: member.playernumber ?? null,
+        playerNumber: member.playernumber,
         firstName: member.roster.contacts.firstname ?? '',
         lastName: member.roster.contacts.lastname ?? '',
       }))

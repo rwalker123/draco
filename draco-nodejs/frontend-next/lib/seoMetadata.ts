@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 
 import { DEFAULT_ACCOUNT_FAVICON_PATH } from './metadataFetchers';
 import { DEFAULT_KEYWORDS, DEFAULT_SITE_NAME } from './seoConstants';
 export { DEFAULT_DESCRIPTION, DEFAULT_KEYWORDS, DEFAULT_SITE_NAME } from './seoConstants';
-
-const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
-const FALLBACK_ORIGIN = process.env.NEXT_PUBLIC_FALLBACK_URL ?? 'http://localhost:3000';
 
 function normalizePath(path?: string): string {
   if (!path || path === '/') {
@@ -14,26 +12,18 @@ function normalizePath(path?: string): string {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-function resolveOrigin(): string {
-  if (PUBLIC_SITE_URL) {
-    try {
-      const url = new URL(PUBLIC_SITE_URL);
-      url.pathname = '/';
-      return url.toString().replace(/\/$/, '');
-    } catch {
-      // Fall back to environment-based resolution
-    }
+async function resolveOrigin(): Promise<string> {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
+  if (!host) {
+    throw new Error('seoMetadata.resolveOrigin: missing "host" header on request');
   }
-
-  return FALLBACK_ORIGIN.replace(/\/$/, '');
+  const proto = requestHeaders.get('x-forwarded-proto') ?? 'https';
+  return `${proto}://${host}`;
 }
 
-interface BuildCanonicalOptions {
-  origin?: string;
-}
-
-export function buildCanonicalUrl(path?: string, options?: BuildCanonicalOptions): string {
-  const origin = options?.origin ?? resolveOrigin();
+export async function buildCanonicalUrl(path?: string): Promise<string> {
+  const origin = await resolveOrigin();
   const pathname = normalizePath(path);
   try {
     return new URL(pathname, origin).toString();
@@ -75,7 +65,7 @@ interface BuildSeoMetadataOptions {
   siteName?: string;
 }
 
-export function buildSeoMetadata({
+export async function buildSeoMetadata({
   title,
   description,
   path,
@@ -84,8 +74,8 @@ export function buildSeoMetadata({
   index = true,
   keywords,
   siteName,
-}: BuildSeoMetadataOptions): Metadata {
-  const canonicalUrl = buildCanonicalUrl(path);
+}: BuildSeoMetadataOptions): Promise<Metadata> {
+  const canonicalUrl = await buildCanonicalUrl(path);
   const resolvedKeywords = resolveKeywords(keywords);
   const openGraphImages = image ? [image] : undefined;
   const twitterImages = image ? [image] : undefined;

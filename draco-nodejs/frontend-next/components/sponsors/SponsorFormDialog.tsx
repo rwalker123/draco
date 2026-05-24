@@ -28,6 +28,9 @@ import { z } from 'zod';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPhoneInput, isValidPhoneNumber } from '../../utils/phoneNumber';
+import ImageCropDialog from '../common/ImageCropDialog';
+import { IMAGE_CROP_PRESETS } from '../../config/imageCropPresets';
+import { SPONSOR_PHOTO_UPLOAD_CONFIG, validateImageFile } from '../../utils/imageFileValidation';
 
 interface SponsorFormDialogProps {
   open: boolean;
@@ -91,6 +94,8 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
     handleSubmit,
     reset,
     setValue,
+    setError,
+    clearErrors,
     control,
     formState: { errors, isSubmitting },
   } = useForm<SponsorFormSchemaType>({
@@ -101,6 +106,7 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
   const photoValue = useWatch({ control, name: 'photo' }) as File | null | undefined;
   const sponsorName = useWatch({ control, name: 'name' });
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [pendingCropFile, setPendingCropFile] = React.useState<File | null>(null);
   const handlePreviewError = () => {
     setPreviewUrl(null);
   };
@@ -147,11 +153,29 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files && event.target.files.length > 0 ? event.target.files[0] : null;
-    setValue('photo', file, { shouldDirty: true, shouldValidate: false });
-    // reset value so selecting the same file again triggers change
     if (event.target) {
       event.target.value = '';
     }
+    if (!file) {
+      setValue('photo', null, { shouldDirty: true, shouldValidate: false });
+      return;
+    }
+    const validationError = validateImageFile(file, SPONSOR_PHOTO_UPLOAD_CONFIG);
+    if (validationError) {
+      setError('photo', { type: 'manual', message: validationError });
+      return;
+    }
+    clearErrors('photo');
+    setPendingCropFile(file);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setPendingCropFile(null);
+    setValue('photo', croppedFile, { shouldDirty: true, shouldValidate: false });
+  };
+
+  const handleCropCancel = () => {
+    setPendingCropFile(null);
   };
 
   const onSubmit = handleSubmit(async (values) => {
@@ -283,7 +307,12 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
             <Stack direction="row" spacing={2} alignItems="center">
               <Button variant="outlined" component="label">
                 {photoValue ? 'Change Logo' : 'Upload Logo'}
-                <input hidden type="file" accept="image/*" onChange={handlePhotoChange} />
+                <input
+                  hidden
+                  type="file"
+                  accept={SPONSOR_PHOTO_UPLOAD_CONFIG.allowedMimeTypes.join(',')}
+                  onChange={handlePhotoChange}
+                />
               </Button>
               {previewUrl ? (
                 <Box
@@ -311,6 +340,11 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
                 Current logo will be retained unless a new file is uploaded.
               </Typography>
             )}
+            {errors.photo?.message && (
+              <Typography variant="caption" color="error">
+                {String(errors.photo.message)}
+              </Typography>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -328,6 +362,13 @@ const SponsorFormDialog: React.FC<SponsorFormDialogProps> = ({
           </Button>
         </DialogActions>
       </Box>
+      <ImageCropDialog
+        open={pendingCropFile !== null}
+        sourceFile={pendingCropFile}
+        preset={IMAGE_CROP_PRESETS.sponsorPhoto}
+        onClose={handleCropCancel}
+        onCropConfirm={handleCropConfirm}
+      />
     </Dialog>
   );
 };

@@ -5,6 +5,7 @@ import {
   UpdateGameResultsType,
   UpsertGameRecapType,
   GameType,
+  GameTeamRecipientCountType,
   EmailSendType,
   AccountSettingKey,
 } from '@draco/shared-schemas';
@@ -245,6 +246,7 @@ export class ScheduleService {
     const safeStatusLine = sanitizePlainText(statusLine);
     const safeScoreLine = sanitizePlainText(scoreLine);
     const safeGameDate = gameDate ? sanitizePlainText(gameDate) : '';
+    const safeScheduleUrl = sanitizePlainText(scheduleUrl);
 
     return `
       <!DOCTYPE html>
@@ -273,9 +275,9 @@ export class ScheduleService {
             <p><strong>${safeScoreLine}</strong></p>
             ${safeGameDate ? `<p>${safeGameDate}</p>` : ''}
             <p>Use the button below to view the full schedule.</p>
-            <a href="${scheduleUrl}" class="button">View Schedule</a>
+            <a href="${safeScheduleUrl}" class="button">View Schedule</a>
             <p>If the button doesn't work, copy and paste this link into your browser:</p>
-            <p>${scheduleUrl}</p>
+            <p>${safeScheduleUrl}</p>
           </div>
           <div class="footer">
             <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
@@ -345,6 +347,244 @@ export class ScheduleService {
         error,
       });
       return false;
+    }
+  }
+
+  private hasMaterialFieldChanged(
+    previousGame: {
+      gamedate: Date | null;
+      fieldid: bigint | null;
+      gamestatus: number | null;
+      hteamid: bigint;
+      vteamid: bigint;
+    },
+    updatedGame: dbScheduleGameWithDetails,
+  ): boolean {
+    const prevDate = previousGame.gamedate?.getTime() ?? null;
+    const newDate = updatedGame.gamedate?.getTime() ?? null;
+    if (prevDate !== newDate) return true;
+    if (previousGame.fieldid !== updatedGame.fieldid) return true;
+    if (previousGame.gamestatus !== updatedGame.gamestatus) return true;
+    if (previousGame.hteamid !== updatedGame.hteamid) return true;
+    if (previousGame.vteamid !== updatedGame.vteamid) return true;
+    return false;
+  }
+
+  private buildScheduleChangeRecipientTeamIds(
+    currentGame: dbScheduleGameWithDetails,
+    previousGame: { hteamid: bigint; vteamid: bigint } | undefined,
+  ): bigint[] {
+    const teamIdSet = new Set<bigint>();
+    if (currentGame.hteamid) teamIdSet.add(currentGame.hteamid);
+    if (currentGame.vteamid) teamIdSet.add(currentGame.vteamid);
+    if (previousGame) {
+      if (previousGame.hteamid) teamIdSet.add(previousGame.hteamid);
+      if (previousGame.vteamid) teamIdSet.add(previousGame.vteamid);
+    }
+    return Array.from(teamIdSet);
+  }
+
+  private buildScheduleChangeSubject(
+    accountName: string,
+    gameStatus: number | null,
+    previousGameStatus: number | null | undefined,
+    headerLine: string,
+  ): string {
+    const currentStatus = gameStatus ?? GameStatus.Scheduled;
+    const isCancelled = currentStatus === GameStatus.Rainout;
+    const wasPostponed =
+      previousGameStatus !== null &&
+      previousGameStatus !== undefined &&
+      previousGameStatus === GameStatus.Postponed &&
+      isCancelled;
+
+    let prefix: string;
+    if (wasPostponed) {
+      prefix = 'POSTPONED:';
+    } else if (isCancelled) {
+      prefix = 'CANCELLED:';
+    } else {
+      prefix = 'Schedule Update:';
+    }
+
+    return `${prefix} ${accountName} - ${headerLine}`;
+  }
+
+  private buildScheduleChangeEmailHtml(options: {
+    accountName: string;
+    leagueName: string;
+    homeTeamName: string;
+    visitorTeamName: string;
+    gameDate?: string;
+    fieldName?: string;
+    fieldAddress?: string;
+    statusLine: string;
+    scheduleUrl: string;
+  }): string {
+    const {
+      accountName,
+      leagueName,
+      homeTeamName,
+      visitorTeamName,
+      gameDate,
+      fieldName,
+      fieldAddress,
+      statusLine,
+      scheduleUrl,
+    } = options;
+
+    const safeAccountName = sanitizePlainText(accountName);
+    const safeLeagueName = sanitizePlainText(leagueName);
+    const safeHomeTeam = sanitizePlainText(homeTeamName);
+    const safeVisitorTeam = sanitizePlainText(visitorTeamName);
+    const safeGameDate = gameDate ? sanitizePlainText(gameDate) : '';
+    const safeFieldName = fieldName ? sanitizePlainText(fieldName) : '';
+    const safeFieldAddress = fieldAddress ? sanitizePlainText(fieldAddress) : '';
+    const safeStatusLine = sanitizePlainText(statusLine);
+    const safeScheduleUrl = sanitizePlainText(scheduleUrl);
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Schedule Update</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f8f9fa; }
+          .detail-row { margin: 8px 0; }
+          .label { font-weight: bold; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>${safeAccountName}</h1>
+          </div>
+          <div class="content">
+            <h2>Schedule Update</h2>
+            <div class="detail-row"><span class="label">League:</span> ${safeLeagueName}</div>
+            <div class="detail-row"><span class="label">Game:</span> ${safeVisitorTeam} @ ${safeHomeTeam}</div>
+            ${safeGameDate ? `<div class="detail-row"><span class="label">Date/Time:</span> ${safeGameDate}</div>` : ''}
+            ${safeFieldName ? `<div class="detail-row"><span class="label">Location:</span> ${safeFieldName}${safeFieldAddress ? ` &mdash; ${safeFieldAddress}` : ''}</div>` : ''}
+            <div class="detail-row"><span class="label">Status:</span> ${safeStatusLine}</div>
+            <p>Use the button below to view the full schedule.</p>
+            <a href="${safeScheduleUrl}" class="button">View Schedule</a>
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p>${safeScheduleUrl}</p>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from ezRecSports.com. Please do not reply to this email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private async syncScheduleChangeToEmail(
+    accountId: bigint,
+    game: dbScheduleGameWithDetails,
+    userId: string,
+    options: {
+      isCreate: boolean;
+      previousGame?: {
+        gamedate: Date | null;
+        fieldid: bigint | null;
+        gamestatus: number | null;
+        hteamid: bigint;
+        vteamid: bigint;
+      };
+    },
+  ): Promise<void> {
+    try {
+      const scheduleVisible = game.leagueseason.season?.schedulevisible ?? true;
+      if (!scheduleVisible) {
+        return;
+      }
+
+      if (!options.isCreate && options.previousGame) {
+        const changed = this.hasMaterialFieldChanged(options.previousGame, game);
+        if (!changed) {
+          return;
+        }
+      }
+
+      const seasonId = game.leagueseason?.season?.id;
+      if (!seasonId) {
+        return;
+      }
+
+      const teamIds = this.buildScheduleChangeRecipientTeamIds(game, options.previousGame);
+      if (!teamIds.length) {
+        return;
+      }
+
+      const teamNames = await this.scheduleRepository.getTeamNames(teamIds);
+      const recipients = await this.resolveActiveRosterRecipients(teamIds, seasonId, accountId);
+
+      if (!recipients.length) {
+        return;
+      }
+
+      const accountHeader = await this.accountsService.getAccountHeader(accountId);
+      const baseUrl = getFrontendBaseUrlOrFallback();
+      const homeTeamName = (game.hteamid && teamNames.get(game.hteamid.toString())) || 'Home Team';
+      const visitorTeamName =
+        (game.vteamid && teamNames.get(game.vteamid.toString())) || 'Visitor Team';
+      const leagueName = game.leagueseason?.league?.name ?? '';
+      const statusLine = getGameStatusText(Number(game.gamestatus ?? GameStatus.Scheduled));
+      const gameDate = game.gamedate
+        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, 'UTC') ?? undefined)
+        : undefined;
+      const fieldName = game.availablefields?.name ?? undefined;
+      const fieldCity = game.availablefields?.city ?? '';
+      const fieldState = game.availablefields?.state ?? '';
+      const fieldAddress =
+        fieldCity || fieldState ? [fieldCity, fieldState].filter(Boolean).join(', ') : undefined;
+      const scheduleUrl = `${baseUrl}/account/${accountHeader.id}/schedule`;
+      const headerLine = `${visitorTeamName} @ ${homeTeamName}`;
+
+      const subject = this.buildScheduleChangeSubject(
+        accountHeader.name,
+        game.gamestatus,
+        options.previousGame?.gamestatus,
+        headerLine,
+      );
+
+      const body = this.buildScheduleChangeEmailHtml({
+        accountName: accountHeader.name,
+        leagueName,
+        homeTeamName,
+        visitorTeamName,
+        gameDate,
+        fieldName,
+        fieldAddress,
+        statusLine,
+        scheduleUrl,
+      });
+
+      const emailRequest: EmailSendType = {
+        subject,
+        body,
+        recipients: {
+          contacts: recipients.map((recipient) => recipient.contactId.toString()),
+        },
+      };
+
+      await this.emailService.composeAndSendEmailFromUser(accountId, userId, emailRequest, {
+        isSystemEmail: true,
+      });
+    } catch (error) {
+      console.error('[email] Failed to send schedule change email', {
+        accountId: accountId.toString(),
+        gameId: game.id.toString(),
+        error,
+      });
     }
   }
 
@@ -428,6 +668,7 @@ export class ScheduleService {
     accountId: bigint,
     seasonId: bigint,
     payload: UpsertGameType,
+    userId: string,
   ): Promise<GameType> {
     const leagueSeasonId = BigInt(payload.leagueSeasonId);
     const homeTeamId = BigInt(payload.homeTeam.id);
@@ -492,6 +733,10 @@ export class ScheduleService {
 
     const createdGame = await this.scheduleRepository.createGame(createData);
 
+    if (payload.notifyTeams === true) {
+      void this.syncScheduleChangeToEmail(accountId, createdGame, userId, { isCreate: true });
+    }
+
     return this.formatGameWithTeamNames(createdGame);
   }
 
@@ -500,6 +745,7 @@ export class ScheduleService {
     seasonId: bigint,
     gameId: bigint,
     payload: UpsertGameType,
+    userId: string,
   ): Promise<GameType> {
     const existingGame = await this.ensureGameInAccount(gameId, accountId);
 
@@ -594,7 +840,23 @@ export class ScheduleService {
 
     const updatedGame = await this.scheduleRepository.updateGame(gameId, updateData);
 
+    if (payload.notifyTeams === true) {
+      void this.syncScheduleChangeToEmail(accountId, updatedGame, userId, {
+        isCreate: false,
+        previousGame: existingGame,
+      });
+    }
+
     return this.formatGameWithTeamNames(updatedGame);
+  }
+
+  async getTeamRecipientCount(
+    accountId: bigint,
+    seasonId: bigint,
+    teamIds: bigint[],
+  ): Promise<GameTeamRecipientCountType> {
+    const recipients = await this.resolveActiveRosterRecipients(teamIds, seasonId, accountId);
+    return { count: recipients.length };
   }
 
   async deleteGame(accountId: bigint, seasonId: bigint, gameId: bigint): Promise<boolean> {

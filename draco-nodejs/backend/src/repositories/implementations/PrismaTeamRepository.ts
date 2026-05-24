@@ -809,4 +809,13 @@ export class PrismaTeamRepository implements ITeamRepository {
 
     return teamSeason as dbTeamSeasonValidationResult | null;
   }
+
+  async findLatestTeamSeasonName(teamId: bigint): Promise<string | null> {
+    const teamSeason = await this.prisma.teamsseason.findFirst({
+      where: { teamid: teamId },
+      orderBy: { id: 'desc' },
+      select: { name: true },
+    });
+    return teamSeason?.name ?? null;
+  }
 }

@@ -42,10 +42,7 @@ export const formatGameDate = (isoDate: string) => {
 };
 
 export const buildPlayerLabel = (player: TeamStatsPlayerSummaryType) => {
-  const number =
-    player.playerNumber !== null && player.playerNumber !== undefined
-      ? `#${player.playerNumber} `
-      : '';
+  const number = player.playerNumber ? `#${player.playerNumber} ` : '';
   return `${number}${player.playerName}`;
 };
 

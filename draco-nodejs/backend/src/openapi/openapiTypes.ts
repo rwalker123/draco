@@ -90,6 +90,8 @@ import {
   PublicContactSummarySchema,
   PublicContactSearchResponseSchema,
   PublicContactSearchQuerySchema,
+  PublicPlayerProfileSchema,
+  PublicPlayerTeamAffiliationSchema,
   PlayerSurveyCategorySchema,
   PlayerSurveyDetailSchema,
   TeamStatsPlayerSummarySchema,
@@ -145,6 +147,9 @@ import {
   UpdateScheduleVisibilitySchema,
   TeamManagerSchema,
   TeamRosterMembersSchema,
+  RosterMemberSeasonTeamWaiverSchema,
+  RosterMemberWaiverSummarySchema,
+  TeamRosterWaiverSummariesSchema,
   TeamSeasonSchema,
   TeamsWantedAccessCodeSchema,
   TeamsWantedContactInfoSchema,
@@ -227,6 +232,7 @@ import {
   UpdateGameResultsSchema,
   UpsertGameSchema,
   UpsertGameRecapSchema,
+  GameTeamRecipientCountSchema,
   CreatePlayerSurveyCategorySchema,
   UpdatePlayerSurveyCategorySchema,
   CreatePlayerSurveyQuestionSchema,
@@ -235,7 +241,10 @@ import {
   RoleWithContactSchema,
   VerifyTokenRequestSchema,
   ChangePasswordRequestSchema,
+  ChangeLoginEmailRequestSchema,
   RoleCheckResponseSchema,
+  AdminUserSummarySchema,
+  AdminUserListResponseSchema,
   UpsertHandoutSchema,
   CreatePhotoSubmissionFormSchema,
   PhotoSubmissionRecordSchema,
@@ -252,6 +261,8 @@ import {
   PhotoGalleryQuerySchema,
   UpdatePhotoGalleryAlbumSchema,
   UpdatePhotoGalleryPhotoSchema,
+  CreateTeamGalleryPhotoSchema,
+  UpdateTeamGalleryPhotoSchema,
   SocialFeedItemSchema,
   SocialFeedListSchema,
   SocialFeedQuerySchema,
@@ -408,6 +419,8 @@ import {
   IndividualSseTicketResponseSchema,
   GetBaseballLiveScoringTicketSchema,
   AllTimeTeamSummarySchema,
+  RosterSeasonMembershipSchema,
+  RosterSeasonMembershipListSchema,
 } from '@draco/shared-schemas';
 
 export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
@@ -417,6 +430,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const UpdateRosterMemberSchemaRef = registry.register(
     'UpdateRosterMember',
     UpdateRosterMemberSchema,
+  );
+  const RosterSeasonMembershipSchemaRef = registry.register(
+    'RosterSeasonMembership',
+    RosterSeasonMembershipSchema,
+  );
+  const RosterSeasonMembershipListSchemaRef = registry.register(
+    'RosterSeasonMembershipList',
+    RosterSeasonMembershipListSchema,
   );
   const ContactSchemaRef = registry.register('Contact', ContactSchema);
   const BaseContactSchemaRef = registry.register('BaseContact', BaseContactSchema);
@@ -475,6 +496,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const TeamRosterMembersSchemaRef = registry.register(
     'TeamRosterMembers',
     TeamRosterMembersSchema,
+  );
+  const RosterMemberSeasonTeamWaiverSchemaRef = registry.register(
+    'RosterMemberSeasonTeamWaiver',
+    RosterMemberSeasonTeamWaiverSchema,
+  );
+  const RosterMemberWaiverSummarySchemaRef = registry.register(
+    'RosterMemberWaiverSummary',
+    RosterMemberWaiverSummarySchema,
+  );
+  const TeamRosterWaiverSummariesSchemaRef = registry.register(
+    'TeamRosterWaiverSummaries',
+    TeamRosterWaiverSummariesSchema,
   );
   const PublicRosterMemberSchemaRef = registry.register(
     'PublicRosterMember',
@@ -830,6 +863,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'PublicContactSearchQuery',
     PublicContactSearchQuerySchema,
   );
+  const PublicPlayerTeamAffiliationSchemaRef = registry.register(
+    'PublicPlayerTeamAffiliation',
+    PublicPlayerTeamAffiliationSchema,
+  );
+  const PublicPlayerProfileSchemaRef = registry.register(
+    'PublicPlayerProfile',
+    PublicPlayerProfileSchema,
+  );
   const TeamStatsPlayerSummarySchemaRef = registry.register(
     'TeamStatsPlayerSummary',
     TeamStatsPlayerSummarySchema,
@@ -1092,6 +1133,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'UpdatePhotoGalleryPhoto',
     UpdatePhotoGalleryPhotoSchema,
   );
+  const CreateTeamGalleryPhotoSchemaRef = registry.register(
+    'CreateTeamGalleryPhoto',
+    CreateTeamGalleryPhotoSchema,
+  );
+  const UpdateTeamGalleryPhotoSchemaRef = registry.register(
+    'UpdateTeamGalleryPhoto',
+    UpdateTeamGalleryPhotoSchema,
+  );
   const PhotoGalleryPhotoSchemaRef = registry.register(
     'PhotoGalleryPhoto',
     PhotoGalleryPhotoSchema,
@@ -1179,6 +1228,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const UpsertGameSchemaRef = registry.register('UpsertGame', UpsertGameSchema);
   const UpsertGameRecapSchemaRef = registry.register('UpsertGameRecap', UpsertGameRecapSchema);
+  const GameTeamRecipientCountSchemaRef = registry.register(
+    'GameTeamRecipientCount',
+    GameTeamRecipientCountSchema,
+  );
   const UpsertSeasonSchemaRef = registry.register('UpsertSeason', UpsertSeasonSchema);
   const UpsertDivisionSeasonSchemaRef = registry.register(
     'UpsertDivisionSeason',
@@ -1213,6 +1266,15 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const ChangePasswordRequestSchemaRef = registry.register(
     'ChangePasswordRequest',
     ChangePasswordRequestSchema,
+  );
+  const ChangeLoginEmailRequestSchemaRef = registry.register(
+    'ChangeLoginEmailRequest',
+    ChangeLoginEmailRequestSchema,
+  );
+  const AdminUserSummarySchemaRef = registry.register('AdminUserSummary', AdminUserSummarySchema);
+  const AdminUserListResponseSchemaRef = registry.register(
+    'AdminUserListResponse',
+    AdminUserListResponseSchema,
   );
   const SchedulerProblemSpecSchemaRef = registry.register(
     'SchedulerProblemSpec',
@@ -1600,6 +1662,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RosterPlayerSchemaRef,
     SignRosterMemberSchemaRef,
     UpdateRosterMemberSchemaRef,
+    RosterSeasonMembershipSchemaRef,
+    RosterSeasonMembershipListSchemaRef,
     ContactSchemaRef,
     BaseContactSchemaRef,
     NamedContactSchemaRef,
@@ -1618,6 +1682,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SeasonParticipantCountDataSchemaRef,
     TeamManagerSchemaRef,
     TeamRosterMembersSchemaRef,
+    RosterMemberSeasonTeamWaiverSchemaRef,
+    RosterMemberWaiverSummarySchemaRef,
+    TeamRosterWaiverSummariesSchemaRef,
     PublicRosterMemberSchemaRef,
     PublicTeamRosterResponseSchemaRef,
     RosterCardPlayerSchemaRef,
@@ -1798,6 +1865,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpsertWelcomeMessageSchemaRef,
     CreatePhotoGalleryPhotoSchemaRef,
     UpdatePhotoGalleryPhotoSchemaRef,
+    CreateTeamGalleryPhotoSchemaRef,
+    UpdateTeamGalleryPhotoSchemaRef,
     PhotoGalleryPhotoSchemaRef,
     CreatePhotoGalleryAlbumSchemaRef,
     UpdatePhotoGalleryAlbumSchemaRef,
@@ -1826,6 +1895,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,
+    GameTeamRecipientCountSchemaRef,
     UpsertSeasonSchemaRef,
     UpsertDivisionSeasonSchemaRef,
     UpdateDivisionSeasonResponseSchemaRef,
@@ -1850,6 +1920,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PublicContactSummarySchemaRef,
     PublicContactSearchResponseSchemaRef,
     PublicContactSearchQuerySchemaRef,
+    PublicPlayerProfileSchemaRef,
+    PublicPlayerTeamAffiliationSchemaRef,
     TeamStatsPlayerSummarySchemaRef,
     GameBattingStatLineSchemaRef,
     GameBattingStatsSchemaRef,
@@ -1873,6 +1945,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     RoleWithContactSchemaRef,
     VerifyTokenRequestSchemaRef,
     ChangePasswordRequestSchemaRef,
+    ChangeLoginEmailRequestSchemaRef,
+    AdminUserSummarySchemaRef,
+    AdminUserListResponseSchemaRef,
     SchedulerProblemSpecSchemaRef,
     SchedulerProblemSpecPreviewSchemaRef,
     SchedulerSeasonSolveRequestSchemaRef,

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useApiClient } from './useApiClient';
 import {
   listSocialFeed,
@@ -38,124 +39,134 @@ const buildQuery = <T extends Record<string, unknown>>(query?: Partial<T>) => {
   return definedEntries.length > 0 ? Object.fromEntries(definedEntries) : undefined;
 };
 
-export const useSocialHubService = ({ accountId, seasonId }: SocialHubServiceConfig) => {
+export function useSocialHubService({ accountId, seasonId }: SocialHubServiceConfig) {
   const apiClient = useApiClient();
 
-  const ensureContext = () => {
-    if (!accountId || !seasonId) {
-      throw new Error('Account and season are required to load social content.');
-    }
-    return { accountId, seasonId };
-  };
+  const depsRef = useRef({ accountId, seasonId, apiClient });
+  useEffect(() => {
+    depsRef.current = { accountId, seasonId, apiClient };
+  }, [accountId, seasonId, apiClient]);
 
-  const fetchFeed = async (
-    query?: Partial<SocialFeedQueryType>,
-    signal?: AbortSignal,
-  ): Promise<SocialFeedItemType[]> => {
-    const context = ensureContext();
-    const result = await listSocialFeed({
-      client: apiClient,
-      path: { accountId: context.accountId, seasonId: context.seasonId },
-      query: buildQuery(query),
-      signal,
-      throwOnError: false,
-    });
+  const [operations] = useState(() => {
+    const ensureContext = () => {
+      const { accountId: a, seasonId: s } = depsRef.current;
+      if (!a || !s) {
+        throw new Error('Account and season are required to load social content.');
+      }
+      return { accountId: a, seasonId: s };
+    };
 
-    const payload = unwrapApiResult(result, 'Failed to load social feed');
-    return payload.feed;
-  };
+    const fetchFeed = async (
+      query?: Partial<SocialFeedQueryType>,
+      signal?: AbortSignal,
+    ): Promise<SocialFeedItemType[]> => {
+      const context = ensureContext();
+      const result = await listSocialFeed({
+        client: depsRef.current.apiClient,
+        path: { accountId: context.accountId, seasonId: context.seasonId },
+        query: buildQuery(query),
+        signal,
+        throwOnError: false,
+      });
 
-  const deleteFeedItem = async (feedItemId: string): Promise<void> => {
-    const context = ensureContext();
-    const result = await deleteSocialFeedItem({
-      client: apiClient,
-      path: {
-        accountId: context.accountId,
-        seasonId: context.seasonId,
-        feedItemId,
-      },
-      throwOnError: false,
-    });
+      const payload = unwrapApiResult(result, 'Failed to load social feed');
+      return payload.feed;
+    };
 
-    assertNoApiError(result, 'Failed to delete social post');
-  };
+    const deleteFeedItem = async (feedItemId: string): Promise<void> => {
+      const context = ensureContext();
+      const result = await deleteSocialFeedItem({
+        client: depsRef.current.apiClient,
+        path: {
+          accountId: context.accountId,
+          seasonId: context.seasonId,
+          feedItemId,
+        },
+        throwOnError: false,
+      });
 
-  const restoreFeedItem = async (feedItemId: string): Promise<void> => {
-    const context = ensureContext();
-    const result = await restoreSocialFeedItem({
-      client: apiClient,
-      path: {
-        accountId: context.accountId,
-        seasonId: context.seasonId,
-        feedItemId,
-      },
-      throwOnError: false,
-    });
+      assertNoApiError(result, 'Failed to delete social post');
+    };
 
-    assertNoApiError(result, 'Failed to restore social post');
-  };
+    const restoreFeedItem = async (feedItemId: string): Promise<void> => {
+      const context = ensureContext();
+      const result = await restoreSocialFeedItem({
+        client: depsRef.current.apiClient,
+        path: {
+          accountId: context.accountId,
+          seasonId: context.seasonId,
+          feedItemId,
+        },
+        throwOnError: false,
+      });
 
-  const fetchVideos = async (
-    query?: Partial<SocialVideoQueryType>,
-    signal?: AbortSignal,
-  ): Promise<SocialVideoType[]> => {
-    const context = ensureContext();
-    const result = await listSocialVideos({
-      client: apiClient,
-      path: { accountId: context.accountId, seasonId: context.seasonId },
-      query: buildQuery(query),
-      signal,
-      throwOnError: false,
-    });
+      assertNoApiError(result, 'Failed to restore social post');
+    };
 
-    const payload = unwrapApiResult(result, 'Failed to load social videos');
-    return payload.videos;
-  };
+    const fetchVideos = async (
+      query?: Partial<SocialVideoQueryType>,
+      signal?: AbortSignal,
+    ): Promise<SocialVideoType[]> => {
+      const context = ensureContext();
+      const result = await listSocialVideos({
+        client: depsRef.current.apiClient,
+        path: { accountId: context.accountId, seasonId: context.seasonId },
+        query: buildQuery(query),
+        signal,
+        throwOnError: false,
+      });
 
-  const fetchCommunityMessages = async (
-    query?: Partial<CommunityMessageQueryType>,
-    signal?: AbortSignal,
-  ): Promise<CommunityMessagePreviewType[]> => {
-    const context = ensureContext();
-    const result = await listCommunityMessages({
-      client: apiClient,
-      path: { accountId: context.accountId, seasonId: context.seasonId },
-      query: buildQuery(query),
-      signal,
-      throwOnError: false,
-    });
+      const payload = unwrapApiResult(result, 'Failed to load social videos');
+      return payload.videos;
+    };
 
-    const payload = unwrapApiResult(result, 'Failed to load community messages');
-    return payload.messages;
-  };
+    const fetchCommunityMessages = async (
+      query?: Partial<CommunityMessageQueryType>,
+      signal?: AbortSignal,
+    ): Promise<CommunityMessagePreviewType[]> => {
+      const context = ensureContext();
+      const result = await listCommunityMessages({
+        client: depsRef.current.apiClient,
+        path: { accountId: context.accountId, seasonId: context.seasonId },
+        query: buildQuery(query),
+        signal,
+        throwOnError: false,
+      });
 
-  const fetchCommunityChannels = async (
-    query?: Partial<CommunityChannelQueryType>,
-    signal?: AbortSignal,
-  ): Promise<CommunityChannelType[]> => {
-    const context = ensureContext();
-    const queryParams =
-      query?.teamSeasonId && `${query.teamSeasonId}`.trim().length > 0
-        ? { teamSeasonId: query.teamSeasonId }
-        : undefined;
-    const result = await listSocialCommunityChannels({
-      client: apiClient,
-      path: { accountId: context.accountId, seasonId: context.seasonId },
-      ...(queryParams ? { query: queryParams } : {}),
-      signal,
-      throwOnError: false,
-    });
+      const payload = unwrapApiResult(result, 'Failed to load community messages');
+      return payload.messages;
+    };
 
-    const payload = unwrapApiResult(result, 'Failed to load community channels');
-    return payload.channels;
-  };
+    const fetchCommunityChannels = async (
+      query?: Partial<CommunityChannelQueryType>,
+      signal?: AbortSignal,
+    ): Promise<CommunityChannelType[]> => {
+      const context = ensureContext();
+      const queryParams =
+        query?.teamSeasonId && `${query.teamSeasonId}`.trim().length > 0
+          ? { teamSeasonId: query.teamSeasonId }
+          : undefined;
+      const result = await listSocialCommunityChannels({
+        client: depsRef.current.apiClient,
+        path: { accountId: context.accountId, seasonId: context.seasonId },
+        ...(queryParams ? { query: queryParams } : {}),
+        signal,
+        throwOnError: false,
+      });
 
-  return {
-    fetchFeed,
-    fetchVideos,
-    fetchCommunityMessages,
-    fetchCommunityChannels,
-    deleteFeedItem,
-    restoreFeedItem,
-  };
-};
+      const payload = unwrapApiResult(result, 'Failed to load community channels');
+      return payload.channels;
+    };
+
+    return {
+      fetchFeed,
+      fetchVideos,
+      fetchCommunityMessages,
+      fetchCommunityChannels,
+      deleteFeedItem,
+      restoreFeedItem,
+    };
+  });
+
+  return operations;
+}

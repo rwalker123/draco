@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import NextLink from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
@@ -24,6 +26,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
+import { buildPlayerStatisticsHref } from '@/utils/playerLinks';
 import {
   getPublicTeamRosterMembers,
   getTeamRosterMembers as apiGetTeamRosterMembers,
@@ -64,6 +67,16 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const { settings: accountSettings } = useAccountSettings(accountId);
   const apiClient = useApiClient();
   const { token } = useAuth();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentLocation = (() => {
+    if (!pathname) {
+      return null;
+    }
+    const query = searchParams?.toString() ?? '';
+    return query.length > 0 ? `${pathname}?${query}` : pathname;
+  })();
+  const playerLinkLabel = 'Team Roster';
   const isAuthenticated = Boolean(token);
   const hasPrivateAccess = isAuthenticated && canViewSensitiveDetails;
   const allowPhotoEdit = Boolean(canEditPhotos);
@@ -345,6 +358,13 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
               lastName: member.player.contact.lastName,
               photoUrl: member.player.contact.photoUrl,
             };
+            const playerHref = buildPlayerStatisticsHref({
+              accountId,
+              contactId: member.player.contact.id,
+              returnTo: currentLocation,
+              returnLabel: playerLinkLabel,
+            });
+            const displayName = getContactDisplayName(member.player.contact);
 
             return (
               <TableRow key={member.id} hover>
@@ -368,9 +388,27 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
                       }
                     />
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" fontWeight={600}>
-                        {getContactDisplayName(member.player.contact)}
-                      </Typography>
+                      {playerHref ? (
+                        <Typography
+                          component={NextLink}
+                          href={playerHref}
+                          prefetch={false}
+                          variant="body2"
+                          sx={{
+                            display: 'block',
+                            fontWeight: 600,
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline' },
+                          }}
+                        >
+                          {displayName}
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" fontWeight={600}>
+                          {displayName}
+                        </Typography>
+                      )}
                       <Typography variant="caption" color="text.secondary">
                         First Year: {member.player.firstYear || 'Not set'}
                       </Typography>
@@ -428,16 +466,40 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
               lastName,
               photoUrl: member.photoUrl ?? undefined,
             };
+            const playerHref = buildPlayerStatisticsHref({
+              accountId,
+              contactId: member.contactId,
+              returnTo: currentLocation,
+              returnLabel: playerLinkLabel,
+            });
+            const playerLabel = displayName || firstName;
 
             return (
               <TableRow key={member.id} hover>
-                <TableCell>{member.playerNumber ?? '-'}</TableCell>
+                <TableCell>{member.playerNumber || '-'}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <UserAvatar user={user} size={32} />
-                    <Typography variant="body2" fontWeight={600}>
-                      {displayName || firstName}
-                    </Typography>
+                    {playerHref ? (
+                      <Typography
+                        component={NextLink}
+                        href={playerHref}
+                        prefetch={false}
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          color: 'primary.main',
+                          textDecoration: 'none',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {playerLabel}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" fontWeight={600}>
+                        {playerLabel}
+                      </Typography>
+                    )}
                   </Box>
                 </TableCell>
                 {showGamesPlayed && <TableCell>{member.gamesPlayed ?? '-'}</TableCell>}

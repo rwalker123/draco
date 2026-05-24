@@ -71,6 +71,7 @@ import {
   ILiveScoringRepository,
   IIndividualLiveScoringRepository,
   IBaseballLiveScoringRepository,
+  IOauthRepository,
 } from './interfaces/index.js';
 import {
   PrismaUserRepository,
@@ -143,6 +144,7 @@ import {
   PrismaLiveScoringRepository,
   PrismaIndividualLiveScoringRepository,
   PrismaBaseballLiveScoringRepository,
+  PrismaOauthRepository,
 } from './implementations/index.js';
 
 import prisma from '../lib/prisma.js';
@@ -222,6 +224,7 @@ export class RepositoryFactory {
   private static liveScoringRepository: ILiveScoringRepository;
   private static individualLiveScoringRepository: IIndividualLiveScoringRepository;
   private static baseballLiveScoringRepository: IBaseballLiveScoringRepository;
+  private static oauthRepository: IOauthRepository;
 
   static getLeagueRepository(): ILeagueRepository {
     if (!this.leagueRepository) {
@@ -741,5 +744,12 @@ export class RepositoryFactory {
       this.baseballLiveScoringRepository = new PrismaBaseballLiveScoringRepository(prisma);
     }
     return this.baseballLiveScoringRepository;
+  }
+
+  static getOauthRepository(): IOauthRepository {
+    if (!this.oauthRepository) {
+      this.oauthRepository = new PrismaOauthRepository(prisma);
+    }
+    return this.oauthRepository;
   }
 }

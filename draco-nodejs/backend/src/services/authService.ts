@@ -1,6 +1,11 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { AuthenticationError, ValidationError, NotFoundError } from '../utils/customErrors.js';
+import {
+  AuthenticationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from '../utils/customErrors.js';
 import { IUserRepository, RepositoryFactory } from '../repositories/index.js';
 import { BaseContactType, RegisteredUserType, SignInCredentialsType } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
@@ -243,6 +248,68 @@ export class AuthService {
       token,
       userId: user.id,
       userName: user.username || '',
+    };
+  }
+
+  /**
+   * Change user login email (aspnetusers.username).
+   * Verifies current password, ensures the new email isn't already in use by
+   * another auth user, rotates the security stamp so existing JWTs are
+   * invalidated, then issues a fresh token containing the new username claim.
+   */
+  async changeLoginEmail(
+    userId: string,
+    currentPassword: string,
+    newLoginEmail: string,
+  ): Promise<RegisteredUserType> {
+    const user = await this.userRepository.findByUserId(userId);
+
+    if (!user) {
+      throw new AuthenticationError('User not found');
+    }
+
+    if (!user.passwordhash) {
+      throw new AuthenticationError('User has no password set');
+    }
+
+    const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.passwordhash);
+    if (!isCurrentPasswordValid) {
+      throw new AuthenticationError('Current password is incorrect');
+    }
+
+    const normalizedNewLoginEmail = newLoginEmail.trim().toLowerCase();
+    if (!normalizedNewLoginEmail) {
+      throw new ValidationError('New login email is required');
+    }
+
+    const currentUsername = (user.username || '').trim().toLowerCase();
+    if (normalizedNewLoginEmail === currentUsername) {
+      throw new ValidationError('New login email must be different from the current login email');
+    }
+
+    const existingUser = await this.userRepository.findByUsername(normalizedNewLoginEmail);
+    if (existingUser && existingUser.id !== user.id) {
+      throw new ConflictError('That email is already in use as a login');
+    }
+
+    const newSecurityStamp = this.generateSecurityStamp();
+
+    const updatedUser = await this.userRepository.updateUser(userId, {
+      username: normalizedNewLoginEmail,
+      securitystamp: newSecurityStamp,
+    });
+
+    const token = this.generateToken(
+      userId,
+      updatedUser.username || normalizedNewLoginEmail,
+      newSecurityStamp,
+      {},
+    );
+
+    return {
+      token,
+      userId: updatedUser.id,
+      userName: updatedUser.username || normalizedNewLoginEmail,
     };
   }
 

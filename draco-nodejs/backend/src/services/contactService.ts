@@ -11,12 +11,19 @@ import {
   ContactValidationType,
   NamedContactType,
   PublicContactSummaryType,
+  PublicPlayerProfileType,
+  RosterSeasonMembershipType,
 } from '@draco/shared-schemas';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
-import { ContactResponseFormatter, TeamResponseFormatter } from '../responseFormatters/index.js';
+import {
+  ContactResponseFormatter,
+  PublicPlayerProfileResponseFormatter,
+  TeamResponseFormatter,
+} from '../responseFormatters/index.js';
 import {
   RepositoryFactory,
   IContactRepository,
+  IUserRepository,
   dbRosterPlayer,
   ISeasonsRepository,
   ITeamRepository,
@@ -28,12 +35,14 @@ export class ContactService {
   private contactRepository: IContactRepository;
   private seasonRepository: ISeasonsRepository;
   private teamRepository: ITeamRepository;
+  private userRepository: IUserRepository;
   private storageService: StorageService;
 
   constructor() {
     this.contactRepository = RepositoryFactory.getContactRepository();
     this.seasonRepository = RepositoryFactory.getSeasonsRepository();
     this.teamRepository = RepositoryFactory.getTeamRepository();
+    this.userRepository = RepositoryFactory.getUserRepository();
     this.storageService = ServiceFactory.getStorageService();
   }
 
@@ -77,7 +86,8 @@ export class ContactService {
     if (!dbContact) {
       throw new NotFoundError('Contact not found');
     }
-    return ContactResponseFormatter.formatContactResponse(dbContact);
+    const loginEmail = await this.resolveLoginEmail(dbContact.userid);
+    return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }
 
   /**
@@ -90,7 +100,8 @@ export class ContactService {
     if (!dbContact) {
       throw new NotFoundError('Contact not found');
     }
-    return ContactResponseFormatter.formatContactResponse(dbContact);
+    const loginEmail = await this.resolveLoginEmail(dbContact.userid);
+    return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }
 
   /**
@@ -120,8 +131,9 @@ export class ContactService {
     }
 
     const updatedContact = await this.contactRepository.update(contactId, updatePayload);
+    const loginEmail = await this.resolveLoginEmail(updatedContact.userid);
 
-    return ContactResponseFormatter.formatContactResponse(updatedContact);
+    return ContactResponseFormatter.formatContactResponse(updatedContact, loginEmail);
   }
 
   /**
@@ -145,7 +157,15 @@ export class ContactService {
       userid: null,
     });
 
-    return ContactResponseFormatter.formatContactResponse(updatedContact);
+    return ContactResponseFormatter.formatContactResponse(updatedContact, null);
+  }
+
+  private async resolveLoginEmail(userid: string | null | undefined): Promise<string | null> {
+    if (!userid) {
+      return null;
+    }
+    const authUser = await this.userRepository.findByUserId(userid);
+    return authUser?.username ?? null;
   }
 
   /**
@@ -183,7 +203,6 @@ export class ContactService {
    * @returns BaseContactType
    */
   async updateContact(contact: CreateContactType, contactId: bigint): Promise<BaseContactType> {
-    // convert to db contact
     const dbCreateContact: Partial<contacts> = {
       firstname: contact.firstName,
       lastname: contact.lastName,
@@ -202,15 +221,19 @@ export class ContactService {
     };
 
     const dbContact = await this.contactRepository.update(contactId, dbCreateContact);
-    return ContactResponseFormatter.formatContactResponse(dbContact);
+    const loginEmail = await this.resolveLoginEmail(dbContact.userid);
+
+    return ContactResponseFormatter.formatContactResponse(dbContact, loginEmail);
   }
 
   /**
-   * Get contacts with their roles for a specific account and season
-   * Uses raw SQL for complex role context joins when includeRoles is true
-   * @param accountId - The account ID to get contacts for
-   * @param seasonId - The season ID for role context (optional, defaults to null for backward compatibility)
-   * @param options - Query options including includeRoles, searchQuery, and pagination
+   * Get contacts with their roles for a specific account and season.
+   * Uses raw SQL for complex role context joins when `includeRoles` is true.
+   *
+   * When `seasonId` is omitted or null and `includeRoles` is true, only
+   * account-level and global roles are resolved. Team and league roles are
+   * season-scoped and are excluded in this case (e.g., a freshly created
+   * account that has no current season yet).
    */
   async getContactsWithRoles(
     accountId: bigint,
@@ -223,12 +246,15 @@ export class ContactService {
       pagination.page = 1;
     }
 
-    // If roles are not requested, use the simple Prisma query
     if (!includeRoles) {
       return this.getContactsSimple(accountId, options);
     }
 
-    const rows = await this.contactRepository.searchContactsWithRoles(accountId, options, seasonId);
+    const rows = await this.contactRepository.searchContactsWithRoles(
+      accountId,
+      options,
+      seasonId ?? null,
+    );
 
     // Transform the flat rows into the desired structure
     return ContactResponseFormatter.formatPagedContactRolesResponse(
@@ -289,6 +315,39 @@ export class ContactService {
       pagination,
     );
     return response;
+  }
+
+  async getPublicPlayerProfile(
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<PublicPlayerProfileType> {
+    const dbContact = await this.contactRepository.findContactInAccount(contactId, accountId);
+    if (!dbContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    const currentSeason = await this.seasonRepository.findCurrentSeason(accountId);
+
+    const teams = currentSeason
+      ? await this.contactRepository.findCurrentSeasonTeamsForContact(
+          accountId,
+          contactId,
+          currentSeason.id,
+        )
+      : [];
+
+    const hasCareerStatistics = await this.contactRepository.hasCareerStatistics(
+      accountId,
+      contactId,
+    );
+
+    return PublicPlayerProfileResponseFormatter.format(
+      accountId,
+      dbContact,
+      currentSeason,
+      teams,
+      hasCareerStatistics,
+    );
   }
 
   async searchContactsPublic(
@@ -437,5 +496,22 @@ export class ContactService {
     );
 
     return getContactPhotoUrl(accountId.toString(), contactId.toString());
+  }
+
+  async getMyTeamSeasons(
+    userId: string,
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<RosterSeasonMembershipType[]> {
+    const rows = await this.contactRepository.findMyTeamSeasons({ userId, accountId, seasonId });
+    return rows.map((row) => ({
+      teamSeasonId: row.teamSeasonId.toString(),
+      teamName: row.teamName,
+      leagueSeasonId: row.leagueSeasonId.toString(),
+      leagueName: row.leagueName,
+      divisionSeasonId: row.divisionSeasonId !== null ? row.divisionSeasonId.toString() : null,
+      divisionName: row.divisionName,
+      jerseyNumber: row.jerseyNumber,
+    }));
   }
 }

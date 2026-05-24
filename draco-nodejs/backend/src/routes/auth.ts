@@ -8,7 +8,7 @@ import {
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
-import { SignInCredentialsSchema } from '@draco/shared-schemas';
+import { ChangeLoginEmailRequestSchema, SignInCredentialsSchema } from '@draco/shared-schemas';
 import { z } from 'zod';
 import { getStringParam } from '../utils/paramExtraction.js';
 
@@ -128,6 +128,26 @@ router.post(
     }
 
     const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+    res.json(result);
+  }),
+);
+
+/**
+ * POST /api/auth/change-login-email
+ * Change the authenticated user's login email (aspnetusers.username).
+ */
+router.post(
+  '/change-login-email',
+  passwordRateLimit,
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const { currentPassword, newLoginEmail } = ChangeLoginEmailRequestSchema.parse(req.body);
+
+    const result = await authService.changeLoginEmail(req.user.id, currentPassword, newLoginEmail);
     res.json(result);
   }),
 );

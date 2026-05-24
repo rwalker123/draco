@@ -30,12 +30,22 @@ export class ContactResponseFormatter {
     };
   }
 
-  static formatContactResponse(contact: dbBaseContact): BaseContactType {
+  static formatContactResponse(
+    contact: dbBaseContact,
+    loginEmail?: string | null,
+  ): BaseContactType {
     const namedContact = this.formatNamedContactResponse(contact);
+    const contactEmail = contact.email ?? undefined;
+    const resolvedLoginEmail =
+      loginEmail &&
+      (!contactEmail || loginEmail.trim().toLowerCase() !== contactEmail.trim().toLowerCase())
+        ? loginEmail
+        : undefined;
     const contactEntry: BaseContactType = {
       ...namedContact,
-      email: contact.email || undefined,
-      userId: contact.userid || undefined, // Roster contacts don't have userId
+      email: contactEmail,
+      userId: contact.userid || undefined,
+      loginEmail: resolvedLoginEmail,
       photoUrl: getContactPhotoUrl(contact.creatoraccountid.toString(), contact.id.toString()),
       contactDetails: {
         phone1: contact.phone1 || '',
@@ -46,7 +56,7 @@ export class ContactResponseFormatter {
         state: contact.state || '',
         zip: contact.zip || '',
         dateOfBirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-        firstYear: null, // Not available without roster join
+        firstYear: null,
       },
     };
     return contactEntry;
@@ -111,14 +121,24 @@ export class ContactResponseFormatter {
 
       // Get or create contact entry
       if (!contactMap.has(contactId)) {
+        const contactEmail = row.email ?? undefined;
+        const loginEmailRaw = row.login_email ?? undefined;
+        const loginEmail =
+          loginEmailRaw &&
+          (!contactEmail ||
+            loginEmailRaw.trim().toLowerCase() !== contactEmail.trim().toLowerCase())
+            ? loginEmailRaw
+            : undefined;
+
         const contactEntry: ContactType = {
           id: contactId,
           creatoraccountid: accountId.toString(),
           firstName: row.firstname,
           lastName: row.lastname,
           middleName: row.middlename || '',
-          email: row.email || undefined,
+          email: contactEmail,
           userId: row.userid || undefined,
+          loginEmail,
           photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
           contactroles: [],
         };

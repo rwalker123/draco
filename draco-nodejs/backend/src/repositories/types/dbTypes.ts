@@ -30,6 +30,35 @@ export interface dbPlayerTeamAssignment {
   teamName?: string | null;
 }
 
+export interface dbPlayerCurrentSeasonTeam {
+  teamSeasonId: bigint;
+  teamId: bigint;
+  seasonId: bigint;
+  leagueSeasonId: bigint;
+  leagueName: string;
+  teamName: string;
+}
+
+export interface dbContactSeasonTeamWaiver {
+  contactId: bigint;
+  teamSeasonId: bigint;
+  teamId: bigint;
+  leagueSeasonId: bigint;
+  leagueName: string;
+  teamName: string;
+  submittedWaiver: boolean;
+}
+
+export interface dbRosterSeasonMembership {
+  teamSeasonId: bigint;
+  teamName: string;
+  leagueSeasonId: bigint;
+  leagueName: string;
+  divisionSeasonId: bigint | null;
+  divisionName: string | null;
+  jerseyNumber: string | null;
+}
+
 export type dbWelcomeMessage = Prisma.accountwelcomeGetPayload<{
   select: {
     id: true;
@@ -1275,6 +1304,7 @@ export type dbContactWithRole = {
   lastname: string;
   email: string | null;
   userid: string | null;
+  login_email: string | null;
   role_context_name: string | null;
   contactrole_id: bigint | null;
   roleid: string | null;
@@ -2399,10 +2429,52 @@ export type dbRosterExportData = Prisma.rosterseasonGetPayload<{
             zip: true;
           };
         };
-        playerseasonaffiliationdues: {
+        rosterseason: {
           select: {
-            affiliationduespaid: true;
-            seasonid: true;
+            inactive: true;
+            submittedwaiver: true;
+            teamsseason: {
+              select: {
+                name: true;
+                leagueseason: {
+                  select: {
+                    seasonid: true;
+                    league: {
+                      select: {
+                        name: true;
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+export type dbWaiverExportData = Prisma.rosterseasonGetPayload<{
+  select: {
+    submittedwaiver: true;
+    teamsseason: {
+      select: {
+        name: true;
+      };
+    };
+    roster: {
+      select: {
+        contacts: {
+          select: {
+            firstname: true;
+            lastname: true;
+            middlename: true;
+            email: true;
+            streetaddress: true;
+            city: true;
+            state: true;
+            zip: true;
           };
         };
       };

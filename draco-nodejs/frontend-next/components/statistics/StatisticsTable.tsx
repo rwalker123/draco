@@ -63,6 +63,7 @@ interface StatisticsTableBaseProps<T> {
   onSort?: (field: string) => void;
   hideHeader?: boolean;
   maxHeight?: string | number;
+  fullWidth?: boolean;
 }
 
 export const StatisticsTableBase = <T extends Record<string, unknown>>({
@@ -76,6 +77,7 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
   onSort,
   hideHeader = false,
   maxHeight,
+  fullWidth = false,
 }: StatisticsTableBaseProps<T>) => {
   const activeField = sortField !== undefined ? String(sortField) : undefined;
   const dataVersion = `${String(activeField)}-${sortOrder}-${data.length}`;
@@ -122,7 +124,7 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
       <TableContainer
         component={Paper}
         sx={{
-          width: 'fit-content',
+          width: fullWidth ? '100%' : 'fit-content',
           maxWidth: '100%',
           ...(maxHeight
             ? {
@@ -142,7 +144,7 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
           size="small"
           stickyHeader={!hideHeader}
           sx={{
-            width: 'auto',
+            width: fullWidth ? '100%' : 'auto',
             tableLayout: 'auto',
             '& .MuiTableCell-root': {
               py: 0.75,
@@ -308,7 +310,7 @@ export type StatsRowBase = {
   playerId?: string | number | null;
   contactId?: string | number | null;
   playerName?: string | null;
-  playerNumber?: number | string | null;
+  playerNumber?: string | null;
   teamName?: string | null;
   teams?: string[] | null;
   ip?: number | null;

@@ -144,6 +144,56 @@ const resolveCategoryForType = (
   return categories[0]?.key ?? null;
 };
 
+const tupleKey = (selection: WidgetSelection): string =>
+  `${selection.leagueId}::${selection.statType}::${selection.categoryKey}`;
+
+const shuffle = <T,>(items: T[]): T[] => {
+  const result = items.slice();
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
+const enumerateCategoriesForLeague = (
+  leagueId: string,
+  battingCategories: LeaderCategoryType[],
+  pitchingCategories: LeaderCategoryType[],
+): WidgetSelection[] => {
+  const out: WidgetSelection[] = [];
+  for (const category of battingCategories) {
+    out.push({ leagueId, statType: 'batting', categoryKey: category.key });
+  }
+  for (const category of pitchingCategories) {
+    out.push({ leagueId, statType: 'pitching', categoryKey: category.key });
+  }
+  return out;
+};
+
+const buildFallbackOrder = (
+  initial: WidgetSelection,
+  leagues: LeagueOption[],
+  battingCategories: LeaderCategoryType[],
+  pitchingCategories: LeaderCategoryType[],
+): WidgetSelection[] => {
+  const initialKey = tupleKey(initial);
+  const sameLeagueRest = shuffle(
+    enumerateCategoriesForLeague(initial.leagueId, battingCategories, pitchingCategories).filter(
+      (tuple) => tupleKey(tuple) !== initialKey,
+    ),
+  );
+  const otherLeagues = shuffle(leagues.filter((league) => league.id !== initial.leagueId));
+  const otherTuples: WidgetSelection[] = [];
+  for (const league of otherLeagues) {
+    const tuples = shuffle(
+      enumerateCategoriesForLeague(league.id, battingCategories, pitchingCategories),
+    );
+    otherTuples.push(...tuples);
+  }
+  return [initial, ...sameLeagueRest, ...otherTuples];
+};
+
 const buildStatTypeTabSx = (muiTheme: Theme) => ({
   minWidth: 120,
   borderRadius: 2,
@@ -219,6 +269,8 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const leagueTabsRef = useRef<HTMLDivElement | null>(null);
   const statTabsRef = useRef<HTMLDivElement | null>(null);
   const categoryTabsRef = useRef<HTMLDivElement | null>(null);
+  const triedSelectionsRef = useRef<Set<string>>(new Set());
+  const fallbackOrderRef = useRef<WidgetSelection[] | null>(null);
 
   const {
     battingCategories,
@@ -229,6 +281,25 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   const isTeamDataFetchable = !isTeamVariant || Boolean(teamIdFilter);
 
   const initialSelectionQueuedRef = useRef(false);
+
+  const resolvedLeagueIdsKey = resolvedLeagues.map((league) => league.id).join(',');
+  const battingCategoryKeysKey = battingCategories.map((category) => category.key).join(',');
+  const pitchingCategoryKeysKey = pitchingCategories.map((category) => category.key).join(',');
+
+  useEffect(() => {
+    triedSelectionsRef.current = new Set();
+    fallbackOrderRef.current = null;
+    initialSelectionQueuedRef.current = false;
+    setHasAnyLeaders(null);
+    setModel(null);
+    setPendingSelection(null);
+  }, [
+    accountId,
+    seasonIdProp,
+    resolvedLeagueIdsKey,
+    battingCategoryKeysKey,
+    pitchingCategoryKeysKey,
+  ]);
 
   useEffect(() => {
     if (initialSelectionQueuedRef.current || model || pendingSelection || !isTeamDataFetchable) {
@@ -302,40 +373,74 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
 
     const controller = new AbortController();
     setLeadersErrorMessage(null);
-    const selection = pendingSelection;
+
+    const isInitialLoad = hasAnyLeaders === null;
+    const allowFallback = isInitialLoad && !isTeamVariant;
+
+    if (allowFallback && !fallbackOrderRef.current) {
+      fallbackOrderRef.current = buildFallbackOrder(
+        pendingSelection,
+        leaguesProp ?? [],
+        battingCategories,
+        pitchingCategories,
+      );
+    }
 
     const run = async () => {
+      let currentAttempt: WidgetSelection | null = pendingSelection;
+
       try {
-        const leaders = await fetchStatisticalLeaders(
-          accountId,
-          selection.leagueId,
-          selection.categoryKey,
-          {
-            divisionId: divisionId ?? undefined,
-            teamId: isTeamVariant ? (teamIdFilter ?? undefined) : undefined,
-            isHistorical,
-            includeAllGameTypes: undefined,
-            limit: leaderLimit,
-          },
-          { client: apiClient, signal: controller.signal },
-        );
+        while (currentAttempt) {
+          const attempt = currentAttempt;
+          const leaders = await fetchStatisticalLeaders(
+            accountId,
+            attempt.leagueId,
+            attempt.categoryKey,
+            {
+              divisionId: divisionId ?? undefined,
+              teamId: isTeamVariant ? (teamIdFilter ?? undefined) : undefined,
+              isHistorical,
+              includeAllGameTypes: undefined,
+              limit: leaderLimit,
+            },
+            { client: apiClient, signal: controller.signal },
+          );
 
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        setModel({ selection, leaders });
-        setCategoryPreferences((previous) => ({
-          ...previous,
-          [selection.statType]: selection.categoryKey,
-        }));
-        if (leaders.length > 0) {
-          if (!hasAnyLeaders) {
-            setHasAnyLeaders(true);
+          if (controller.signal.aborted) {
+            return;
           }
-        } else if (hasAnyLeaders === null) {
-          setHasAnyLeaders(false);
+
+          if (leaders.length > 0) {
+            setModel({ selection: attempt, leaders });
+            setCategoryPreferences((previous) => ({
+              ...previous,
+              [attempt.statType]: attempt.categoryKey,
+            }));
+            if (!hasAnyLeaders) {
+              setHasAnyLeaders(true);
+            }
+            return;
+          }
+
+          if (!allowFallback) {
+            setModel({ selection: attempt, leaders });
+            setCategoryPreferences((previous) => ({
+              ...previous,
+              [attempt.statType]: attempt.categoryKey,
+            }));
+            if (hasAnyLeaders === null) {
+              setHasAnyLeaders(false);
+            }
+            return;
+          }
+
+          triedSelectionsRef.current.add(tupleKey(attempt));
+          const order = fallbackOrderRef.current ?? [];
+          currentAttempt =
+            order.find((tuple) => !triedSelectionsRef.current.has(tupleKey(tuple))) ?? null;
         }
+
+        setHasAnyLeaders(false);
       } catch (err) {
         if (controller.signal.aborted) {
           return;
@@ -358,12 +463,15 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
   }, [
     accountId,
     apiClient,
+    battingCategories,
     divisionId,
     hasAnyLeaders,
     isHistorical,
     isTeamVariant,
     leaderLimit,
+    leaguesProp,
     pendingSelection,
+    pitchingCategories,
     teamIdFilter,
   ]);
 
