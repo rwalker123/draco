@@ -69,6 +69,18 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: () => mockAuthValue,
 }));
 
+let mockAccountValue: { currentAccount: { id: string; name: string } | null } = {
+  currentAccount: null,
+};
+
+vi.mock('@/context/AccountContext', () => ({
+  useAccount: () => ({
+    currentAccount: mockAccountValue.currentAccount,
+    loading: false,
+    initialized: true,
+  }),
+}));
+
 const theme = createTheme();
 
 const renderPage = () =>
@@ -94,6 +106,7 @@ describe('OAuthAuthorizePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthValue = makeAuthValue();
+    mockAccountValue = { currentAccount: null };
   });
 
   afterEach(() => {
@@ -155,7 +168,7 @@ describe('OAuthAuthorizePage', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('My MCP Client wants to connect to your Draco account'),
+          screen.getByText('My MCP Client wants to connect to your ezRecSports account'),
         ).toBeInTheDocument();
       });
 
@@ -221,7 +234,57 @@ describe('OAuthAuthorizePage', () => {
 
       expect(screen.getByText('Unknown client identifier')).toBeInTheDocument();
       expect(screen.getByText('invalid_client')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Return to Draco' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Return to ezRecSports' })).toBeInTheDocument();
+    });
+  });
+
+  describe('account brand name', () => {
+    it('renders the current account name in the consent heading and error-state link', async () => {
+      mockAccountValue = { currentAccount: { id: 'acct-7', name: 'Northside Little League' } };
+      mockFetch.mockResolvedValue(makeJsonResponse(makeValidateSuccessBody()));
+
+      renderPage();
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            'My MCP Client wants to connect to your Northside Little League account',
+          ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('renders the current account name in the error-state Return link', async () => {
+      mockAccountValue = { currentAccount: { id: 'acct-7', name: 'Northside Little League' } };
+      mockFetch.mockResolvedValue(
+        makeJsonResponse(
+          { error: 'invalid_client', error_description: 'Unknown client identifier' },
+          400,
+        ),
+      );
+
+      renderPage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Authorization request failed')).toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByRole('link', { name: 'Return to Northside Little League' }),
+      ).toBeInTheDocument();
+    });
+
+    it('falls back to ezRecSports when the account name is whitespace', async () => {
+      mockAccountValue = { currentAccount: { id: 'acct-7', name: '   ' } };
+      mockFetch.mockResolvedValue(makeJsonResponse(makeValidateSuccessBody()));
+
+      renderPage();
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('My MCP Client wants to connect to your ezRecSports account'),
+        ).toBeInTheDocument();
+      });
     });
   });
 
