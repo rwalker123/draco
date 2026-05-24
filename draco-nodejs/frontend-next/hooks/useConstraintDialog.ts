@@ -34,7 +34,7 @@ export const useConstraintDialog = <TEntity extends { id: string }, TUpsert>(
   const openEdit = (entity: TEntity) => {
     setEditing(entity);
     setMode('edit');
-    setDialogKey(`edit_${entity.id}`);
+    setDialogKey(`edit_${entity.id}_${Date.now()}`);
     setOpen(true);
   };
 

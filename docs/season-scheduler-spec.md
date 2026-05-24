@@ -138,9 +138,10 @@ The scheduler should not gain new features until the existing surface is decompo
 
 ### 2.1 Extract shared utilities
 
-- **`utils/daysOfWeekUtils.ts`** — `DAYS`, `maskToSelectedBits`, `selectedBitsToMask`, `formatDaysOfWeekMask`. Replace the duplicate copies in `SeasonSchedulerWidget.tsx` and `SchedulerFieldAvailabilityRuleDialog.tsx`.
-- **`hooks/useEntityNameMaps.ts`** — accepts fields/teams/umpires/games, returns memoization-stable lookup maps. Replace ad-hoc maps inside the widget.
-- **`hooks/useApiOperation.ts`** — a generic `(operation) => { execute, loading, error, clearError }` factory. Refactor `useSeasonSchedulerOperations.ts` to use it; target reduction from 519 lines to ~100.
+- **`utils/daysOfWeekUtils.ts`** — `DAYS`, `maskToSelectedBits`, `selectedBitsToMask`, `formatDaysOfWeekMask`. Replaces the duplicate copies that previously lived in `SeasonSchedulerWidget.tsx` and `SchedulerFieldAvailabilityRuleDialog.tsx`.
+- **`utils/schedulerTimeFormat.ts`** — `formatLocalHhmmTo12Hour`, `formatLocalTimeRange` (per-zone `Intl.DateTimeFormat` cache so per-row rendering stays cheap).
+- **`hooks/useEntityNameMaps.ts`** — builds lookup maps for fields, teams, umpires, and a game-summary label from the supplied entity arrays (fresh `Map` instances per call; consumers don't rely on stable identities — React Compiler handles consumer-side memoization).
+- **`hooks/useSeasonSchedulerOperations.ts`** — single shared loading/error state with an in-flight counter; auto-binds every scheduler service method through internal `list`/`mutate` helpers (~160 lines, down from 519). _Note: an earlier draft introduced a generic `useApiOperation` factory, but it didn't fit the multi-method shared-state pattern and was removed._
 
 ### 2.2 Decompose `SeasonSchedulerWidget`
 
