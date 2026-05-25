@@ -94,6 +94,12 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   onCloseSpecPreview,
 }) => {
   const [expandedGameIds, setExpandedGameIds] = useState<Set<string>>(new Set());
+  const [trackedRunId, setTrackedRunId] = useState<string | undefined>(proposal?.runId);
+
+  if (proposal?.runId !== trackedRunId) {
+    setTrackedRunId(proposal?.runId);
+    setExpandedGameIds(new Set());
+  }
 
   const assignments = proposal?.assignments ?? [];
 
