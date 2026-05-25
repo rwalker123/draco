@@ -64,10 +64,16 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
   else if (umpireNames.length > 1) secondaryParts.push(`Umpires: ${umpireNames.join(', ')}`);
   else secondaryParts.push('Umpire: Unassigned');
 
+  const detailsId = `proposal-assignment-details-${assignment.gameId}`;
+
   return (
     <Box sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
-        <Checkbox checked={selected} onChange={onToggleSelection} />
+        <Checkbox
+          checked={selected}
+          onChange={onToggleSelection}
+          inputProps={{ 'aria-label': `Select assignment: ${title}` }}
+        />
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
             {title}
@@ -78,14 +84,16 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
         </Box>
         <IconButton
           size="small"
-          aria-label={expanded ? 'Collapse details' : 'Expand details'}
+          aria-label={expanded ? `Collapse details for ${title}` : `Expand details for ${title}`}
+          aria-expanded={expanded}
+          aria-controls={detailsId}
           onClick={onToggleExpanded}
         >
           {expanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
         </IconButton>
       </Box>
 
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
+      <Collapse in={expanded} timeout="auto" unmountOnExit id={detailsId}>
         <Box sx={{ px: 2, pb: 1 }}>
           <Typography variant="caption" color="text.secondary" display="block">
             Game ID: {assignment.gameId}

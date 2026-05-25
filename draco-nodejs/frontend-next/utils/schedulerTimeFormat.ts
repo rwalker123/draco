@@ -50,11 +50,17 @@ export const formatLocalTimeRange = (
   }
   try {
     const { dateLabel, time, tzName } = getZoneFormatters(timeZone);
-    const dateLabelText = dateLabel.format(start);
+    const startDateLabel = dateLabel.format(start);
+    const endDateLabel = dateLabel.format(end);
     const startTime = time.format(start);
     const endTime = time.format(end);
     const tzLabel = tzName.formatToParts(start).find((p) => p.type === 'timeZoneName')?.value;
-    return `${dateLabelText} • ${startTime} – ${endTime}${tzLabel ? ` (${tzLabel})` : ''}`;
+    const tzSuffix = tzLabel ? ` (${tzLabel})` : '';
+    const range =
+      startDateLabel === endDateLabel
+        ? `${startDateLabel} • ${startTime} – ${endTime}`
+        : `${startDateLabel} ${startTime} – ${endDateLabel} ${endTime}`;
+    return `${range}${tzSuffix}`;
   } catch {
     return `${start.toISOString()}–${end.toISOString()}`;
   }
