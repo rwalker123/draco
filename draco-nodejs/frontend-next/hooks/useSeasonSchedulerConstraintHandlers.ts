@@ -1,0 +1,383 @@
+'use client';
+
+import { useRef, useState, useEffect } from 'react';
+import type {
+  SchedulerFieldAvailabilityRule,
+  SchedulerFieldAvailabilityRuleUpsert,
+  SchedulerFieldExclusionDate,
+  SchedulerFieldExclusionDateUpsert,
+  SchedulerSeasonExclusion,
+  SchedulerSeasonExclusionUpsert,
+  SchedulerTeamExclusion,
+  SchedulerTeamExclusionUpsert,
+  SchedulerUmpireExclusion,
+  SchedulerUmpireExclusionUpsert,
+} from '@draco/shared-schemas';
+
+type SignalFn<T> = (signal?: AbortSignal) => Promise<T>;
+
+interface ConstraintOps {
+  seasonId: string | null;
+  canEdit: boolean;
+  listFieldAvailabilityRules: SignalFn<SchedulerFieldAvailabilityRule[]>;
+  createFieldAvailabilityRule: (
+    input: SchedulerFieldAvailabilityRuleUpsert,
+  ) => Promise<SchedulerFieldAvailabilityRule>;
+  updateFieldAvailabilityRule: (
+    id: string,
+    input: SchedulerFieldAvailabilityRuleUpsert,
+  ) => Promise<SchedulerFieldAvailabilityRule>;
+  deleteFieldAvailabilityRule: (id: string) => Promise<void>;
+  listFieldExclusionDates: SignalFn<SchedulerFieldExclusionDate[]>;
+  createFieldExclusionDate: (
+    input: SchedulerFieldExclusionDateUpsert,
+  ) => Promise<SchedulerFieldExclusionDate>;
+  updateFieldExclusionDate: (
+    id: string,
+    input: SchedulerFieldExclusionDateUpsert,
+  ) => Promise<SchedulerFieldExclusionDate>;
+  deleteFieldExclusionDate: (id: string) => Promise<void>;
+  listSeasonExclusions: SignalFn<SchedulerSeasonExclusion[]>;
+  createSeasonExclusion: (
+    input: SchedulerSeasonExclusionUpsert,
+  ) => Promise<SchedulerSeasonExclusion>;
+  updateSeasonExclusion: (
+    id: string,
+    input: SchedulerSeasonExclusionUpsert,
+  ) => Promise<SchedulerSeasonExclusion>;
+  deleteSeasonExclusion: (id: string) => Promise<void>;
+  listTeamExclusions: SignalFn<SchedulerTeamExclusion[]>;
+  createTeamExclusion: (input: SchedulerTeamExclusionUpsert) => Promise<SchedulerTeamExclusion>;
+  updateTeamExclusion: (
+    id: string,
+    input: SchedulerTeamExclusionUpsert,
+  ) => Promise<SchedulerTeamExclusion>;
+  deleteTeamExclusion: (id: string) => Promise<void>;
+  listUmpireExclusions: SignalFn<SchedulerUmpireExclusion[]>;
+  createUmpireExclusion: (
+    input: SchedulerUmpireExclusionUpsert,
+  ) => Promise<SchedulerUmpireExclusion>;
+  updateUmpireExclusion: (
+    id: string,
+    input: SchedulerUmpireExclusionUpsert,
+  ) => Promise<SchedulerUmpireExclusion>;
+  deleteUmpireExclusion: (id: string) => Promise<void>;
+  setSuccess: (message: string | null) => void;
+  setError: (message: string | null) => void;
+}
+
+export const useSeasonSchedulerConstraintHandlers = ({
+  seasonId,
+  canEdit,
+  listFieldAvailabilityRules,
+  createFieldAvailabilityRule,
+  updateFieldAvailabilityRule,
+  deleteFieldAvailabilityRule,
+  listFieldExclusionDates,
+  createFieldExclusionDate,
+  updateFieldExclusionDate,
+  deleteFieldExclusionDate,
+  listSeasonExclusions,
+  createSeasonExclusion,
+  updateSeasonExclusion,
+  deleteSeasonExclusion,
+  listTeamExclusions,
+  createTeamExclusion,
+  updateTeamExclusion,
+  deleteTeamExclusion,
+  listUmpireExclusions,
+  createUmpireExclusion,
+  updateUmpireExclusion,
+  deleteUmpireExclusion,
+  setSuccess,
+  setError,
+}: ConstraintOps) => {
+  const listRulesRef = useRef(listFieldAvailabilityRules);
+  const listExclusionsRef = useRef(listFieldExclusionDates);
+  const listSeasonExclusionsRef = useRef(listSeasonExclusions);
+  const listTeamExclusionsRef = useRef(listTeamExclusions);
+  const listUmpireExclusionsRef = useRef(listUmpireExclusions);
+
+  useEffect(() => {
+    listRulesRef.current = listFieldAvailabilityRules;
+    listExclusionsRef.current = listFieldExclusionDates;
+    listSeasonExclusionsRef.current = listSeasonExclusions;
+    listTeamExclusionsRef.current = listTeamExclusions;
+    listUmpireExclusionsRef.current = listUmpireExclusions;
+  }, [
+    listFieldAvailabilityRules,
+    listFieldExclusionDates,
+    listSeasonExclusions,
+    listTeamExclusions,
+    listUmpireExclusions,
+  ]);
+
+  const [rules, setRules] = useState<SchedulerFieldAvailabilityRule[]>([]);
+  const [exclusions, setExclusions] = useState<SchedulerFieldExclusionDate[]>([]);
+  const [seasonExclusions, setSeasonExclusions] = useState<SchedulerSeasonExclusion[]>([]);
+  const [teamExclusions, setTeamExclusions] = useState<SchedulerTeamExclusion[]>([]);
+  const [umpireExclusions, setUmpireExclusions] = useState<SchedulerUmpireExclusion[]>([]);
+
+  useEffect(() => {
+    if (!canEdit || !seasonId) return;
+
+    const controller = new AbortController();
+
+    const doLoad = async () => {
+      const [nextRules, nextExclusions, nextSeasonExcl, nextTeamExcl, nextUmpireExcl] =
+        await Promise.all([
+          listRulesRef.current(controller.signal),
+          listExclusionsRef.current(controller.signal),
+          listSeasonExclusionsRef.current(controller.signal),
+          listTeamExclusionsRef.current(controller.signal),
+          listUmpireExclusionsRef.current(controller.signal),
+        ]);
+
+      if (controller.signal.aborted) return;
+      setRules(nextRules);
+      setExclusions(nextExclusions);
+      setSeasonExclusions(nextSeasonExcl);
+      setTeamExclusions(nextTeamExcl);
+      setUmpireExclusions(nextUmpireExcl);
+    };
+
+    doLoad().catch((err: unknown) => {
+      if (!controller.signal.aborted)
+        setError(err instanceof Error ? err.message : 'Failed to load constraint data');
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }, [canEdit, seasonId, setError]);
+
+  const reloadRules = async () => {
+    if (!seasonId) return;
+    setRules(await listRulesRef.current());
+  };
+
+  const reloadExclusions = async () => {
+    if (!seasonId) return;
+    setExclusions(await listExclusionsRef.current());
+  };
+
+  const reloadSeasonExclusions = async () => {
+    if (!seasonId) return;
+    setSeasonExclusions(await listSeasonExclusionsRef.current());
+  };
+
+  const reloadTeamExclusions = async () => {
+    if (!seasonId) return;
+    setTeamExclusions(await listTeamExclusionsRef.current());
+  };
+
+  const reloadUmpireExclusions = async () => {
+    if (!seasonId) return;
+    setUmpireExclusions(await listUmpireExclusionsRef.current());
+  };
+
+  const handleCreateRule = async (input: SchedulerFieldAvailabilityRuleUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await createFieldAvailabilityRule(input);
+      setSuccess('Rule created');
+      await reloadRules();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save rule');
+      throw err;
+    }
+  };
+
+  const handleEditRule = async (ruleId: string, input: SchedulerFieldAvailabilityRuleUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await updateFieldAvailabilityRule(ruleId, input);
+      setSuccess('Rule updated');
+      await reloadRules();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save rule');
+      throw err;
+    }
+  };
+
+  const handleDeleteRule = async (rule: SchedulerFieldAvailabilityRule) => {
+    try {
+      await deleteFieldAvailabilityRule(rule.id);
+      await reloadRules();
+      setSuccess('Rule deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete rule');
+    }
+  };
+
+  const handleCreateExclusion = async (input: SchedulerFieldExclusionDateUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await createFieldExclusionDate(input);
+      setSuccess('Exclusion created');
+      await reloadExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save exclusion');
+      throw err;
+    }
+  };
+
+  const handleEditExclusion = async (
+    exclusionId: string,
+    input: SchedulerFieldExclusionDateUpsert,
+  ) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await updateFieldExclusionDate(exclusionId, input);
+      setSuccess('Exclusion updated');
+      await reloadExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteExclusion = async (exclusion: SchedulerFieldExclusionDate) => {
+    try {
+      await deleteFieldExclusionDate(exclusion.id);
+      await reloadExclusions();
+      setSuccess('Exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete exclusion');
+    }
+  };
+
+  const handleCreateSeasonExclusion = async (input: SchedulerSeasonExclusionUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await createSeasonExclusion(input);
+      setSuccess('Season exclusion created');
+      await reloadSeasonExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save season exclusion');
+      throw err;
+    }
+  };
+
+  const handleEditSeasonExclusion = async (
+    exclusionId: string,
+    input: SchedulerSeasonExclusionUpsert,
+  ) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await updateSeasonExclusion(exclusionId, input);
+      setSuccess('Season exclusion updated');
+      await reloadSeasonExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save season exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteSeasonExclusion = async (exclusion: SchedulerSeasonExclusion) => {
+    try {
+      await deleteSeasonExclusion(exclusion.id);
+      await reloadSeasonExclusions();
+      setSuccess('Season exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete season exclusion');
+    }
+  };
+
+  const handleCreateTeamExclusion = async (input: SchedulerTeamExclusionUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await createTeamExclusion(input);
+      setSuccess('Team exclusion created');
+      await reloadTeamExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save team exclusion');
+      throw err;
+    }
+  };
+
+  const handleEditTeamExclusion = async (
+    exclusionId: string,
+    input: SchedulerTeamExclusionUpsert,
+  ) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await updateTeamExclusion(exclusionId, input);
+      setSuccess('Team exclusion updated');
+      await reloadTeamExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save team exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteTeamExclusion = async (exclusion: SchedulerTeamExclusion) => {
+    try {
+      await deleteTeamExclusion(exclusion.id);
+      await reloadTeamExclusions();
+      setSuccess('Team exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete team exclusion');
+    }
+  };
+
+  const handleCreateUmpireExclusion = async (input: SchedulerUmpireExclusionUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await createUmpireExclusion(input);
+      setSuccess('Umpire exclusion created');
+      await reloadUmpireExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save umpire exclusion');
+      throw err;
+    }
+  };
+
+  const handleEditUmpireExclusion = async (
+    exclusionId: string,
+    input: SchedulerUmpireExclusionUpsert,
+  ) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await updateUmpireExclusion(exclusionId, input);
+      setSuccess('Umpire exclusion updated');
+      await reloadUmpireExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save umpire exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteUmpireExclusion = async (exclusion: SchedulerUmpireExclusion) => {
+    try {
+      await deleteUmpireExclusion(exclusion.id);
+      await reloadUmpireExclusions();
+      setSuccess('Umpire exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete umpire exclusion');
+    }
+  };
+
+  return {
+    rules,
+    exclusions,
+    seasonExclusions,
+    teamExclusions,
+    umpireExclusions,
+    handleCreateRule,
+    handleEditRule,
+    handleDeleteRule,
+    handleCreateExclusion,
+    handleEditExclusion,
+    handleDeleteExclusion,
+    handleCreateSeasonExclusion,
+    handleEditSeasonExclusion,
+    handleDeleteSeasonExclusion,
+    handleCreateTeamExclusion,
+    handleEditTeamExclusion,
+    handleDeleteTeamExclusion,
+    handleCreateUmpireExclusion,
+    handleEditUmpireExclusion,
+    handleDeleteUmpireExclusion,
+  };
+};

@@ -1,502 +1,164 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type {
-  SchedulerApplyResult,
-  SchedulerFieldAvailabilityRule,
   SchedulerFieldAvailabilityRuleUpsert,
-  SchedulerFieldExclusionDate,
   SchedulerFieldExclusionDateUpsert,
-  SchedulerProblemSpecPreview,
-  SchedulerSeasonExclusion,
-  SchedulerSeasonExclusionUpsert,
-  SchedulerSeasonWindowConfig,
-  SchedulerSeasonWindowConfigUpsert,
   SchedulerSeasonApplyRequest,
+  SchedulerSeasonExclusionUpsert,
   SchedulerSeasonSolveRequest,
-  SchedulerSolveResult,
-  SchedulerTeamExclusion,
+  SchedulerSeasonWindowConfigUpsert,
   SchedulerTeamExclusionUpsert,
-  SchedulerUmpireExclusion,
   SchedulerUmpireExclusionUpsert,
 } from '@draco/shared-schemas';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
 import { SchedulerService } from '../services/schedulerService';
 
+const isAbortError = (err: unknown, signal?: AbortSignal): boolean => {
+  if (signal?.aborted) return true;
+  if (
+    typeof DOMException !== 'undefined' &&
+    err instanceof DOMException &&
+    err.name === 'AbortError'
+  ) {
+    return true;
+  }
+  if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) {
+    return true;
+  }
+  return false;
+};
+
 export const useSeasonSchedulerOperations = (accountId: string, seasonId: string | null) => {
   const { token } = useAuth();
   const apiClient = useApiClient();
-  const service = new SchedulerService(token, apiClient);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const requireSeasonId = (): string => {
-    if (!seasonId) {
-      throw new Error('Missing current season. Please reload and try again.');
-    }
-    return seasonId;
-  };
+  const depsRef = useRef({ token, apiClient, accountId, seasonId });
+  depsRef.current = { token, apiClient, accountId, seasonId };
 
-  const listFieldAvailabilityRules = async (
-    signal?: AbortSignal,
-  ): Promise<SchedulerFieldAvailabilityRule[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.listFieldAvailabilityRules(accountId, resolvedSeasonId, signal);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to load field availability rules';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const inFlightRef = useRef(0);
 
-  const getProblemSpecPreview = async (): Promise<SchedulerProblemSpecPreview> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.getProblemSpecPreview(accountId, resolvedSeasonId);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to load scheduler problem spec preview';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [operations] = useState(() => {
+    const getContext = () => {
+      const { seasonId: sid, token: t, apiClient: c, accountId: aid } = depsRef.current;
+      if (!sid) throw new Error('Missing current season. Please reload and try again.');
+      return { service: new SchedulerService(t, c), accountId: aid, seasonId: sid };
+    };
 
-  const getSeasonWindowConfig = async (
-    signal?: AbortSignal,
-  ): Promise<SchedulerSeasonWindowConfig | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.getSeasonWindowConfig(accountId, resolvedSeasonId, signal);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to load scheduler season window config';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const run = async <T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> => {
+      inFlightRef.current += 1;
+      setLoading(true);
+      setError(null);
+      try {
+        return await fn();
+      } catch (err) {
+        if (isAbortError(err, signal)) throw err;
+        const normalized = err instanceof Error ? err : new Error(String(err));
+        setError(normalized.message);
+        throw normalized;
+      } finally {
+        inFlightRef.current -= 1;
+        if (inFlightRef.current <= 0) {
+          inFlightRef.current = 0;
+          setLoading(false);
+        }
+      }
+    };
 
-  const upsertSeasonWindowConfig = async (
-    input: SchedulerSeasonWindowConfigUpsert,
-  ): Promise<SchedulerSeasonWindowConfig> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.upsertSeasonWindowConfig(accountId, resolvedSeasonId, input);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to save scheduler season window config';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const list =
+      <T>(call: (s: SchedulerService, a: string, i: string, signal?: AbortSignal) => Promise<T>) =>
+      (signal?: AbortSignal): Promise<T> =>
+        run(() => {
+          const { service, accountId, seasonId } = getContext();
+          return call(service, accountId, seasonId, signal);
+        }, signal);
 
-  const listSeasonExclusions = async (
-    signal?: AbortSignal,
-  ): Promise<SchedulerSeasonExclusion[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.listSeasonExclusions(accountId, resolvedSeasonId, signal);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load season exclusions';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const mutate =
+      <TArgs extends unknown[], TResult>(
+        call: (s: SchedulerService, a: string, i: string, ...args: TArgs) => Promise<TResult>,
+      ) =>
+      (...args: TArgs): Promise<TResult> =>
+        run(() => {
+          const { service, accountId, seasonId } = getContext();
+          return call(service, accountId, seasonId, ...args);
+        });
 
-  const createSeasonExclusion = async (
-    input: SchedulerSeasonExclusionUpsert,
-  ): Promise<SchedulerSeasonExclusion> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.createSeasonExclusion(accountId, resolvedSeasonId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create season exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return {
+      getProblemSpecPreview: mutate((s, a, i) => s.getProblemSpecPreview(a, i)),
+      getSeasonWindowConfig: list((s, a, i, signal) => s.getSeasonWindowConfig(a, i, signal)),
+      upsertSeasonWindowConfig: mutate((s, a, i, input: SchedulerSeasonWindowConfigUpsert) =>
+        s.upsertSeasonWindowConfig(a, i, input),
+      ),
+      listFieldAvailabilityRules: list((s, a, i, signal) =>
+        s.listFieldAvailabilityRules(a, i, signal),
+      ),
+      createFieldAvailabilityRule: mutate((s, a, i, input: SchedulerFieldAvailabilityRuleUpsert) =>
+        s.createFieldAvailabilityRule(a, i, input),
+      ),
+      updateFieldAvailabilityRule: mutate(
+        (s, a, i, ruleId: string, input: SchedulerFieldAvailabilityRuleUpsert) =>
+          s.updateFieldAvailabilityRule(a, i, ruleId, input),
+      ),
+      deleteFieldAvailabilityRule: mutate((s, a, i, ruleId: string) =>
+        s.deleteFieldAvailabilityRule(a, i, ruleId),
+      ),
+      listFieldExclusionDates: list((s, a, i, signal) => s.listFieldExclusionDates(a, i, signal)),
+      createFieldExclusionDate: mutate((s, a, i, input: SchedulerFieldExclusionDateUpsert) =>
+        s.createFieldExclusionDate(a, i, input),
+      ),
+      updateFieldExclusionDate: mutate(
+        (s, a, i, exclusionId: string, input: SchedulerFieldExclusionDateUpsert) =>
+          s.updateFieldExclusionDate(a, i, exclusionId, input),
+      ),
+      deleteFieldExclusionDate: mutate((s, a, i, exclusionId: string) =>
+        s.deleteFieldExclusionDate(a, i, exclusionId),
+      ),
+      listSeasonExclusions: list((s, a, i, signal) => s.listSeasonExclusions(a, i, signal)),
+      createSeasonExclusion: mutate((s, a, i, input: SchedulerSeasonExclusionUpsert) =>
+        s.createSeasonExclusion(a, i, input),
+      ),
+      updateSeasonExclusion: mutate(
+        (s, a, i, exclusionId: string, input: SchedulerSeasonExclusionUpsert) =>
+          s.updateSeasonExclusion(a, i, exclusionId, input),
+      ),
+      deleteSeasonExclusion: mutate((s, a, i, exclusionId: string) =>
+        s.deleteSeasonExclusion(a, i, exclusionId),
+      ),
+      listTeamExclusions: list((s, a, i, signal) => s.listTeamExclusions(a, i, signal)),
+      createTeamExclusion: mutate((s, a, i, input: SchedulerTeamExclusionUpsert) =>
+        s.createTeamExclusion(a, i, input),
+      ),
+      updateTeamExclusion: mutate(
+        (s, a, i, exclusionId: string, input: SchedulerTeamExclusionUpsert) =>
+          s.updateTeamExclusion(a, i, exclusionId, input),
+      ),
+      deleteTeamExclusion: mutate((s, a, i, exclusionId: string) =>
+        s.deleteTeamExclusion(a, i, exclusionId),
+      ),
+      listUmpireExclusions: list((s, a, i, signal) => s.listUmpireExclusions(a, i, signal)),
+      createUmpireExclusion: mutate((s, a, i, input: SchedulerUmpireExclusionUpsert) =>
+        s.createUmpireExclusion(a, i, input),
+      ),
+      updateUmpireExclusion: mutate(
+        (s, a, i, exclusionId: string, input: SchedulerUmpireExclusionUpsert) =>
+          s.updateUmpireExclusion(a, i, exclusionId, input),
+      ),
+      deleteUmpireExclusion: mutate((s, a, i, exclusionId: string) =>
+        s.deleteUmpireExclusion(a, i, exclusionId),
+      ),
+      solveSeason: mutate(
+        (s, a, i, request: SchedulerSeasonSolveRequest, options?: { idempotencyKey?: string }) =>
+          s.solveSeason(a, i, request, options),
+      ),
+      applySeason: mutate((s, a, i, request: SchedulerSeasonApplyRequest) =>
+        s.applySeason(a, i, request),
+      ),
+      clearError: () => setError(null),
+    };
+  });
 
-  const updateSeasonExclusion = async (
-    exclusionId: string,
-    input: SchedulerSeasonExclusionUpsert,
-  ): Promise<SchedulerSeasonExclusion> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.updateSeasonExclusion(accountId, resolvedSeasonId, exclusionId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update season exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteSeasonExclusion = async (exclusionId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      await service.deleteSeasonExclusion(accountId, resolvedSeasonId, exclusionId);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete season exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const listTeamExclusions = async (signal?: AbortSignal): Promise<SchedulerTeamExclusion[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.listTeamExclusions(accountId, resolvedSeasonId, signal);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load team exclusions';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTeamExclusion = async (
-    input: SchedulerTeamExclusionUpsert,
-  ): Promise<SchedulerTeamExclusion> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.createTeamExclusion(accountId, resolvedSeasonId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create team exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateTeamExclusion = async (
-    exclusionId: string,
-    input: SchedulerTeamExclusionUpsert,
-  ): Promise<SchedulerTeamExclusion> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.updateTeamExclusion(accountId, resolvedSeasonId, exclusionId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update team exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteTeamExclusion = async (exclusionId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      await service.deleteTeamExclusion(accountId, resolvedSeasonId, exclusionId);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete team exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const listUmpireExclusions = async (
-    signal?: AbortSignal,
-  ): Promise<SchedulerUmpireExclusion[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.listUmpireExclusions(accountId, resolvedSeasonId, signal);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load umpire exclusions';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createUmpireExclusion = async (
-    input: SchedulerUmpireExclusionUpsert,
-  ): Promise<SchedulerUmpireExclusion> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.createUmpireExclusion(accountId, resolvedSeasonId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create umpire exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUmpireExclusion = async (
-    exclusionId: string,
-    input: SchedulerUmpireExclusionUpsert,
-  ): Promise<SchedulerUmpireExclusion> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.updateUmpireExclusion(accountId, resolvedSeasonId, exclusionId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update umpire exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteUmpireExclusion = async (exclusionId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      await service.deleteUmpireExclusion(accountId, resolvedSeasonId, exclusionId);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete umpire exclusion';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createFieldAvailabilityRule = async (
-    input: SchedulerFieldAvailabilityRuleUpsert,
-  ): Promise<SchedulerFieldAvailabilityRule> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.createFieldAvailabilityRule(accountId, resolvedSeasonId, input);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to create field availability rule';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateFieldAvailabilityRule = async (
-    ruleId: string,
-    input: SchedulerFieldAvailabilityRuleUpsert,
-  ): Promise<SchedulerFieldAvailabilityRule> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.updateFieldAvailabilityRule(accountId, resolvedSeasonId, ruleId, input);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to update field availability rule';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteFieldAvailabilityRule = async (ruleId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      await service.deleteFieldAvailabilityRule(accountId, resolvedSeasonId, ruleId);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to delete field availability rule';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const listFieldExclusionDates = async (
-    signal?: AbortSignal,
-  ): Promise<SchedulerFieldExclusionDate[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.listFieldExclusionDates(accountId, resolvedSeasonId, signal);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load field exclusion dates';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createFieldExclusionDate = async (
-    input: SchedulerFieldExclusionDateUpsert,
-  ): Promise<SchedulerFieldExclusionDate> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.createFieldExclusionDate(accountId, resolvedSeasonId, input);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create field exclusion date';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateFieldExclusionDate = async (
-    exclusionId: string,
-    input: SchedulerFieldExclusionDateUpsert,
-  ): Promise<SchedulerFieldExclusionDate> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.updateFieldExclusionDate(
-        accountId,
-        resolvedSeasonId,
-        exclusionId,
-        input,
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update field exclusion date';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteFieldExclusionDate = async (exclusionId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      await service.deleteFieldExclusionDate(accountId, resolvedSeasonId, exclusionId);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete field exclusion date';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const solveSeason = async (
-    request: SchedulerSeasonSolveRequest,
-    options?: { idempotencyKey?: string },
-  ): Promise<SchedulerSolveResult> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.solveSeason(accountId, resolvedSeasonId, request, options);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to generate schedule proposal';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const applySeason = async (
-    request: SchedulerSeasonApplyRequest,
-  ): Promise<SchedulerApplyResult> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resolvedSeasonId = requireSeasonId();
-      return await service.applySeason(accountId, resolvedSeasonId, request);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to apply schedule proposal';
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearError = () => setError(null);
-
-  return {
-    getProblemSpecPreview,
-    getSeasonWindowConfig,
-    upsertSeasonWindowConfig,
-    listFieldAvailabilityRules,
-    createFieldAvailabilityRule,
-    updateFieldAvailabilityRule,
-    deleteFieldAvailabilityRule,
-    listFieldExclusionDates,
-    createFieldExclusionDate,
-    updateFieldExclusionDate,
-    deleteFieldExclusionDate,
-    listSeasonExclusions,
-    createSeasonExclusion,
-    updateSeasonExclusion,
-    deleteSeasonExclusion,
-    listTeamExclusions,
-    createTeamExclusion,
-    updateTeamExclusion,
-    deleteTeamExclusion,
-    listUmpireExclusions,
-    createUmpireExclusion,
-    updateUmpireExclusion,
-    deleteUmpireExclusion,
-    solveSeason,
-    applySeason,
-    loading,
-    error,
-    clearError,
-  };
+  return { ...operations, loading, error };
 };

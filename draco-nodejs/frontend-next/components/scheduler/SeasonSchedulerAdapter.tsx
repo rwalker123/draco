@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import type { TeamSeasonType } from '@draco/shared-schemas';
 import type { Game, League } from '@/types/schedule';
+import { useEntityNameMaps } from '../../hooks/useEntityNameMaps';
+import { SHOW_SEASON_SCHEDULER } from '../../constants/featureFlags';
 import { SeasonSchedulerWidget } from './SeasonSchedulerWidget';
 
 interface NamedEntity {
@@ -61,42 +63,13 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
 
   const schedulerLeagues = leagues.map((league) => ({ id: league.id, name: league.name }));
 
-  const teamNameById = (() => {
-    const map = new Map<string, string>();
-    teams.forEach((team) => {
-      const id = team.id;
-      if (!id) {
-        return;
-      }
-      map.set(id, team.name ?? 'Unknown Team');
-    });
-    return map;
-  })();
+  const schedulerTeams = teams
+    .filter((team) => Boolean(team.id))
+    .map((team) => ({ id: team.id!, name: team.name ?? 'Unknown Team' }));
 
-  const gameById = (() => {
-    const map = new Map<string, Game>();
-    games.forEach((game) => {
-      if (game.id) {
-        map.set(game.id, game);
-      }
-    });
-    return map;
-  })();
+  const { getGameSummaryLabel } = useEntityNameMaps({ teams: schedulerTeams, games });
 
-  const getSchedulerGameLabel = (gameId: string): string => {
-    const game = gameById.get(gameId);
-    if (!game) {
-      return `Game ${gameId}`;
-    }
-
-    const home = teamNameById.get(game.homeTeamId) ?? 'Unknown Team';
-    const visitor = teamNameById.get(game.visitorTeamId) ?? 'Unknown Team';
-    return `${home} vs ${visitor}`;
-  };
-
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  if (!canEdit || !isDevelopment) {
+  if (!canEdit || !SHOW_SEASON_SCHEDULER) {
     return null;
   }
 
@@ -133,10 +106,8 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
       fields={schedulerFields}
       umpires={schedulerUmpires}
       leagues={schedulerLeagues}
-      teams={teams
-        .filter((team) => Boolean(team.id))
-        .map((team) => ({ id: team.id!, name: team.name ?? 'Unknown Team' }))}
-      getGameSummaryLabel={getSchedulerGameLabel}
+      teams={schedulerTeams}
+      getGameSummaryLabel={getGameSummaryLabel}
       onApplied={onApplied}
       setSuccess={setSuccess}
       setError={setError}

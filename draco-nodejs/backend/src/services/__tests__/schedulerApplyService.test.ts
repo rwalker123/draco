@@ -871,4 +871,89 @@ describe('SchedulerApplyService.applyProposal', () => {
     expect(result.appliedGameIds).toEqual(['123']);
     expect(result.skipped).toEqual([{ gameId: '124', reason: 'Umpire daily game limit exceeded' }]);
   });
+
+  it('re-apply idempotency: applying the same proposal a second time produces the same games state', async () => {
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-idempotent',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: '123',
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: ['77'],
+        },
+      ],
+    };
+
+    const firstResult = await service.applyProposal(accountId, request);
+    expect(firstResult.status).toBe('applied');
+    expect(firstResult.appliedGameIds).toEqual(['123']);
+
+    const secondResult = await service.applyProposal(accountId, request);
+    expect(secondResult.status).toBe('applied');
+    expect(secondResult.appliedGameIds).toEqual(['123']);
+
+    const game = gamesById.get(123n);
+    expect(game?.fieldid).toBe(10n);
+    expect(game?.umpire1).toBe(77n);
+    expect(repository.updateGame).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips assignment when game id is not found for this account', async () => {
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-missing-game',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: '9999',
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request);
+
+    expect(result.status).toBe('failed');
+    expect(result.appliedGameIds).toHaveLength(0);
+    expect(result.skipped[0]?.gameId).toBe('9999');
+    expect(repository.updateGame).not.toHaveBeenCalled();
+  });
+
+  it('skips assignment when field id is not found for this account', async () => {
+    gamesById.set(123n, makeAccountGame({ id: 123n }));
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-missing-field',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: '123',
+          fieldId: '8888',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request);
+
+    expect(result.status).toBe('failed');
+    expect(result.appliedGameIds).toHaveLength(0);
+    expect(result.skipped[0]?.gameId).toBe('123');
+    expect(repository.updateGame).not.toHaveBeenCalled();
+  });
 });
