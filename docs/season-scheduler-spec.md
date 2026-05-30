@@ -195,25 +195,83 @@ Add Vitest coverage for:
 
 ---
 
-## 3. Completion Roadmap *(to be written after Phase 0)*
+## 3. Completion Roadmap
 
-Deferred until §2 is complete. Topics that need decisions before this section can be filled in:
+Decisions in §3/§4 were resolved with the maintainer on 2026-05-29. This roadmap reflects those answers. Phase 0 (§2) remains a prerequisite for shipping any of this to a pilot account; the §2.5 gate is the one outstanding Phase 0 item but does **not** block authoring or building the work below.
 
-- **Constraint coverage** — which of the following are required for real-world use, and are they hard or soft constraints? Examples: team rest days between games, home/away balance, doubleheader rules, travel distance, bye-week handling, division-vs-cross-division pairing requirements, round-robin completeness.
-- **Solver semantics** — soft-constraint scoring, tie-breaking, determinism guarantees, time budget / cancellation.
-- **Conflict diagnostics** — richer "why is this game unscheduled" output and a UI to act on it.
-- **Proposal lifecycle** — should proposals be persisted (named, comparable, re-openable) or remain in-memory only?
-- **Edit before apply** — manual override of an individual assignment in the review UI.
-- **Rollback** — an "undo apply" path on `games`.
-- **Cross-season scheduling** — playoffs or tournaments that span multiple `season` rows.
-- **Performance ceiling** — measured limits on game / field / umpire count and a plan if those are exceeded.
-- **Rollout** — staging pilot accounts, then opt-in production accounts, then general availability; what telemetry is needed to support each step.
+### 3.0 Architecture shift: Generator → Placer
+
+Today the scheduler is a **placer** only: it consumes matchups that already exist as `games` rows (`schedulerProblemSpecService` sources them via `listSeasonGames`) and assigns field/time/umpire. Completion adds a **generator** in front of it.
+
+- **Generator (new, Phase A)** — given a per-league round-robin config, produces the *set* of matchups (home/visitor pairs). It does **not** assign dates, times, fields, or umpires.
+- **Placer (exists today, upgraded in Phase B)** — the current engine; takes matchups + constraints and assigns field/time/umpire.
+
+The two stay separate components (per maintainer decision G-d). The generator's output feeds the placer. Per §2 / B.8, generated matchups are held **in memory** (not written to new DB tables) and only persisted to `games` on apply.
+
+### Phase A — Matchup Generation (independently shippable)
+
+Produces matchups; placement uses the existing "first valid slot" engine until Phase B.
+
+- **A1. Per-league round-robin config.** Each league configures how many times a team plays opponents, with **separate counts for in-division vs. out-of-division (same league)** opponents — e.g. "5 games vs each in-division team, 3 vs each other-division team." Divisions are read from `divisionseason` membership.
+- **A2. Volume modes.** Long-term, three ways to express volume (all requested in G-a): round-robin cycles, target games-per-team, target season length. **Ship round-robin cycles first**; the per-opponent counts in A1 are the cycle multipliers. Other modes are later options.
+- **A3. Home/away.** Driven by the generated counts (G-c). Even count → split home/away evenly. Odd count → alternate and balance across the season using a running per-team home/away tally so totals stay as even as possible (supports the A.2 home/away-balance goal). The odd-count tie-break must be deterministic.
+- **A4. Determinism.** Same config + same team set → same matchup set (stable/seeded ordering), consistent with the existing engine's determinism guarantees.
+- **A5. Output.** An in-memory list of unplaced matchups (home, visitor, league/division context) fed directly into the placer. No new persisted entity (B.8).
+
+### Phase B — Soft-constraint scoring (smarter placement)
+
+Today the placer takes the **first** slot that violates no hard rule. Phase B makes it pick the **best** legal slot: each soft preference contributes a penalty, and the placer chooses the lowest total penalty among valid candidates. Hard constraints are unchanged.
+
+Soft constraints:
+
+- **Team rest days (A.1, soft)** — penalty when two of a team's games fall closer together than a configurable minimum gap; larger penalty the closer they are.
+- **Home/away balance (A.2)** — penalty when an assignment worsens a team's home/away imbalance.
+- **Division / cross-division pairing (A.5, soft)** — best-effort; penalty when the generated target counts cannot be met exactly (they often can't divide evenly).
+
+**Default weights (D.11), fixed initially, configurable later:** rest-days = 3, home/away imbalance = 2, pairing shortfall = 1. Lower total score = better placement. Ties broken by the existing stable sort, preserving determinism.
+
+> Note: this changes the engine from "first valid" to "best valid among candidates," a non-trivial refactor. No solve time budget / cancellation (D.12) — the greedy approach is fast; revisit only if E.14 limits are exceeded.
+
+### Phase C — Persistence, edit, audit
+
+- **C1. Proposal persistence (B.8).** Serialize the in-memory proposal to **localStorage as JSON**, keyed by (account, season), so re-opening the widget restores the last solve. **No backend proposal table.**
+- **C2. Edit before apply (C.9).** Allow manual override of an individual assignment (field/time/umpire) in the review UI before apply. Edits update the stored proposal and are re-validated against hard constraints; a hard-constraint violation is **warned but allowed** (manual override is an intentional admin decision).
+- **C3. Apply audit log (G.19).** Record who applied which assignments and when. This is the one place a small **durable DB table is justified** despite B.8 (audit must survive; localStorage won't do): account, season, applying user, timestamp, and the applied assignments / affected game count. **Requires schema approval before building.**
+- **C4. No rollback (C.10).** No "undo apply" path on `games`.
+
+### Scale (E.14)
+
+The solver must handle realistic league sizes. Proposed ceilings to measure and add a perf test against (numbers TBD pending real data): ~50 teams, ~12 fields, ~30 umpires, a few hundred games per season. If exceeded, revisit the greedy algorithm and D.12.
+
+### Rollout (F.15)
+
+Keep behind the §2.5 gate → enable on a staging pilot account → opt-in production accounts → general availability. Minimal telemetry to gate steps: solve count, unscheduled rate, apply count, error rate. Low priority; revisit when §2.5 lands.
+
+### Sequencing
+
+Phase A → Phase B → Phase C. Phase A is shippable on its own (generate matchups, place with today's engine). Phase B upgrades placement quality. Phase C adds persistence, edit, and audit.
 
 ---
 
-## 4. Open Questions (general)
+## 4. Open Questions — Resolved (2026-05-29)
 
-- Is "umpires-per-game" intended to be a per-league setting rather than per-season? Several leagues currently mix one-umpire and two-umpire formats.
-- Should field availability rules support seasonal overrides (e.g. summer vs spring hours), or is one rule set per field sufficient?
-- The schema stores exclusion windows as full DateTime ranges — should there be a recurring-pattern variant (e.g. "every Monday 6–8pm") to avoid creating dozens of rows?
-- Apply currently writes to `games` directly. Do we need an audit log of who applied which proposal and when?
+| Question | Decision |
+| --- | --- |
+| Constraint: team rest days | **Soft** (Phase B, weight 3). |
+| Constraint: home/away balance | **Required**, soft target (Phase A3 + Phase B, weight 2). |
+| Constraint: doubleheaders | **Config option**, not hardcoded. |
+| Constraint: division/cross-division pairing | **Soft**, best-effort (often can't divide evenly). |
+| "Bye weeks" / "plays once a week" | **Not a thing** — no such concept; do not introduce it. |
+| Round-robin completeness / matchup generation | **In scope** — scheduler must generate matchups (Phase A); generator is separate from the placer. |
+| Round-robin counts | **Per-league**, separate in-division vs. out-of-division counts. |
+| Proposal lifecycle | **localStorage JSON**, keyed by (account, season). No backend proposal schema yet. |
+| Edit before apply | **Yes** — manual override, warn-but-allow on hard-constraint violations. |
+| Rollback / undo apply | **No.** |
+| Apply audit log | **Yes** — small durable DB table (needs schema approval). |
+| Travel distance | **Not relevant.** |
+| Conflict diagnostics | Current single-reason string is **sufficient for now**. |
+| Solve time budget / cancellation | **Not needed now.** |
+| Umpires-per-game per-league | **No change** — stays per-season. |
+| Field availability seasonal overrides | **No.** |
+| Recurring-pattern exclusion windows | **No.** |
+| Cross-season scheduling (playoffs/tournaments) | Still deferred — no decision requested. |

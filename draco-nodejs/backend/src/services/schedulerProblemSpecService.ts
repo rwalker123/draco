@@ -116,13 +116,17 @@ export class SchedulerProblemSpecService {
     request: SchedulerSeasonSolveRequest,
   ): Promise<{ problemSpec: SchedulerProblemSpec; timeZoneId: string }> {
     const base = await this.loadBaseSpecData(accountId, seasonId);
-    const filteredGames = request.gameIds?.length
-      ? base.games.filter((game) => request.gameIds?.includes(game.id))
-      : base.games;
+
+    const sourceGames: SchedulerGameRequest[] =
+      request.matchups && request.matchups.length > 0
+        ? request.matchups
+        : request.gameIds?.length
+          ? base.games.filter((game) => request.gameIds?.includes(game.id))
+          : base.games;
 
     const requiredUmpiresOverride =
       request.umpiresPerGame ?? base.seasonWindowConfig.umpiresPerGame ?? 2;
-    const normalizedGames = filteredGames.map((game) => ({
+    const normalizedGames = sourceGames.map((game) => ({
       ...game,
       requiredUmpires: requiredUmpiresOverride,
     }));

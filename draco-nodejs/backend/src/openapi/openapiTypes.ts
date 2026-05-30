@@ -288,6 +288,8 @@ import {
   SchedulerProblemSpecPreviewSchema,
   SchedulerSeasonSolveRequestSchema,
   SchedulerSeasonApplyRequestSchema,
+  SchedulerGenerateMatchupsRequestSchema,
+  SchedulerGenerateMatchupsResultSchema,
   SchedulerSolveResultSchema,
   SchedulerApplyRequestSchema,
   SchedulerApplyResultSchema,
@@ -1292,6 +1294,14 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerSeasonApplyRequest',
     SchedulerSeasonApplyRequestSchema,
   );
+  const SchedulerGenerateMatchupsRequestSchemaRef = registry.register(
+    'SchedulerGenerateMatchupsRequest',
+    SchedulerGenerateMatchupsRequestSchema,
+  );
+  const SchedulerGenerateMatchupsResultSchemaRef = registry.register(
+    'SchedulerGenerateMatchupsResult',
+    SchedulerGenerateMatchupsResultSchema,
+  );
   const SchedulerSolveResultSchemaRef = registry.register(
     'SchedulerSolveResult',
     SchedulerSolveResultSchema,
@@ -1952,6 +1962,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerProblemSpecPreviewSchemaRef,
     SchedulerSeasonSolveRequestSchemaRef,
     SchedulerSeasonApplyRequestSchemaRef,
+    SchedulerGenerateMatchupsRequestSchemaRef,
+    SchedulerGenerateMatchupsResultSchemaRef,
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,

@@ -4,6 +4,8 @@ import type {
   SchedulerFieldAvailabilityRuleUpsert,
   SchedulerFieldExclusionDate,
   SchedulerFieldExclusionDateUpsert,
+  SchedulerGenerateMatchupsRequest,
+  SchedulerGenerateMatchupsResult,
   SchedulerProblemSpecPreview,
   SchedulerSeasonExclusion,
   SchedulerSeasonExclusionUpsert,
@@ -32,6 +34,7 @@ import {
   deleteSchedulerSeasonExclusion,
   deleteSchedulerTeamExclusion,
   deleteSchedulerUmpireExclusion,
+  generateSeasonMatchups,
   getSchedulerProblemSpecPreview,
   getSchedulerSeasonWindowConfig,
   listSchedulerFieldExclusionDates,
@@ -126,6 +129,21 @@ export class SchedulerService {
     });
 
     return unwrapApiResult(result, 'Failed to generate schedule proposal');
+  }
+
+  async generateSeasonMatchups(
+    accountId: string,
+    seasonId: string,
+    request: SchedulerGenerateMatchupsRequest,
+  ): Promise<SchedulerGenerateMatchupsResult> {
+    const result = await generateSeasonMatchups({
+      client: this.client,
+      path: { accountId, seasonId },
+      body: request,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to generate matchups');
   }
 
   async applySeason(

@@ -11,6 +11,8 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     SchedulerProblemSpecPreviewSchemaRef,
     SchedulerSeasonSolveRequestSchemaRef,
     SchedulerSeasonApplyRequestSchemaRef,
+    SchedulerGenerateMatchupsRequestSchemaRef,
+    SchedulerGenerateMatchupsResultSchemaRef,
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
@@ -865,6 +867,67 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
       403: {
         description: 'Insufficient permissions',
         content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/generate-matchups',
+    operationId: 'generateSeasonMatchups',
+    summary: 'Generate round-robin matchups (unplaced)',
+    description:
+      'Generates deterministic, home/away-balanced round-robin matchups for the selected leagues using the provided per-league in-division and cross-division game counts. Reads teams and divisions from the database. Does not place (no dates/fields/umpires) and does not persist; feed the returned matchups into the solve endpoint to place them.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: SchedulerGenerateMatchupsRequestSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Generated matchups with per-league summary',
+        content: { 'application/json': { schema: SchedulerGenerateMatchupsResultSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions to generate schedules',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Season or league not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
       },
       500: {
         description: 'Internal server error',

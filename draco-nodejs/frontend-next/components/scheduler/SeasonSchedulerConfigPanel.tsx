@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { SchedulerSeasonWindowConfig } from '@draco/shared-schemas';
+import { SchedulerRoundRobinConfig, type LeagueRoundRobinCount } from './SchedulerRoundRobinConfig';
 
 type UmpiresPerGame = 1 | 2 | 3 | 4;
 
@@ -23,6 +24,7 @@ interface EntityOption {
 }
 
 interface SeasonSchedulerConfigPanelProps {
+  accountId: string;
   seasonId: string | null;
   seasonWindowConfig: SchedulerSeasonWindowConfig | null;
   seasonStartDate: string;
@@ -35,15 +37,18 @@ interface SeasonSchedulerConfigPanelProps {
   leagueSeasonIdFilter: string | undefined;
   leagueSeasonSelection: string[] | null;
   leagueNameById: Map<string, string>;
+  roundRobinCounts: Map<string, LeagueRoundRobinCount>;
   onSeasonStartDateChange: (value: string) => void;
   onSeasonEndDateChange: (value: string) => void;
   onUmpiresPerGameChange: (value: UmpiresPerGame) => void;
   onMaxGamesPerUmpirePerDayChange: (value: string) => void;
   onLeagueSelectionChange: (ids: string[]) => void;
+  onRoundRobinCountsChange: (counts: Map<string, LeagueRoundRobinCount>) => void;
   onSave: () => void;
 }
 
 export const SeasonSchedulerConfigPanel: React.FC<SeasonSchedulerConfigPanelProps> = ({
+  accountId,
   seasonId,
   seasonWindowConfig,
   seasonStartDate,
@@ -56,11 +61,13 @@ export const SeasonSchedulerConfigPanel: React.FC<SeasonSchedulerConfigPanelProp
   leagueSeasonIdFilter,
   leagueSeasonSelection,
   leagueNameById,
+  roundRobinCounts,
   onSeasonStartDateChange,
   onSeasonEndDateChange,
   onUmpiresPerGameChange,
   onMaxGamesPerUmpirePerDayChange,
   onLeagueSelectionChange,
+  onRoundRobinCountsChange,
   onSave,
 }) => {
   const allLeagueSeasonIds = leagues.map((league) => league.id);
@@ -237,6 +244,16 @@ export const SeasonSchedulerConfigPanel: React.FC<SeasonSchedulerConfigPanelProp
           />
         </Box>
       </Box>
+
+      <SchedulerRoundRobinConfig
+        accountId={accountId}
+        seasonId={seasonId}
+        selectedLeagueSeasonIds={selectedLeagueSeasonIds}
+        leagues={leagues}
+        leagueNameById={leagueNameById}
+        counts={roundRobinCounts}
+        onCountsChange={onRoundRobinCountsChange}
+      />
     </>
   );
 };

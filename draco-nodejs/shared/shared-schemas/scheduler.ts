@@ -533,6 +533,10 @@ export const SchedulerSeasonSolveRequestSchema = z
     constraints: SchedulerConstraintsOverrideSchema,
     objectives: SchedulerObjectivesSchema,
     gameIds: schedulerIdSchema.array().min(1).optional(),
+    matchups: SchedulerGameRequestSchema.array().min(1).optional().openapi({
+      description:
+        'Optional caller-provided matchups to place instead of DB-sourced games. When present, the backend skips loading existing games and schedules exactly these matchups (used by round-robin matchup generation). gameIds is ignored when matchups is provided.',
+    }),
     umpiresPerGame: z.number().int().min(1).max(4).optional().openapi({
       example: 2,
       description:
@@ -542,7 +546,53 @@ export const SchedulerSeasonSolveRequestSchema = z
   .openapi({
     title: 'SchedulerSeasonSolveRequest',
     description:
-      'DB-sourced solve request. The backend assembles teams/games/fields/umpires/fieldSlots from the database; the caller may provide optional constraint/objective overrides.',
+      'DB-sourced solve request. The backend assembles teams/games/fields/umpires/fieldSlots from the database; the caller may provide optional constraint/objective overrides, or supply explicit matchups to place.',
+  });
+
+export const SchedulerLeagueRoundRobinCountSchema = z
+  .object({
+    leagueSeasonId: schedulerIdSchema,
+    inDivisionGameCount: z.number().int().min(0).max(50).openapi({
+      example: 5,
+      description: 'How many times each team plays every other team in its own division.',
+    }),
+    crossDivisionGameCount: z.number().int().min(0).max(50).openapi({
+      example: 3,
+      description:
+        'How many times each team plays every other team in the same league but a different division.',
+    }),
+  })
+  .openapi({ title: 'SchedulerLeagueRoundRobinCount' });
+
+export const SchedulerGenerateMatchupsRequestSchema = z
+  .object({
+    leagueCounts: SchedulerLeagueRoundRobinCountSchema.array().min(1),
+  })
+  .openapi({
+    title: 'SchedulerGenerateMatchupsRequest',
+    description:
+      'Round-robin matchup generation request. For each selected league, specifies the per-opponent game counts for in-division and cross-division pairings. The backend reads the league teams and divisions from the database and returns deterministic, home/away-balanced matchups without persisting them.',
+  });
+
+export const SchedulerMatchupGenerationSummarySchema = z
+  .object({
+    leagueSeasonId: schedulerIdSchema,
+    teamCount: z.number().int().nonnegative(),
+    inDivisionGames: z.number().int().nonnegative(),
+    crossDivisionGames: z.number().int().nonnegative(),
+    totalGames: z.number().int().nonnegative(),
+  })
+  .openapi({ title: 'SchedulerMatchupGenerationSummary' });
+
+export const SchedulerGenerateMatchupsResultSchema = z
+  .object({
+    matchups: SchedulerGameRequestSchema.array(),
+    summary: SchedulerMatchupGenerationSummarySchema.array(),
+  })
+  .openapi({
+    title: 'SchedulerGenerateMatchupsResult',
+    description:
+      'Generated round-robin matchups (unplaced; no dates/fields/umpires) plus a per-league summary. Matchups are not persisted; feed them into the solve endpoint to place them.',
   });
 
 export const SchedulerAssignmentSchema = z
@@ -749,6 +799,14 @@ export type SchedulerApplyStatus = z.infer<typeof SchedulerApplyStatusSchema>;
 export type SchedulerApplyResult = z.infer<typeof SchedulerApplyResultSchema>;
 export type SchedulerSeasonSolveRequest = z.infer<typeof SchedulerSeasonSolveRequestSchema>;
 export type SchedulerSeasonApplyRequest = z.infer<typeof SchedulerSeasonApplyRequestSchema>;
+export type SchedulerLeagueRoundRobinCount = z.infer<typeof SchedulerLeagueRoundRobinCountSchema>;
+export type SchedulerGenerateMatchupsRequest = z.infer<
+  typeof SchedulerGenerateMatchupsRequestSchema
+>;
+export type SchedulerMatchupGenerationSummary = z.infer<
+  typeof SchedulerMatchupGenerationSummarySchema
+>;
+export type SchedulerGenerateMatchupsResult = z.infer<typeof SchedulerGenerateMatchupsResultSchema>;
 
 export const SchedulerProblemSpecPreviewSchema = z
   .object({

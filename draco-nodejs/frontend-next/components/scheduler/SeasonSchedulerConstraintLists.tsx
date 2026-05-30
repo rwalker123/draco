@@ -279,7 +279,7 @@ export const SeasonSchedulerConstraintLists: React.FC<SeasonSchedulerConstraintL
       {seasonId && (
         <>
           <SchedulerFieldAvailabilityRuleDialog
-            key={ruleDialog.dialogKey}
+            key={`field-availability-${ruleDialog.dialogKey}`}
             open={ruleDialog.open}
             mode={ruleDialog.mode}
             seasonId={seasonId}
@@ -290,7 +290,7 @@ export const SeasonSchedulerConstraintLists: React.FC<SeasonSchedulerConstraintL
             loading={loading}
           />
           <SchedulerFieldExclusionDateDialog
-            key={exclusionDialog.dialogKey}
+            key={`field-exclusion-${exclusionDialog.dialogKey}`}
             open={exclusionDialog.open}
             mode={exclusionDialog.mode}
             seasonId={seasonId}
@@ -301,7 +301,7 @@ export const SeasonSchedulerConstraintLists: React.FC<SeasonSchedulerConstraintL
             loading={loading}
           />
           <SchedulerSeasonExclusionDialog
-            key={seasonExclusionDialog.dialogKey}
+            key={`season-exclusion-${seasonExclusionDialog.dialogKey}`}
             open={seasonExclusionDialog.open}
             mode={seasonExclusionDialog.mode}
             seasonId={seasonId}
@@ -311,7 +311,7 @@ export const SeasonSchedulerConstraintLists: React.FC<SeasonSchedulerConstraintL
             loading={loading}
           />
           <SchedulerTeamExclusionDialog
-            key={teamExclusionDialog.dialogKey}
+            key={`team-exclusion-${teamExclusionDialog.dialogKey}`}
             open={teamExclusionDialog.open}
             mode={teamExclusionDialog.mode}
             seasonId={seasonId}
@@ -322,7 +322,7 @@ export const SeasonSchedulerConstraintLists: React.FC<SeasonSchedulerConstraintL
             loading={loading}
           />
           <SchedulerUmpireExclusionDialog
-            key={umpireExclusionDialog.dialogKey}
+            key={`umpire-exclusion-${umpireExclusionDialog.dialogKey}`}
             open={umpireExclusionDialog.open}
             mode={umpireExclusionDialog.mode}
             seasonId={seasonId}

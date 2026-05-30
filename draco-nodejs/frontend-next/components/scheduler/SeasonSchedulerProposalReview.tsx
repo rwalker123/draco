@@ -11,7 +11,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import type { SchedulerProblemSpecPreview, SchedulerSolveResult } from '@draco/shared-schemas';
+import type {
+  SchedulerGameRequest,
+  SchedulerProblemSpecPreview,
+  SchedulerSolveResult,
+} from '@draco/shared-schemas';
 import { formatDateInTimezone, getDateKeyInTimezone } from '../../utils/dateUtils';
 import { ProposalAssignmentRow } from './ProposalAssignmentRow';
 import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
@@ -27,6 +31,8 @@ interface SeasonSchedulerProposalReviewProps {
   teamNameById: Map<string, string>;
   umpireNameById: Map<string, string>;
   leagueNameById: Map<string, string>;
+  proposalFromGenerated: boolean;
+  generatedMatchups: SchedulerGameRequest[] | null;
   getGameSummaryLabel: (gameId: string) => string;
   onToggleSelection: (gameId: string) => void;
   onToggleAll: () => void;
@@ -87,6 +93,8 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   teamNameById,
   umpireNameById,
   leagueNameById,
+  proposalFromGenerated,
+  generatedMatchups,
   getGameSummaryLabel,
   onToggleSelection,
   onToggleAll,
@@ -113,7 +121,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   );
 
   const gameRequestById = new Map<string, SchedulerProblemSpecPreview['games'][number]>(
-    (specPreview?.games ?? []).map((game) => [game.id, game]),
+    [...(specPreview?.games ?? []), ...(generatedMatchups ?? [])].map((game) => [game.id, game]),
   );
 
   const selectedMode = !proposal || selectedGameIds.size === assignments.length ? 'all' : 'subset';
@@ -173,13 +181,27 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                     }
                     label={`Select (${selectedGameIds.size}/${proposal.assignments.length})`}
                   />
-                  <Button
-                    variant="contained"
-                    onClick={onApply}
-                    disabled={selectedGameIds.size === 0}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: 0.5,
+                    }}
                   >
-                    Apply {selectedMode === 'all' ? 'All' : 'Selected'}
-                  </Button>
+                    <Button
+                      variant="contained"
+                      onClick={onApply}
+                      disabled={selectedGameIds.size === 0 || proposalFromGenerated}
+                    >
+                      Apply {selectedMode === 'all' ? 'All' : 'Selected'}
+                    </Button>
+                    {proposalFromGenerated && (
+                      <Typography variant="caption" color="text.secondary">
+                        Applying generated schedules is coming soon.
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
 
                 <Stack spacing={1}>

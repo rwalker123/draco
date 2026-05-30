@@ -12,6 +12,7 @@ import {
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerSeasonSolveRequestSchema,
   SchedulerSeasonApplyRequestSchema,
+  SchedulerGenerateMatchupsRequestSchema,
 } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
@@ -27,6 +28,7 @@ const schedulerUmpireExclusionsService = ServiceFactory.getSchedulerUmpireExclus
 const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecService();
 const schedulerEngineService = ServiceFactory.getSchedulerEngineService();
 const schedulerSeasonApplyService = ServiceFactory.getSchedulerSeasonApplyService();
+const schedulerMatchupGenerationService = ServiceFactory.getSchedulerMatchupGenerationService();
 
 router.get(
   '/season-window-config',
@@ -358,6 +360,23 @@ router.post(
       accountId,
       seasonId,
       request,
+    );
+    res.json(result);
+  }),
+);
+
+router.post(
+  '/generate-matchups',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const body = SchedulerGenerateMatchupsRequestSchema.parse(req.body);
+    const result = await schedulerMatchupGenerationService.generateForSeason(
+      accountId,
+      seasonId,
+      body,
     );
     res.json(result);
   }),

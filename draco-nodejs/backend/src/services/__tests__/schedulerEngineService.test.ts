@@ -924,4 +924,218 @@ describe('SchedulerEngineService', () => {
       expect(unscheduled.reason).toBeTruthy();
     }
   });
+
+  it('treats team blackouts as a hard constraint and schedules once the blackout is lifted', () => {
+    const service = new SchedulerEngineService();
+
+    const blackedOutSpec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 60 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+      teamBlackouts: [
+        {
+          teamSeasonId: 'teamSeason-1',
+          startTime: '2026-04-05T08:00:00Z',
+          endTime: '2026-04-05T12:00:00Z',
+        },
+      ],
+      constraints: { hard: { respectFieldSlots: true, respectTeamBlackouts: true } },
+    };
+
+    const blocked = service.solve(blackedOutSpec);
+    expect(blocked.status).toBe('infeasible');
+    expect(blocked.unscheduled).toHaveLength(1);
+    expect(blocked.unscheduled[0]?.gameId).toBe('game-1');
+
+    const cleared = service.solve({ ...blackedOutSpec, teamBlackouts: [] });
+    expect(cleared.status).toBe('completed');
+    expect(cleared.assignments).toHaveLength(1);
+    expect(cleared.assignments[0]?.fieldId).toBe('field-1');
+  });
+
+  it('ignores team blackouts when respectTeamBlackouts is disabled', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 60 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+      teamBlackouts: [
+        {
+          teamSeasonId: 'teamSeason-1',
+          startTime: '2026-04-05T08:00:00Z',
+          endTime: '2026-04-05T12:00:00Z',
+        },
+      ],
+      constraints: { hard: { respectFieldSlots: true, respectTeamBlackouts: false } },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+  });
+
+  it('leaves a game unscheduled when no umpire is available during its window and schedules it once availability covers the slot', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 60 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [{ id: 'ump-1', name: 'Alice' }],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-04-05T12:00:00Z', endTime: '2026-04-05T18:00:00Z' },
+      ],
+      constraints: { hard: { respectFieldSlots: true, respectUmpireAvailability: true } },
+    };
+
+    const unavailable = service.solve(spec);
+    expect(unavailable.status).toBe('infeasible');
+    expect(unavailable.unscheduled).toHaveLength(1);
+    expect(unavailable.unscheduled[0]?.gameId).toBe('game-1');
+
+    const covering = service.solve({
+      ...spec,
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-04-05T08:00:00Z', endTime: '2026-04-05T18:00:00Z' },
+      ],
+    });
+    expect(covering.status).toBe('completed');
+    expect(covering.assignments).toHaveLength(1);
+    expect(covering.assignments[0]?.umpireIds).toEqual(['ump-1']);
+  });
+
+  it('assigns an umpire outside their availability window when respectUmpireAvailability is disabled', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 60 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [{ id: 'ump-1', name: 'Alice' }],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'leagueSeason-1',
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          earliestStart: '2026-04-05T09:00:00Z',
+          latestEnd: '2026-04-05T14:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-04-05T12:00:00Z', endTime: '2026-04-05T18:00:00Z' },
+      ],
+      constraints: { hard: { respectFieldSlots: true, respectUmpireAvailability: false } },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.umpireIds).toEqual(['ump-1']);
+  });
 });

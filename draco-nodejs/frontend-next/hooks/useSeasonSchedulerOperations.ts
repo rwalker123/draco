@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import type {
   SchedulerFieldAvailabilityRuleUpsert,
   SchedulerFieldExclusionDateUpsert,
+  SchedulerGenerateMatchupsRequest,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonExclusionUpsert,
   SchedulerSeasonSolveRequest,
@@ -148,6 +149,9 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
       ),
       deleteUmpireExclusion: mutate((s, a, i, exclusionId: string) =>
         s.deleteUmpireExclusion(a, i, exclusionId),
+      ),
+      generateMatchups: mutate((s, a, i, request: SchedulerGenerateMatchupsRequest) =>
+        s.generateSeasonMatchups(a, i, request),
       ),
       solveSeason: mutate(
         (s, a, i, request: SchedulerSeasonSolveRequest, options?: { idempotencyKey?: string }) =>

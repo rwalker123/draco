@@ -48,6 +48,8 @@ import { SchedulerSeasonWindowConfigService } from './schedulerSeasonWindowConfi
 import { SchedulerSeasonExclusionsService } from './schedulerSeasonExclusionsService.js';
 import { SchedulerTeamSeasonExclusionsService } from './schedulerTeamSeasonExclusionsService.js';
 import { SchedulerUmpireExclusionsService } from './schedulerUmpireExclusionsService.js';
+import { SchedulerMatchupGenerationService } from './schedulerMatchupGenerationService.js';
+import { SchedulerMatchupGeneratorService } from './schedulerMatchupGeneratorService.js';
 import { LeagueService } from './LeagueService.js';
 import { LeagueFaqService } from './LeagueFaqService.js';
 import { MonitoringService } from './monitoringService.js';
@@ -162,6 +164,8 @@ export class ServiceFactory {
   private static schedulerSeasonExclusionsService: SchedulerSeasonExclusionsService;
   private static schedulerTeamSeasonExclusionsService: SchedulerTeamSeasonExclusionsService;
   private static schedulerUmpireExclusionsService: SchedulerUmpireExclusionsService;
+  private static schedulerMatchupGenerationService: SchedulerMatchupGenerationService;
+  private static schedulerMatchupGeneratorService: SchedulerMatchupGeneratorService;
   private static leagueService: LeagueService;
   private static leagueFaqService: LeagueFaqService;
   private static monitoringService: MonitoringService;
@@ -552,6 +556,22 @@ export class ServiceFactory {
     }
 
     return this.schedulerUmpireExclusionsService;
+  }
+
+  static getSchedulerMatchupGeneratorService(): SchedulerMatchupGeneratorService {
+    if (!this.schedulerMatchupGeneratorService) {
+      this.schedulerMatchupGeneratorService = new SchedulerMatchupGeneratorService();
+    }
+
+    return this.schedulerMatchupGeneratorService;
+  }
+
+  static getSchedulerMatchupGenerationService(): SchedulerMatchupGenerationService {
+    if (!this.schedulerMatchupGenerationService) {
+      this.schedulerMatchupGenerationService = new SchedulerMatchupGenerationService();
+    }
+
+    return this.schedulerMatchupGenerationService;
   }
 
   static getMonitoringService(): MonitoringService {
