@@ -74,6 +74,12 @@ function parsedText(result: { content: unknown[] }) {
   return JSON.parse(first.text);
 }
 
+function seasonGamesResponse(games: ReturnType<typeof game>[], total?: number) {
+  return {
+    data: { games, pagination: { page: 1, limit: 100, total: total ?? games.length } },
+  };
+}
+
 describe('getAccountGamesHandler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -101,6 +107,24 @@ describe('getAccountGamesHandler', () => {
       const schema = z.object(getAccountGamesInputSchema);
       expect(() => schema.parse({ account_id: 'acc-1', limit: 101 })).toThrow();
     });
+
+    it('rejects a malformed from date', () => {
+      const schema = z.object(getAccountGamesInputSchema);
+      expect(() => schema.parse({ account_id: 'acc-1', from: 'not-a-date' })).toThrow();
+    });
+
+    it('rejects impossible calendar dates', () => {
+      const schema = z.object(getAccountGamesInputSchema);
+      expect(() => schema.parse({ account_id: 'acc-1', to: '2026-02-30' })).toThrow();
+      expect(() => schema.parse({ account_id: 'acc-1', to: '2026-13-01' })).toThrow();
+    });
+
+    it('accepts a valid YYYY-MM-DD date', () => {
+      const schema = z.object(getAccountGamesInputSchema);
+      expect(() =>
+        schema.parse({ account_id: 'acc-1', from: '2026-05-29', to: '2026-05-31' }),
+      ).not.toThrow();
+    });
   });
 
   describe('account-wide query', () => {
@@ -112,7 +136,7 @@ describe('getAccountGamesHandler', () => {
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'America/Chicago' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({ data: { games: [game()] } });
+      mockListSeasonGames.mockResolvedValueOnce(seasonGamesResponse([game()]));
 
       const result = await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', range: 'today' }),
@@ -140,28 +164,26 @@ describe('getAccountGamesHandler', () => {
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({
-        data: {
-          games: [
-            game({
-              id: 'final',
-              gameDate: '2026-05-10T19:00:00Z',
-              gameStatus: 1,
-              gameStatusText: 'Final',
-              homeScore: 7,
-              visitorScore: 3,
-            }),
-            game({
-              id: 'scheduled',
-              gameDate: '2026-05-12T19:00:00Z',
-              gameStatus: 0,
-              gameStatusText: 'Scheduled',
-              homeScore: 0,
-              visitorScore: 0,
-            }),
-          ],
-        },
-      });
+      mockListSeasonGames.mockResolvedValueOnce(
+        seasonGamesResponse([
+          game({
+            id: 'final',
+            gameDate: '2026-05-10T19:00:00Z',
+            gameStatus: 1,
+            gameStatusText: 'Final',
+            homeScore: 7,
+            visitorScore: 3,
+          }),
+          game({
+            id: 'scheduled',
+            gameDate: '2026-05-12T19:00:00Z',
+            gameStatus: 0,
+            gameStatusText: 'Scheduled',
+            homeScore: 0,
+            visitorScore: 0,
+          }),
+        ]),
+      );
 
       const result = await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', from: '2026-05-01' }),
@@ -180,7 +202,7 @@ describe('getAccountGamesHandler', () => {
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({ data: { games: [] } });
+      mockListSeasonGames.mockResolvedValueOnce(seasonGamesResponse([]));
 
       await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', season_id: 'season-99', range: 'today' }),
@@ -202,14 +224,12 @@ describe('getAccountGamesHandler', () => {
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'America/Chicago' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({
-        data: {
-          games: [
-            game({ id: 'today-evening', gameDate: '2026-05-15T23:00:00-05:00' }),
-            game({ id: 'tomorrow-early', gameDate: '2026-05-16T10:00:00-05:00' }),
-          ],
-        },
-      });
+      mockListSeasonGames.mockResolvedValueOnce(
+        seasonGamesResponse([
+          game({ id: 'today-evening', gameDate: '2026-05-15T23:00:00-05:00' }),
+          game({ id: 'tomorrow-early', gameDate: '2026-05-16T10:00:00-05:00' }),
+        ]),
+      );
 
       const result = await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', range: 'today' }),
@@ -227,14 +247,12 @@ describe('getAccountGamesHandler', () => {
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({
-        data: {
-          games: [
-            game({ id: 'g-adult', league: { id: 'lg-adult', name: '18+ Adult' } }),
-            game({ id: 'g-youth', league: { id: 'lg-youth', name: 'Youth 12U' } }),
-          ],
-        },
-      });
+      mockListSeasonGames.mockResolvedValueOnce(
+        seasonGamesResponse([
+          game({ id: 'g-adult', league: { id: 'lg-adult', name: '18+ Adult' } }),
+          game({ id: 'g-youth', league: { id: 'lg-youth', name: 'Youth 12U' } }),
+        ]),
+      );
 
       const result = await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', from: '2026-05-01', league_id: 'lg-adult' }),
@@ -253,15 +271,13 @@ describe('getAccountGamesHandler', () => {
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({
-        data: {
-          games: [
-            game({ id: 'later', gameDate: '2026-05-20T19:00:00Z' }),
-            game({ id: 'earlier', gameDate: '2026-05-18T19:00:00Z' }),
-            game({ id: 'latest', gameDate: '2026-05-22T19:00:00Z' }),
-          ],
-        },
-      });
+      mockListSeasonGames.mockResolvedValueOnce(
+        seasonGamesResponse([
+          game({ id: 'later', gameDate: '2026-05-20T19:00:00Z' }),
+          game({ id: 'earlier', gameDate: '2026-05-18T19:00:00Z' }),
+          game({ id: 'latest', gameDate: '2026-05-22T19:00:00Z' }),
+        ]),
+      );
 
       const result = await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', from: '2026-05-01', limit: 2 }),
@@ -273,13 +289,88 @@ describe('getAccountGamesHandler', () => {
     });
   });
 
+  describe('pagination', () => {
+    it('pages through every backend page in the window before filtering', async () => {
+      const page1 = Array.from({ length: 100 }, (_, i) =>
+        game({ id: `g-${i}`, gameDate: '2026-05-15T18:00:00Z' }),
+      );
+      const page2 = Array.from({ length: 50 }, (_, i) =>
+        game({ id: `g-${100 + i}`, gameDate: '2026-05-15T18:00:00Z' }),
+      );
+
+      mockGetCurrentSeason.mockResolvedValueOnce({ data: { id: 'season-1', name: 'Spring' } });
+      mockGetAccountById.mockResolvedValueOnce({
+        data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
+      });
+      mockListSeasonGames
+        .mockResolvedValueOnce({
+          data: { games: page1, pagination: { page: 1, limit: 100, total: 150 } },
+        })
+        .mockResolvedValueOnce({
+          data: { games: page2, pagination: { page: 2, limit: 100, total: 150 } },
+        });
+
+      const result = await withCtx(() =>
+        getAccountGamesHandler({
+          account_id: 'acc-1',
+          from: '2026-05-15',
+          to: '2026-05-15',
+          limit: 100,
+        }),
+      );
+
+      expect(mockListSeasonGames).toHaveBeenCalledTimes(2);
+      expect(mockListSeasonGames).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ query: expect.objectContaining({ page: 1, limit: 100 }) }),
+      );
+      expect(mockListSeasonGames).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ query: expect.objectContaining({ page: 2, limit: 100 }) }),
+      );
+
+      const body = parsedText(result);
+      expect(body.count).toBe(100);
+      expect(body.truncated).toBe(false);
+    });
+
+    it('caps at the max page count and flags the result as truncated', async () => {
+      mockGetCurrentSeason.mockResolvedValueOnce({ data: { id: 'season-1', name: 'Spring' } });
+      mockGetAccountById.mockResolvedValueOnce({
+        data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
+      });
+      for (let p = 1; p <= 20; p += 1) {
+        const pageGames = Array.from({ length: 100 }, (_, i) =>
+          game({ id: `p${p}-${i}`, gameDate: '2026-05-15T18:00:00Z' }),
+        );
+        mockListSeasonGames.mockResolvedValueOnce({
+          data: { games: pageGames, pagination: { page: p, limit: 100, total: 3000 } },
+        });
+      }
+
+      const result = await withCtx(() =>
+        getAccountGamesHandler({
+          account_id: 'acc-1',
+          from: '2026-05-15',
+          to: '2026-05-15',
+          limit: 100,
+        }),
+      );
+
+      expect(mockListSeasonGames).toHaveBeenCalledTimes(20);
+      const body = parsedText(result);
+      expect(body.truncated).toBe(true);
+      expect(body.summary).toContain('may be incomplete');
+    });
+  });
+
   describe('empty results', () => {
     it('returns a friendly summary when no games match (including hidden schedules)', async () => {
       mockGetCurrentSeason.mockResolvedValueOnce({ data: { id: 'season-1', name: 'Spring' } });
       mockGetAccountById.mockResolvedValueOnce({
         data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
       });
-      mockListSeasonGames.mockResolvedValueOnce({ data: { games: [] } });
+      mockListSeasonGames.mockResolvedValueOnce(seasonGamesResponse([]));
 
       const result = await withCtx(() =>
         getAccountGamesHandler({ account_id: 'acc-1', range: 'tonight' }),

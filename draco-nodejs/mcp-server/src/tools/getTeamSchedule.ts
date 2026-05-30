@@ -9,6 +9,7 @@ import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
 import { getAccountTimezone } from './helpers/accountTimezone.js';
 import { shapeGames } from './helpers/shapeGames.js';
 import { jsonResult } from './helpers/jsonResult.js';
+import { localDateSchema } from './helpers/dateSchema.js';
 import { localDateBounds, filterGamesByLocalDate } from './helpers/resolveGameDateWindow.js';
 
 const TOOL_NAME = 'get_team_schedule';
@@ -17,8 +18,8 @@ export const getTeamScheduleInputSchema = {
   account_id: z.string().min(1),
   team_season_id: z.string().min(1),
   season_id: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
+  from: localDateSchema.optional(),
+  to: localDateSchema.optional(),
 };
 
 export async function getTeamScheduleHandler(args: {

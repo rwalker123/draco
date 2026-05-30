@@ -88,6 +88,16 @@ describe('getTeamScheduleHandler', () => {
         }),
       ).not.toThrow();
     });
+
+    it('rejects malformed or impossible dates', () => {
+      const schema = z.object(getTeamScheduleInputSchema);
+      expect(() =>
+        schema.parse({ account_id: 'acc-1', team_season_id: 'ts-1', from: 'not-a-date' }),
+      ).toThrow();
+      expect(() =>
+        schema.parse({ account_id: 'acc-1', team_season_id: 'ts-1', to: '2026-02-30' }),
+      ).toThrow();
+    });
   });
 
   describe('happy path', () => {
