@@ -17,8 +17,12 @@ import type {
   SchedulerSolveResult,
 } from '@draco/shared-schemas';
 import { formatDateInTimezone, getDateKeyInTimezone } from '../../utils/dateUtils';
+import { findSelectedFieldClashes } from '../../utils/schedulerAssignmentChecks';
 import { ProposalAssignmentRow } from './ProposalAssignmentRow';
 import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
+
+type Option = { id: string; name: string };
+type EditableAssignment = SchedulerSolveResult['assignments'][number];
 
 interface SeasonSchedulerProposalReviewProps {
   proposal: SchedulerSolveResult | null;
@@ -27,6 +31,9 @@ interface SeasonSchedulerProposalReviewProps {
   loading: boolean;
   timeZone: string;
   selectedGameIds: Set<string>;
+  fields: Option[];
+  umpires: Option[];
+  maxUmpires: number;
   fieldNameById: Map<string, string>;
   teamNameById: Map<string, string>;
   umpireNameById: Map<string, string>;
@@ -36,6 +43,7 @@ interface SeasonSchedulerProposalReviewProps {
   onToggleSelection: (gameId: string) => void;
   onToggleAll: () => void;
   onApply: () => void;
+  onAssignmentChange: (assignment: EditableAssignment) => void;
   onCloseSpecPreview: () => void;
 }
 
@@ -88,6 +96,9 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   loading,
   timeZone,
   selectedGameIds,
+  fields,
+  umpires,
+  maxUmpires,
   fieldNameById,
   teamNameById,
   umpireNameById,
@@ -97,6 +108,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   onToggleSelection,
   onToggleAll,
   onApply,
+  onAssignmentChange,
   onCloseSpecPreview,
 }) => {
   const [expandedGameIds, setExpandedGameIds] = useState<Set<string>>(new Set());
@@ -134,6 +146,9 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   };
 
   const groupedAssignments = groupAssignmentsByDate(proposal, timeZone);
+  const fieldClashes = proposal
+    ? findSelectedFieldClashes(proposal.assignments, selectedGameIds)
+    : [];
 
   return (
     <>
@@ -188,6 +203,17 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                   </Button>
                 </Box>
 
+                {fieldClashes.length > 0 && (
+                  <Alert severity="warning" sx={{ mb: 1 }}>
+                    {fieldClashes.length} selected field/time clash
+                    {fieldClashes.length === 1 ? '' : 'es'} detected (
+                    {fieldClashes
+                      .map((clash) => fieldNameById.get(clash.fieldId) ?? `Field ${clash.fieldId}`)
+                      .join(', ')}
+                    ). You can still apply — the server skips any true conflicts and reports them.
+                  </Alert>
+                )}
+
                 <Stack spacing={1}>
                   {groupedAssignments.map((group) => (
                     <Box
@@ -205,6 +231,9 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                           timeZone={timeZone}
                           selected={selectedGameIds.has(assignment.gameId)}
                           expanded={expandedGameIds.has(assignment.gameId)}
+                          fields={fields}
+                          umpires={umpires}
+                          maxUmpires={maxUmpires}
                           fieldNameById={fieldNameById}
                           teamNameById={teamNameById}
                           umpireNameById={umpireNameById}
@@ -212,6 +241,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                           leagueNameById={leagueNameById}
                           onToggleSelection={() => onToggleSelection(assignment.gameId)}
                           onToggleExpanded={() => toggleExpanded(assignment.gameId)}
+                          onAssignmentChange={onAssignmentChange}
                         />
                       ))}
                     </Box>

@@ -1,13 +1,32 @@
 'use client';
 
 import React from 'react';
-import { Box, Checkbox, Collapse, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  Collapse,
+  FormControl,
+  IconButton,
+  InputLabel,
+  ListItemText,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import type { SchedulerProblemSpecPreview, SchedulerSolveResult } from '@draco/shared-schemas';
-import { formatLocalTimeRange } from '../../utils/schedulerTimeFormat';
+import {
+  formatLocalTimeRange,
+  utcIsoToZonedInputValue,
+  zonedInputValueToUtcIso,
+} from '../../utils/schedulerTimeFormat';
 
 type Assignment = SchedulerSolveResult['assignments'][number];
 type GameRequest = SchedulerProblemSpecPreview['games'][number];
+type Option = { id: string; name: string };
 
 interface ProposalAssignmentRowProps {
   assignment: Assignment;
@@ -15,6 +34,9 @@ interface ProposalAssignmentRowProps {
   timeZone: string;
   selected: boolean;
   expanded: boolean;
+  fields: Option[];
+  umpires: Option[];
+  maxUmpires: number;
   fieldNameById: Map<string, string>;
   teamNameById: Map<string, string>;
   umpireNameById: Map<string, string>;
@@ -22,6 +44,7 @@ interface ProposalAssignmentRowProps {
   leagueNameById: Map<string, string>;
   onToggleSelection: () => void;
   onToggleExpanded: () => void;
+  onAssignmentChange: (assignment: Assignment) => void;
 }
 
 export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
@@ -30,6 +53,9 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
   timeZone,
   selected,
   expanded,
+  fields,
+  umpires,
+  maxUmpires,
   fieldNameById,
   teamNameById,
   umpireNameById,
@@ -37,6 +63,7 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
   leagueNameById,
   onToggleSelection,
   onToggleExpanded,
+  onAssignmentChange,
 }) => {
   const home =
     (game?.homeTeamSeasonId ? teamNameById.get(game.homeTeamSeasonId) : null) ?? 'Unknown Home';
@@ -66,6 +93,33 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
 
   const detailsId = `proposal-assignment-details-${assignment.gameId}`;
 
+  const handleFieldChange = (event: SelectChangeEvent) => {
+    onAssignmentChange({ ...assignment, fieldId: event.target.value });
+  };
+
+  const handleUmpiresChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    const ids = (typeof value === 'string' ? value.split(',') : value).filter(
+      (id) => id.length > 0,
+    );
+    onAssignmentChange({ ...assignment, umpireIds: ids.slice(0, maxUmpires) });
+  };
+
+  const handleStartChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextStartIso = zonedInputValueToUtcIso(event.target.value, timeZone);
+    if (!nextStartIso) return;
+    const previousStart = new Date(assignment.startTime).getTime();
+    const previousEnd = new Date(assignment.endTime).getTime();
+    const durationMs =
+      Number.isFinite(previousStart) && Number.isFinite(previousEnd) && previousEnd > previousStart
+        ? previousEnd - previousStart
+        : 0;
+    const nextEndIso = new Date(new Date(nextStartIso).getTime() + durationMs).toISOString();
+    onAssignmentChange({ ...assignment, startTime: nextStartIso, endTime: nextEndIso });
+  };
+
+  const startInputValue = utcIsoToZonedInputValue(assignment.startTime, timeZone);
+
   return (
     <Box sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
@@ -84,7 +138,7 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
         </Box>
         <IconButton
           size="small"
-          aria-label={expanded ? `Collapse details for ${title}` : `Expand details for ${title}`}
+          aria-label={expanded ? `Edit ${title}` : `Edit ${title}`}
           aria-expanded={expanded}
           aria-controls={detailsId}
           onClick={onToggleExpanded}
@@ -94,23 +148,76 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
       </Box>
 
       <Collapse in={expanded} timeout="auto" unmountOnExit id={detailsId}>
-        <Box sx={{ px: 2, pb: 1 }}>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Game ID: {assignment.gameId}
-          </Typography>
-          {game && (
+        <Box sx={{ px: 2, pb: 2, pt: 1 }}>
+          <Stack spacing={2}>
+            <FormControl size="small" fullWidth>
+              <InputLabel id={`${detailsId}-field-label`}>Field</InputLabel>
+              <Select
+                labelId={`${detailsId}-field-label`}
+                label="Field"
+                value={assignment.fieldId}
+                onChange={handleFieldChange}
+              >
+                {fields.map((field) => (
+                  <MenuItem key={field.id} value={field.id}>
+                    {field.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" fullWidth>
+              <InputLabel id={`${detailsId}-umpires-label`}>Umpires</InputLabel>
+              <Select
+                labelId={`${detailsId}-umpires-label`}
+                label="Umpires"
+                multiple
+                value={assignment.umpireIds}
+                onChange={handleUmpiresChange}
+                renderValue={(selectedIds) =>
+                  selectedIds.length === 0
+                    ? 'Unassigned'
+                    : selectedIds
+                        .map(
+                          (id) =>
+                            schedulerUmpireNameById.get(id) ??
+                            umpireNameById.get(id) ??
+                            `Umpire ${id}`,
+                        )
+                        .join(', ')
+                }
+              >
+                {umpires.map((umpire) => (
+                  <MenuItem
+                    key={umpire.id}
+                    value={umpire.id}
+                    disabled={
+                      assignment.umpireIds.length >= maxUmpires &&
+                      !assignment.umpireIds.includes(umpire.id)
+                    }
+                  >
+                    <Checkbox checked={assignment.umpireIds.includes(umpire.id)} />
+                    <ListItemText primary={umpire.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Start"
+              type="datetime-local"
+              size="small"
+              fullWidth
+              value={startInputValue}
+              onChange={handleStartChange}
+              InputLabelProps={{ shrink: true }}
+              helperText="Times are shown in the league time zone. End time shifts with the same game length."
+            />
+
             <Typography variant="caption" color="text.secondary" display="block">
-              Home Team Season ID: {game.homeTeamSeasonId} • Visitor Team Season ID:{' '}
-              {game.visitorTeamSeasonId}
+              Game ID: {assignment.gameId}
             </Typography>
-          )}
-          <Typography variant="caption" color="text.secondary" display="block">
-            Start (UTC): {assignment.startTime} • End (UTC): {assignment.endTime}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Field ID: {assignment.fieldId} • Umpire IDs:{' '}
-            {assignment.umpireIds.length ? assignment.umpireIds.join(', ') : 'None'}
-          </Typography>
+          </Stack>
         </Box>
       </Collapse>
     </Box>

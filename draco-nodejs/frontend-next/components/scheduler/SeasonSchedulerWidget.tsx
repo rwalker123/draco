@@ -446,6 +446,19 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     setSelectedGameIds(new Set(assignments.map((a) => a.gameId)));
   };
 
+  const handleAssignmentChange = (updated: SchedulerSolveResult['assignments'][number]) => {
+    setProposal((prev) =>
+      prev
+        ? {
+            ...prev,
+            assignments: prev.assignments.map((assignment) =>
+              assignment.gameId === updated.gameId ? updated : assignment,
+            ),
+          }
+        : prev,
+    );
+  };
+
   if (!canEdit) {
     return null;
   }
@@ -591,6 +604,9 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         loading={loading}
         timeZone={timeZone}
         selectedGameIds={selectedGameIds}
+        fields={fields}
+        umpires={umpires}
+        maxUmpires={umpiresPerGame}
         fieldNameById={fieldNameById}
         teamNameById={teamNameById}
         umpireNameById={umpireNameById}
@@ -600,6 +616,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         onToggleSelection={handleToggleSelection}
         onToggleAll={handleToggleAll}
         onApply={handleApply}
+        onAssignmentChange={handleAssignmentChange}
         onCloseSpecPreview={() => setSpecPreviewOpen(false)}
       />
     </WidgetShell>

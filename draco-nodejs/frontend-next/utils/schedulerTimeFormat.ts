@@ -8,6 +8,78 @@ export const formatLocalHhmmTo12Hour = (value: string): string => {
   return `${hours12}:${match[2] ?? '00'} ${suffix}`;
 };
 
+const pad2 = (value: number): string => String(value).padStart(2, '0');
+
+interface ZonedParts {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+}
+
+const getZonedParts = (date: Date, timeZone: string): ZonedParts => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const parts: Record<string, number> = {};
+  for (const part of formatter.formatToParts(date)) {
+    if (part.type !== 'literal') {
+      parts[part.type] = Number(part.value);
+    }
+  }
+  return {
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    hour: parts.hour === 24 ? 0 : parts.hour,
+    minute: parts.minute,
+  };
+};
+
+/**
+ * UTC ISO instant -> "YYYY-MM-DDTHH:mm" wall-clock value (in timeZone) for a datetime-local input.
+ */
+export const utcIsoToZonedInputValue = (iso: string, timeZone: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  try {
+    const p = getZonedParts(date, timeZone);
+    return `${p.year}-${pad2(p.month)}-${pad2(p.day)}T${pad2(p.hour)}:${pad2(p.minute)}`;
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * "YYYY-MM-DDTHH:mm" wall-clock value (interpreted in timeZone) -> UTC ISO instant.
+ * Uses one-step offset inversion; correct except exactly at a DST transition instant.
+ */
+export const zonedInputValueToUtcIso = (value: string, timeZone: string): string | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  try {
+    const guess = Date.UTC(year, month - 1, day, hour, minute);
+    const p = getZonedParts(new Date(guess), timeZone);
+    const zonedAsUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute);
+    const offset = zonedAsUtc - guess;
+    return new Date(guess - offset).toISOString();
+  } catch {
+    return null;
+  }
+};
+
 interface ZoneFormatters {
   dateLabel: Intl.DateTimeFormat;
   time: Intl.DateTimeFormat;
