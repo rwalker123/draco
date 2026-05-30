@@ -97,6 +97,7 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
 
   return (
     <SeasonSchedulerWidget
+      key={`${accountId}:${seasonId ?? 'none'}`}
       accountId={accountId}
       seasonId={seasonId}
       canEdit={canEdit}
