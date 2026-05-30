@@ -182,7 +182,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                   <Button
                     variant="contained"
                     onClick={onApply}
-                    disabled={selectedGameIds.size === 0}
+                    disabled={selectedGameIds.size === 0 || loading}
                   >
                     Apply {selectedMode === 'all' ? 'All' : 'Selected'}
                   </Button>
