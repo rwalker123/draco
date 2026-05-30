@@ -18,6 +18,7 @@ export class SchedulerSeasonApplyService {
       constraints: request.constraints,
       objectives: undefined,
       gameIds: request.gameIds,
+      matchups: request.matchups,
     };
     const spec = await schedulerProblemSpecService.buildProblemSpec(
       accountId,
@@ -35,7 +36,7 @@ export class SchedulerSeasonApplyService {
         constraints,
         gameIds: request.gameIds,
       },
-      { seasonId },
+      { seasonId, matchups: request.matchups, seasonTeams: spec.teams },
     );
   }
 }

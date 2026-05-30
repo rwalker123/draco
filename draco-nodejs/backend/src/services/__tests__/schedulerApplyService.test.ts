@@ -9,8 +9,15 @@ import type {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
   dbScheduleUpdateData,
+  dbScheduleCreateData,
 } from '../../repositories/index.js';
-import type { SchedulerApplyRequest } from '@draco/shared-schemas';
+import type {
+  SchedulerApplyRequest,
+  SchedulerGameRequest,
+  SchedulerTeam,
+} from '@draco/shared-schemas';
+import { GameStatus, GameType } from '../../types/gameEnums.js';
+import { ValidationError } from '../../utils/customErrors.js';
 import type {
   availablefields,
   schedulerseasonexclusions,
@@ -955,5 +962,490 @@ describe('SchedulerApplyService.applyProposal', () => {
     expect(result.appliedGameIds).toHaveLength(0);
     expect(result.skipped[0]?.gameId).toBe('123');
     expect(repository.updateGame).not.toHaveBeenCalled();
+  });
+});
+
+describe('SchedulerApplyService.applyProposal — generated matchup path', () => {
+  const accountId = 42n;
+  const seasonId = 2n;
+  const leagueSeasonId = 99n;
+  const homeTeamSeasonId = 11n;
+  const visitorTeamSeasonId = 22n;
+  let repository: ScheduleRepositoryStub;
+  let fieldRepository: FieldRepositoryStub;
+  let seasonExclusionsRepository: SchedulerSeasonExclusionsRepositoryStub;
+  let teamExclusionsRepository: SchedulerTeamSeasonExclusionsRepositoryStub;
+  let umpireExclusionsRepository: SchedulerUmpireExclusionsRepositoryStub;
+  let service: SchedulerApplyService;
+  let createdGames: dbScheduleCreateData[];
+  let fieldMeta: { haslights: boolean; maxparallelgames: number };
+
+  const genMatchup = (id: string): SchedulerGameRequest => ({
+    id,
+    leagueSeasonId: leagueSeasonId.toString(),
+    homeTeamSeasonId: homeTeamSeasonId.toString(),
+    visitorTeamSeasonId: visitorTeamSeasonId.toString(),
+  });
+
+  const makeSeasonTeam = (teamSeasonId: string): SchedulerTeam => ({
+    id: teamSeasonId,
+    teamSeasonId,
+    league: { id: leagueSeasonId.toString() },
+  });
+
+  const seasonTeams: SchedulerTeam[] = [
+    makeSeasonTeam(homeTeamSeasonId.toString()),
+    makeSeasonTeam(visitorTeamSeasonId.toString()),
+    makeSeasonTeam('33'),
+    makeSeasonTeam('44'),
+  ];
+
+  const makeBaseRequest = (
+    gameId: string,
+    matchups: SchedulerGameRequest[],
+    umpireIds: string[] = [],
+  ): SchedulerApplyRequest => ({
+    runId: 'run-gen',
+    mode: 'all',
+    constraints: { hard: {} },
+    assignments: [
+      {
+        gameId,
+        fieldId: '10',
+        startTime: '2026-04-05T09:00:00Z',
+        endTime: '2026-04-05T10:30:00Z',
+        umpireIds,
+      },
+    ],
+  });
+
+  beforeEach(() => {
+    repository = new ScheduleRepositoryStub();
+    fieldRepository = new FieldRepositoryStub();
+    seasonExclusionsRepository = new SchedulerSeasonExclusionsRepositoryStub();
+    teamExclusionsRepository = new SchedulerTeamSeasonExclusionsRepositoryStub();
+    umpireExclusionsRepository = new SchedulerUmpireExclusionsRepositoryStub();
+    createdGames = [];
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
+
+    fieldRepository.findAccountField.mockImplementation(async (account, fieldId) => {
+      if (account !== accountId || fieldId !== 10n) {
+        return null;
+      }
+      return makeAvailableField({
+        id: 10n,
+        accountid: accountId,
+        haslights: fieldMeta.haslights,
+        maxparallelgames: fieldMeta.maxparallelgames,
+      });
+    });
+
+    repository.createGame.mockImplementation(async (data: dbScheduleCreateData) => {
+      createdGames.push(data);
+      return makeGameWithDetails(BigInt(createdGames.length + 1000));
+    });
+
+    repository.countFieldBookingsAtTime.mockResolvedValue(0);
+    repository.countTeamBookingsAtTime.mockResolvedValue(0);
+    repository.countUmpireBookingsAtTime.mockResolvedValue(0);
+    repository.countTeamGamesInRange.mockResolvedValue(0);
+    repository.countUmpireGamesInRange.mockResolvedValue(0);
+
+    seasonExclusionsRepository.listForSeason.mockResolvedValue([] as schedulerseasonexclusions[]);
+    teamExclusionsRepository.listForSeason.mockResolvedValue([] as schedulerteamseasonexclusions[]);
+    umpireExclusionsRepository.listForSeason.mockResolvedValue([] as schedulerumpireexclusions[]);
+
+    service = new SchedulerApplyService({
+      scheduleRepository: repository,
+      fieldRepository,
+      schedulerSeasonExclusionsRepository: seasonExclusionsRepository,
+      schedulerTeamSeasonExclusionsRepository: teamExclusionsRepository,
+      schedulerUmpireExclusionsRepository: umpireExclusionsRepository,
+    });
+  });
+
+  it('calls createGame with correct teams, league, date, field, umpires, status, and type for a generated matchup', async () => {
+    const matchupId = 'gen-abc123';
+    const matchup = genMatchup(matchupId);
+    const request = makeBaseRequest(matchupId, [matchup], ['77', '88']);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('applied');
+    expect(result.appliedGameIds).toEqual([matchupId]);
+    expect(repository.updateGame).not.toHaveBeenCalled();
+    expect(repository.createGame).toHaveBeenCalledTimes(1);
+
+    const createArg = createdGames[0]!;
+    expect(createArg.hteamid).toBe(homeTeamSeasonId);
+    expect(createArg.vteamid).toBe(visitorTeamSeasonId);
+    expect(createArg.leagueid).toBe(leagueSeasonId);
+    expect(createArg.fieldid).toBe(10n);
+    expect(createArg.umpire1).toBe(77n);
+    expect(createArg.umpire2).toBe(88n);
+    expect(createArg.umpire3).toBeNull();
+    expect(createArg.umpire4).toBeNull();
+    expect(createArg.hscore).toBe(0);
+    expect(createArg.vscore).toBe(0);
+    expect(createArg.comment).toBe('');
+    expect(createArg.gamestatus).toBe(GameStatus.Scheduled);
+    expect(createArg.gametype).toBe(GameType.RegularSeason);
+    expect(createArg.gamedate).toEqual(new Date('2026-04-05T09:00:00Z'));
+  });
+
+  it('does not call parseBigIntId on a gen-... id — no throw from BigInt parsing', async () => {
+    const matchupId = 'gen-not-a-number';
+    const matchup = genMatchup(matchupId);
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    await expect(
+      service.applyProposal(accountId, request, { seasonId, matchups: [matchup], seasonTeams }),
+    ).resolves.not.toThrow();
+
+    expect(repository.findGameWithAccountContext).not.toHaveBeenCalled();
+  });
+
+  it('skips a generated matchup that hits a field booking conflict and does not call createGame', async () => {
+    const matchupId = 'gen-conflict';
+    const matchup = genMatchup(matchupId);
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    repository.countFieldBookingsAtTime.mockResolvedValue(1);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.appliedGameIds).toHaveLength(0);
+    expect(result.skipped).toEqual([
+      { gameId: matchupId, reason: 'Field is already booked for this date and time' },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('skips a generated matchup that hits a team booking conflict and does not call createGame', async () => {
+    const matchupId = 'gen-team-conflict';
+    const matchup = genMatchup(matchupId);
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    repository.countTeamBookingsAtTime.mockResolvedValue(1);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      { gameId: matchupId, reason: 'Team is already booked for this date and time' },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('DB-sourced path still calls updateGame and is unaffected by empty matchups list', async () => {
+    const gameId = 555n;
+    const dbGames = new Map<bigint, dbScheduleGameForAccount>();
+    dbGames.set(gameId, makeAccountGame({ id: gameId }));
+
+    repository.findGameWithAccountContext.mockImplementation(
+      async (id: bigint, account: bigint) => {
+        if (account !== accountId) {
+          return null;
+        }
+        return dbGames.get(id) ?? null;
+      },
+    );
+
+    repository.updateGame.mockImplementation(async (id: bigint) => makeGameWithDetails(id));
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-db',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: gameId.toString(),
+          fieldId: '10',
+          startTime: '2026-04-07T10:00:00Z',
+          endTime: '2026-04-07T11:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [],
+    });
+
+    expect(result.status).toBe('applied');
+    expect(result.appliedGameIds).toEqual([gameId.toString()]);
+    expect(repository.updateGame).toHaveBeenCalledTimes(1);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('DB-sourced path works when matchups context is absent entirely', async () => {
+    const gameId = 666n;
+    const dbGames = new Map<bigint, dbScheduleGameForAccount>();
+    dbGames.set(gameId, makeAccountGame({ id: gameId }));
+
+    repository.findGameWithAccountContext.mockImplementation(
+      async (id: bigint, account: bigint) => {
+        if (account !== accountId) {
+          return null;
+        }
+        return dbGames.get(id) ?? null;
+      },
+    );
+
+    repository.updateGame.mockImplementation(async (id: bigint) => makeGameWithDetails(id));
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-no-ctx',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: gameId.toString(),
+          fieldId: '10',
+          startTime: '2026-04-07T10:00:00Z',
+          endTime: '2026-04-07T11:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request);
+
+    expect(result.status).toBe('applied');
+    expect(result.appliedGameIds).toEqual([gameId.toString()]);
+    expect(repository.updateGame).toHaveBeenCalledTimes(1);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('second generated matchup in same batch sees the first insert in conflict checks', async () => {
+    const id1 = 'gen-first';
+    const id2 = 'gen-second';
+    const matchup1 = genMatchup(id1);
+    const matchup2: SchedulerGameRequest = {
+      ...genMatchup(id2),
+      homeTeamSeasonId: '33',
+      visitorTeamSeasonId: '44',
+    };
+
+    fieldMeta = { haslights: true, maxparallelgames: 1 };
+
+    repository.createGame.mockImplementation(async (data: dbScheduleCreateData) => {
+      createdGames.push(data);
+      const newId = BigInt(createdGames.length + 2000);
+
+      repository.countFieldBookingsAtTime.mockImplementation(
+        async (fieldId: bigint, gameDate: Date, _leagueSeasonId: bigint, excludeId?: bigint) => {
+          let count = 0;
+          for (const g of createdGames) {
+            const gDate = g.gamedate instanceof Date ? g.gamedate : new Date(g.gamedate as string);
+            if (excludeId !== undefined) {
+              continue;
+            }
+            if (g.fieldid !== fieldId) {
+              continue;
+            }
+            if (gDate.getTime() !== gameDate.getTime()) {
+              continue;
+            }
+            count += 1;
+          }
+          return count;
+        },
+      );
+
+      return makeGameWithDetails(newId);
+    });
+
+    const request: SchedulerApplyRequest = {
+      runId: 'run-batch',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: id1,
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+        {
+          gameId: id2,
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup1, matchup2],
+      seasonTeams,
+    });
+
+    expect(result.appliedGameIds).toContain(id1);
+    expect(result.skipped.find((s) => s.gameId === id2)?.reason).toMatch(/already booked/);
+    expect(repository.createGame).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips a generated matchup whose teams are not in the requested season', async () => {
+    const matchupId = 'gen-foreign-team';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      homeTeamSeasonId: '9999',
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      {
+        gameId: matchupId,
+        reason: 'Generated matchup references teams or league outside the requested season',
+      },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('skips a generated matchup whose league does not match the teams’ league', async () => {
+    const matchupId = 'gen-foreign-league';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      leagueSeasonId: '12345',
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      {
+        gameId: matchupId,
+        reason: 'Generated matchup references teams or league outside the requested season',
+      },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('fails closed and skips generated matchups when seasonTeams context is absent', async () => {
+    const matchupId = 'gen-no-teams';
+    const matchup = genMatchup(matchupId);
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      {
+        gameId: matchupId,
+        reason: 'Generated matchup references teams or league outside the requested season',
+      },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('inserts a generated matchup only once when its id is duplicated across assignments', async () => {
+    const matchupId = 'gen-dup';
+    const matchup = genMatchup(matchupId);
+    const request: SchedulerApplyRequest = {
+      runId: 'run-dup',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: matchupId,
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+        {
+          gameId: matchupId,
+          fieldId: '10',
+          startTime: '2026-04-05T12:00:00Z',
+          endTime: '2026-04-05T13:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(repository.createGame).toHaveBeenCalledTimes(1);
+    expect(result.appliedGameIds).toEqual([matchupId]);
+    expect(result.skipped).toEqual([
+      { gameId: matchupId, reason: 'Duplicate generated matchup in apply request' },
+    ]);
+  });
+
+  it('skips a generated matchup whose home and visitor teams are the same', async () => {
+    const matchupId = 'gen-self-game';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      visitorTeamSeasonId: homeTeamSeasonId.toString(),
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      { gameId: matchupId, reason: 'Home team and visitor team cannot be the same' },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('throws a ValidationError when a generated matchup team id is malformed', async () => {
+    const matchupId = 'gen-bad-team-id';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      homeTeamSeasonId: 'not-a-number',
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    await expect(
+      service.applyProposal(accountId, request, {
+        seasonId,
+        matchups: [matchup],
+        seasonTeams,
+      }),
+    ).rejects.toThrow(ValidationError);
+
+    expect(repository.createGame).not.toHaveBeenCalled();
   });
 });

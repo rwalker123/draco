@@ -108,13 +108,13 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
     expect(result.skipped).toHaveLength(0);
   });
 
-  it('passes seasonId through to applyProposal context', async () => {
+  it('passes seasonId and season teams through to applyProposal context', async () => {
     applyService.applyProposal.mockResolvedValue(makeApplyResult());
 
     await service.applySeasonProposal(accountId, seasonId, baseRequest);
 
     const [, , context] = applyService.applyProposal.mock.calls[0] ?? [];
-    expect(context).toEqual({ seasonId });
+    expect(context).toEqual({ seasonId, matchups: undefined, seasonTeams: baseSpec.teams });
   });
 
   it('partial-apply: propagates partial status when some assignments are rejected', async () => {

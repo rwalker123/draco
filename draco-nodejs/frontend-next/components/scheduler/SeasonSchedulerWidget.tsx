@@ -366,12 +366,30 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         gameIds: selectedMode === 'subset' ? selectedIdsArray : undefined,
         assignments: proposal.assignments,
         constraints: {},
+        matchups:
+          proposalFromGenerated && generatedMatchups && generatedMatchups.length > 0
+            ? generatedMatchups
+            : undefined,
       };
       const result = await applySeason(request);
+
+      if (result.status === 'failed') {
+        setError(
+          result.skipped.length > 0
+            ? `No games applied — all ${result.skipped.length} assignments were skipped`
+            : 'No games were applied',
+        );
+        return;
+      }
+
       const message =
         result.status === 'applied'
           ? `Applied ${result.appliedGameIds.length} games`
           : `Applied ${result.appliedGameIds.length} games, skipped ${result.skipped.length}`;
+      setProposal(null);
+      setProposalFromGenerated(false);
+      setGeneratedMatchups(null);
+      setSelectedGameIds(new Set());
       setSuccess(message);
       await onApplied();
     } catch (err) {
@@ -547,7 +565,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         teamNameById={teamNameById}
         umpireNameById={umpireNameById}
         leagueNameById={leagueNameById}
-        proposalFromGenerated={proposalFromGenerated}
         generatedMatchups={generatedMatchups}
         getGameSummaryLabel={getGameSummaryLabel}
         onToggleSelection={handleToggleSelection}

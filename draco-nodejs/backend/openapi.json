@@ -24142,6 +24142,73 @@
               "example": "123"
             },
             "minItems": 1
+          },
+          "matchups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "homeTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "visitorTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "requiredUmpires": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 1
+                },
+                "preferredFieldIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                },
+                "earliestStart": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "latestEnd": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id",
+                "leagueSeasonId",
+                "homeTeamSeasonId",
+                "visitorTeamSeasonId"
+              ],
+              "title": "SchedulerGameRequest"
+            },
+            "minItems": 1,
+            "description": "Generated matchups being applied (from round-robin generation). When an assignment references one of these matchups, the backend creates a NEW game from the matchup teams/league plus the assignment placement instead of updating an existing game. Omit when applying a DB-sourced proposal."
           }
         },
         "required": [
@@ -24151,7 +24218,7 @@
           "constraints"
         ],
         "title": "SchedulerSeasonApplyRequest",
-        "description": "DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides."
+        "description": "DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides. May include generated matchups to create new games."
       },
       "SchedulerGenerateMatchupsRequest": {
         "type": "object",
