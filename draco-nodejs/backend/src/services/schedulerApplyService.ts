@@ -84,6 +84,7 @@ export class SchedulerApplyService {
   ): Promise<SchedulerApplyResult> {
     const targetGameIds = this.resolveTargetGameIds(request);
     const appliedGameIds: string[] = [];
+    const insertedGeneratedGameIds = new Set<string>();
     const skipped: Array<{ gameId: string; reason: string }> = [];
     const fieldMetaById = new Map<string, { hasLights: boolean; maxParallelGames: number }>();
     const hard = withDefaultHardConstraints(request.constraints);
@@ -139,6 +140,15 @@ export class SchedulerApplyService {
       }
 
       const isGenerated = matchupById.has(assignment.gameId);
+
+      if (isGenerated && insertedGeneratedGameIds.has(assignment.gameId)) {
+        skipped.push({
+          gameId: assignment.gameId,
+          reason: 'Duplicate generated matchup in apply request',
+        });
+        continue;
+      }
+
       const fieldId = this.parseBigIntId(assignment.fieldId, 'fieldId');
       const gameDate = this.parseDateTime(assignment.startTime, 'startTime');
       const endTime = this.parseDateTime(assignment.endTime, 'endTime');
@@ -418,6 +428,7 @@ export class SchedulerApplyService {
           gametype: GameType.RegularSeason,
         };
         await this.scheduleRepository.createGame(createData);
+        insertedGeneratedGameIds.add(assignment.gameId);
       } else {
         const updateData: dbScheduleUpdateData = {
           gamedate: gameDate,

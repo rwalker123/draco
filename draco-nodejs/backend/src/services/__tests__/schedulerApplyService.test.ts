@@ -1371,6 +1371,44 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     expect(repository.createGame).not.toHaveBeenCalled();
   });
 
+  it('inserts a generated matchup only once when its id is duplicated across assignments', async () => {
+    const matchupId = 'gen-dup';
+    const matchup = genMatchup(matchupId);
+    const request: SchedulerApplyRequest = {
+      runId: 'run-dup',
+      mode: 'all',
+      constraints: { hard: {} },
+      assignments: [
+        {
+          gameId: matchupId,
+          fieldId: '10',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+          umpireIds: [],
+        },
+        {
+          gameId: matchupId,
+          fieldId: '10',
+          startTime: '2026-04-05T12:00:00Z',
+          endTime: '2026-04-05T13:30:00Z',
+          umpireIds: [],
+        },
+      ],
+    };
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(repository.createGame).toHaveBeenCalledTimes(1);
+    expect(result.appliedGameIds).toEqual([matchupId]);
+    expect(result.skipped).toEqual([
+      { gameId: matchupId, reason: 'Duplicate generated matchup in apply request' },
+    ]);
+  });
+
   it('skips a generated matchup whose home and visitor teams are the same', async () => {
     const matchupId = 'gen-self-game';
     const matchup: SchedulerGameRequest = {
