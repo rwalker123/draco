@@ -2,6 +2,7 @@ import type {
   SchedulerApplyRequest,
   SchedulerApplyResult,
   SchedulerGameRequest,
+  SchedulerTeam,
 } from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { IScheduleRepository } from '../repositories/interfaces/IScheduleRepository.js';
@@ -75,7 +76,11 @@ export class SchedulerApplyService {
   async applyProposal(
     accountId: bigint,
     request: SchedulerApplyRequest,
-    context?: { seasonId?: bigint; matchups?: SchedulerGameRequest[] },
+    context?: {
+      seasonId?: bigint;
+      matchups?: SchedulerGameRequest[];
+      seasonTeams?: SchedulerTeam[];
+    },
   ): Promise<SchedulerApplyResult> {
     const targetGameIds = this.resolveTargetGameIds(request);
     const appliedGameIds: string[] = [];
@@ -85,6 +90,11 @@ export class SchedulerApplyService {
     const matchupById = new Map<string, SchedulerGameRequest>(
       (context?.matchups ?? []).map((m) => [m.id, m]),
     );
+    const seasonLeagueByTeamSeasonId = context?.seasonTeams
+      ? new Map<string, string>(
+          context.seasonTeams.map((team) => [team.teamSeasonId, team.league.id]),
+        )
+      : undefined;
 
     const seasonExclusions: Array<{ start: Date; end: Date }> = [];
     const teamExclusionsByTeamSeasonId = new Map<string, Array<{ start: Date; end: Date }>>();
@@ -184,9 +194,26 @@ export class SchedulerApplyService {
 
       if (isGenerated) {
         const matchup = matchupById.get(assignment.gameId)!;
-        homeTeamId = BigInt(matchup.homeTeamSeasonId);
-        visitorTeamId = BigInt(matchup.visitorTeamSeasonId);
-        leagueSeasonId = BigInt(matchup.leagueSeasonId);
+        homeTeamId = this.parseBigIntId(matchup.homeTeamSeasonId, 'homeTeamSeasonId');
+        visitorTeamId = this.parseBigIntId(matchup.visitorTeamSeasonId, 'visitorTeamSeasonId');
+        leagueSeasonId = this.parseBigIntId(matchup.leagueSeasonId, 'leagueSeasonId');
+
+        const homeLeague = seasonLeagueByTeamSeasonId?.get(matchup.homeTeamSeasonId);
+        const visitorLeague = seasonLeagueByTeamSeasonId?.get(matchup.visitorTeamSeasonId);
+        if (
+          !seasonLeagueByTeamSeasonId ||
+          homeLeague === undefined ||
+          visitorLeague === undefined ||
+          homeLeague !== matchup.leagueSeasonId ||
+          visitorLeague !== matchup.leagueSeasonId
+        ) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Generated matchup references teams or league outside the requested season',
+          });
+          continue;
+        }
+
         excludeGameId = undefined;
       } else {
         const parsedGameId = this.parseBigIntId(assignment.gameId, 'gameId');

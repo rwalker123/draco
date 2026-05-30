@@ -372,6 +372,16 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
             : undefined,
       };
       const result = await applySeason(request);
+
+      if (result.status === 'failed') {
+        setError(
+          result.skipped.length > 0
+            ? `No games applied — all ${result.skipped.length} assignments were skipped`
+            : 'No games were applied',
+        );
+        return;
+      }
+
       const message =
         result.status === 'applied'
           ? `Applied ${result.appliedGameIds.length} games`

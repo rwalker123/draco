@@ -36,7 +36,7 @@ export class SchedulerSeasonApplyService {
         constraints,
         gameIds: request.gameIds,
       },
-      { seasonId, matchups: request.matchups },
+      { seasonId, matchups: request.matchups, seasonTeams: spec.teams },
     );
   }
 }

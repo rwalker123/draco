@@ -11,8 +11,13 @@ import type {
   dbScheduleUpdateData,
   dbScheduleCreateData,
 } from '../../repositories/index.js';
-import type { SchedulerApplyRequest, SchedulerGameRequest } from '@draco/shared-schemas';
+import type {
+  SchedulerApplyRequest,
+  SchedulerGameRequest,
+  SchedulerTeam,
+} from '@draco/shared-schemas';
 import { GameStatus, GameType } from '../../types/gameEnums.js';
+import { ValidationError } from '../../utils/customErrors.js';
 import type {
   availablefields,
   schedulerseasonexclusions,
@@ -982,6 +987,19 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     visitorTeamSeasonId: visitorTeamSeasonId.toString(),
   });
 
+  const makeSeasonTeam = (teamSeasonId: string): SchedulerTeam => ({
+    id: teamSeasonId,
+    teamSeasonId,
+    league: { id: leagueSeasonId.toString() },
+  });
+
+  const seasonTeams: SchedulerTeam[] = [
+    makeSeasonTeam(homeTeamSeasonId.toString()),
+    makeSeasonTeam(visitorTeamSeasonId.toString()),
+    makeSeasonTeam('33'),
+    makeSeasonTeam('44'),
+  ];
+
   const makeBaseRequest = (
     gameId: string,
     matchups: SchedulerGameRequest[],
@@ -1054,6 +1072,7 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     const result = await service.applyProposal(accountId, request, {
       seasonId,
       matchups: [matchup],
+      seasonTeams,
     });
 
     expect(result.status).toBe('applied');
@@ -1084,7 +1103,7 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     const request = makeBaseRequest(matchupId, [matchup]);
 
     await expect(
-      service.applyProposal(accountId, request, { seasonId, matchups: [matchup] }),
+      service.applyProposal(accountId, request, { seasonId, matchups: [matchup], seasonTeams }),
     ).resolves.not.toThrow();
 
     expect(repository.findGameWithAccountContext).not.toHaveBeenCalled();
@@ -1100,6 +1119,7 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     const result = await service.applyProposal(accountId, request, {
       seasonId,
       matchups: [matchup],
+      seasonTeams,
     });
 
     expect(result.status).toBe('failed');
@@ -1120,6 +1140,7 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     const result = await service.applyProposal(accountId, request, {
       seasonId,
       matchups: [matchup],
+      seasonTeams,
     });
 
     expect(result.status).toBe('failed');
@@ -1274,10 +1295,98 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     const result = await service.applyProposal(accountId, request, {
       seasonId,
       matchups: [matchup1, matchup2],
+      seasonTeams,
     });
 
     expect(result.appliedGameIds).toContain(id1);
     expect(result.skipped.find((s) => s.gameId === id2)?.reason).toMatch(/already booked/);
     expect(repository.createGame).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips a generated matchup whose teams are not in the requested season', async () => {
+    const matchupId = 'gen-foreign-team';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      homeTeamSeasonId: '9999',
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      {
+        gameId: matchupId,
+        reason: 'Generated matchup references teams or league outside the requested season',
+      },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('skips a generated matchup whose league does not match the teams’ league', async () => {
+    const matchupId = 'gen-foreign-league';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      leagueSeasonId: '12345',
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      {
+        gameId: matchupId,
+        reason: 'Generated matchup references teams or league outside the requested season',
+      },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('fails closed and skips generated matchups when seasonTeams context is absent', async () => {
+    const matchupId = 'gen-no-teams';
+    const matchup = genMatchup(matchupId);
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      {
+        gameId: matchupId,
+        reason: 'Generated matchup references teams or league outside the requested season',
+      },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
+  it('throws a ValidationError when a generated matchup team id is malformed', async () => {
+    const matchupId = 'gen-bad-team-id';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      homeTeamSeasonId: 'not-a-number',
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    await expect(
+      service.applyProposal(accountId, request, {
+        seasonId,
+        matchups: [matchup],
+        seasonTeams,
+      }),
+    ).rejects.toThrow(ValidationError);
+
+    expect(repository.createGame).not.toHaveBeenCalled();
   });
 });
