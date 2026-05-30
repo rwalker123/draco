@@ -232,11 +232,13 @@ The soft constraints are **placement** concerns — they affect *when/where* a g
 
 **Activation:** the problem-spec assembly auto-enables these three soft constraints with the default weights above (no UI yet), so season solves get better spacing immediately. A caller-supplied `constraints.soft` overrides the defaults. Determinism is preserved: scoring is deterministic and ties keep the first slot in the existing stable order, so with no active soft constraint the engine output is identical to before. No solve time budget / cancellation (D.12) — the greedy approach is fast.
 
-### Phase C — Persistence, edit, audit
+### Phase C — Persistence, edit, audit *(scoped 2026-05-30)*
 
-- **C1. Proposal persistence (B.8).** Serialize the in-memory proposal to **localStorage as JSON**, keyed by (account, season), so re-opening the widget restores the last solve. **No backend proposal table.**
-- **C2. Edit before apply (C.9).** Allow manual override of an individual assignment (field/time/umpire) in the review UI before apply. Edits update the stored proposal and are re-validated against hard constraints; a hard-constraint violation is **warned but allowed** (manual override is an intentional admin decision).
-- **C3. Apply audit log (G.19).** Record who applied which assignments and when. This is the one place a small **durable DB table is justified** despite B.8 (audit must survive; localStorage won't do): account, season, applying user, timestamp, and the applied assignments / affected game count. **Requires schema approval before building.**
+Three independent increments. Suggested order: C1 → C2 → C3.
+
+- **C1. Proposal persistence (B.8).** *Frontend only, no schema change.* Serialize the widget's proposal state (`proposal`, `proposalFromGenerated`, `generatedMatchups`, `selectedGameIds`) to **localStorage** keyed `scheduler:proposal:{accountId}:{seasonId}`; hydrate on mount; clear storage on apply success. Mirrors the existing `loadRoundRobinCounts`/`saveRoundRobinCounts` pattern. Restores as-is on reopen; the apply path re-validates and reports stale/invalid assignments via its existing `skipped[]`.
+- **C2. Edit before apply (C.9).** *Frontend only — the apply API already takes an `assignments[]` array.* Make each `ProposalAssignmentRow` editable (field, umpires, start date/time; end derived from the existing duration), updating the in-memory/persisted proposal. **Validation = minimal + cheap clash check:** allow free edits, do one client-side check for two selected assignments sharing the same field + time, and otherwise rely on the backend apply response's existing `skipped[]` reasons (field busy, team double-booked, exclusions). This realizes "warn-but-allow" without re-implementing engine rules on the client.
+- **C3. Apply audit log (G.19).** *Backend; needs a new Prisma table — schema approval required before building.* **Write-only** table (e.g. `schedulerapplyauditlog`): `accountid`, `seasonid`, `runid`, `mode`, `appliedbyuserid` + `appliedbyusername` (from `req.user`), applied/skipped counts, `createdat`. Raw-SQL migration + repository; the acting user is threaded from the apply route into `SchedulerSeasonApplyService`, which writes one row after each apply. No read endpoint or UI in this increment (queryable in the DB).
 - **C4. No rollback (C.10).** No "undo apply" path on `games`.
 
 ### Scale (E.14)
