@@ -214,6 +214,14 @@ export class SchedulerApplyService {
           continue;
         }
 
+        if (homeTeamId === visitorTeamId) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Home team and visitor team cannot be the same',
+          });
+          continue;
+        }
+
         excludeGameId = undefined;
       } else {
         const parsedGameId = this.parseBigIntId(assignment.gameId, 'gameId');

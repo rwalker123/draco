@@ -1371,6 +1371,27 @@ describe('SchedulerApplyService.applyProposal — generated matchup path', () =>
     expect(repository.createGame).not.toHaveBeenCalled();
   });
 
+  it('skips a generated matchup whose home and visitor teams are the same', async () => {
+    const matchupId = 'gen-self-game';
+    const matchup: SchedulerGameRequest = {
+      ...genMatchup(matchupId),
+      visitorTeamSeasonId: homeTeamSeasonId.toString(),
+    };
+    const request = makeBaseRequest(matchupId, [matchup]);
+
+    const result = await service.applyProposal(accountId, request, {
+      seasonId,
+      matchups: [matchup],
+      seasonTeams,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.skipped).toEqual([
+      { gameId: matchupId, reason: 'Home team and visitor team cannot be the same' },
+    ]);
+    expect(repository.createGame).not.toHaveBeenCalled();
+  });
+
   it('throws a ValidationError when a generated matchup team id is malformed', async () => {
     const matchupId = 'gen-bad-team-id';
     const matchup: SchedulerGameRequest = {
