@@ -138,7 +138,9 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
         </Box>
         <IconButton
           size="small"
-          aria-label={expanded ? `Edit ${title}` : `Edit ${title}`}
+          aria-label={
+            expanded ? `Collapse edit controls for ${title}` : `Expand edit controls for ${title}`
+          }
           aria-expanded={expanded}
           aria-controls={detailsId}
           onClick={onToggleExpanded}
