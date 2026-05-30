@@ -9,6 +9,8 @@ import { resolveCurrentSeason } from './helpers/resolveCurrentSeason.js';
 import { getAccountTimezone } from './helpers/accountTimezone.js';
 import { shapeGames } from './helpers/shapeGames.js';
 import { jsonResult } from './helpers/jsonResult.js';
+import { localDateSchema } from './helpers/dateSchema.js';
+import { localDateBounds, filterGamesByLocalDate } from './helpers/resolveGameDateWindow.js';
 
 const TOOL_NAME = 'get_team_schedule';
 
@@ -16,8 +18,8 @@ export const getTeamScheduleInputSchema = {
   account_id: z.string().min(1),
   team_season_id: z.string().min(1),
   season_id: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
+  from: localDateSchema.optional(),
+  to: localDateSchema.optional(),
 };
 
 export async function getTeamScheduleHandler(args: {
@@ -38,19 +40,27 @@ export async function getTeamScheduleHandler(args: {
       seasonId = resolved.seasonId;
     }
 
+    const bounds = args.from || args.to ? localDateBounds(args.from, args.to) : undefined;
+
     const { data } = await listTeamSeasonSchedule({
       client,
       path: { accountId: args.account_id, seasonId, teamSeasonId: args.team_season_id },
       query: {
-        startDate: args.from,
-        endDate: args.to,
+        startDate: bounds?.startDate,
+        endDate: bounds?.endDate,
         sortOrder: 'asc',
         limit: 100,
       },
       throwOnError: true,
     });
 
-    const games = data.games;
+    const timezone = await getAccountTimezone(client, args.account_id);
+    const games = filterGamesByLocalDate(
+      data.games,
+      timezone,
+      bounds?.localStart,
+      bounds?.localEnd,
+    );
 
     if (games.length === 0) {
       auditLog({
@@ -69,7 +79,6 @@ export async function getTeamScheduleHandler(args: {
       });
     }
 
-    const timezone = await getAccountTimezone(client, args.account_id);
     const shaped = shapeGames(games, timezone);
 
     auditLog({

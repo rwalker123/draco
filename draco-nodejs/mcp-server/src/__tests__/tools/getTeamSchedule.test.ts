@@ -88,6 +88,16 @@ describe('getTeamScheduleHandler', () => {
         }),
       ).not.toThrow();
     });
+
+    it('rejects malformed or impossible dates', () => {
+      const schema = z.object(getTeamScheduleInputSchema);
+      expect(() =>
+        schema.parse({ account_id: 'acc-1', team_season_id: 'ts-1', from: 'not-a-date' }),
+      ).toThrow();
+      expect(() =>
+        schema.parse({ account_id: 'acc-1', team_season_id: 'ts-1', to: '2026-02-30' }),
+      ).toThrow();
+    });
   });
 
   describe('happy path', () => {
@@ -131,15 +141,99 @@ describe('getTeamScheduleHandler', () => {
 
       expect(mockListTeamSeasonSchedule).toHaveBeenCalledWith(
         expect.objectContaining({
-          query: expect.objectContaining({ startDate: '2026-05-01', endDate: '2026-05-31' }),
+          query: expect.objectContaining({
+            startDate: '2026-04-30T00:00:00.000Z',
+            endDate: '2026-06-01T23:59:59.999Z',
+          }),
         }),
       );
+    });
+
+    it('filters on local date so a Friday-night ET game survives to=that Friday', async () => {
+      // Fri 2026-05-29 8:15 PM ET == 2026-05-30 00:15 UTC (next UTC day).
+      const fridayNightGame = {
+        ...fixtureGame,
+        id: 'fri-night',
+        gameDate: '2026-05-30T00:15:00.000Z',
+      };
+      const saturdayGame = {
+        ...fixtureGame,
+        id: 'sat',
+        gameDate: '2026-05-30T18:00:00.000Z',
+      };
+
+      mockGetCurrentSeason.mockResolvedValueOnce({ data: fixtureSeason });
+      mockListTeamSeasonSchedule.mockResolvedValueOnce({
+        data: {
+          games: [fridayNightGame, saturdayGame],
+          pagination: { page: 1, limit: 100, total: 2 },
+        },
+      });
+      mockGetAccountById.mockResolvedValueOnce({
+        data: { account: { id: 'acc-1', configuration: { timeZone: 'America/New_York' } } },
+      });
+
+      const result = await withCtx(() =>
+        getTeamScheduleHandler({
+          account_id: 'acc-1',
+          team_season_id: 'ts-1',
+          to: '2026-05-29',
+        }),
+      );
+
+      const body = JSON.parse((result.content[0] as { text: string }).text);
+      expect(body.count).toBe(1);
+      expect(body.games[0].game_id).toBe('fri-night');
+    });
+
+    it('surfaces runs for completed games and null for unplayed games', async () => {
+      mockGetCurrentSeason.mockResolvedValueOnce({ data: fixtureSeason });
+      mockListTeamSeasonSchedule.mockResolvedValueOnce({
+        data: {
+          games: [
+            {
+              ...fixtureGame,
+              id: 'final',
+              gameStatus: 1,
+              gameStatusText: 'Final',
+              homeScore: 5,
+              visitorScore: 2,
+            },
+            {
+              ...fixtureGame,
+              id: 'scheduled',
+              gameDate: '2026-05-12T19:00:00-05:00',
+              gameStatus: 0,
+              gameStatusText: 'Scheduled',
+            },
+          ],
+          pagination: { page: 1, limit: 100, total: 2 },
+        },
+      });
+      mockGetAccountById.mockResolvedValueOnce({
+        data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
+      });
+
+      const result = await withCtx(() =>
+        getTeamScheduleHandler({ account_id: 'acc-1', team_season_id: 'ts-1' }),
+      );
+
+      const body = JSON.parse((result.content[0] as { text: string }).text);
+      const final = body.games.find((g: { game_id: string }) => g.game_id === 'final');
+      const scheduled = body.games.find((g: { game_id: string }) => g.game_id === 'scheduled');
+      expect(final.home_score).toBe(5);
+      expect(final.visitor_score).toBe(2);
+      expect(scheduled.home_score).toBeNull();
+      expect(scheduled.visitor_score).toBeNull();
     });
 
     it('returns no-games message for empty schedule', async () => {
       mockGetCurrentSeason.mockResolvedValueOnce({ data: fixtureSeason });
       mockListTeamSeasonSchedule.mockResolvedValueOnce({
         data: { games: [], pagination: { page: 1, limit: 100, total: 0 } },
+      });
+      mockGetAccountById.mockResolvedValueOnce({
+        data: { account: { id: 'acc-1', configuration: { timeZone: 'UTC' } } },
       });
 
       const result = await withCtx(() =>
