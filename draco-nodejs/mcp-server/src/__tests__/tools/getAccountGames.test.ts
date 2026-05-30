@@ -285,6 +285,9 @@ describe('getAccountGamesHandler', () => {
 
       const body = parsedText(result);
       expect(body.count).toBe(2);
+      expect(body.matched).toBe(3);
+      expect(body.summary).toContain('3 games scheduled');
+      expect(body.summary).toContain('showing the first 2');
       expect(body.games.map((g: { game_id: string }) => g.game_id)).toEqual(['earlier', 'later']);
     });
   });
@@ -330,6 +333,7 @@ describe('getAccountGamesHandler', () => {
       );
 
       const body = parsedText(result);
+      expect(body.matched).toBe(150);
       expect(body.count).toBe(100);
       expect(body.truncated).toBe(false);
     });

@@ -155,6 +155,7 @@ export async function getAccountGamesHandler(args: GetAccountGamesArgs): Promise
     const sorted = [...games].sort(
       (a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime(),
     );
+    const matchedCount = sorted.length;
     const limited = sorted.slice(0, limit);
     const shaped = shapeGames(limited, timezone);
 
@@ -164,17 +165,23 @@ export async function getAccountGamesHandler(args: GetAccountGamesArgs): Promise
       accountId: args.account_id,
       durationMs: Date.now() - start,
       status: 'ok',
-      count: limited.length,
+      count: matchedCount,
       requestId: ctx.requestId,
     });
 
-    const summary = truncated
-      ? `${buildSummary(limited.length, args)} (results may be incomplete — too many games in range; narrow the date range or league.)`
-      : buildSummary(limited.length, args);
+    let summary = buildSummary(matchedCount, args);
+    if (limited.length < matchedCount) {
+      summary += ` (showing the first ${limited.length})`;
+    }
+    if (truncated) {
+      summary +=
+        ' (results may be incomplete — too many games in range; narrow the date range or league.)';
+    }
 
     return jsonResult({
       summary,
       timezone,
+      matched: matchedCount,
       count: limited.length,
       truncated,
       games: shaped,
