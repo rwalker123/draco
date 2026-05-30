@@ -23886,6 +23886,73 @@
             },
             "minItems": 1
           },
+          "matchups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "homeTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "visitorTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "requiredUmpires": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 1
+                },
+                "preferredFieldIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                },
+                "earliestStart": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "latestEnd": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id",
+                "leagueSeasonId",
+                "homeTeamSeasonId",
+                "visitorTeamSeasonId"
+              ],
+              "title": "SchedulerGameRequest"
+            },
+            "minItems": 1,
+            "description": "Optional caller-provided matchups to place instead of DB-sourced games. When present, the backend skips loading existing games and schedules exactly these matchups (used by round-robin matchup generation). gameIds is ignored when matchups is provided."
+          },
           "umpiresPerGame": {
             "type": "integer",
             "minimum": 1,
@@ -23895,7 +23962,7 @@
           }
         },
         "title": "SchedulerSeasonSolveRequest",
-        "description": "DB-sourced solve request. The backend assembles teams/games/fields/umpires/fieldSlots from the database; the caller may provide optional constraint/objective overrides."
+        "description": "DB-sourced solve request. The backend assembles teams/games/fields/umpires/fieldSlots from the database; the caller may provide optional constraint/objective overrides, or supply explicit matchups to place."
       },
       "SchedulerSeasonApplyRequest": {
         "type": "object",
@@ -24085,6 +24152,163 @@
         ],
         "title": "SchedulerSeasonApplyRequest",
         "description": "DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides."
+      },
+      "SchedulerGenerateMatchupsRequest": {
+        "type": "object",
+        "properties": {
+          "leagueCounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "inDivisionGameCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 50,
+                  "example": 5,
+                  "description": "How many times each team plays every other team in its own division."
+                },
+                "crossDivisionGameCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 50,
+                  "example": 3,
+                  "description": "How many times each team plays every other team in the same league but a different division."
+                }
+              },
+              "required": [
+                "leagueSeasonId",
+                "inDivisionGameCount",
+                "crossDivisionGameCount"
+              ],
+              "title": "SchedulerLeagueRoundRobinCount"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "leagueCounts"
+        ],
+        "title": "SchedulerGenerateMatchupsRequest",
+        "description": "Round-robin matchup generation request. For each selected league, specifies the per-opponent game counts for in-division and cross-division pairings. The backend reads the league teams and divisions from the database and returns deterministic, home/away-balanced matchups without persisting them."
+      },
+      "SchedulerGenerateMatchupsResult": {
+        "type": "object",
+        "properties": {
+          "matchups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "homeTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "visitorTeamSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "requiredUmpires": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 1
+                },
+                "preferredFieldIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "123"
+                  }
+                },
+                "earliestStart": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "latestEnd": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2024-03-01T18:30:00Z",
+                  "description": "ISO 8601 timestamp string with timezone offset."
+                },
+                "durationMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "id",
+                "leagueSeasonId",
+                "homeTeamSeasonId",
+                "visitorTeamSeasonId"
+              ],
+              "title": "SchedulerGameRequest"
+            }
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "leagueSeasonId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "example": "123"
+                },
+                "teamCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "inDivisionGames": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "crossDivisionGames": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalGames": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "leagueSeasonId",
+                "teamCount",
+                "inDivisionGames",
+                "crossDivisionGames",
+                "totalGames"
+              ],
+              "title": "SchedulerMatchupGenerationSummary"
+            }
+          }
+        },
+        "required": [
+          "matchups",
+          "summary"
+        ],
+        "title": "SchedulerGenerateMatchupsResult",
+        "description": "Generated round-robin matchups (unplaced; no dates/fields/umpires) plus a per-league summary. Matchups are not persisted; feed them into the solve endpoint to place them."
       },
       "SchedulerSolveResult": {
         "type": "object",
@@ -69049,6 +69273,113 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/generate-matchups": {
+      "post": {
+        "operationId": "generateSeasonMatchups",
+        "summary": "Generate round-robin matchups (unplaced)",
+        "description": "Generates deterministic, home/away-balanced round-robin matchups for the selected leagues using the provided per-league in-division and cross-division game counts. Reads teams and divisions from the database. Does not place (no dates/fields/umpires) and does not persist; feed the returned matchups into the solve endpoint to place them.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerGenerateMatchupsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated matchups with per-league summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerGenerateMatchupsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to generate schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Season or league not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

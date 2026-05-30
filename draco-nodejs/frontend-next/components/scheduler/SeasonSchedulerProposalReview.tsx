@@ -27,6 +27,7 @@ interface SeasonSchedulerProposalReviewProps {
   teamNameById: Map<string, string>;
   umpireNameById: Map<string, string>;
   leagueNameById: Map<string, string>;
+  proposalFromGenerated: boolean;
   getGameSummaryLabel: (gameId: string) => string;
   onToggleSelection: (gameId: string) => void;
   onToggleAll: () => void;
@@ -87,6 +88,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   teamNameById,
   umpireNameById,
   leagueNameById,
+  proposalFromGenerated,
   getGameSummaryLabel,
   onToggleSelection,
   onToggleAll,
@@ -173,13 +175,27 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                     }
                     label={`Select (${selectedGameIds.size}/${proposal.assignments.length})`}
                   />
-                  <Button
-                    variant="contained"
-                    onClick={onApply}
-                    disabled={selectedGameIds.size === 0}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: 0.5,
+                    }}
                   >
-                    Apply {selectedMode === 'all' ? 'All' : 'Selected'}
-                  </Button>
+                    <Button
+                      variant="contained"
+                      onClick={onApply}
+                      disabled={selectedGameIds.size === 0 || proposalFromGenerated}
+                    >
+                      Apply {selectedMode === 'all' ? 'All' : 'Selected'}
+                    </Button>
+                    {proposalFromGenerated && (
+                      <Typography variant="caption" color="text.secondary">
+                        Applying generated schedules is coming soon.
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
 
                 <Stack spacing={1}>

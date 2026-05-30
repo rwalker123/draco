@@ -69,3 +69,4 @@ export * from './PrismaLiveScoringRepository.js';
 export * from './PrismaIndividualLiveScoringRepository.js';
 export * from './PrismaBaseballLiveScoringRepository.js';
 export * from './PrismaOauthRepository.js';
+export * from './PrismaSchedulerMatchupRepository.js';

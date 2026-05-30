@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Divider, Typography } from '@mui/material';
 import WidgetShell from '../ui/WidgetShell';
 import type {
+  SchedulerGenerateMatchupsRequest,
   SchedulerProblemSpecPreview,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonSolveRequest,
@@ -17,6 +18,7 @@ import { useEntityNameMaps } from '../../hooks/useEntityNameMaps';
 import { SeasonSchedulerConfigPanel } from './SeasonSchedulerConfigPanel';
 import { SeasonSchedulerConstraintLists } from './SeasonSchedulerConstraintLists';
 import { SeasonSchedulerProposalReview } from './SeasonSchedulerProposalReview';
+import { loadRoundRobinCounts, type LeagueRoundRobinCount } from './SchedulerRoundRobinConfig';
 
 type FieldOption = { id: string; name: string };
 type EntityOption = { id: string; name: string };
@@ -66,6 +68,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     getSeasonWindowConfig,
     upsertSeasonWindowConfig,
     getProblemSpecPreview,
+    generateMatchups,
     solveSeason,
     applySeason,
     loading,
@@ -90,11 +93,15 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [seasonEndDate, setSeasonEndDate] = useState('');
   const [leagueSeasonSelection, setLeagueSeasonSelection] = useState<string[] | null>(null);
   const [proposal, setProposal] = useState<SchedulerSolveResult | null>(null);
+  const [proposalFromGenerated, setProposalFromGenerated] = useState(false);
   const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(new Set());
   const [specPreview, setSpecPreview] = useState<SchedulerProblemSpecPreview | null>(null);
   const [specPreviewOpen, setSpecPreviewOpen] = useState(false);
   const [umpiresPerGame, setUmpiresPerGame] = useState<UmpiresPerGame>(2);
   const [maxGamesPerUmpirePerDayInput, setMaxGamesPerUmpirePerDayInput] = useState('');
+  const [roundRobinCounts, setRoundRobinCounts] = useState<Map<string, LeagueRoundRobinCount>>(
+    () => (seasonId ? loadRoundRobinCounts(accountId, seasonId) : new Map()),
+  );
 
   const { fieldNameById, teamNameById, umpireNameById } = useEntityNameMaps({
     fields,
@@ -220,6 +227,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       setError(null);
       clearError();
       setProposal(null);
+      setProposalFromGenerated(false);
       if (!seasonWindowConfig)
         throw new Error('Season dates are required before generating a proposal');
       if (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
@@ -266,6 +274,74 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate proposal');
+    }
+  };
+
+  const handleGenerateMatchups = async () => {
+    try {
+      setError(null);
+      clearError();
+      setProposal(null);
+      setProposalFromGenerated(false);
+
+      if (!seasonWindowConfig)
+        throw new Error('Season dates are required before generating matchups');
+      if (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+        throw new Error('Select at least one league to schedule');
+
+      const leagueCounts = selectedLeagueSeasonIds
+        .map((id) => {
+          const entry = roundRobinCounts.get(id);
+          return {
+            leagueSeasonId: id,
+            inDivisionGameCount: entry?.inDivisionGameCount ?? 0,
+            crossDivisionGameCount: entry?.crossDivisionGameCount ?? 0,
+          };
+        })
+        .filter((entry) => entry.inDivisionGameCount > 0 || entry.crossDivisionGameCount > 0);
+
+      if (leagueCounts.length === 0) {
+        setError(
+          'Enter at least one game count (in-division or cross-division) for a selected league before generating matchups.',
+        );
+        return;
+      }
+
+      const generateRequest: SchedulerGenerateMatchupsRequest = { leagueCounts };
+      const { matchups } = await generateMatchups(generateRequest);
+
+      if (matchups.length === 0) {
+        setError('No matchups were generated. Check that your leagues have teams and divisions.');
+        return;
+      }
+
+      const trimmedMaxGames = maxGamesPerUmpirePerDayInput.trim();
+      const maxGamesPerUmpirePerDay =
+        trimmedMaxGames.length > 0 ? Number(trimmedMaxGames) : undefined;
+      if (maxGamesPerUmpirePerDay !== undefined) {
+        if (!Number.isFinite(maxGamesPerUmpirePerDay) || maxGamesPerUmpirePerDay <= 0)
+          throw new Error('Max games/day for umpires must be a positive number');
+      }
+
+      const solveRequest: SchedulerSeasonSolveRequest = {
+        matchups,
+        objectives: { primary: 'maximize_scheduled_games' },
+        umpiresPerGame,
+        constraints:
+          maxGamesPerUmpirePerDay !== undefined
+            ? { hard: { maxGamesPerUmpirePerDay: Math.floor(maxGamesPerUmpirePerDay) } }
+            : undefined,
+      };
+
+      const result = await solveSeason(solveRequest);
+      setProposal(result);
+      setProposalFromGenerated(true);
+      setSelectedGameIds(new Set(result.assignments.map((a) => a.gameId)));
+      setSuccess(
+        `Generated matchups placed (${result.metrics.scheduledGames}/${result.metrics.totalGames} scheduled)`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate matchups');
     }
   };
 
@@ -352,6 +428,17 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
             Preview Problem Spec
           </Button>
           <Button
+            variant="outlined"
+            onClick={handleGenerateMatchups}
+            disabled={
+              !seasonId ||
+              !seasonWindowConfig ||
+              (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+            }
+          >
+            Generate Matchups
+          </Button>
+          <Button
             variant="contained"
             onClick={handleSolve}
             disabled={
@@ -374,6 +461,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       <Divider sx={{ my: 2 }} />
 
       <SeasonSchedulerConfigPanel
+        accountId={accountId}
         seasonId={seasonId}
         seasonWindowConfig={seasonWindowConfig}
         seasonStartDate={seasonStartDate}
@@ -386,11 +474,13 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         leagueSeasonIdFilter={leagueSeasonIdFilter}
         leagueSeasonSelection={leagueSeasonSelection}
         leagueNameById={leagueNameById}
+        roundRobinCounts={roundRobinCounts}
         onSeasonStartDateChange={setSeasonStartDate}
         onSeasonEndDateChange={setSeasonEndDate}
         onUmpiresPerGameChange={setUmpiresPerGame}
         onMaxGamesPerUmpirePerDayChange={setMaxGamesPerUmpirePerDayInput}
         onLeagueSelectionChange={setLeagueSeasonSelection}
+        onRoundRobinCountsChange={setRoundRobinCounts}
         onSave={() => {
           handleSaveSeasonWindow()
             .then(() => setSuccess('Scheduler settings saved'))
@@ -447,6 +537,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         teamNameById={teamNameById}
         umpireNameById={umpireNameById}
         leagueNameById={leagueNameById}
+        proposalFromGenerated={proposalFromGenerated}
         getGameSummaryLabel={getGameSummaryLabel}
         onToggleSelection={handleToggleSelection}
         onToggleAll={handleToggleAll}

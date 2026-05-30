@@ -52,6 +52,7 @@ import {
   IInstagramIngestionRepository,
   ISchedulerFieldAvailabilityRulesRepository,
   ISchedulerFieldExclusionDatesRepository,
+  ISchedulerMatchupRepository,
   ISchedulerProblemSpecRepository,
   ISchedulerSeasonConfigRepository,
   ISchedulerSeasonLeagueSelectionsRepository,
@@ -125,6 +126,7 @@ import {
   PrismaInstagramIngestionRepository,
   PrismaSchedulerFieldAvailabilityRulesRepository,
   PrismaSchedulerFieldExclusionDatesRepository,
+  PrismaSchedulerMatchupRepository,
   PrismaSchedulerProblemSpecRepository,
   PrismaSchedulerSeasonConfigRepository,
   PrismaSchedulerSeasonLeagueSelectionsRepository,
@@ -205,6 +207,7 @@ export class RepositoryFactory {
   private static instagramIngestionRepository: IInstagramIngestionRepository;
   private static schedulerFieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository;
   private static schedulerFieldExclusionDatesRepository: ISchedulerFieldExclusionDatesRepository;
+  private static schedulerMatchupRepository: ISchedulerMatchupRepository;
   private static schedulerProblemSpecRepository: ISchedulerProblemSpecRepository;
   private static schedulerSeasonConfigRepository: ISchedulerSeasonConfigRepository;
   private static schedulerSeasonLeagueSelectionsRepository: ISchedulerSeasonLeagueSelectionsRepository;
@@ -493,6 +496,13 @@ export class RepositoryFactory {
         new PrismaSchedulerFieldExclusionDatesRepository(prisma);
     }
     return this.schedulerFieldExclusionDatesRepository;
+  }
+
+  static getSchedulerMatchupRepository(): ISchedulerMatchupRepository {
+    if (!this.schedulerMatchupRepository) {
+      this.schedulerMatchupRepository = new PrismaSchedulerMatchupRepository(prisma);
+    }
+    return this.schedulerMatchupRepository;
   }
 
   static getSchedulerProblemSpecRepository(): ISchedulerProblemSpecRepository {
