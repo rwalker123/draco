@@ -5,6 +5,7 @@ import type {
   SchedulerGameRequest,
   SchedulerHardConstraints,
   SchedulerProblemSpec,
+  SchedulerSoftConstraints,
   SchedulerSolveResult,
   SchedulerTeamBlackout,
   SchedulerTeamExclusion,
@@ -17,6 +18,11 @@ import crypto from 'node:crypto';
 import { ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
 
+const DEFAULT_BACK_TO_BACK_WEIGHT = 3;
+const DEFAULT_SPREAD_WEIGHT = 2;
+const DEFAULT_EARLY_LATE_WEIGHT = 1;
+const EARLY_LATE_SPLIT_HOUR_LOCAL = 17;
+
 interface Interval {
   start: Date;
   end: Date;
@@ -25,6 +31,13 @@ interface Interval {
 interface GameCandidateContext {
   game: SchedulerGameRequest;
   durationMinutes: number;
+}
+
+interface SlotCandidate {
+  slot: SchedulerFieldSlot;
+  start: Date;
+  durationEnd: Date;
+  umpireIds: string[];
 }
 
 const normalizeSchedulerId = (value: string | number): string => {
@@ -99,6 +112,7 @@ export class SchedulerEngineService {
     const unscheduled: SchedulerUnscheduledReason[] = [];
 
     const hard = this.withDefaultHardConstraints(problemSpec.constraints);
+    const soft = problemSpec.constraints?.soft;
     const availability = this.groupUmpireAvailability(
       problemSpec.umpireAvailability,
       problemSpec.umpires,
@@ -159,6 +173,7 @@ export class SchedulerEngineService {
           umpireDailyCounts,
         },
         timeZoneId,
+        soft,
       );
 
       if (assignment) {
@@ -560,6 +575,168 @@ export class SchedulerEngineService {
     return { start: startDate, end: endDate };
   }
 
+  private buildSlotCandidate(
+    slot: SchedulerFieldSlot,
+    candidate: GameCandidateContext,
+    constraints: SchedulerHardConstraints,
+    availability: Map<string, Interval[]>,
+    seasonExclusions: Interval[],
+    teamBlackouts: Map<string, Interval[]>,
+    teamExclusions: Map<string, Interval[]>,
+    umpireExclusions: Map<string, Interval[]>,
+    umpireDailyLimitById: Map<string, number>,
+    fieldCapacityById: Map<string, number>,
+    fieldLightsById: Map<string, boolean>,
+    schedules: {
+      teamSchedule: Map<string, Interval[]>;
+      fieldSchedule: Map<string, Interval[]>;
+      umpireSchedule: Map<string, Interval[]>;
+      teamDailyCounts: Map<string, Map<string, number>>;
+      umpireDailyCounts: Map<string, Map<string, number>>;
+    },
+    timeZoneId: string,
+  ): SlotCandidate | null {
+    const start = new Date(slot.startTime);
+    const end = new Date(slot.endTime);
+
+    const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
+    if (durationEnd > end) {
+      return null;
+    }
+
+    if (
+      seasonExclusions.some((exclusion) => this.overlaps(exclusion, { start, end: durationEnd }))
+    ) {
+      return null;
+    }
+
+    if (this.intersectsTeamExclusion(candidate.game, start, durationEnd, teamExclusions)) {
+      return null;
+    }
+
+    if (!this.slotWithinGameWindow(candidate.game, start, durationEnd)) {
+      return null;
+    }
+
+    if (
+      constraints.respectTeamBlackouts &&
+      this.intersectsBlackout(candidate.game, start, durationEnd, teamBlackouts)
+    ) {
+      return null;
+    }
+
+    if (this.violatesLightsRequirement(slot.fieldId, start, constraints, fieldLightsById)) {
+      return null;
+    }
+
+    if (
+      this.hasFieldCapacityConflict(
+        slot.fieldId,
+        start,
+        durationEnd,
+        schedules.fieldSchedule,
+        fieldCapacityById.get(slot.fieldId) ?? 1,
+      )
+    ) {
+      return null;
+    }
+
+    if (
+      this.hasConflict(
+        candidate.game.homeTeamSeasonId,
+        start,
+        durationEnd,
+        schedules.teamSchedule,
+      ) ||
+      this.hasConflict(
+        candidate.game.visitorTeamSeasonId,
+        start,
+        durationEnd,
+        schedules.teamSchedule,
+      )
+    ) {
+      return null;
+    }
+
+    const umpireIds = this.selectUmpires(
+      candidate.game,
+      start,
+      durationEnd,
+      constraints,
+      availability,
+      umpireExclusions,
+      umpireDailyLimitById,
+      schedules.umpireSchedule,
+      schedules.umpireDailyCounts,
+      timeZoneId,
+    );
+
+    if (!umpireIds) {
+      return null;
+    }
+
+    if (
+      constraints.maxGamesPerTeamPerDay !== undefined &&
+      !this.withinDailyLimit(
+        candidate.game.homeTeamSeasonId,
+        start,
+        constraints.maxGamesPerTeamPerDay,
+        schedules.teamDailyCounts,
+        timeZoneId,
+      )
+    ) {
+      return null;
+    }
+
+    if (
+      constraints.maxGamesPerTeamPerDay !== undefined &&
+      !this.withinDailyLimit(
+        candidate.game.visitorTeamSeasonId,
+        start,
+        constraints.maxGamesPerTeamPerDay,
+        schedules.teamDailyCounts,
+        timeZoneId,
+      )
+    ) {
+      return null;
+    }
+
+    return { slot, start, durationEnd, umpireIds };
+  }
+
+  private commitBooking(
+    cand: SlotCandidate,
+    game: SchedulerGameRequest,
+    schedules: {
+      teamSchedule: Map<string, Interval[]>;
+      fieldSchedule: Map<string, Interval[]>;
+      umpireSchedule: Map<string, Interval[]>;
+      teamDailyCounts: Map<string, Map<string, number>>;
+      umpireDailyCounts: Map<string, Map<string, number>>;
+    },
+    timeZoneId: string,
+  ): void {
+    this.addBooking(cand.slot.fieldId, cand.start, cand.durationEnd, schedules.fieldSchedule);
+    this.addBooking(game.homeTeamSeasonId, cand.start, cand.durationEnd, schedules.teamSchedule);
+    this.addBooking(game.visitorTeamSeasonId, cand.start, cand.durationEnd, schedules.teamSchedule);
+    this.incrementDailyCount(
+      game.homeTeamSeasonId,
+      cand.start,
+      schedules.teamDailyCounts,
+      timeZoneId,
+    );
+    this.incrementDailyCount(
+      game.visitorTeamSeasonId,
+      cand.start,
+      schedules.teamDailyCounts,
+      timeZoneId,
+    );
+    for (const umpireId of cand.umpireIds) {
+      this.addBooking(umpireId, cand.start, cand.durationEnd, schedules.umpireSchedule);
+      this.incrementDailyCount(umpireId, cand.start, schedules.umpireDailyCounts, timeZoneId);
+    }
+  }
+
   private findAssignment(
     candidate: GameCandidateContext,
     sortedSlots: SchedulerFieldSlot[],
@@ -580,6 +757,7 @@ export class SchedulerEngineService {
       umpireDailyCounts: Map<string, Map<string, number>>;
     },
     timeZoneId: string,
+    soft?: SchedulerSoftConstraints,
   ): SchedulerAssignment | undefined {
     const preferredFields = candidate.game.preferredFieldIds ?? [];
     const preferredFieldSet = preferredFields.length ? new Set(preferredFields) : undefined;
@@ -590,157 +768,145 @@ export class SchedulerEngineService {
         ]
       : [sortedSlots];
 
+    const softActive = this.hasActiveSoftConstraints(soft);
+
     for (const slots of passes) {
+      let best: SlotCandidate | undefined;
+      let bestScore = Number.POSITIVE_INFINITY;
+
       for (const slot of slots) {
-        const start = new Date(slot.startTime);
-        const end = new Date(slot.endTime);
-
-        const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
-        if (durationEnd > end) {
-          continue;
-        }
-
-        if (
-          seasonExclusions.some((exclusion) =>
-            this.overlaps(exclusion, { start, end: durationEnd }),
-          )
-        ) {
-          continue;
-        }
-
-        if (this.intersectsTeamExclusion(candidate.game, start, durationEnd, teamExclusions)) {
-          continue;
-        }
-
-        if (!this.slotWithinGameWindow(candidate.game, start, durationEnd)) {
-          continue;
-        }
-
-        if (
-          constraints.respectTeamBlackouts &&
-          this.intersectsBlackout(candidate.game, start, durationEnd, teamBlackouts)
-        ) {
-          continue;
-        }
-
-        if (this.violatesLightsRequirement(slot.fieldId, start, constraints, fieldLightsById)) {
-          continue;
-        }
-
-        if (
-          this.hasFieldCapacityConflict(
-            slot.fieldId,
-            start,
-            durationEnd,
-            schedules.fieldSchedule,
-            fieldCapacityById.get(slot.fieldId) ?? 1,
-          )
-        ) {
-          continue;
-        }
-
-        if (
-          this.hasConflict(
-            candidate.game.homeTeamSeasonId,
-            start,
-            durationEnd,
-            schedules.teamSchedule,
-          ) ||
-          this.hasConflict(
-            candidate.game.visitorTeamSeasonId,
-            start,
-            durationEnd,
-            schedules.teamSchedule,
-          )
-        ) {
-          continue;
-        }
-
-        const umpireIds = this.selectUmpires(
-          candidate.game,
-          start,
-          durationEnd,
+        const cand = this.buildSlotCandidate(
+          slot,
+          candidate,
           constraints,
           availability,
+          seasonExclusions,
+          teamBlackouts,
+          teamExclusions,
           umpireExclusions,
           umpireDailyLimitById,
-          schedules.umpireSchedule,
-          schedules.umpireDailyCounts,
+          fieldCapacityById,
+          fieldLightsById,
+          schedules,
           timeZoneId,
         );
-
-        if (!umpireIds) {
+        if (!cand) {
           continue;
         }
 
-        if (
-          constraints.maxGamesPerTeamPerDay !== undefined &&
-          !this.withinDailyLimit(
-            candidate.game.homeTeamSeasonId,
-            start,
-            constraints.maxGamesPerTeamPerDay,
-            schedules.teamDailyCounts,
-            timeZoneId,
-          )
-        ) {
-          continue;
+        if (!softActive) {
+          best = cand;
+          break;
         }
 
-        if (
-          constraints.maxGamesPerTeamPerDay !== undefined &&
-          !this.withinDailyLimit(
-            candidate.game.visitorTeamSeasonId,
-            start,
-            constraints.maxGamesPerTeamPerDay,
-            schedules.teamDailyCounts,
-            timeZoneId,
-          )
-        ) {
-          continue;
-        }
-
-        this.addBooking(slot.fieldId, start, durationEnd, schedules.fieldSchedule);
-        this.addBooking(
-          candidate.game.homeTeamSeasonId,
-          start,
-          durationEnd,
+        const score = this.scoreCandidate(
+          candidate.game,
+          cand.start,
+          cand.durationEnd,
+          soft,
           schedules.teamSchedule,
-        );
-        this.addBooking(
-          candidate.game.visitorTeamSeasonId,
-          start,
-          durationEnd,
-          schedules.teamSchedule,
-        );
-        this.incrementDailyCount(
-          candidate.game.homeTeamSeasonId,
-          start,
-          schedules.teamDailyCounts,
           timeZoneId,
         );
-        this.incrementDailyCount(
-          candidate.game.visitorTeamSeasonId,
-          start,
-          schedules.teamDailyCounts,
-          timeZoneId,
-        );
-
-        for (const umpireId of umpireIds) {
-          this.addBooking(umpireId, start, durationEnd, schedules.umpireSchedule);
-          this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts, timeZoneId);
+        if (score < bestScore) {
+          bestScore = score;
+          best = cand;
         }
+      }
 
+      if (best) {
+        this.commitBooking(best, candidate.game, schedules, timeZoneId);
         return {
           gameId: candidate.game.id,
-          fieldId: slot.fieldId,
-          startTime: start.toISOString(),
-          endTime: durationEnd.toISOString(),
-          umpireIds,
+          fieldId: best.slot.fieldId,
+          startTime: best.start.toISOString(),
+          endTime: best.durationEnd.toISOString(),
+          umpireIds: best.umpireIds,
         };
       }
     }
 
     return undefined;
+  }
+
+  private hasActiveSoftConstraints(soft: SchedulerSoftConstraints | undefined): boolean {
+    if (!soft) {
+      return false;
+    }
+    return (
+      soft.avoidBackToBackGames?.enabled === true ||
+      soft.balanceEarlyVsLate?.enabled === true ||
+      soft.spreadGamesAcrossDays?.enabled === true
+    );
+  }
+
+  private isEarlySlot(date: Date, timeZoneId: string): boolean {
+    const hour = DateUtils.getHourInTimeZone(date, timeZoneId);
+    const effectiveHour = hour !== null ? hour : date.getUTCHours();
+    return effectiveHour < EARLY_LATE_SPLIT_HOUR_LOCAL;
+  }
+
+  private scoreCandidate(
+    game: SchedulerGameRequest,
+    start: Date,
+    end: Date,
+    soft: SchedulerSoftConstraints | undefined,
+    teamSchedule: Map<string, Interval[]>,
+    timeZoneId: string,
+  ): number {
+    let penalty = 0;
+    const teams = [game.homeTeamSeasonId, game.visitorTeamSeasonId];
+
+    for (const team of teams) {
+      const bookings = teamSchedule.get(team) ?? [];
+
+      if (soft?.avoidBackToBackGames?.enabled && soft.avoidBackToBackGames.minRestMinutes > 0) {
+        const weight = soft.avoidBackToBackGames.weight ?? DEFAULT_BACK_TO_BACK_WEIGHT;
+        const minRest = soft.avoidBackToBackGames.minRestMinutes;
+        let minGap = Number.POSITIVE_INFINITY;
+        for (const booking of bookings) {
+          const gapAfterBooking = (start.getTime() - booking.end.getTime()) / 60000;
+          const gapBeforeBooking = (booking.start.getTime() - end.getTime()) / 60000;
+          const gap = Math.min(
+            gapAfterBooking >= 0 ? gapAfterBooking : Number.POSITIVE_INFINITY,
+            gapBeforeBooking >= 0 ? gapBeforeBooking : Number.POSITIVE_INFINITY,
+          );
+          if (gap < minGap) {
+            minGap = gap;
+          }
+        }
+        if (minGap !== Number.POSITIVE_INFINITY && minGap < minRest) {
+          penalty += weight * ((minRest - minGap) / minRest);
+        }
+      }
+
+      if (soft?.spreadGamesAcrossDays?.enabled) {
+        const weight = soft.spreadGamesAcrossDays.weight ?? DEFAULT_SPREAD_WEIGHT;
+        const candidateDayKey = this.formatDayKeyInTimeZone(start, timeZoneId);
+        const sameDayCount = bookings.filter(
+          (booking) => this.formatDayKeyInTimeZone(booking.start, timeZoneId) === candidateDayKey,
+        ).length;
+        penalty += weight * sameDayCount;
+      }
+
+      if (soft?.balanceEarlyVsLate?.enabled) {
+        const weight = soft.balanceEarlyVsLate.weight ?? DEFAULT_EARLY_LATE_WEIGHT;
+        const candidateIsEarly = this.isEarlySlot(start, timeZoneId);
+        let earlyCount = 0;
+        let lateCount = 0;
+        for (const booking of bookings) {
+          if (this.isEarlySlot(booking.start, timeZoneId)) {
+            earlyCount += 1;
+          } else {
+            lateCount += 1;
+          }
+        }
+        const sameSide = candidateIsEarly ? earlyCount : lateCount;
+        const otherSide = candidateIsEarly ? lateCount : earlyCount;
+        penalty += weight * Math.max(0, sameSide - otherSide);
+      }
+    }
+
+    return penalty;
   }
 
   private violatesLightsRequirement(

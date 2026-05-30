@@ -1139,3 +1139,454 @@ describe('SchedulerEngineService', () => {
     expect(result.assignments[0]?.umpireIds).toEqual(['ump-1']);
   });
 });
+
+describe('SchedulerEngineService — soft constraint scoring', () => {
+  const makeBaseSpec = (): SchedulerProblemSpec => ({
+    season: {
+      id: 'season-1',
+      name: 'Test Season',
+      startDate: '2026-04-01',
+      endDate: '2026-08-31',
+      gameDurations: { defaultMinutes: 60 },
+    },
+    teams: [
+      { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+      { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+    ],
+    fields: [{ id: 'field-1', name: 'Field 1' }],
+    umpires: [],
+    games: [
+      {
+        id: 'game-1',
+        leagueSeasonId: 'league-1',
+        homeTeamSeasonId: 'ts-1',
+        visitorTeamSeasonId: 'ts-2',
+        requiredUmpires: 0,
+      },
+    ],
+    fieldSlots: [],
+    constraints: { hard: {} },
+  });
+
+  it('no-soft invariant: spec without soft constraints picks the first valid slot', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      fieldSlots: [
+        {
+          id: 'slot-early',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-late',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T19:00:00Z',
+          endTime: '2026-04-06T21:00:00Z',
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments[0]?.startTime).toBe('2026-04-06T09:00:00.000Z');
+  });
+
+  it('no-soft invariant: all soft constraints explicitly disabled still picks first slot', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      fieldSlots: [
+        {
+          id: 'slot-early',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-late',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T19:00:00Z',
+          endTime: '2026-04-06T21:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {},
+        soft: {
+          avoidBackToBackGames: { enabled: false, minRestMinutes: 120 },
+          spreadGamesAcrossDays: { enabled: false },
+          balanceEarlyVsLate: { enabled: false },
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments[0]?.startTime).toBe('2026-04-06T09:00:00.000Z');
+  });
+
+  it('avoidBackToBackGames: prefers the far slot when a team already has a nearby game', () => {
+    const service = new SchedulerEngineService();
+
+    const specWithSoft: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      games: [
+        {
+          id: 'game-existing',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-new',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-close',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T10:30:00Z',
+          endTime: '2026-04-06T12:30:00Z',
+        },
+        {
+          id: 'slot-far',
+          fieldId: 'field-1',
+          startTime: '2026-04-08T09:00:00Z',
+          endTime: '2026-04-08T11:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {},
+        soft: {
+          avoidBackToBackGames: { enabled: true, minRestMinutes: 2880, weight: 3 },
+        },
+      },
+    };
+
+    const result = service.solve(specWithSoft);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+
+    const existingAssignment = result.assignments.find((a) => a.gameId === 'game-existing');
+    const newAssignment = result.assignments.find((a) => a.gameId === 'game-new');
+
+    expect(existingAssignment?.startTime).toBe('2026-04-06T10:30:00.000Z');
+    expect(newAssignment?.startTime).toBe('2026-04-08T09:00:00.000Z');
+  });
+
+  it('avoidBackToBackGames: without soft, the first/close slot is chosen (control)', () => {
+    const service = new SchedulerEngineService();
+
+    const specNoSoft: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'league-1' } },
+        { id: 'team-4', teamSeasonId: 'ts-4', league: { id: 'league-1' } },
+      ],
+      games: [
+        {
+          id: 'game-anchor',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-new',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-3',
+          visitorTeamSeasonId: 'ts-4',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-anchor',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-close',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T10:30:00Z',
+          endTime: '2026-04-06T12:30:00Z',
+        },
+        {
+          id: 'slot-far',
+          fieldId: 'field-1',
+          startTime: '2026-04-08T09:00:00Z',
+          endTime: '2026-04-08T11:00:00Z',
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const result = service.solve(specNoSoft);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+
+    const anchorAssignment = result.assignments.find((a) => a.gameId === 'game-anchor');
+    const newAssignment = result.assignments.find((a) => a.gameId === 'game-new');
+    expect(anchorAssignment?.startTime).toBe('2026-04-06T09:00:00.000Z');
+    expect(newAssignment?.startTime).toBe('2026-04-06T10:30:00.000Z');
+  });
+
+  it('spreadGamesAcrossDays: prefers a slot on a day the team has no game', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'league-1' } },
+      ],
+      games: [
+        {
+          id: 'game-monday',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-new',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-3',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-monday',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-monday-afternoon',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T14:00:00Z',
+          endTime: '2026-04-06T16:00:00Z',
+        },
+        {
+          id: 'slot-wednesday',
+          fieldId: 'field-1',
+          startTime: '2026-04-08T09:00:00Z',
+          endTime: '2026-04-08T11:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {},
+        soft: {
+          spreadGamesAcrossDays: { enabled: true, weight: 2 },
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+
+    const newAssignment = result.assignments.find((a) => a.gameId === 'game-new');
+    expect(newAssignment?.startTime).toBe('2026-04-08T09:00:00.000Z');
+  });
+
+  it('balanceEarlyVsLate: team with an early game already prefers a late slot for next game', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'league-1' } },
+      ],
+      games: [
+        {
+          id: 'game-early',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-new',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-3',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-early-day1',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-early-day2',
+          fieldId: 'field-1',
+          startTime: '2026-04-07T09:00:00Z',
+          endTime: '2026-04-07T11:00:00Z',
+        },
+        {
+          id: 'slot-late-day2',
+          fieldId: 'field-1',
+          startTime: '2026-04-07T19:00:00Z',
+          endTime: '2026-04-07T21:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {},
+        soft: {
+          balanceEarlyVsLate: { enabled: true, weight: 1 },
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+
+    const newAssignment = result.assignments.find((a) => a.gameId === 'game-new');
+    expect(newAssignment?.startTime).toBe('2026-04-07T19:00:00.000Z');
+  });
+
+  it('weight dominance: higher-weight constraint wins when two soft constraints conflict', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'league-1' } },
+      ],
+      games: [
+        {
+          id: 'game-anchor',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-new',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-3',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-anchor',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-same-day-late',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T19:00:00Z',
+          endTime: '2026-04-06T21:00:00Z',
+        },
+        {
+          id: 'slot-diff-day-early',
+          fieldId: 'field-1',
+          startTime: '2026-04-07T09:00:00Z',
+          endTime: '2026-04-07T11:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {},
+        soft: {
+          spreadGamesAcrossDays: { enabled: true, weight: 10 },
+          balanceEarlyVsLate: { enabled: true, weight: 1 },
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+
+    const newAssignment = result.assignments.find((a) => a.gameId === 'game-new');
+    expect(newAssignment?.startTime).toBe('2026-04-07T09:00:00.000Z');
+  });
+
+  it('determinism: identical spec solved twice produces deep-equal results', () => {
+    const service = new SchedulerEngineService();
+
+    const spec: SchedulerProblemSpec = {
+      ...makeBaseSpec(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'league-1' } },
+      ],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-2',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-3',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-a',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T09:00:00Z',
+          endTime: '2026-04-06T11:00:00Z',
+        },
+        {
+          id: 'slot-b',
+          fieldId: 'field-1',
+          startTime: '2026-04-06T14:00:00Z',
+          endTime: '2026-04-06T16:00:00Z',
+        },
+        {
+          id: 'slot-c',
+          fieldId: 'field-1',
+          startTime: '2026-04-08T09:00:00Z',
+          endTime: '2026-04-08T11:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {},
+        soft: {
+          avoidBackToBackGames: { enabled: true, minRestMinutes: 2880, weight: 3 },
+          spreadGamesAcrossDays: { enabled: true, weight: 2 },
+          balanceEarlyVsLate: { enabled: true, weight: 1 },
+        },
+      },
+    };
+
+    const result1 = service.solve({ ...spec, runId: 'run-det-1' });
+    const result2 = service.solve({ ...spec, runId: 'run-det-1' });
+
+    expect(result1.assignments).toEqual(result2.assignments);
+    expect(result1.unscheduled).toEqual(result2.unscheduled);
+  });
+});
