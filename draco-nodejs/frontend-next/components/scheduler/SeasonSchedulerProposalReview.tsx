@@ -11,7 +11,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import type { SchedulerProblemSpecPreview, SchedulerSolveResult } from '@draco/shared-schemas';
+import type {
+  SchedulerGameRequest,
+  SchedulerProblemSpecPreview,
+  SchedulerSolveResult,
+} from '@draco/shared-schemas';
 import { formatDateInTimezone, getDateKeyInTimezone } from '../../utils/dateUtils';
 import { ProposalAssignmentRow } from './ProposalAssignmentRow';
 import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
@@ -28,6 +32,7 @@ interface SeasonSchedulerProposalReviewProps {
   umpireNameById: Map<string, string>;
   leagueNameById: Map<string, string>;
   proposalFromGenerated: boolean;
+  generatedMatchups: SchedulerGameRequest[] | null;
   getGameSummaryLabel: (gameId: string) => string;
   onToggleSelection: (gameId: string) => void;
   onToggleAll: () => void;
@@ -89,6 +94,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   umpireNameById,
   leagueNameById,
   proposalFromGenerated,
+  generatedMatchups,
   getGameSummaryLabel,
   onToggleSelection,
   onToggleAll,
@@ -115,7 +121,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   );
 
   const gameRequestById = new Map<string, SchedulerProblemSpecPreview['games'][number]>(
-    (specPreview?.games ?? []).map((game) => [game.id, game]),
+    [...(specPreview?.games ?? []), ...(generatedMatchups ?? [])].map((game) => [game.id, game]),
   );
 
   const selectedMode = !proposal || selectedGameIds.size === assignments.length ? 'all' : 'subset';

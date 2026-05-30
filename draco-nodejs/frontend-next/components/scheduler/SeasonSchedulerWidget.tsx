@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Divider, Typography } from '@mui/material';
 import WidgetShell from '../ui/WidgetShell';
 import type {
+  SchedulerGameRequest,
   SchedulerGenerateMatchupsRequest,
   SchedulerProblemSpecPreview,
   SchedulerSeasonApplyRequest,
@@ -94,6 +95,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [leagueSeasonSelection, setLeagueSeasonSelection] = useState<string[] | null>(null);
   const [proposal, setProposal] = useState<SchedulerSolveResult | null>(null);
   const [proposalFromGenerated, setProposalFromGenerated] = useState(false);
+  const [generatedMatchups, setGeneratedMatchups] = useState<SchedulerGameRequest[] | null>(null);
   const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(new Set());
   const [specPreview, setSpecPreview] = useState<SchedulerProblemSpecPreview | null>(null);
   const [specPreviewOpen, setSpecPreviewOpen] = useState(false);
@@ -233,6 +235,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       clearError();
       setProposal(null);
       setProposalFromGenerated(false);
+      setGeneratedMatchups(null);
       if (!seasonWindowConfig)
         throw new Error('Season dates are required before generating a proposal');
       if (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
@@ -288,6 +291,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       clearError();
       setProposal(null);
       setProposalFromGenerated(false);
+      setGeneratedMatchups(null);
 
       if (!seasonWindowConfig)
         throw new Error('Season dates are required before generating matchups');
@@ -341,6 +345,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       const result = await solveSeason(solveRequest);
       setProposal(result);
       setProposalFromGenerated(true);
+      setGeneratedMatchups(matchups);
       setSelectedGameIds(new Set(result.assignments.map((a) => a.gameId)));
       setSuccess(
         `Generated matchups placed (${result.metrics.scheduledGames}/${result.metrics.totalGames} scheduled)`,
@@ -543,6 +548,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         umpireNameById={umpireNameById}
         leagueNameById={leagueNameById}
         proposalFromGenerated={proposalFromGenerated}
+        generatedMatchups={generatedMatchups}
         getGameSummaryLabel={getGameSummaryLabel}
         onToggleSelection={handleToggleSelection}
         onToggleAll={handleToggleAll}
