@@ -156,6 +156,11 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     };
   }, [canEdit, seasonId, setError]);
 
+  useEffect(() => {
+    if (!seasonId) return;
+    setRoundRobinCounts(loadRoundRobinCounts(accountId, seasonId));
+  }, [accountId, seasonId]);
+
   const handleSaveSeasonWindow = async () => {
     if (!seasonId) return;
 

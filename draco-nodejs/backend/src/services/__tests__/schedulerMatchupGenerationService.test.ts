@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { SchedulerMatchupGenerationService } from '../schedulerMatchupGenerationService.js';
 import type { ISchedulerMatchupRepository } from '../../repositories/interfaces/ISchedulerMatchupRepository.js';
 import { NotFoundError, ValidationError } from '../../utils/customErrors.js';
@@ -7,6 +7,7 @@ import type {
   SchedulerGenerateMatchupsResult,
 } from '@draco/shared-schemas';
 import type { SchedulerMatchupGeneratorService } from '../schedulerMatchupGeneratorService.js';
+import { partialMock } from '../../test-utils/partialMock.js';
 
 class MatchupRepositoryStub implements ISchedulerMatchupRepository {
   listLeagueTeamsWithDivision = vi.fn<ISchedulerMatchupRepository['listLeagueTeamsWithDivision']>();
@@ -16,8 +17,8 @@ class MatchupRepositoryStub implements ISchedulerMatchupRepository {
 
 const makeGeneratorStub = (
   result: SchedulerGenerateMatchupsResult,
-): SchedulerMatchupGeneratorService =>
-  ({ generate: vi.fn().mockReturnValue(result) }) as unknown as SchedulerMatchupGeneratorService;
+): Mocked<SchedulerMatchupGeneratorService> =>
+  partialMock<SchedulerMatchupGeneratorService>({ generate: vi.fn().mockReturnValue(result) });
 
 const ACCOUNT_ID = BigInt(1);
 const SEASON_ID = BigInt(100);

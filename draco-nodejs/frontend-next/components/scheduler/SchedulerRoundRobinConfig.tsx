@@ -83,9 +83,7 @@ export const SchedulerRoundRobinConfig: React.FC<SchedulerRoundRobinConfigProps>
     };
     const next = new Map(counts);
     next.set(leagueSeasonId, { ...existing, [field]: value });
-    if (seasonId) {
-      saveRoundRobinCounts(accountId, seasonId, next);
-    }
+    saveRoundRobinCounts(accountId, seasonId, next);
     onCountsChange(next);
   };
 
