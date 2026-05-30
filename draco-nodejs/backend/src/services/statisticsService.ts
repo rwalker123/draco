@@ -355,25 +355,24 @@ export class StatisticsService {
         ds.id as "divisionId",
         dd.name as "divisionName",
         ds.priority as "divisionPriority",
-        COALESCE(SUM(CASE 
-          WHEN lg.gamestatus = 1 AND (
-            (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR 
+        COALESCE(SUM(CASE
+          WHEN lg.gamestatus IN (1, 4) AND (
+            (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR
             (lg.vteamid = ts.id AND lg.vscore > lg.hscore)
           ) THEN 1 ELSE 0 END), 0)::int as w,
-        COALESCE(SUM(CASE 
-          WHEN lg.gamestatus = 1 AND (
-            (lg.hteamid = ts.id AND lg.hscore < lg.vscore) OR 
+        COALESCE(SUM(CASE
+          WHEN lg.gamestatus IN (1, 4) AND (
+            (lg.hteamid = ts.id AND lg.hscore < lg.vscore) OR
             (lg.vteamid = ts.id AND lg.vscore < lg.hscore)
           ) THEN 1
           WHEN lg.gamestatus = 5 AND (lg.hteamid = ts.id OR lg.vteamid = ts.id) THEN 1
-          WHEN lg.gamestatus = 4 AND (lg.hteamid = ts.id OR lg.vteamid = ts.id) THEN 1
           ELSE 0 END), 0)::int as l,
         COALESCE(SUM(CASE 
           WHEN lg.gamestatus = 1 AND lg.hscore = lg.vscore AND (lg.hteamid = ts.id OR lg.vteamid = ts.id) 
           THEN 1 ELSE 0 END), 0)::int as t,
         -- Division Wins
         COALESCE(SUM(CASE
-          WHEN lg.gamestatus = 1
+          WHEN lg.gamestatus IN (1, 4)
             AND (
               (lg.hteamid = ts.id AND lg.hscore > lg.vscore)
               OR (lg.vteamid = ts.id AND lg.vscore > lg.hscore)
@@ -385,11 +384,11 @@ export class StatisticsService {
         -- Division Losses
         COALESCE(SUM(CASE
           WHEN (
-            (lg.gamestatus = 1 AND (
+            (lg.gamestatus IN (1, 4) AND (
               (lg.hteamid = ts.id AND lg.hscore < lg.vscore)
               OR (lg.vteamid = ts.id AND lg.vscore < lg.hscore)
             ))
-            OR (lg.gamestatus IN (4, 5) AND (lg.hteamid = ts.id OR lg.vteamid = ts.id))
+            OR (lg.gamestatus = 5 AND (lg.hteamid = ts.id OR lg.vteamid = ts.id))
           )
             AND hts.divisionseasonid = vts.divisionseasonid
             AND hts.divisionseasonid = ts.divisionseasonid
