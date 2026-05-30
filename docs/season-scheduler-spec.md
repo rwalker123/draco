@@ -218,19 +218,19 @@ Produces matchups; placement uses the existing "first valid slot" engine until P
 - **A4. Determinism.** Same config + same team set → same matchup set (stable/seeded ordering), consistent with the existing engine's determinism guarantees.
 - **A5. Output.** An in-memory list of unplaced matchups (home, visitor, league/division context) fed directly into the placer. No new persisted entity (B.8).
 
-### Phase B — Soft-constraint scoring (smarter placement)
+### Phase B — Soft-constraint scoring (smarter placement) — **IMPLEMENTED**
 
-Today the placer takes the **first** slot that violates no hard rule. Phase B makes it pick the **best** legal slot: each soft preference contributes a penalty, and the placer chooses the lowest total penalty among valid candidates. Hard constraints are unchanged.
+The placer previously took the **first** slot that violated no hard rule. It now picks the **best** legal slot: each soft preference contributes a penalty and the placer chooses the lowest total penalty among valid candidates. Hard constraints are unchanged, and the preferred-field pass still takes precedence over the soft score.
 
-Soft constraints:
+The soft constraints are **placement** concerns — they affect *when/where* a game is placed, not who is home. They were already defined in `SchedulerSoftConstraintsSchema`; Phase B implemented the engine scoring for them:
 
-- **Team rest days (A.1, soft)** — penalty when two of a team's games fall closer together than a configurable minimum gap; larger penalty the closer they are.
-- **Home/away balance (A.2)** — penalty when an assignment worsens a team's home/away imbalance.
-- **Division / cross-division pairing (A.5, soft)** — best-effort; penalty when the generated target counts cannot be met exactly (they often can't divide evenly).
+- **`avoidBackToBackGames`** (the A.1 rest-days constraint) — penalty when a team's game falls within `minRestMinutes` of another of its games; larger the closer they are. **Default weight 3, default `minRestMinutes` 2880 (2 days).**
+- **`spreadGamesAcrossDays`** — penalty for each existing same-day game a team already has, discouraging clustering. **Default weight 2.**
+- **`balanceEarlyVsLate`** — penalty for adding to a team's already-heavier side of the early/late split (split at 17:00 local). **Default weight 1.**
 
-**Default weights (D.11), fixed initially, configurable later:** rest-days = 3, home/away imbalance = 2, pairing shortfall = 1. Lower total score = better placement. Ties broken by the existing stable sort, preserving determinism.
+**Home/away balance (A.2) is a generation concern, not a placement one** — placement can't change who is home — so it is handled entirely by the Phase A generator (A3), not by the placer. Likewise pairing counts (A.5) are fixed at generation. These are intentionally *not* placement-scoring terms.
 
-> Note: this changes the engine from "first valid" to "best valid among candidates," a non-trivial refactor. No solve time budget / cancellation (D.12) — the greedy approach is fast; revisit only if E.14 limits are exceeded.
+**Activation:** the problem-spec assembly auto-enables these three soft constraints with the default weights above (no UI yet), so season solves get better spacing immediately. A caller-supplied `constraints.soft` overrides the defaults. Determinism is preserved: scoring is deterministic and ties keep the first slot in the existing stable order, so with no active soft constraint the engine output is identical to before. No solve time budget / cancellation (D.12) — the greedy approach is fast.
 
 ### Phase C — Persistence, edit, audit
 

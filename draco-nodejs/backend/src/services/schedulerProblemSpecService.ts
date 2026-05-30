@@ -137,7 +137,7 @@ export class SchedulerProblemSpecService {
 
     const normalizedConstraints = this.normalizeConstraints(request.constraints, base.timeZoneId);
     const maxGamesPerUmpirePerDayDefault = base.seasonWindowConfig.maxGamesPerUmpirePerDay;
-    const constraintsWithDefaults =
+    const constraintsWithHardDefaults =
       maxGamesPerUmpirePerDayDefault === undefined || maxGamesPerUmpirePerDayDefault === null
         ? normalizedConstraints
         : {
@@ -148,6 +148,18 @@ export class SchedulerProblemSpecService {
                 normalizedConstraints?.hard?.maxGamesPerUmpirePerDay ??
                 maxGamesPerUmpirePerDayDefault,
             },
+          };
+    const defaultSoft: NonNullable<SchedulerConstraints>['soft'] = {
+      avoidBackToBackGames: { enabled: true, minRestMinutes: 2880, weight: 3 },
+      spreadGamesAcrossDays: { enabled: true, weight: 2 },
+      balanceEarlyVsLate: { enabled: true, weight: 1 },
+    };
+    const constraintsWithDefaults =
+      constraintsWithHardDefaults?.soft !== undefined
+        ? constraintsWithHardDefaults
+        : {
+            ...(constraintsWithHardDefaults ?? {}),
+            soft: defaultSoft,
           };
 
     return {
