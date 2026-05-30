@@ -20,6 +20,11 @@ import { SeasonSchedulerConfigPanel } from './SeasonSchedulerConfigPanel';
 import { SeasonSchedulerConstraintLists } from './SeasonSchedulerConstraintLists';
 import { SeasonSchedulerProposalReview } from './SeasonSchedulerProposalReview';
 import { loadRoundRobinCounts, type LeagueRoundRobinCount } from './SchedulerRoundRobinConfig';
+import {
+  clearPersistedProposal,
+  loadPersistedProposal,
+  savePersistedProposal,
+} from '../../utils/schedulerProposalStorage';
 
 type FieldOption = { id: string; name: string };
 type EntityOption = { id: string; name: string };
@@ -93,10 +98,21 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [seasonStartDate, setSeasonStartDate] = useState('');
   const [seasonEndDate, setSeasonEndDate] = useState('');
   const [leagueSeasonSelection, setLeagueSeasonSelection] = useState<string[] | null>(null);
-  const [proposal, setProposal] = useState<SchedulerSolveResult | null>(null);
-  const [proposalFromGenerated, setProposalFromGenerated] = useState(false);
-  const [generatedMatchups, setGeneratedMatchups] = useState<SchedulerGameRequest[] | null>(null);
-  const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(new Set());
+  const [persistedProposal] = useState(() =>
+    seasonId ? loadPersistedProposal(accountId, seasonId) : null,
+  );
+  const [proposal, setProposal] = useState<SchedulerSolveResult | null>(
+    persistedProposal?.proposal ?? null,
+  );
+  const [proposalFromGenerated, setProposalFromGenerated] = useState(
+    persistedProposal?.proposalFromGenerated ?? false,
+  );
+  const [generatedMatchups, setGeneratedMatchups] = useState<SchedulerGameRequest[] | null>(
+    persistedProposal?.generatedMatchups ?? null,
+  );
+  const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(
+    new Set(persistedProposal?.selectedGameIds ?? []),
+  );
   const [specPreview, setSpecPreview] = useState<SchedulerProblemSpecPreview | null>(null);
   const [specPreviewOpen, setSpecPreviewOpen] = useState(false);
   const [umpiresPerGame, setUmpiresPerGame] = useState<UmpiresPerGame>(2);
@@ -104,6 +120,20 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [roundRobinCounts, setRoundRobinCounts] = useState<Map<string, LeagueRoundRobinCount>>(
     () => (seasonId ? loadRoundRobinCounts(accountId, seasonId) : new Map()),
   );
+
+  useEffect(() => {
+    if (!seasonId) return;
+    if (proposal) {
+      savePersistedProposal(accountId, seasonId, {
+        proposal,
+        proposalFromGenerated,
+        generatedMatchups,
+        selectedGameIds: Array.from(selectedGameIds),
+      });
+    } else {
+      clearPersistedProposal(accountId, seasonId);
+    }
+  }, [accountId, seasonId, proposal, proposalFromGenerated, generatedMatchups, selectedGameIds]);
 
   const { fieldNameById, teamNameById, umpireNameById } = useEntityNameMaps({
     fields,
