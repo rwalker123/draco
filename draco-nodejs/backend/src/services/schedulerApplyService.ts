@@ -1,14 +1,19 @@
-import type { SchedulerApplyRequest, SchedulerApplyResult } from '@draco/shared-schemas';
+import type {
+  SchedulerApplyRequest,
+  SchedulerApplyResult,
+  SchedulerGameRequest,
+} from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { IScheduleRepository } from '../repositories/interfaces/IScheduleRepository.js';
 import type { IFieldRepository } from '../repositories/interfaces/IFieldRepository.js';
 import type { ISchedulerSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
 import type { ISchedulerTeamSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
 import type { ISchedulerUmpireExclusionsRepository } from '../repositories/interfaces/ISchedulerUmpireExclusionsRepository.js';
-import type { dbScheduleUpdateData } from '../repositories/index.js';
+import type { dbScheduleCreateData, dbScheduleUpdateData } from '../repositories/index.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { ValidationUtils } from '../utils/validationUtils.js';
 import { DateUtils } from '../utils/dateUtils.js';
+import { GameStatus, GameType } from '../types/gameEnums.js';
 
 const MAX_UMPIRES_PER_GAME = 4;
 
@@ -70,13 +75,16 @@ export class SchedulerApplyService {
   async applyProposal(
     accountId: bigint,
     request: SchedulerApplyRequest,
-    context?: { seasonId?: bigint },
+    context?: { seasonId?: bigint; matchups?: SchedulerGameRequest[] },
   ): Promise<SchedulerApplyResult> {
     const targetGameIds = this.resolveTargetGameIds(request);
     const appliedGameIds: string[] = [];
     const skipped: Array<{ gameId: string; reason: string }> = [];
     const fieldMetaById = new Map<string, { hasLights: boolean; maxParallelGames: number }>();
     const hard = withDefaultHardConstraints(request.constraints);
+    const matchupById = new Map<string, SchedulerGameRequest>(
+      (context?.matchups ?? []).map((m) => [m.id, m]),
+    );
 
     const seasonExclusions: Array<{ start: Date; end: Date }> = [];
     const teamExclusionsByTeamSeasonId = new Map<string, Array<{ start: Date; end: Date }>>();
@@ -120,7 +128,7 @@ export class SchedulerApplyService {
         continue;
       }
 
-      const gameId = this.parseBigIntId(assignment.gameId, 'gameId');
+      const isGenerated = matchupById.has(assignment.gameId);
       const fieldId = this.parseBigIntId(assignment.fieldId, 'fieldId');
       const gameDate = this.parseDateTime(assignment.startTime, 'startTime');
       const endTime = this.parseDateTime(assignment.endTime, 'endTime');
@@ -162,22 +170,58 @@ export class SchedulerApplyService {
 
       const umpireIds = assignment.umpireIds.map((id) => this.parseBigIntId(id, 'umpireId'));
 
-      const existingGame = await this.scheduleRepository.findGameWithAccountContext(
-        gameId,
-        accountId,
-      );
-      if (!existingGame) {
-        skipped.push({ gameId: assignment.gameId, reason: 'Game not found' });
-        continue;
+      let homeTeamId: bigint;
+      let visitorTeamId: bigint;
+      let leagueSeasonId: bigint;
+      let excludeGameId: bigint | undefined;
+      let dbGameId: bigint | undefined;
+      let dbGamedate: Date | undefined;
+      let dbFieldid: bigint | null | undefined;
+      let dbUmpire1: bigint | null | undefined;
+      let dbUmpire2: bigint | null | undefined;
+      let dbUmpire3: bigint | null | undefined;
+      let dbUmpire4: bigint | null | undefined;
+
+      if (isGenerated) {
+        const matchup = matchupById.get(assignment.gameId)!;
+        homeTeamId = BigInt(matchup.homeTeamSeasonId);
+        visitorTeamId = BigInt(matchup.visitorTeamSeasonId);
+        leagueSeasonId = BigInt(matchup.leagueSeasonId);
+        excludeGameId = undefined;
+      } else {
+        const parsedGameId = this.parseBigIntId(assignment.gameId, 'gameId');
+        const existingGame = await this.scheduleRepository.findGameWithAccountContext(
+          parsedGameId,
+          accountId,
+        );
+        if (!existingGame) {
+          skipped.push({ gameId: assignment.gameId, reason: 'Game not found' });
+          continue;
+        }
+
+        if (context?.seasonId && existingGame.leagueseason.seasonid !== context.seasonId) {
+          skipped.push({
+            gameId: assignment.gameId,
+            reason: 'Game is not in the requested season',
+          });
+          continue;
+        }
+
+        homeTeamId = existingGame.hteamid;
+        visitorTeamId = existingGame.vteamid;
+        leagueSeasonId = existingGame.leagueid;
+        excludeGameId = parsedGameId;
+        dbGameId = parsedGameId;
+        dbGamedate = existingGame.gamedate;
+        dbFieldid = existingGame.fieldid;
+        dbUmpire1 = existingGame.umpire1;
+        dbUmpire2 = existingGame.umpire2;
+        dbUmpire3 = existingGame.umpire3;
+        dbUmpire4 = existingGame.umpire4;
       }
 
-      if (context?.seasonId && existingGame.leagueseason.seasonid !== context.seasonId) {
-        skipped.push({ gameId: assignment.gameId, reason: 'Game is not in the requested season' });
-        continue;
-      }
-
-      const homeTeamKey = existingGame.hteamid.toString();
-      const visitorTeamKey = existingGame.vteamid.toString();
+      const homeTeamKey = homeTeamId.toString();
+      const visitorTeamKey = visitorTeamId.toString();
       const excludedTeams = [homeTeamKey, visitorTeamKey].some((key) =>
         (teamExclusionsByTeamSeasonId.get(key) ?? []).some((block) =>
           this.overlaps(block, { start: gameDate, end: endTime }),
@@ -200,14 +244,14 @@ export class SchedulerApplyService {
         continue;
       }
 
-      const teams = [existingGame.hteamid, existingGame.vteamid];
+      const teams = [homeTeamId, visitorTeamId];
       const teamConflicts = await Promise.all(
         teams.map(async (teamSeasonId) => {
           const existingBookings = await this.scheduleRepository.countTeamBookingsAtTime(
             teamSeasonId,
             gameDate,
-            existingGame.leagueid,
-            gameId,
+            leagueSeasonId,
+            excludeGameId,
           );
           return { existingBookings };
         }),
@@ -228,8 +272,8 @@ export class SchedulerApplyService {
             const existingBookings = await this.scheduleRepository.countUmpireBookingsAtTime(
               umpireId,
               gameDate,
-              existingGame.leagueid,
-              gameId,
+              leagueSeasonId,
+              excludeGameId,
             );
             return { existingBookings };
           }),
@@ -247,15 +291,14 @@ export class SchedulerApplyService {
 
       if (hard?.maxGamesPerTeamPerDay !== undefined) {
         const { start, end } = this.buildUtcDayRange(gameDate);
-        const teams = [existingGame.hteamid, existingGame.vteamid];
         const counts = await Promise.all(
           teams.map(async (teamSeasonId) => {
             const existingCount = await this.scheduleRepository.countTeamGamesInRange(
               teamSeasonId,
               start,
               end,
-              existingGame.leagueid,
-              gameId,
+              leagueSeasonId,
+              excludeGameId,
             );
             return { existingCount };
           }),
@@ -276,8 +319,8 @@ export class SchedulerApplyService {
               umpireId,
               start,
               end,
-              existingGame.leagueid,
-              gameId,
+              leagueSeasonId,
+              excludeGameId,
             );
             return { existingCount };
           }),
@@ -311,8 +354,8 @@ export class SchedulerApplyService {
       const existingBookings = await this.scheduleRepository.countFieldBookingsAtTime(
         fieldId,
         gameDate,
-        existingGame.leagueid,
-        gameId,
+        leagueSeasonId,
+        excludeGameId,
       );
       if (existingBookings >= capacity) {
         skipped.push({
@@ -322,25 +365,46 @@ export class SchedulerApplyService {
         continue;
       }
 
-      const updateData: dbScheduleUpdateData = {
-        gamedate: gameDate,
-        fieldid: fieldId,
-        umpire1: umpireIds[0] ?? null,
-        umpire2: umpireIds[1] ?? null,
-        umpire3: umpireIds[2] ?? null,
-        umpire4: umpireIds[3] ?? null,
-      };
+      if (isGenerated) {
+        const createData: dbScheduleCreateData = {
+          gamedate: gameDate,
+          hteamid: homeTeamId,
+          vteamid: visitorTeamId,
+          leagueid: leagueSeasonId,
+          fieldid: fieldId,
+          umpire1: umpireIds[0] ?? null,
+          umpire2: umpireIds[1] ?? null,
+          umpire3: umpireIds[2] ?? null,
+          umpire4: umpireIds[3] ?? null,
+          hscore: 0,
+          vscore: 0,
+          comment: '',
+          gamestatus: GameStatus.Scheduled,
+          gametype: GameType.RegularSeason,
+        };
+        await this.scheduleRepository.createGame(createData);
+      } else {
+        const updateData: dbScheduleUpdateData = {
+          gamedate: gameDate,
+          fieldid: fieldId,
+          umpire1: umpireIds[0] ?? null,
+          umpire2: umpireIds[1] ?? null,
+          umpire3: umpireIds[2] ?? null,
+          umpire4: umpireIds[3] ?? null,
+        };
 
-      const alreadyApplied =
-        existingGame.gamedate.getTime() === gameDate.getTime() &&
-        existingGame.fieldid === fieldId &&
-        existingGame.umpire1 === (umpireIds[0] ?? null) &&
-        existingGame.umpire2 === (umpireIds[1] ?? null) &&
-        existingGame.umpire3 === (umpireIds[2] ?? null) &&
-        existingGame.umpire4 === (umpireIds[3] ?? null);
+        const alreadyApplied =
+          dbGamedate !== undefined &&
+          dbGamedate.getTime() === gameDate.getTime() &&
+          dbFieldid === fieldId &&
+          dbUmpire1 === (umpireIds[0] ?? null) &&
+          dbUmpire2 === (umpireIds[1] ?? null) &&
+          dbUmpire3 === (umpireIds[2] ?? null) &&
+          dbUmpire4 === (umpireIds[3] ?? null);
 
-      if (!alreadyApplied) {
-        await this.scheduleRepository.updateGame(gameId, updateData);
+        if (!alreadyApplied) {
+          await this.scheduleRepository.updateGame(dbGameId!, updateData);
+        }
       }
 
       appliedGameIds.push(assignment.gameId);

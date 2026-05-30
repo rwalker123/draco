@@ -703,6 +703,10 @@ export const SchedulerSeasonApplyRequestSchema = z
     assignments: SchedulerAssignmentSchema.array().min(1),
     constraints: SchedulerConstraintsOverrideRequiredSchema,
     gameIds: schedulerIdSchema.array().min(1).optional(),
+    matchups: SchedulerGameRequestSchema.array().min(1).optional().openapi({
+      description:
+        'Generated matchups being applied (from round-robin generation). When an assignment references one of these matchups, the backend creates a NEW game from the matchup teams/league plus the assignment placement instead of updating an existing game. Omit when applying a DB-sourced proposal.',
+    }),
   })
   .superRefine((data, ctx) => {
     if (data.mode === 'subset' && (!data.gameIds || data.gameIds.length === 0)) {
@@ -716,7 +720,7 @@ export const SchedulerSeasonApplyRequestSchema = z
   .openapi({
     title: 'SchedulerSeasonApplyRequest',
     description:
-      'DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides.',
+      'DB-sourced apply request. Persists the proposed assignments for the season using DB-derived data plus constraint overrides. May include generated matchups to create new games.',
   });
 
 export const SchedulerApplySkippedSchema = z

@@ -31,7 +31,6 @@ interface SeasonSchedulerProposalReviewProps {
   teamNameById: Map<string, string>;
   umpireNameById: Map<string, string>;
   leagueNameById: Map<string, string>;
-  proposalFromGenerated: boolean;
   generatedMatchups: SchedulerGameRequest[] | null;
   getGameSummaryLabel: (gameId: string) => string;
   onToggleSelection: (gameId: string) => void;
@@ -93,7 +92,6 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
   teamNameById,
   umpireNameById,
   leagueNameById,
-  proposalFromGenerated,
   generatedMatchups,
   getGameSummaryLabel,
   onToggleSelection,
@@ -181,27 +179,13 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                     }
                     label={`Select (${selectedGameIds.size}/${proposal.assignments.length})`}
                   />
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-end',
-                      gap: 0.5,
-                    }}
+                  <Button
+                    variant="contained"
+                    onClick={onApply}
+                    disabled={selectedGameIds.size === 0}
                   >
-                    <Button
-                      variant="contained"
-                      onClick={onApply}
-                      disabled={selectedGameIds.size === 0 || proposalFromGenerated}
-                    >
-                      Apply {selectedMode === 'all' ? 'All' : 'Selected'}
-                    </Button>
-                    {proposalFromGenerated && (
-                      <Typography variant="caption" color="text.secondary">
-                        Applying generated schedules is coming soon.
-                      </Typography>
-                    )}
-                  </Box>
+                    Apply {selectedMode === 'all' ? 'All' : 'Selected'}
+                  </Button>
                 </Box>
 
                 <Stack spacing={1}>
