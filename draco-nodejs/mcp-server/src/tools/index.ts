@@ -3,6 +3,7 @@ import { listMyAccountsHandler } from './listMyAccounts.js';
 import { listMyTeamsInputSchema, listMyTeamsHandler } from './listMyTeams.js';
 import { getMyBattingStatsInputSchema, getMyBattingStatsHandler } from './getMyBattingStats.js';
 import { getMyPitchingStatsInputSchema, getMyPitchingStatsHandler } from './getMyPitchingStats.js';
+import { getAccountGamesInputSchema, getAccountGamesHandler } from './getAccountGames.js';
 import { getRecentGamesInputSchema, getRecentGamesHandler } from './getRecentGames.js';
 import { getTeamManagersInputSchema, getTeamManagersHandler } from './getTeamManagers.js';
 import { getTeamRosterInputSchema, getTeamRosterHandler } from './getTeamRoster.js';
@@ -47,6 +48,16 @@ export function registerTools(server: McpServer): void {
       inputSchema: getMyPitchingStatsInputSchema,
     },
     async (args) => getMyPitchingStatsHandler(args),
+  );
+
+  server.registerTool(
+    'get_account_games',
+    {
+      description:
+        "List games scheduled across an entire account for a season, not limited to the user's own teams. Use `range` ('today', 'tonight', 'tomorrow', 'this_week', 'this_weekend') for natural date queries — dates are evaluated in the account's timezone, so to answer \"are there any games tonight?\" pass range='today'. Provide `from`/`to` (YYYY-MM-DD) for an explicit date range instead. To restrict to a specific league (e.g. an \"18+\" league, whose age group is part of the league name), first call list_seasons to find its league_season_id and pass it as `league_id`. Division filtering is not supported. Omit season_id to use the current season.",
+      inputSchema: getAccountGamesInputSchema,
+    },
+    async (args) => getAccountGamesHandler(args),
   );
 
   server.registerTool(
