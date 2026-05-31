@@ -62,6 +62,7 @@ describe('FieldScheduleConfigService', () => {
     repo = {
       findFieldInAccount: vi.fn(),
       getConfigForField: vi.fn(),
+      getConfigsForAccount: vi.fn(),
       replaceConfigForField: vi.fn(),
       listOpenHoursForAccount: vi.fn(),
       listClosedDatesForAccount: vi.fn(),
@@ -138,6 +139,57 @@ describe('FieldScheduleConfigService', () => {
       expect(result.gameLengthMinutes).toBeNull();
       expect(result.openHours).toHaveLength(0);
       expect(result.closedDates).toHaveLength(0);
+    });
+  });
+
+  describe('getConfigs', () => {
+    it('maps every account field config in one batch, preserving repo order', async () => {
+      const fieldA = makeField({
+        id: 42n,
+        name: 'Field A',
+        gamelengthminutes: 90,
+        bufferminutes: 15,
+      });
+      const fieldB = makeField({
+        id: 43n,
+        name: 'Field B',
+        scheduleenabled: false,
+        gamelengthminutes: null,
+        bufferminutes: 0,
+      });
+
+      repo.getConfigsForAccount.mockResolvedValue([
+        {
+          field: fieldA,
+          openHours: [makeOpenHour({ id: 1n, fieldid: 42n, dayofweek: 0 })],
+          closedDates: [makeClosedDate({ id: 1n, fieldid: 42n })],
+        },
+        { field: fieldB, openHours: [], closedDates: [] },
+      ]);
+
+      const result = await service.getConfigs(accountId);
+
+      expect(repo.getConfigsForAccount).toHaveBeenCalledWith(accountId);
+      expect(result.configs).toHaveLength(2);
+
+      expect(result.configs[0].fieldId).toBe('42');
+      expect(result.configs[0].scheduleEnabled).toBe(true);
+      expect(result.configs[0].gameLengthMinutes).toBe(90);
+      expect(result.configs[0].openHours).toHaveLength(1);
+      expect(result.configs[0].closedDates).toHaveLength(1);
+
+      expect(result.configs[1].fieldId).toBe('43');
+      expect(result.configs[1].scheduleEnabled).toBe(false);
+      expect(result.configs[1].gameLengthMinutes).toBeNull();
+      expect(result.configs[1].openHours).toHaveLength(0);
+    });
+
+    it('returns an empty list when the account has no fields', async () => {
+      repo.getConfigsForAccount.mockResolvedValue([]);
+
+      const result = await service.getConfigs(accountId);
+
+      expect(result.configs).toHaveLength(0);
     });
   });
 

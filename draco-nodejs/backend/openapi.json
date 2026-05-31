@@ -1450,6 +1450,119 @@
         "title": "FieldScheduleConfig",
         "description": "A field's scheduling configuration: whether it is included in scheduling, its game length / buffer, weekly open hours, and one-off closed dates."
       },
+      "FieldScheduleConfigs": {
+        "type": "object",
+        "properties": {
+          "configs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fieldId": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "example": "12345"
+                },
+                "scheduleEnabled": {
+                  "type": "boolean"
+                },
+                "gameLengthMinutes": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 1440
+                },
+                "bufferMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1440
+                },
+                "openHours": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "dayOfWeek": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 6,
+                        "example": 0,
+                        "description": "Day of week where 0=Mon ... 6=Sun."
+                      },
+                      "startTimeLocal": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                        "example": "18:30"
+                      },
+                      "endTimeLocal": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                        "example": "18:30"
+                      },
+                      "id": {
+                        "type": "string",
+                        "pattern": "^\\d+$",
+                        "example": "12345"
+                      }
+                    },
+                    "required": [
+                      "dayOfWeek",
+                      "startTimeLocal",
+                      "endTimeLocal",
+                      "id"
+                    ],
+                    "title": "FieldOpenHour"
+                  }
+                },
+                "closedDates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-04-01"
+                      },
+                      "note": {
+                        "type": "string",
+                        "nullable": true,
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "id": {
+                        "type": "string",
+                        "pattern": "^\\d+$",
+                        "example": "12345"
+                      }
+                    },
+                    "required": [
+                      "date",
+                      "id"
+                    ],
+                    "title": "FieldClosedDate"
+                  }
+                }
+              },
+              "required": [
+                "fieldId",
+                "scheduleEnabled",
+                "bufferMinutes",
+                "openHours",
+                "closedDates"
+              ],
+              "title": "FieldScheduleConfig",
+              "description": "A field's scheduling configuration: whether it is included in scheduling, its game length / buffer, weekly open hours, and one-off closed dates."
+            }
+          }
+        },
+        "required": [
+          "configs"
+        ],
+        "title": "FieldScheduleConfigs",
+        "description": "Scheduling configuration for every field in an account."
+      },
       "FieldScheduleConfigUpsert": {
         "type": "object",
         "properties": {
@@ -38703,6 +38816,73 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/fields/schedule-configs": {
+      "get": {
+        "operationId": "listFieldScheduleConfigs",
+        "summary": "List schedule config for every field in an account",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Field schedule configs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldScheduleConfigs"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
                 }
               }
             }

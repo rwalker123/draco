@@ -30,4 +30,14 @@ export class FieldScheduleConfigResponseFormatter {
         })),
     };
   }
+
+  static formatMany(
+    items: {
+      field: availablefields;
+      openHours: fieldopenhours[];
+      closedDates: fieldcloseddates[];
+    }[],
+  ): FieldScheduleConfigType[] {
+    return items.map((item) => this.format(item.field, item.openHours, item.closedDates));
+  }
 }

@@ -5,6 +5,11 @@ export interface IFieldScheduleConfigRepository {
   getConfigForField(
     fieldId: bigint,
   ): Promise<{ openHours: fieldopenhours[]; closedDates: fieldcloseddates[] }>;
+  getConfigsForAccount(
+    accountId: bigint,
+  ): Promise<
+    { field: availablefields; openHours: fieldopenhours[]; closedDates: fieldcloseddates[] }[]
+  >;
   replaceConfigForField(
     fieldId: bigint,
     input: {

@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import {
   getFieldScheduleConfig as apiGetConfig,
+  listFieldScheduleConfigs as apiListConfigs,
   replaceFieldScheduleConfig as apiReplaceConfig,
 } from '@draco/shared-api-client';
 import { ApiClientError } from '../../utils/apiResult';
@@ -10,6 +11,7 @@ import type { FieldScheduleConfigType, FieldScheduleConfigUpsertType } from '@dr
 
 vi.mock('@draco/shared-api-client', () => ({
   getFieldScheduleConfig: vi.fn(),
+  listFieldScheduleConfigs: vi.fn(),
   replaceFieldScheduleConfig: vi.fn(),
 }));
 
@@ -56,6 +58,44 @@ describe('FieldScheduleConfigService', () => {
     vi.clearAllMocks();
     client = {} as Client;
     service = new FieldScheduleConfigService(undefined, client);
+  });
+
+  describe('listFieldScheduleConfigs', () => {
+    it('fetches all configs in one call and returns the configs array', async () => {
+      const configs = [makeConfig({ fieldId: 'field-1' }), makeConfig({ fieldId: 'field-2' })];
+      vi.mocked(apiListConfigs).mockResolvedValue(makeOk({ configs }));
+
+      const result = await service.listFieldScheduleConfigs(ACCOUNT_ID);
+
+      expect(apiListConfigs).toHaveBeenCalledWith({
+        client,
+        path: { accountId: ACCOUNT_ID },
+        signal: undefined,
+        throwOnError: false,
+      });
+      expect(result).toHaveLength(2);
+      expect(result[0].fieldId).toBe('field-1');
+      expect(result[1].fieldId).toBe('field-2');
+    });
+
+    it('passes the AbortSignal through to the API call', async () => {
+      vi.mocked(apiListConfigs).mockResolvedValue(makeOk({ configs: [] }));
+
+      const controller = new AbortController();
+      await service.listFieldScheduleConfigs(ACCOUNT_ID, controller.signal);
+
+      expect(apiListConfigs).toHaveBeenCalledWith(
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('throws ApiClientError on API failure', async () => {
+      vi.mocked(apiListConfigs).mockResolvedValue(makeError('Server error', 500));
+
+      await expect(service.listFieldScheduleConfigs(ACCOUNT_ID)).rejects.toBeInstanceOf(
+        ApiClientError,
+      );
+    });
   });
 
   describe('getFieldScheduleConfig', () => {

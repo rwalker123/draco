@@ -194,9 +194,19 @@ export const FieldScheduleConfigUpsertSchema = z
       "Full replacement of a field's scheduling configuration. The provided openHours and closedDates replace any existing rows for the field.",
   });
 
+export const FieldScheduleConfigsSchema = z
+  .object({
+    configs: FieldScheduleConfigSchema.array(),
+  })
+  .openapi({
+    title: 'FieldScheduleConfigs',
+    description: 'Scheduling configuration for every field in an account.',
+  });
+
 export type FieldOpenHourType = z.infer<typeof FieldOpenHourSchema>;
 export type FieldOpenHourUpsertType = z.infer<typeof FieldOpenHourUpsertSchema>;
 export type FieldClosedDateType = z.infer<typeof FieldClosedDateSchema>;
 export type FieldClosedDateUpsertType = z.infer<typeof FieldClosedDateUpsertSchema>;
 export type FieldScheduleConfigType = z.infer<typeof FieldScheduleConfigSchema>;
 export type FieldScheduleConfigUpsertType = z.infer<typeof FieldScheduleConfigUpsertSchema>;
+export type FieldScheduleConfigsType = z.infer<typeof FieldScheduleConfigsSchema>;

@@ -54,6 +54,7 @@ class SeasonsRepositoryStub implements ISeasonsRepository {
 class FieldScheduleConfigRepositoryStub implements IFieldScheduleConfigRepository {
   findFieldInAccount = vi.fn<IFieldScheduleConfigRepository['findFieldInAccount']>();
   getConfigForField = vi.fn<IFieldScheduleConfigRepository['getConfigForField']>();
+  getConfigsForAccount = vi.fn<IFieldScheduleConfigRepository['getConfigsForAccount']>();
   replaceConfigForField = vi.fn<IFieldScheduleConfigRepository['replaceConfigForField']>();
   listOpenHoursForAccount = vi.fn<IFieldScheduleConfigRepository['listOpenHoursForAccount']>();
   listClosedDatesForAccount = vi.fn<IFieldScheduleConfigRepository['listClosedDatesForAccount']>();

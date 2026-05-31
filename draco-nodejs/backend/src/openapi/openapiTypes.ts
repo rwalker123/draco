@@ -56,6 +56,7 @@ import {
   CreateMemberBusinessSchema,
   FieldSchema,
   FieldScheduleConfigSchema,
+  FieldScheduleConfigsSchema,
   FieldScheduleConfigUpsertSchema,
   FieldOpenHourSchema,
   FieldOpenHourUpsertSchema,
@@ -458,6 +459,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const FieldScheduleConfigSchemaRef = registry.register(
     'FieldScheduleConfig',
     FieldScheduleConfigSchema,
+  );
+  const FieldScheduleConfigsSchemaRef = registry.register(
+    'FieldScheduleConfigs',
+    FieldScheduleConfigsSchema,
   );
   const FieldScheduleConfigUpsertSchemaRef = registry.register(
     'FieldScheduleConfigUpsert',
@@ -1677,6 +1682,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     FieldsSchemaRef,
     UpsertFieldSchemaRef,
     FieldScheduleConfigSchemaRef,
+    FieldScheduleConfigsSchemaRef,
     FieldScheduleConfigUpsertSchemaRef,
     FieldOpenHourSchemaRef,
     FieldOpenHourUpsertSchemaRef,

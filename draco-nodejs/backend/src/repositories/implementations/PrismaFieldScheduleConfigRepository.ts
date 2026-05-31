@@ -32,6 +32,47 @@ export class PrismaFieldScheduleConfigRepository implements IFieldScheduleConfig
     return { openHours, closedDates };
   }
 
+  async getConfigsForAccount(
+    accountId: bigint,
+  ): Promise<
+    { field: availablefields; openHours: fieldopenhours[]; closedDates: fieldcloseddates[] }[]
+  > {
+    const [fields, openHours, closedDates] = await Promise.all([
+      this.prisma.availablefields.findMany({
+        where: { accountid: accountId },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.fieldopenhours.findMany({
+        where: { availablefields: { accountid: accountId } },
+        orderBy: { dayofweek: 'asc' },
+      }),
+      this.prisma.fieldcloseddates.findMany({
+        where: { availablefields: { accountid: accountId } },
+        orderBy: { closeddate: 'asc' },
+      }),
+    ]);
+
+    const openHoursByField = new Map<bigint, fieldopenhours[]>();
+    for (const row of openHours) {
+      const list = openHoursByField.get(row.fieldid) ?? [];
+      list.push(row);
+      openHoursByField.set(row.fieldid, list);
+    }
+
+    const closedDatesByField = new Map<bigint, fieldcloseddates[]>();
+    for (const row of closedDates) {
+      const list = closedDatesByField.get(row.fieldid) ?? [];
+      list.push(row);
+      closedDatesByField.set(row.fieldid, list);
+    }
+
+    return fields.map((field) => ({
+      field,
+      openHours: openHoursByField.get(field.id) ?? [],
+      closedDates: closedDatesByField.get(field.id) ?? [],
+    }));
+  }
+
   async replaceConfigForField(
     fieldId: bigint,
     input: {

@@ -121,6 +121,18 @@ router.delete(
 );
 
 router.get(
+  '/:accountId/fields/schedule-configs',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const configs = await fieldScheduleConfigService.getConfigs(accountId);
+    res.json(configs);
+  }),
+);
+
+router.get(
   '/:accountId/fields/:fieldId/schedule-config',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),

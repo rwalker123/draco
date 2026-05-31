@@ -1,4 +1,8 @@
-import type { FieldScheduleConfigType, FieldScheduleConfigUpsertType } from '@draco/shared-schemas';
+import type {
+  FieldScheduleConfigsType,
+  FieldScheduleConfigType,
+  FieldScheduleConfigUpsertType,
+} from '@draco/shared-schemas';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { IFieldScheduleConfigRepository } from '../repositories/interfaces/IFieldScheduleConfigRepository.js';
 import { FieldScheduleConfigResponseFormatter } from '../responseFormatters/fieldScheduleConfigResponseFormatter.js';
@@ -11,6 +15,11 @@ export class FieldScheduleConfigService {
     repo: IFieldScheduleConfigRepository = RepositoryFactory.getFieldScheduleConfigRepository(),
   ) {
     this.repo = repo;
+  }
+
+  async getConfigs(accountId: bigint): Promise<FieldScheduleConfigsType> {
+    const items = await this.repo.getConfigsForAccount(accountId);
+    return { configs: FieldScheduleConfigResponseFormatter.formatMany(items) };
   }
 
   async getConfig(accountId: bigint, fieldId: bigint): Promise<FieldScheduleConfigType> {

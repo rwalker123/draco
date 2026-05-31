@@ -182,16 +182,13 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
       const service = new FieldScheduleConfigService(token, apiClient);
 
       try {
-        const results = await Promise.all(
-          fields.map((f) => service.getFieldScheduleConfig(accountId, f.id, controller.signal)),
-        );
+        const configs = await service.listFieldScheduleConfigs(accountId, controller.signal);
 
         if (controller.signal.aborted) return;
 
         const next = new Map<string, FieldConfigState>();
-        for (let i = 0; i < fields.length; i++) {
-          const config = results[i];
-          next.set(fields[i].id, {
+        for (const config of configs) {
+          next.set(config.fieldId, {
             config,
             editing: false,
             saving: false,

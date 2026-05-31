@@ -45,6 +45,7 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     FieldsSchemaRef,
     UpsertFieldSchemaRef,
     FieldScheduleConfigSchemaRef,
+    FieldScheduleConfigsSchemaRef,
     FieldScheduleConfigUpsertSchemaRef,
     UmpireSchemaRef,
     UmpiresSchemaRef,
@@ -3879,6 +3880,41 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
             schema: InternalServerErrorSchemaRef,
           },
         },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/fields/schedule-configs',
+    operationId: 'listFieldScheduleConfigs',
+    summary: 'List schedule config for every field in an account',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Field schedule configs',
+        content: { 'application/json': { schema: FieldScheduleConfigsSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },
   });
