@@ -26,6 +26,7 @@ export class FieldScheduleConfigResponseFormatter {
         .map((r) => ({
           id: r.id.toString(),
           date: DateUtils.formatDateForResponse(r.closeddate)!,
+          endDate: DateUtils.formatDateForResponse(r.enddate) ?? undefined,
           note: r.note ?? undefined,
         })),
     };

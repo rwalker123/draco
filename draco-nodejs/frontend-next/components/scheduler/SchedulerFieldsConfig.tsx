@@ -2,33 +2,54 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Alert,
   Box,
-  Checkbox,
-  CircularProgress,
+  Button,
   Chip,
+  CircularProgress,
+  Collapse,
   FormControlLabel,
+  Paper,
+  Popover,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import type {
-  FieldClosedDateType,
-  FieldClosedDateUpsertType,
-  FieldOpenHourType,
-  FieldScheduleConfigType,
-  FieldScheduleConfigUpsertType,
-} from '@draco/shared-schemas';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import type { FieldScheduleConfigType, FieldScheduleConfigUpsertType } from '@draco/shared-schemas';
 import { useAuth } from '../../context/AuthContext';
 import { useApiClient } from '../../hooks/useApiClient';
 import { FieldScheduleConfigService } from '../../services/fieldScheduleConfigService';
-import { DAYS } from '../../utils/daysOfWeekUtils';
-import { formatLocalHhmmTo12Hour } from '../../utils/schedulerTimeFormat';
-import { SchedulerFieldDayEditor } from './SchedulerFieldDayEditor';
+import {
+  buildDraftClosedDates,
+  buildDraftDays,
+  configToUpsert,
+  formatClosedDateLabel,
+  formatMinutesAsHoursMinutes,
+  groupOpenHoursLabel,
+} from './schedulerFieldConfigHelpers';
+import { SchedulerFieldOpenHoursPopover } from './SchedulerFieldOpenHoursPopover';
+import { SchedulerFieldClosedDatesPopover } from './SchedulerFieldClosedDatesPopover';
+import { SchedulerFieldGameLengthPopover } from './SchedulerFieldGameLengthPopover';
+import { SchedulerFieldValuePopover } from './SchedulerFieldValuePopover';
+
+export * from './schedulerFieldConfigHelpers';
 
 type FieldOption = { id: string; name: string };
+
+type PopoverKind = 'hours' | 'length' | 'buffer' | 'closed';
+
+interface PopoverState {
+  fieldId: string;
+  kind: PopoverKind;
+  anchorEl: HTMLElement;
+}
 
 interface SchedulerFieldsConfigProps {
   accountId: string;
@@ -36,124 +57,6 @@ interface SchedulerFieldsConfigProps {
   setSuccess: (message: string | null) => void;
   setError: (message: string | null) => void;
 }
-
-interface FieldConfigState {
-  config: FieldScheduleConfigType;
-  editing: boolean;
-  saving: boolean;
-  error: string | null;
-  draftDays: DraftDayMap;
-  draftGameLength: string;
-  draftBuffer: string;
-  draftClosedDates: DraftClosedDate[];
-}
-
-export type DraftDayMap = Map<number, { open: boolean; start: string; end: string }>;
-
-export interface DraftClosedDate {
-  key: string;
-  date: string;
-  note: string;
-}
-
-export const buildDraftDays = (openHours: FieldOpenHourType[]): DraftDayMap => {
-  const map: DraftDayMap = new Map();
-  for (const day of DAYS) {
-    map.set(day.bit, { open: false, start: '09:00', end: '21:00' });
-  }
-  for (const hour of openHours) {
-    map.set(hour.dayOfWeek, { open: true, start: hour.startTimeLocal, end: hour.endTimeLocal });
-  }
-  return map;
-};
-
-export const buildDraftClosedDates = (closedDates: FieldClosedDateType[]): DraftClosedDate[] =>
-  closedDates.map((cd, i) => ({
-    key: `${cd.id}-${i}`,
-    date: cd.date,
-    note: cd.note ?? '',
-  }));
-
-export const buildOpenHoursPayload = (
-  draftDays: DraftDayMap,
-): FieldScheduleConfigUpsertType['openHours'] => {
-  const result: FieldScheduleConfigUpsertType['openHours'] = [];
-  for (const day of DAYS) {
-    const entry = draftDays.get(day.bit);
-    if (entry?.open) {
-      result.push({
-        dayOfWeek: day.bit,
-        startTimeLocal: entry.start,
-        endTimeLocal: entry.end,
-      });
-    }
-  }
-  return result;
-};
-
-export const buildClosedDatesPayload = (
-  draftClosedDates: DraftClosedDate[],
-): FieldScheduleConfigUpsertType['closedDates'] =>
-  draftClosedDates
-    .filter((cd) => cd.date.trim().length > 0)
-    .map((cd) => {
-      const entry: FieldClosedDateUpsertType = { date: cd.date.trim() };
-      if (cd.note.trim().length > 0) {
-        entry.note = cd.note.trim();
-      }
-      return entry;
-    });
-
-export const applyQuickSetToDays = (
-  current: DraftDayMap,
-  bitsToOpen: number[],
-  startTime: string,
-  endTime: string,
-): DraftDayMap => {
-  const next = new Map(current);
-  const openSet = new Set(bitsToOpen);
-  for (const day of DAYS) {
-    const existing = next.get(day.bit) ?? { open: false, start: startTime, end: endTime };
-    if (openSet.has(day.bit)) {
-      next.set(day.bit, { open: true, start: startTime, end: endTime });
-    } else {
-      next.set(day.bit, { ...existing, open: false });
-    }
-  }
-  return next;
-};
-
-export const groupOpenHoursLabel = (openHours: FieldOpenHourType[]): string => {
-  if (openHours.length === 0) return 'No open hours';
-  const sorted = [...openHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-  const segments: string[] = [];
-  let groupStart = sorted[0];
-  let prev = sorted[0];
-  for (let i = 1; i < sorted.length; i++) {
-    const cur = sorted[i];
-    const sameTime =
-      cur.startTimeLocal === prev.startTimeLocal && cur.endTimeLocal === prev.endTimeLocal;
-    const consecutive = cur.dayOfWeek === prev.dayOfWeek + 1;
-    if (sameTime && consecutive) {
-      prev = cur;
-    } else {
-      segments.push(buildSegmentLabel(groupStart, prev));
-      groupStart = cur;
-      prev = cur;
-    }
-  }
-  segments.push(buildSegmentLabel(groupStart, prev));
-  return segments.join(' · ');
-};
-
-const buildSegmentLabel = (start: FieldOpenHourType, end: FieldOpenHourType): string => {
-  const startDayLabel = DAYS.find((d) => d.bit === start.dayOfWeek)?.label ?? '';
-  const endDayLabel = DAYS.find((d) => d.bit === end.dayOfWeek)?.label ?? '';
-  const dayRange =
-    start.dayOfWeek === end.dayOfWeek ? startDayLabel : `${startDayLabel}–${endDayLabel}`;
-  const timeRange = `${formatLocalHhmmTo12Hour(start.startTimeLocal)}–${formatLocalHhmmTo12Hour(start.endTimeLocal)}`;
-  return `${dayRange} ${timeRange}`;
-};
 
 export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
   accountId,
@@ -169,8 +72,12 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
     serviceRef.current = new FieldScheduleConfigService(token, apiClient);
   }, [token, apiClient]);
 
-  const [fieldStates, setFieldStates] = useState<Map<string, FieldConfigState>>(new Map());
+  const [configs, setConfigs] = useState<Map<string, FieldScheduleConfigType>>(new Map());
   const [loading, setLoading] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [sectionOpen, setSectionOpen] = useState(false);
+  const [showEnabledOnly, setShowEnabledOnly] = useState(false);
+  const [popover, setPopover] = useState<PopoverState | null>(null);
 
   useEffect(() => {
     if (fields.length === 0) return;
@@ -182,25 +89,13 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
       const service = new FieldScheduleConfigService(token, apiClient);
 
       try {
-        const configs = await service.listFieldScheduleConfigs(accountId, controller.signal);
-
+        const loaded = await service.listFieldScheduleConfigs(accountId, controller.signal);
         if (controller.signal.aborted) return;
-
-        const next = new Map<string, FieldConfigState>();
-        for (const config of configs) {
-          next.set(config.fieldId, {
-            config,
-            editing: false,
-            saving: false,
-            error: null,
-            draftDays: buildDraftDays(config.openHours),
-            draftGameLength:
-              config.gameLengthMinutes != null ? String(config.gameLengthMinutes) : '',
-            draftBuffer: String(config.bufferMinutes),
-            draftClosedDates: buildDraftClosedDates(config.closedDates),
-          });
+        const next = new Map<string, FieldScheduleConfigType>();
+        for (const config of loaded) {
+          next.set(config.fieldId, config);
         }
-        setFieldStates(next);
+        setConfigs(next);
       } catch (err: unknown) {
         if (!controller.signal.aborted) {
           setError(err instanceof Error ? err.message : 'Failed to load field schedule configs');
@@ -219,218 +114,254 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
     };
   }, [accountId, fields, setError, token, apiClient]);
 
-  const updateFieldState = (fieldId: string, patch: Partial<FieldConfigState>) => {
-    setFieldStates((prev) => {
-      const existing = prev.get(fieldId);
-      if (!existing) return prev;
-      const next = new Map(prev);
-      next.set(fieldId, { ...existing, ...patch });
-      return next;
-    });
-  };
+  const closePopover = () => setPopover(null);
 
-  const handleToggleEnabled = async (fieldId: string, checked: boolean) => {
-    const state = fieldStates.get(fieldId);
-    if (!state) return;
+  const persist = async (fieldId: string, overrides: Partial<FieldScheduleConfigUpsertType>) => {
+    const config = configs.get(fieldId);
+    if (!config) return;
 
     const service = serviceRef.current ?? new FieldScheduleConfigService(token, apiClient);
-
-    const body: FieldScheduleConfigUpsertType = {
-      scheduleEnabled: checked,
-      gameLengthMinutes: state.config.gameLengthMinutes ?? null,
-      bufferMinutes: state.config.bufferMinutes,
-      openHours: state.config.openHours.map((h) => ({
-        dayOfWeek: h.dayOfWeek,
-        startTimeLocal: h.startTimeLocal,
-        endTimeLocal: h.endTimeLocal,
-      })),
-      closedDates: state.config.closedDates.map((cd) => ({
-        date: cd.date,
-        note: cd.note ?? undefined,
-      })),
-    };
+    const body: FieldScheduleConfigUpsertType = { ...configToUpsert(config), ...overrides };
 
     try {
-      updateFieldState(fieldId, { saving: true, error: null });
+      setSavingId(fieldId);
       const updated = await service.replaceFieldScheduleConfig(accountId, fieldId, body);
-      updateFieldState(fieldId, {
-        saving: false,
-        config: updated,
-        draftDays: buildDraftDays(updated.openHours),
-        draftGameLength: updated.gameLengthMinutes != null ? String(updated.gameLengthMinutes) : '',
-        draftBuffer: String(updated.bufferMinutes),
-        draftClosedDates: buildDraftClosedDates(updated.closedDates),
+      setConfigs((prev) => {
+        const next = new Map(prev);
+        next.set(fieldId, updated);
+        return next;
       });
-      setSuccess(`Field schedule ${checked ? 'enabled' : 'disabled'}`);
+      setPopover(null);
+      setSuccess('Field schedule updated');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update field schedule';
-      updateFieldState(fieldId, { saving: false, error: message });
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Failed to update field schedule');
+    } finally {
+      setSavingId(null);
     }
   };
 
-  const handleSave = async (fieldId: string) => {
-    const state = fieldStates.get(fieldId);
-    if (!state) return;
-
-    const service = serviceRef.current ?? new FieldScheduleConfigService(token, apiClient);
-
-    const trimmedLength = state.draftGameLength.trim();
-    const gameLengthMinutes = trimmedLength.length > 0 ? Number(trimmedLength) : null;
-    const bufferMinutes = Number(state.draftBuffer.trim() || '0');
-
-    const body: FieldScheduleConfigUpsertType = {
-      scheduleEnabled: state.config.scheduleEnabled,
-      gameLengthMinutes,
-      bufferMinutes,
-      openHours: buildOpenHoursPayload(state.draftDays),
-      closedDates: buildClosedDatesPayload(state.draftClosedDates),
-    };
-
-    try {
-      updateFieldState(fieldId, { saving: true, error: null });
-      const updated = await service.replaceFieldScheduleConfig(accountId, fieldId, body);
-      updateFieldState(fieldId, {
-        saving: false,
-        editing: false,
-        config: updated,
-        draftDays: buildDraftDays(updated.openHours),
-        draftGameLength: updated.gameLengthMinutes != null ? String(updated.gameLengthMinutes) : '',
-        draftBuffer: String(updated.bufferMinutes),
-        draftClosedDates: buildDraftClosedDates(updated.closedDates),
-        error: null,
-      });
-      setSuccess('Field schedule configuration saved');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save field schedule config';
-      updateFieldState(fieldId, { saving: false, error: message });
-    }
+  const openPopover = (
+    event: React.MouseEvent<HTMLElement>,
+    fieldId: string,
+    kind: PopoverKind,
+  ) => {
+    setPopover({ fieldId, kind, anchorEl: event.currentTarget });
   };
 
-  const handleCancel = (fieldId: string) => {
-    const state = fieldStates.get(fieldId);
-    if (!state) return;
-    updateFieldState(fieldId, {
-      editing: false,
-      error: null,
-      draftDays: buildDraftDays(state.config.openHours),
-      draftGameLength:
-        state.config.gameLengthMinutes != null ? String(state.config.gameLengthMinutes) : '',
-      draftBuffer: String(state.config.bufferMinutes),
-      draftClosedDates: buildDraftClosedDates(state.config.closedDates),
-    });
-  };
+  const rows = fields.filter((field) => {
+    const config = configs.get(field.id);
+    if (!config) return false;
+    return showEnabledOnly ? config.scheduleEnabled : true;
+  });
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-        <CircularProgress size={16} />
-        <Typography variant="body2" color="text.secondary">
-          Loading field configurations…
-        </Typography>
-      </Box>
-    );
-  }
+  const enabledCount = fields.reduce(
+    (count, field) => (configs.get(field.id)?.scheduleEnabled ? count + 1 : count),
+    0,
+  );
 
-  if (fields.length === 0) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        No fields available. Add fields to configure schedule availability.
-      </Typography>
-    );
-  }
+  const popoverConfig = popover ? (configs.get(popover.fieldId) ?? null) : null;
+  const popoverSaving = popover ? savingId === popover.fieldId : false;
 
   return (
-    <Box>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-        Fields
-      </Typography>
-      {fields.map((field) => {
-        const state = fieldStates.get(field.id);
-        if (!state) return null;
+    <Box sx={{ mb: 2 }}>
+      <Box
+        component="button"
+        type="button"
+        onClick={() => setSectionOpen((open) => !open)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          width: '100%',
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          p: 0,
+          color: 'inherit',
+        }}
+        aria-expanded={sectionOpen}
+      >
+        {sectionOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          Fields
+        </Typography>
+        {loading ? (
+          <CircularProgress size={14} />
+        ) : (
+          <Chip size="small" label={`${enabledCount} of ${fields.length} available`} />
+        )}
+      </Box>
 
-        const summaryLabel = groupOpenHoursLabel(state.config.openHours);
-        const lengthLabel =
-          state.config.gameLengthMinutes != null
-            ? `${state.config.gameLengthMinutes}min games`
-            : 'length not set';
-        const bufferLabel = `${state.config.bufferMinutes}min buffer`;
+      <Collapse in={sectionOpen} unmountOnExit>
+        <Box sx={{ pt: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={showEnabledOnly}
+                onChange={(e) => setShowEnabledOnly(e.target.checked)}
+              />
+            }
+            label="Show available only"
+          />
 
-        return (
-          <Accordion
-            key={field.id}
-            expanded={state.editing}
-            onChange={(_e, expanded) => {
-              if (!expanded) {
-                handleCancel(field.id);
-              } else {
-                updateFieldState(field.id, { editing: true });
-              }
+          {rows.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {fields.length === 0
+                ? 'No fields available. Add fields to configure schedule availability.'
+                : 'No fields match the current filter.'}
+            </Typography>
+          ) : (
+            <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Field</TableCell>
+                    <TableCell align="center">Available</TableCell>
+                    <TableCell>Open Hours</TableCell>
+                    <TableCell align="center">Game Length</TableCell>
+                    <TableCell align="center">Buffer</TableCell>
+                    <TableCell align="center">Closed Dates</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((field) => {
+                    const config = configs.get(field.id)!;
+                    const saving = savingId === field.id;
+                    const hoursLabel = groupOpenHoursLabel(config.openHours);
+                    const closedCount = config.closedDates.length;
+                    return (
+                      <TableRow key={field.id} hover>
+                        <TableCell>{field.name}</TableCell>
+                        <TableCell align="center">
+                          <Switch
+                            size="small"
+                            checked={config.scheduleEnabled}
+                            disabled={saving}
+                            onChange={(e) =>
+                              void persist(field.id, { scheduleEnabled: e.target.checked })
+                            }
+                            slotProps={{
+                              input: { 'aria-label': `${field.name} available for scheduling` },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            color={hoursLabel ? 'primary' : 'inherit'}
+                            disabled={saving}
+                            onClick={(e) => openPopover(e, field.id, 'hours')}
+                            aria-label={`Open hours for ${field.name}`}
+                            sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                          >
+                            {hoursLabel || 'Set hours'}
+                          </Button>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            color="inherit"
+                            disabled={saving}
+                            onClick={(e) => openPopover(e, field.id, 'length')}
+                            aria-label={`Game length for ${field.name}`}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            {config.gameLengthMinutes != null
+                              ? formatMinutesAsHoursMinutes(config.gameLengthMinutes)
+                              : 'Default'}
+                          </Button>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            color="inherit"
+                            disabled={saving}
+                            onClick={(e) => openPopover(e, field.id, 'buffer')}
+                            aria-label={`Buffer for ${field.name}`}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            {`${config.bufferMinutes}m`}
+                          </Button>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip
+                            title={
+                              closedCount > 0
+                                ? config.closedDates.map(formatClosedDateLabel).join(', ')
+                                : ''
+                            }
+                          >
+                            <Button
+                              size="small"
+                              color={closedCount > 0 ? 'primary' : 'inherit'}
+                              disabled={saving}
+                              onClick={(e) => openPopover(e, field.id, 'closed')}
+                              aria-label={`Closed dates for ${field.name}`}
+                              sx={{ textTransform: 'none' }}
+                            >
+                              {closedCount > 0 ? `${closedCount}` : 'None'}
+                            </Button>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      </Collapse>
+
+      <Popover
+        open={Boolean(popover && popoverConfig)}
+        anchorEl={popover?.anchorEl ?? null}
+        onClose={closePopover}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        {popover && popoverConfig && popover.kind === 'hours' && (
+          <SchedulerFieldOpenHoursPopover
+            initialDays={buildDraftDays(popoverConfig.openHours)}
+            saving={popoverSaving}
+            onSave={(openHours) => void persist(popover.fieldId, { openHours })}
+            onCancel={closePopover}
+          />
+        )}
+        {popover && popoverConfig && popover.kind === 'closed' && (
+          <SchedulerFieldClosedDatesPopover
+            initialClosedDates={buildDraftClosedDates(popoverConfig.closedDates)}
+            saving={popoverSaving}
+            onSave={(closedDates) => void persist(popover.fieldId, { closedDates })}
+            onCancel={closePopover}
+          />
+        )}
+        {popover && popoverConfig && popover.kind === 'length' && (
+          <SchedulerFieldGameLengthPopover
+            initialMinutes={popoverConfig.gameLengthMinutes ?? null}
+            saving={popoverSaving}
+            onSave={(minutes) => void persist(popover.fieldId, { gameLengthMinutes: minutes })}
+            onCancel={closePopover}
+          />
+        )}
+        {popover && popoverConfig && popover.kind === 'buffer' && (
+          <SchedulerFieldValuePopover
+            title="Buffer"
+            label="Minutes"
+            min={0}
+            initialValue={String(popoverConfig.bufferMinutes)}
+            saving={popoverSaving}
+            onSave={(raw) => {
+              const trimmed = raw.trim();
+              void persist(popover.fieldId, {
+                bufferMinutes: trimmed.length > 0 ? Number(trimmed) : 0,
+              });
             }}
-            disableGutters
-            sx={{ mb: 1 }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', flex: 1 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={state.config.scheduleEnabled}
-                      disabled={state.saving}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        void handleToggleEnabled(field.id, e.target.checked);
-                      }}
-                      size="small"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {field.name}
-                    </Typography>
-                  }
-                  sx={{ mr: 0 }}
-                />
-                {state.saving && <CircularProgress size={14} />}
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                  <Chip label={summaryLabel} size="small" variant="outlined" />
-                  <Chip label={lengthLabel} size="small" variant="outlined" />
-                  <Chip label={bufferLabel} size="small" variant="outlined" />
-                </Box>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              {state.error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {state.error}
-                </Alert>
-              )}
-              {state.editing && (
-                <SchedulerFieldDayEditor
-                  draftDays={state.draftDays}
-                  draftGameLength={state.draftGameLength}
-                  draftBuffer={state.draftBuffer}
-                  draftClosedDates={state.draftClosedDates}
-                  saving={state.saving}
-                  onDraftDaysChange={(next) => updateFieldState(field.id, { draftDays: next })}
-                  onDraftGameLengthChange={(v) =>
-                    updateFieldState(field.id, { draftGameLength: v })
-                  }
-                  onDraftBufferChange={(v) => updateFieldState(field.id, { draftBuffer: v })}
-                  onDraftClosedDatesChange={(next) =>
-                    updateFieldState(field.id, { draftClosedDates: next })
-                  }
-                  onSave={() => void handleSave(field.id)}
-                  onCancel={() => handleCancel(field.id)}
-                />
-              )}
-            </AccordionDetails>
-          </Accordion>
-        );
-      })}
+            onCancel={closePopover}
+          />
+        )}
+      </Popover>
     </Box>
   );
 };

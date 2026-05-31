@@ -7,6 +7,7 @@ import {
   buildClosedDatesPayload,
   applyQuickSetToDays,
   groupOpenHoursLabel,
+  formatMinutesAsHoursMinutes,
 } from '../SchedulerFieldsConfig';
 import { DAYS } from '../../../utils/daysOfWeekUtils';
 
@@ -148,8 +149,8 @@ describe('buildDraftClosedDates', () => {
 describe('buildClosedDatesPayload', () => {
   it('filters out entries with empty dates', () => {
     const payload = buildClosedDatesPayload([
-      { key: 'a', date: '', note: '' },
-      { key: 'b', date: '2026-07-04', note: '' },
+      { key: 'a', date: '', endDate: '', note: '' },
+      { key: 'b', date: '2026-07-04', endDate: '', note: '' },
     ]);
 
     expect(payload).toHaveLength(1);
@@ -157,24 +158,40 @@ describe('buildClosedDatesPayload', () => {
   });
 
   it('omits note when empty', () => {
-    const payload = buildClosedDatesPayload([{ key: 'a', date: '2026-07-04', note: '' }]);
+    const payload = buildClosedDatesPayload([
+      { key: 'a', date: '2026-07-04', endDate: '', note: '' },
+    ]);
 
     expect(payload[0].note).toBeUndefined();
   });
 
   it('includes note when provided', () => {
-    const payload = buildClosedDatesPayload([{ key: 'a', date: '2026-07-04', note: 'Holiday' }]);
+    const payload = buildClosedDatesPayload([
+      { key: 'a', date: '2026-07-04', endDate: '', note: 'Holiday' },
+    ]);
 
     expect(payload[0].note).toBe('Holiday');
   });
 
   it('trims whitespace from date and note', () => {
     const payload = buildClosedDatesPayload([
-      { key: 'a', date: '  2026-07-04  ', note: '  Holiday  ' },
+      { key: 'a', date: '  2026-07-04  ', endDate: '', note: '  Holiday  ' },
     ]);
 
     expect(payload[0].date).toBe('2026-07-04');
     expect(payload[0].note).toBe('Holiday');
+  });
+
+  it('includes endDate only when it differs from the start date', () => {
+    const payload = buildClosedDatesPayload([
+      { key: 'a', date: '2026-07-04', endDate: '2026-07-06', note: '' },
+      { key: 'b', date: '2026-08-01', endDate: '2026-08-01', note: '' },
+      { key: 'c', date: '2026-09-01', endDate: '', note: '' },
+    ]);
+
+    expect(payload[0].endDate).toBe('2026-07-06');
+    expect(payload[1].endDate).toBeUndefined();
+    expect(payload[2].endDate).toBeUndefined();
   });
 });
 
@@ -231,9 +248,19 @@ describe('applyQuickSetToDays', () => {
   });
 });
 
+describe('formatMinutesAsHoursMinutes', () => {
+  it('formats minutes as H:MM with zero-padded minutes', () => {
+    expect(formatMinutesAsHoursMinutes(90)).toBe('1:30');
+    expect(formatMinutesAsHoursMinutes(120)).toBe('2:00');
+    expect(formatMinutesAsHoursMinutes(45)).toBe('0:45');
+    expect(formatMinutesAsHoursMinutes(60)).toBe('1:00');
+    expect(formatMinutesAsHoursMinutes(0)).toBe('0:00');
+  });
+});
+
 describe('groupOpenHoursLabel', () => {
-  it('returns "No open hours" when array is empty', () => {
-    expect(groupOpenHoursLabel([])).toBe('No open hours');
+  it('returns an empty string when array is empty', () => {
+    expect(groupOpenHoursLabel([])).toBe('');
   });
 
   it('labels a single open day correctly', () => {

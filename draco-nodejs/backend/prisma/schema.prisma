@@ -394,6 +394,7 @@ model fieldcloseddates {
   id              BigInt          @id @default(autoincrement())
   fieldid         BigInt
   closeddate      DateTime        @db.Date
+  enddate         DateTime?       @db.Date
   note            String?         @db.VarChar(255)
   createdat       DateTime        @default(now()) @db.Timestamptz(6)
   updatedat       DateTime        @default(now()) @updatedAt @db.Timestamptz(6)

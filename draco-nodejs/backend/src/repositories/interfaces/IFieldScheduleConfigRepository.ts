@@ -17,7 +17,7 @@ export interface IFieldScheduleConfigRepository {
       gameLengthMinutes: number | null;
       bufferMinutes: number;
       openHours: { dayOfWeek: number; startTimeLocal: string; endTimeLocal: string }[];
-      closedDates: { date: string; note: string | null }[];
+      closedDates: { date: string; endDate: string | null; note: string | null }[];
     },
   ): Promise<void>;
   listOpenHoursForAccount(accountId: bigint): Promise<fieldopenhours[]>;

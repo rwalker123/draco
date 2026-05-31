@@ -1067,6 +1067,11 @@ components:
                 type: string
                 format: date
                 example: 2026-04-01
+              endDate:
+                type: string
+                format: date
+                example: 2026-04-01
+                description: Optional inclusive end of a closed range. Omit for a single day.
               note:
                 type: string
                 nullable: true
@@ -1152,6 +1157,11 @@ components:
                       type: string
                       format: date
                       example: 2026-04-01
+                    endDate:
+                      type: string
+                      format: date
+                      example: 2026-04-01
+                      description: Optional inclusive end of a closed range. Omit for a single day.
                     note:
                       type: string
                       nullable: true
@@ -1227,6 +1237,11 @@ components:
                 type: string
                 format: date
                 example: 2026-04-01
+              endDate:
+                type: string
+                format: date
+                example: 2026-04-01
+                description: Optional inclusive end of a closed range. Omit for a single day.
               note:
                 type: string
                 nullable: true
@@ -1300,6 +1315,11 @@ components:
           type: string
           format: date
           example: 2026-04-01
+        endDate:
+          type: string
+          format: date
+          example: 2026-04-01
+          description: Optional inclusive end of a closed range. Omit for a single day.
         note:
           type: string
           nullable: true
@@ -1320,6 +1340,11 @@ components:
           type: string
           format: date
           example: 2026-04-01
+        endDate:
+          type: string
+          format: date
+          example: 2026-04-01
+          description: Optional inclusive end of a closed range. Omit for a single day.
         note:
           type: string
           nullable: true

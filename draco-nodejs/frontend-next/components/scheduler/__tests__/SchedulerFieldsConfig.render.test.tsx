@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { dracoTheme } from '../../../theme';
 import { SchedulerFieldsConfig } from '../SchedulerFieldsConfig';
@@ -7,7 +7,7 @@ import { SchedulerFieldsConfig } from '../SchedulerFieldsConfig';
 const { listMock, CONFIGS } = vi.hoisted(() => {
   const CONFIGS = Array.from({ length: 6 }, (_, i) => ({
     fieldId: String(i + 1),
-    scheduleEnabled: true,
+    scheduleEnabled: i % 2 === 0,
     gameLengthMinutes: 90,
     bufferMinutes: 15,
     openHours: [
@@ -18,14 +18,8 @@ const { listMock, CONFIGS } = vi.hoisted(() => {
   return { listMock: vi.fn().mockResolvedValue(CONFIGS), CONFIGS };
 });
 
-vi.mock('../../../context/AuthContext', () => ({
-  useAuth: () => ({ token: 'tok' }),
-}));
-
-vi.mock('../../../hooks/useApiClient', () => ({
-  useApiClient: () => ({}),
-}));
-
+vi.mock('../../../context/AuthContext', () => ({ useAuth: () => ({ token: 'tok' }) }));
+vi.mock('../../../hooks/useApiClient', () => ({ useApiClient: () => ({}) }));
 vi.mock('../../../services/fieldScheduleConfigService', () => ({
   FieldScheduleConfigService: class {
     listFieldScheduleConfigs = listMock;
@@ -48,32 +42,60 @@ const renderConfig = () =>
     </ThemeProvider>,
   );
 
-describe('SchedulerFieldsConfig render cost', () => {
-  beforeEach(() => {
-    listMock.mockClear();
-  });
+const expandSection = () => fireEvent.click(screen.getByRole('button', { name: /Fields/ }));
 
-  it('does not mount the per-field day editor for collapsed rows', async () => {
+describe('SchedulerFieldsConfig table', () => {
+  beforeEach(() => listMock.mockClear());
+
+  it('summarizes available count and keeps the table collapsed by default', async () => {
     renderConfig();
 
-    // Wait for the batch load to populate the rows.
-    await screen.findByText('Field 1');
+    // 3 of 6 are available (even indices). Summary shows while collapsed.
+    expect(await screen.findByText('3 of 6 available')).toBeInTheDocument();
 
-    // All rows start collapsed. The heavy day editor ("Open Hours" section) must
-    // not be mounted for any collapsed row — otherwise all N editors render at once.
-    expect(screen.queryAllByText('Open Hours')).toHaveLength(0);
-    expect(screen.queryAllByText('Quick Set')).toHaveLength(0);
+    // Collapsed: no table, no field rows mounted.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('Field 1')).not.toBeInTheDocument();
   });
 
-  it('renders every field row (summary + enable toggle) without any editors', async () => {
-    const { container } = renderConfig();
-    await screen.findByText('Field 1');
+  it('renders one compact row per field with no editors mounted until a cell is opened', async () => {
+    renderConfig();
+    await screen.findByText('3 of 6 available');
+    expandSection();
 
-    // Each field still gets a collapsible row with its enable checkbox and name,
-    // so the list itself renders fully — only the heavy editors are deferred.
-    expect(container.querySelectorAll('.MuiAccordionSummary-root')).toHaveLength(FIELDS.length);
-    expect(screen.getAllByRole('checkbox')).toHaveLength(FIELDS.length);
+    // Table renders one row per field with an inline schedule switch each.
+    expect(await screen.findByRole('table')).toBeInTheDocument();
     FIELDS.forEach((f) => expect(screen.getByText(f.name)).toBeInTheDocument());
-    expect(screen.queryAllByText('Game Settings')).toHaveLength(0);
+    expect(screen.getByLabelText('Field 1 available for scheduling')).toBeInTheDocument();
+
+    // No heavy editor is mounted — "Weekdays" only exists inside the open-hours popover.
+    expect(screen.queryByText('Weekdays')).not.toBeInTheDocument();
+  });
+
+  it('opens the open-hours popover only when its cell is clicked', async () => {
+    renderConfig();
+    await screen.findByText('3 of 6 available');
+    expandSection();
+    await screen.findByRole('table');
+
+    expect(screen.queryByText('Weekdays')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open hours for Field 1' }));
+
+    expect(await screen.findByText('Weekdays')).toBeInTheDocument();
+  });
+
+  it('filters to available-only fields when toggled', async () => {
+    renderConfig();
+    await screen.findByText('3 of 6 available');
+    expandSection();
+    await screen.findByRole('table');
+
+    expect(screen.getByText('Field 2')).toBeInTheDocument(); // index 1 -> not available
+
+    fireEvent.click(screen.getByLabelText('Show available only'));
+
+    expect(screen.queryByText('Field 2')).not.toBeInTheDocument();
+    expect(screen.getByText('Field 1')).toBeInTheDocument(); // index 0 -> available
   });
 });

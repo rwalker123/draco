@@ -122,16 +122,34 @@ export const FieldOpenHourUpsertSchema = FieldOpenHourBaseSchema.superRefine(
 
 const FieldClosedDateBaseSchema = z.object({
   date: fieldScheduleDateSchema,
+  endDate: fieldScheduleDateSchema
+    .optional()
+    .openapi({ description: 'Optional inclusive end of a closed range. Omit for a single day.' }),
   note: z.string().trim().min(1).max(255).nullish(),
 });
 
+const closedDateRefinement = (
+  data: { date: string; endDate?: string | null },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.endDate && data.endDate < data.date) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['endDate'],
+      message: 'endDate must be on or after date',
+    });
+  }
+};
+
 export const FieldClosedDateSchema = FieldClosedDateBaseSchema.extend({
   id: bigintToStringSchema,
-}).openapi({ title: 'FieldClosedDate' });
+})
+  .superRefine(closedDateRefinement)
+  .openapi({ title: 'FieldClosedDate' });
 
-export const FieldClosedDateUpsertSchema = FieldClosedDateBaseSchema.openapi({
-  title: 'FieldClosedDateUpsert',
-});
+export const FieldClosedDateUpsertSchema = FieldClosedDateBaseSchema.superRefine(
+  closedDateRefinement,
+).openapi({ title: 'FieldClosedDateUpsert' });
 
 const fieldScheduleConfigRefinement = (
   data: { openHours: { dayOfWeek: number }[]; closedDates: { date: string }[] },

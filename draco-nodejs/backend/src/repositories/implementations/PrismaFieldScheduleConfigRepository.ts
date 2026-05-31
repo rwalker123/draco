@@ -80,7 +80,7 @@ export class PrismaFieldScheduleConfigRepository implements IFieldScheduleConfig
       gameLengthMinutes: number | null;
       bufferMinutes: number;
       openHours: { dayOfWeek: number; startTimeLocal: string; endTimeLocal: string }[];
-      closedDates: { date: string; note: string | null }[];
+      closedDates: { date: string; endDate: string | null; note: string | null }[];
     },
   ): Promise<void> {
     await this.prisma.$transaction([
@@ -106,6 +106,7 @@ export class PrismaFieldScheduleConfigRepository implements IFieldScheduleConfig
         data: input.closedDates.map((d) => ({
           fieldid: fieldId,
           closeddate: new Date(d.date),
+          enddate: d.endDate ? new Date(d.endDate) : null,
           note: d.note,
         })),
       }),

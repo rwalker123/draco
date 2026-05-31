@@ -383,9 +383,20 @@ export class SchedulerProblemSpecService {
     for (const record of records) {
       const fieldId = record.fieldid.toString();
       const dates = map.get(fieldId) ?? new Set<string>();
-      const dateKey = DateUtils.formatDateForResponse(record.closeddate);
-      if (dateKey) {
-        dates.add(dateKey);
+      const startKey = DateUtils.formatDateForResponse(record.closeddate);
+      if (startKey) {
+        const endRaw = DateUtils.formatDateForResponse(record.enddate);
+        const endKey = endRaw && endRaw >= startKey ? endRaw : startKey;
+        let cursor = startKey;
+        let guard = 0;
+        while (cursor <= endKey) {
+          dates.add(cursor);
+          cursor = nextDate(cursor);
+          guard += 1;
+          if (guard > 1000) {
+            break;
+          }
+        }
       }
       map.set(fieldId, dates);
     }

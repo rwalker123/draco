@@ -48,6 +48,7 @@ const makeClosedDate = (overrides: Partial<fieldcloseddates> = {}): fieldclosedd
     id: 1n,
     fieldid: fieldId,
     closeddate: new Date('2026-07-04T00:00:00Z'),
+    enddate: null,
     note: 'Holiday',
     createdat: new Date('2026-01-01T00:00:00Z'),
     updatedat: new Date('2026-01-01T00:00:00Z'),
@@ -104,6 +105,7 @@ describe('FieldScheduleConfigService', () => {
         makeClosedDate({
           id: 1n,
           closeddate: new Date('2026-07-04T00:00:00Z'),
+          enddate: new Date('2026-07-06T00:00:00Z'),
           note: 'Fourth of July',
         }),
       ];
@@ -126,8 +128,10 @@ describe('FieldScheduleConfigService', () => {
 
       expect(result.closedDates).toHaveLength(2);
       expect(result.closedDates[0].date).toBe('2026-07-04');
+      expect(result.closedDates[0].endDate).toBe('2026-07-06');
       expect(result.closedDates[0].note).toBe('Fourth of July');
       expect(result.closedDates[1].date).toBe('2026-12-25');
+      expect(result.closedDates[1].endDate).toBeUndefined();
     });
 
     it('returns null for gameLengthMinutes when field has no game length', async () => {
@@ -221,7 +225,10 @@ describe('FieldScheduleConfigService', () => {
         gameLengthMinutes: undefined,
         bufferMinutes: 0,
         openHours: [{ dayOfWeek: 1, startTimeLocal: '10:00', endTimeLocal: '18:00' }],
-        closedDates: [{ date: '2026-07-04', note: undefined }],
+        closedDates: [
+          { date: '2026-07-04', endDate: '2026-07-06', note: undefined },
+          { date: '2026-08-01', note: undefined },
+        ],
       });
 
       expect(repo.replaceConfigForField).toHaveBeenCalledOnce();
@@ -231,9 +238,11 @@ describe('FieldScheduleConfigService', () => {
       expect(callArg.bufferMinutes).toBe(0);
       expect(callArg.openHours).toHaveLength(1);
       expect(callArg.openHours[0].dayOfWeek).toBe(1);
-      expect(callArg.closedDates).toHaveLength(1);
+      expect(callArg.closedDates).toHaveLength(2);
       expect(callArg.closedDates[0].date).toBe('2026-07-04');
+      expect(callArg.closedDates[0].endDate).toBe('2026-07-06');
       expect(callArg.closedDates[0].note).toBeNull();
+      expect(callArg.closedDates[1].endDate).toBeNull();
     });
 
     it('returns reloaded config after replace', async () => {

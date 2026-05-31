@@ -53,6 +53,7 @@ export class FieldScheduleConfigService {
       })),
       closedDates: input.closedDates.map((d) => ({
         date: d.date,
+        endDate: d.endDate ?? null,
         note: d.note ?? null,
       })),
     });

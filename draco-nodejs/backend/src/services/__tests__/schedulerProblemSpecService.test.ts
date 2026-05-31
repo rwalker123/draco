@@ -219,11 +219,17 @@ const makeOpenHours = (
     updatedat: new Date('2026-01-01T00:00:00.000Z'),
   }) as fieldopenhours;
 
-const makeClosedDate = (id: bigint, fieldId: bigint, date: Date): fieldcloseddates =>
+const makeClosedDate = (
+  id: bigint,
+  fieldId: bigint,
+  date: Date,
+  endDate: Date | null = null,
+): fieldcloseddates =>
   ({
     id,
     fieldid: fieldId,
     closeddate: date,
+    enddate: endDate,
     note: null,
     createdat: new Date('2026-01-01T00:00:00.000Z'),
     updatedat: new Date('2026-01-01T00:00:00.000Z'),
@@ -489,6 +495,52 @@ describe('SchedulerProblemSpecService', () => {
       const starts = spec.fieldSlots.map((s) => s.startTime);
       expect(starts.every((t) => !t.startsWith('2026-04-06'))).toBe(true);
       expect(starts.some((t) => t.startsWith('2026-04-07'))).toBe(true);
+    });
+
+    it('skips every day within a closed-date range (start through end inclusive)', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-09T00:00:00.000Z'),
+        }),
+      );
+
+      // Open Mon–Thu (bits 0–3) within the window.
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '11:00'),
+        makeOpenHours(2n, 100n, 1, '09:00', '11:00'),
+        makeOpenHours(3n, 100n, 2, '09:00', '11:00'),
+        makeOpenHours(4n, 100n, 3, '09:00', '11:00'),
+      ]);
+
+      // Closed 2026-04-06 through 2026-04-08 (inclusive range).
+      fieldScheduleConfigRepo.listClosedDatesForAccount.mockResolvedValue([
+        makeClosedDate(
+          1n,
+          100n,
+          new Date('2026-04-06T00:00:00.000Z'),
+          new Date('2026-04-08T00:00:00.000Z'),
+        ),
+      ]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+
+      expect(starts.some((t) => t.startsWith('2026-04-06'))).toBe(false);
+      expect(starts.some((t) => t.startsWith('2026-04-07'))).toBe(false);
+      expect(starts.some((t) => t.startsWith('2026-04-08'))).toBe(false);
+      expect(starts.some((t) => t.startsWith('2026-04-09'))).toBe(true);
     });
 
     it('yields no slots when scheduleenabled is false', async () => {
