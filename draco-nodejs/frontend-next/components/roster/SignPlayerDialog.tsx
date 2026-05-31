@@ -599,12 +599,12 @@ const SignPlayerDialog: React.FC<SignPlayerDialogProps> = ({
                   onChange={(event) => {
                     const { value } = event.target;
                     if (value === '') {
-                      field.onChange(undefined);
+                      field.onChange('');
                       return;
                     }
 
                     const parsed = Number.parseInt(value, 10);
-                    field.onChange(Number.isNaN(parsed) ? undefined : parsed);
+                    field.onChange(Number.isNaN(parsed) ? '' : parsed);
                   }}
                   inputProps={{ min: 1900, max: new Date().getFullYear() }}
                   fullWidth
