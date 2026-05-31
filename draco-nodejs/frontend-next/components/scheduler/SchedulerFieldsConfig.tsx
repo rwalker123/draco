@@ -408,21 +408,25 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                   {state.error}
                 </Alert>
               )}
-              <SchedulerFieldDayEditor
-                draftDays={state.draftDays}
-                draftGameLength={state.draftGameLength}
-                draftBuffer={state.draftBuffer}
-                draftClosedDates={state.draftClosedDates}
-                saving={state.saving}
-                onDraftDaysChange={(next) => updateFieldState(field.id, { draftDays: next })}
-                onDraftGameLengthChange={(v) => updateFieldState(field.id, { draftGameLength: v })}
-                onDraftBufferChange={(v) => updateFieldState(field.id, { draftBuffer: v })}
-                onDraftClosedDatesChange={(next) =>
-                  updateFieldState(field.id, { draftClosedDates: next })
-                }
-                onSave={() => void handleSave(field.id)}
-                onCancel={() => handleCancel(field.id)}
-              />
+              {state.editing && (
+                <SchedulerFieldDayEditor
+                  draftDays={state.draftDays}
+                  draftGameLength={state.draftGameLength}
+                  draftBuffer={state.draftBuffer}
+                  draftClosedDates={state.draftClosedDates}
+                  saving={state.saving}
+                  onDraftDaysChange={(next) => updateFieldState(field.id, { draftDays: next })}
+                  onDraftGameLengthChange={(v) =>
+                    updateFieldState(field.id, { draftGameLength: v })
+                  }
+                  onDraftBufferChange={(v) => updateFieldState(field.id, { draftBuffer: v })}
+                  onDraftClosedDatesChange={(next) =>
+                    updateFieldState(field.id, { draftClosedDates: next })
+                  }
+                  onSave={() => void handleSave(field.id)}
+                  onCancel={() => handleCancel(field.id)}
+                />
+              )}
             </AccordionDetails>
           </Accordion>
         );
