@@ -5,14 +5,6 @@ import {
   upsertSchedulerSeasonWindowConfig as apiUpsertWindowConfig,
   solveSeasonSchedule as apiSolveSeason,
   applySeasonSchedule as apiApplySeason,
-  listSchedulerFieldAvailabilityRules as apiListFieldRules,
-  createSchedulerFieldAvailabilityRule as apiCreateFieldRule,
-  updateSchedulerFieldAvailabilityRule as apiUpdateFieldRule,
-  deleteSchedulerFieldAvailabilityRule as apiDeleteFieldRule,
-  listSchedulerFieldExclusionDates as apiListFieldExclusions,
-  createSchedulerFieldExclusionDate as apiCreateFieldExclusion,
-  updateSchedulerFieldExclusionDate as apiUpdateFieldExclusion,
-  deleteSchedulerFieldExclusionDate as apiDeleteFieldExclusion,
   listSchedulerSeasonExclusions as apiListSeasonExclusions,
   createSchedulerSeasonExclusion as apiCreateSeasonExclusion,
   updateSchedulerSeasonExclusion as apiUpdateSeasonExclusion,
@@ -36,14 +28,6 @@ vi.mock('@draco/shared-api-client', () => ({
   upsertSchedulerSeasonWindowConfig: vi.fn(),
   solveSeasonSchedule: vi.fn(),
   applySeasonSchedule: vi.fn(),
-  listSchedulerFieldAvailabilityRules: vi.fn(),
-  createSchedulerFieldAvailabilityRule: vi.fn(),
-  updateSchedulerFieldAvailabilityRule: vi.fn(),
-  deleteSchedulerFieldAvailabilityRule: vi.fn(),
-  listSchedulerFieldExclusionDates: vi.fn(),
-  createSchedulerFieldExclusionDate: vi.fn(),
-  updateSchedulerFieldExclusionDate: vi.fn(),
-  deleteSchedulerFieldExclusionDate: vi.fn(),
   listSchedulerSeasonExclusions: vi.fn(),
   createSchedulerSeasonExclusion: vi.fn(),
   updateSchedulerSeasonExclusion: vi.fn(),
@@ -203,138 +187,6 @@ describe('SchedulerService', () => {
         throwOnError: false,
       });
       expect((result as Record<string, unknown>).gamesCreated).toBe(56);
-    });
-  });
-
-  describe('listFieldAvailabilityRules', () => {
-    it('returns the rules array from the API response', async () => {
-      const rule = { id: 'rule-1', fieldId: 'field-1', dayOfWeek: 'Monday' };
-      vi.mocked(apiListFieldRules).mockResolvedValue(makeOk({ rules: [rule] }));
-
-      const result = await service.listFieldAvailabilityRules(ACCOUNT_ID, SEASON_ID);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('rule-1');
-    });
-
-    it('throws on API error', async () => {
-      vi.mocked(apiListFieldRules).mockResolvedValue(makeError('Server Error', 500));
-
-      await expect(
-        service.listFieldAvailabilityRules(ACCOUNT_ID, SEASON_ID),
-      ).rejects.toBeInstanceOf(ApiClientError);
-    });
-  });
-
-  describe('createFieldAvailabilityRule', () => {
-    it('creates a rule and returns the new record', async () => {
-      const rule = { id: 'rule-2', fieldId: 'field-1', dayOfWeek: 'Tuesday' };
-      vi.mocked(apiCreateFieldRule).mockResolvedValue(makeOk(rule));
-
-      const input = { fieldId: 'field-1', dayOfWeek: 'Tuesday' } as never;
-      const result = await service.createFieldAvailabilityRule(ACCOUNT_ID, SEASON_ID, input);
-
-      expect(apiCreateFieldRule).toHaveBeenCalledWith({
-        client,
-        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID },
-        body: input,
-        throwOnError: false,
-      });
-      expect((result as Record<string, unknown>).dayOfWeek).toBe('Tuesday');
-    });
-  });
-
-  describe('updateFieldAvailabilityRule', () => {
-    it('updates a rule and returns the updated record', async () => {
-      const updated = { id: 'rule-1', fieldId: 'field-1', dayOfWeek: 'Wednesday' };
-      vi.mocked(apiUpdateFieldRule).mockResolvedValue(makeOk(updated));
-
-      const result = await service.updateFieldAvailabilityRule(ACCOUNT_ID, SEASON_ID, 'rule-1', {
-        dayOfWeek: 'Wednesday',
-      } as never);
-
-      expect(apiUpdateFieldRule).toHaveBeenCalledWith({
-        client,
-        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID, ruleId: 'rule-1' },
-        body: { dayOfWeek: 'Wednesday' },
-        throwOnError: false,
-      });
-      expect((result as Record<string, unknown>).dayOfWeek).toBe('Wednesday');
-    });
-  });
-
-  describe('deleteFieldAvailabilityRule', () => {
-    it('deletes a rule without error', async () => {
-      vi.mocked(apiDeleteFieldRule).mockResolvedValue(makeOk(null));
-
-      await expect(
-        service.deleteFieldAvailabilityRule(ACCOUNT_ID, SEASON_ID, 'rule-1'),
-      ).resolves.toBeUndefined();
-
-      expect(apiDeleteFieldRule).toHaveBeenCalledWith({
-        client,
-        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID, ruleId: 'rule-1' },
-        throwOnError: false,
-      });
-    });
-  });
-
-  describe('listFieldExclusionDates', () => {
-    it('returns the exclusions array from the API response', async () => {
-      const exclusion = { id: 'ex-1', fieldId: 'field-1', date: '2025-04-01' };
-      vi.mocked(apiListFieldExclusions).mockResolvedValue(makeOk({ exclusions: [exclusion] }));
-
-      const result = await service.listFieldExclusionDates(ACCOUNT_ID, SEASON_ID);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].date).toBe('2025-04-01');
-    });
-  });
-
-  describe('createFieldExclusionDate', () => {
-    it('creates an exclusion and returns the new record', async () => {
-      const exclusion = { id: 'ex-2', fieldId: 'field-2', date: '2025-05-01' };
-      vi.mocked(apiCreateFieldExclusion).mockResolvedValue(makeOk(exclusion));
-
-      const input = { fieldId: 'field-2', date: '2025-05-01' } as never;
-      const result = await service.createFieldExclusionDate(ACCOUNT_ID, SEASON_ID, input);
-
-      expect(apiCreateFieldExclusion).toHaveBeenCalledWith({
-        client,
-        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID },
-        body: input,
-        throwOnError: false,
-      });
-      expect(result.date).toBe('2025-05-01');
-    });
-  });
-
-  describe('updateFieldExclusionDate', () => {
-    it('updates an exclusion and returns the updated record', async () => {
-      const updated = { id: 'ex-1', fieldId: 'field-1', date: '2025-04-15' };
-      vi.mocked(apiUpdateFieldExclusion).mockResolvedValue(makeOk(updated));
-
-      const result = await service.updateFieldExclusionDate(ACCOUNT_ID, SEASON_ID, 'ex-1', {
-        date: '2025-04-15',
-      } as never);
-
-      expect(apiUpdateFieldExclusion).toHaveBeenCalledWith({
-        client,
-        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID, exclusionId: 'ex-1' },
-        body: { date: '2025-04-15' },
-        throwOnError: false,
-      });
-      expect(result.date).toBe('2025-04-15');
-    });
-  });
-
-  describe('deleteFieldExclusionDate', () => {
-    it('deletes an exclusion without error', async () => {
-      vi.mocked(apiDeleteFieldExclusion).mockResolvedValue(makeOk(null));
-
-      await expect(
-        service.deleteFieldExclusionDate(ACCOUNT_ID, SEASON_ID, 'ex-1'),
-      ).resolves.toBeUndefined();
     });
   });
 

@@ -5,7 +5,9 @@ type ApiFieldInput = {
   name: string;
   shortName: string;
   hasLights?: boolean | null;
-  schedulerStartIncrementMinutes?: number | null;
+  scheduleEnabled?: boolean | null;
+  gameLengthMinutes?: number | null;
+  bufferMinutes?: number | null;
   address?: string | null;
   city?: string | null;
   state?: string | null;
@@ -71,7 +73,9 @@ export const mapApiFieldToFieldType = (
     name: field.name,
     shortName: field.shortName,
     hasLights: field.hasLights === true,
-    schedulerStartIncrementMinutes: field.schedulerStartIncrementMinutes ?? 165,
+    scheduleEnabled: field.scheduleEnabled === true,
+    gameLengthMinutes: field.gameLengthMinutes ?? null,
+    bufferMinutes: field.bufferMinutes ?? 0,
     address: normalizeOptionalString(field.address),
     city: normalizeOptionalString(field.city),
     state: normalizeOptionalString(field.state),

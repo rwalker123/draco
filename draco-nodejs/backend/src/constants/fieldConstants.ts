@@ -3,12 +3,8 @@
  */
 
 /**
- * Default increment in minutes between game start times for scheduler field slots.
- * This value is used when a field doesn't have a custom schedulerStartIncrementMinutes configured.
- *
- * 165 minutes = 2 hours 45 minutes (typical game duration + buffer time)
- *
- * Note: This constant is also used as @default(165) in prisma/schema.prisma
- * for the availablefields.schedulerstartincrementminutes field.
+ * Default game length in minutes used by the scheduler when generating field
+ * slots for a field that has no game length configured and the season has no
+ * resolved default duration. Slot spacing is this value plus the field buffer.
  */
-export const DEFAULT_FIELD_START_INCREMENT_MINUTES = 165;
+export const DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES = 165;

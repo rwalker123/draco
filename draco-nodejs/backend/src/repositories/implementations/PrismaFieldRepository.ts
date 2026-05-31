@@ -86,7 +86,9 @@ export class PrismaFieldRepository implements IFieldRepository {
         latitude: true,
         longitude: true,
         haslights: true,
-        schedulerstartincrementminutes: true,
+        scheduleenabled: true,
+        gamelengthminutes: true,
+        bufferminutes: true,
       },
     });
   }

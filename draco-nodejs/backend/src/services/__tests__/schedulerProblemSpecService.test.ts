@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SchedulerProblemSpecService } from '../schedulerProblemSpecService.js';
+import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 import type { ISchedulerProblemSpecRepository } from '../../repositories/interfaces/ISchedulerProblemSpecRepository.js';
 import type { ISeasonsRepository } from '../../repositories/interfaces/ISeasonsRepository.js';
-import type { ISchedulerFieldAvailabilityRulesRepository } from '../../repositories/interfaces/ISchedulerFieldAvailabilityRulesRepository.js';
-import type { ISchedulerFieldExclusionDatesRepository } from '../../repositories/interfaces/ISchedulerFieldExclusionDatesRepository.js';
+import type { IFieldScheduleConfigRepository } from '../../repositories/interfaces/IFieldScheduleConfigRepository.js';
 import type { ISchedulerSeasonConfigRepository } from '../../repositories/interfaces/ISchedulerSeasonConfigRepository.js';
 import type { ISchedulerSeasonLeagueSelectionsRepository } from '../../repositories/interfaces/ISchedulerSeasonLeagueSelectionsRepository.js';
 import type { ISchedulerSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
@@ -16,11 +16,11 @@ import type {
   leagueschedule,
   schedulerseasonconfig,
   schedulerseasonexclusions,
-  schedulerfieldexclusiondates,
-  schedulerfieldavailabilityrules,
   schedulerteamseasonexclusions,
   schedulerumpireexclusions,
   teamsseason,
+  fieldopenhours,
+  fieldcloseddates,
 } from '#prisma/client';
 import type { SchedulerSeasonSolveRequest } from '@draco/shared-schemas';
 import type { dbLeagueUmpireWithContact } from '../../repositories/types/dbTypes.js';
@@ -51,22 +51,12 @@ class SeasonsRepositoryStub implements ISeasonsRepository {
   updateScheduleVisibility = vi.fn<ISeasonsRepository['updateScheduleVisibility']>();
 }
 
-class SchedulerFieldAvailabilityRulesRepositoryStub implements ISchedulerFieldAvailabilityRulesRepository {
-  findById = vi.fn<ISchedulerFieldAvailabilityRulesRepository['findById']>();
-  findForAccount = vi.fn<ISchedulerFieldAvailabilityRulesRepository['findForAccount']>();
-  listForSeason = vi.fn<ISchedulerFieldAvailabilityRulesRepository['listForSeason']>();
-  create = vi.fn<ISchedulerFieldAvailabilityRulesRepository['create']>();
-  update = vi.fn<ISchedulerFieldAvailabilityRulesRepository['update']>();
-  delete = vi.fn<ISchedulerFieldAvailabilityRulesRepository['delete']>();
-}
-
-class SchedulerFieldExclusionDatesRepositoryStub implements ISchedulerFieldExclusionDatesRepository {
-  findById = vi.fn<ISchedulerFieldExclusionDatesRepository['findById']>();
-  findForAccount = vi.fn<ISchedulerFieldExclusionDatesRepository['findForAccount']>();
-  listForSeason = vi.fn<ISchedulerFieldExclusionDatesRepository['listForSeason']>();
-  create = vi.fn<ISchedulerFieldExclusionDatesRepository['create']>();
-  update = vi.fn<ISchedulerFieldExclusionDatesRepository['update']>();
-  delete = vi.fn<ISchedulerFieldExclusionDatesRepository['delete']>();
+class FieldScheduleConfigRepositoryStub implements IFieldScheduleConfigRepository {
+  findFieldInAccount = vi.fn<IFieldScheduleConfigRepository['findFieldInAccount']>();
+  getConfigForField = vi.fn<IFieldScheduleConfigRepository['getConfigForField']>();
+  replaceConfigForField = vi.fn<IFieldScheduleConfigRepository['replaceConfigForField']>();
+  listOpenHoursForAccount = vi.fn<IFieldScheduleConfigRepository['listOpenHoursForAccount']>();
+  listClosedDatesForAccount = vi.fn<IFieldScheduleConfigRepository['listClosedDatesForAccount']>();
 }
 
 class SchedulerSeasonConfigRepositoryStub implements ISchedulerSeasonConfigRepository {
@@ -151,7 +141,7 @@ const makeTeamSeason = (id: bigint, teamId: bigint, leagueSeasonId: bigint): tea
     divisionseasonid: null,
   }) as teamsseason;
 
-const makeField = (id: bigint): availablefields =>
+const makeField = (id: bigint, overrides?: Partial<availablefields>): availablefields =>
   ({
     id,
     accountid: accountId,
@@ -168,7 +158,10 @@ const makeField = (id: bigint): availablefields =>
     longitude: '',
     haslights: true,
     maxparallelgames: 1,
-    schedulerstartincrementminutes: 60,
+    scheduleenabled: true,
+    gamelengthminutes: null,
+    bufferminutes: 0,
+    ...overrides,
   }) as availablefields;
 
 const makeUmpire = (id: bigint): dbLeagueUmpireWithContact =>
@@ -208,46 +201,50 @@ const makeGame = (
     umpire4: null,
   }) as leagueschedule;
 
-const makeRule = (id: bigint, fieldId: bigint): schedulerfieldavailabilityrules =>
-  ({
-    id,
-    accountid: accountId,
-    seasonid: seasonId,
-    fieldid: fieldId,
-    startdate: new Date('2026-04-06T00:00:00.000Z'),
-    enddate: new Date('2026-04-06T00:00:00.000Z'),
-    daysofweekmask: 1, // Monday
-    starttimelocal: '09:00',
-    endtimelocal: '11:00',
-    startincrementminutes: 60,
-    enabled: true,
-  }) as schedulerfieldavailabilityrules;
-
-const makeOpenRule = (
+const makeOpenHours = (
   id: bigint,
   fieldId: bigint,
-  overrides?: Partial<schedulerfieldavailabilityrules>,
-): schedulerfieldavailabilityrules =>
+  dayOfWeek: number,
+  startTimeLocal: string,
+  endTimeLocal: string,
+): fieldopenhours =>
   ({
     id,
-    accountid: accountId,
-    seasonid: seasonId,
     fieldid: fieldId,
-    startdate: null,
-    enddate: null,
-    daysofweekmask: 1, // Monday
-    starttimelocal: '13:00',
-    endtimelocal: '15:00',
-    startincrementminutes: 60,
-    enabled: true,
-    ...overrides,
-  }) as schedulerfieldavailabilityrules;
+    dayofweek: dayOfWeek,
+    starttimelocal: startTimeLocal,
+    endtimelocal: endTimeLocal,
+    createdat: new Date('2026-01-01T00:00:00.000Z'),
+    updatedat: new Date('2026-01-01T00:00:00.000Z'),
+  }) as fieldopenhours;
 
-describe('SchedulerProblemSpecService.buildProblemSpec', () => {
+const makeClosedDate = (id: bigint, fieldId: bigint, date: Date): fieldcloseddates =>
+  ({
+    id,
+    fieldid: fieldId,
+    closeddate: date,
+    note: null,
+    createdat: new Date('2026-01-01T00:00:00.000Z'),
+    updatedat: new Date('2026-01-01T00:00:00.000Z'),
+  }) as fieldcloseddates;
+
+vi.mock('../../repositories/repositoryFactory.js', () => ({
+  RepositoryFactory: {
+    getSchedulerProblemSpecRepository: vi.fn(),
+    getSeasonsRepository: vi.fn(),
+    getFieldScheduleConfigRepository: vi.fn(),
+    getSchedulerSeasonConfigRepository: vi.fn(),
+    getSchedulerSeasonLeagueSelectionsRepository: vi.fn(),
+    getSchedulerSeasonExclusionsRepository: vi.fn(),
+    getSchedulerTeamSeasonExclusionsRepository: vi.fn(),
+    getSchedulerUmpireExclusionsRepository: vi.fn(),
+  },
+}));
+
+describe('SchedulerProblemSpecService', () => {
   let schedulerRepo: SchedulerProblemSpecRepositoryStub;
   let seasonsRepo: SeasonsRepositoryStub;
-  let rulesRepo: SchedulerFieldAvailabilityRulesRepositoryStub;
-  let exclusionsRepo: SchedulerFieldExclusionDatesRepositoryStub;
+  let fieldScheduleConfigRepo: FieldScheduleConfigRepositoryStub;
   let seasonConfigRepo: SchedulerSeasonConfigRepositoryStub;
   let seasonLeagueSelectionsRepo: SchedulerSeasonLeagueSelectionsRepositoryStub;
   let seasonExclusionsRepo: SchedulerSeasonExclusionsRepositoryStub;
@@ -258,134 +255,376 @@ describe('SchedulerProblemSpecService.buildProblemSpec', () => {
   beforeEach(() => {
     schedulerRepo = new SchedulerProblemSpecRepositoryStub();
     seasonsRepo = new SeasonsRepositoryStub();
-    rulesRepo = new SchedulerFieldAvailabilityRulesRepositoryStub();
-    exclusionsRepo = new SchedulerFieldExclusionDatesRepositoryStub();
+    fieldScheduleConfigRepo = new FieldScheduleConfigRepositoryStub();
     seasonConfigRepo = new SchedulerSeasonConfigRepositoryStub();
     seasonLeagueSelectionsRepo = new SchedulerSeasonLeagueSelectionsRepositoryStub();
     seasonExclusionsRepo = new SchedulerSeasonExclusionsRepositoryStub();
     teamExclusionsRepo = new SchedulerTeamSeasonExclusionsRepositoryStub();
     umpireExclusionsRepo = new SchedulerUmpireExclusionsRepositoryStub();
-    service = new SchedulerProblemSpecService(
-      schedulerRepo,
-      seasonsRepo,
-      rulesRepo,
-      exclusionsRepo,
+
+    vi.mocked(RepositoryFactory.getSchedulerProblemSpecRepository).mockReturnValue(schedulerRepo);
+    vi.mocked(RepositoryFactory.getSeasonsRepository).mockReturnValue(seasonsRepo);
+    vi.mocked(RepositoryFactory.getFieldScheduleConfigRepository).mockReturnValue(
+      fieldScheduleConfigRepo,
+    );
+    vi.mocked(RepositoryFactory.getSchedulerSeasonConfigRepository).mockReturnValue(
       seasonConfigRepo,
+    );
+    vi.mocked(RepositoryFactory.getSchedulerSeasonLeagueSelectionsRepository).mockReturnValue(
       seasonLeagueSelectionsRepo,
+    );
+    vi.mocked(RepositoryFactory.getSchedulerSeasonExclusionsRepository).mockReturnValue(
       seasonExclusionsRepo,
+    );
+    vi.mocked(RepositoryFactory.getSchedulerTeamSeasonExclusionsRepository).mockReturnValue(
       teamExclusionsRepo,
+    );
+    vi.mocked(RepositoryFactory.getSchedulerUmpireExclusionsRepository).mockReturnValue(
       umpireExclusionsRepo,
     );
 
+    service = new SchedulerProblemSpecService();
+
     schedulerRepo.findAccount.mockResolvedValue(makeAccount({ timezoneid: 'UTC' }));
     seasonsRepo.findSeasonById.mockResolvedValue(makeSeason());
-    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
+    fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([] as fieldopenhours[]);
+    fieldScheduleConfigRepo.listClosedDatesForAccount.mockResolvedValue([] as fieldcloseddates[]);
     seasonConfigRepo.findForSeason.mockResolvedValue(makeSeasonWindowConfig());
     seasonLeagueSelectionsRepo.listForSeason.mockResolvedValue([]);
     seasonExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerseasonexclusions[]);
     teamExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerteamseasonexclusions[]);
     umpireExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerumpireexclusions[]);
-  });
 
-  it('assembles a problem spec from DB data and injects account timezone into requireLightsAfter', async () => {
     schedulerRepo.listSeasonTeams.mockResolvedValue([
       makeTeamSeason(11n, 1001n, 55n),
       makeTeamSeason(12n, 1002n, 55n),
     ]);
-    schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
     schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n)]);
     schedulerRepo.listSeasonGames.mockResolvedValue([makeGame(999n, 55n, 11n, 12n)]);
-    rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n)]);
-    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
+  });
 
-    const request: SchedulerSeasonSolveRequest = {
-      constraints: {
-        hard: {
-          requireLightsAfter: { enabled: true, startHourLocal: 18 },
+  describe('slot generation from field open hours', () => {
+    it('produces slots within the open window spaced by gameLength + bufferMinutes', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 15,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '12:00'),
+      ]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-06T00:00:00.000Z'),
+        }),
+      );
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+      expect(starts).toEqual(['2026-04-06T09:00:00.000Z', '2026-04-06T10:15:00.000Z']);
+      expect(spec.fieldSlots[0]?.endTime).toBe('2026-04-06T12:00:00.000Z');
+      expect(spec.fieldSlots[1]?.fieldId).toBe('100');
+    });
+
+    it('spacing uses field gameLength alone when no season default — 90-minute spacing over 4-hour window', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 90,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '13:00'),
+      ]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-06T00:00:00.000Z'),
+        }),
+      );
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+      expect(starts).toEqual(['2026-04-06T09:00:00.000Z', '2026-04-06T10:30:00.000Z']);
+      expect(starts).not.toContain('2026-04-06T13:00:00.000Z');
+    });
+
+    it('spacing uses smaller of field gameLength vs fallback — field 45 min produces tighter slots than fallback 165 min', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 45,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '11:00'),
+      ]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-06T00:00:00.000Z'),
+        }),
+      );
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+      expect(starts).toEqual(['2026-04-06T09:00:00.000Z', '2026-04-06T09:45:00.000Z']);
+    });
+
+    it('uses only field game length when season default is absent', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '10:00', '12:00'),
+      ]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-06T00:00:00.000Z'),
+        }),
+      );
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      expect(spec.fieldSlots).toHaveLength(2);
+      expect(spec.fieldSlots[0]?.startTime).toBe('2026-04-06T10:00:00.000Z');
+      expect(spec.fieldSlots[1]?.startTime).toBe('2026-04-06T11:00:00.000Z');
+    });
+
+    it('uses DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES (165) when neither season nor field duration is set', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: null,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '21:00'),
+      ]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-06T00:00:00.000Z'),
+        }),
+      );
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+      expect(starts[0]).toBe('2026-04-06T09:00:00.000Z');
+      expect(starts[1]).toBe('2026-04-06T11:45:00.000Z');
+      expect(starts[2]).toBe('2026-04-06T14:30:00.000Z');
+    });
+
+    it('skips all slots on a closed date', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-07T00:00:00.000Z'),
+        }),
+      );
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '11:00'),
+        makeOpenHours(2n, 100n, 1, '09:00', '11:00'),
+      ]);
+
+      fieldScheduleConfigRepo.listClosedDatesForAccount.mockResolvedValue([
+        makeClosedDate(1n, 100n, new Date('2026-04-06T00:00:00.000Z')),
+      ]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+      expect(starts.every((t) => !t.startsWith('2026-04-06'))).toBe(true);
+      expect(starts.some((t) => t.startsWith('2026-04-07'))).toBe(true);
+    });
+
+    it('yields no slots when scheduleenabled is false', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: false,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '11:00'),
+      ]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      expect(spec.fieldSlots).toHaveLength(0);
+    });
+
+    it('yields no slots when field has no open-hours rows at all', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([] as fieldopenhours[]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      expect(spec.fieldSlots).toHaveLength(0);
+    });
+
+    it('skips a day that has no open-hours row for that weekday', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      seasonConfigRepo.findForSeason.mockResolvedValue(
+        makeSeasonWindowConfig({
+          startdate: new Date('2026-04-06T00:00:00.000Z'),
+          enddate: new Date('2026-04-07T00:00:00.000Z'),
+        }),
+      );
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 1, '09:00', '11:00'),
+      ]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const starts = spec.fieldSlots.map((s) => s.startTime);
+      expect(starts.every((t) => !t.startsWith('2026-04-06'))).toBe(true);
+      expect(starts.some((t) => t.startsWith('2026-04-07'))).toBe(true);
+    });
+  });
+
+  describe('buildProblemSpec — core spec assembly', () => {
+    it('assembles a problem spec from DB data and injects account timezone into requireLightsAfter', async () => {
+      const field = makeField(100n, {
+        scheduleenabled: true,
+        gamelengthminutes: 60,
+        bufferminutes: 0,
+      });
+      schedulerRepo.listAccountFields.mockResolvedValue([field]);
+
+      fieldScheduleConfigRepo.listOpenHoursForAccount.mockResolvedValue([
+        makeOpenHours(1n, 100n, 0, '09:00', '11:00'),
+      ]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        constraints: {
+          hard: {
+            requireLightsAfter: { enabled: true, startHourLocal: 18 },
+          },
         },
-      },
-      objectives: { primary: 'maximize_scheduled_games' },
-    };
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
 
-    const spec = await service.buildProblemSpec(accountId, seasonId, request);
-    expect(spec.season.startDate).toBe('2026-04-06');
-    expect(spec.season.endDate).toBe('2026-04-06');
-    expect(spec.fieldSlots).toHaveLength(2);
-    expect(spec.fieldSlots[0]?.startTime).toBe('2026-04-06T09:00:00.000Z');
-    expect(spec.fieldSlots[1]?.startTime).toBe('2026-04-06T10:00:00.000Z');
-    expect(spec.fieldSlots[0]?.endTime).toBe('2026-04-06T11:00:00.000Z');
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
 
-    expect(spec.constraints?.hard?.requireLightsAfter?.timeZone).toBe('UTC');
-  });
+      expect(spec.season.startDate).toBe('2026-04-06');
+      expect(spec.season.endDate).toBe('2026-04-06');
+      expect(spec.fieldSlots).toHaveLength(2);
+      expect(spec.fieldSlots[0]?.startTime).toBe('2026-04-06T09:00:00.000Z');
+      expect(spec.fieldSlots[1]?.startTime).toBe('2026-04-06T10:00:00.000Z');
+      expect(spec.fieldSlots[0]?.endTime).toBe('2026-04-06T11:00:00.000Z');
+      expect(spec.constraints?.hard?.requireLightsAfter?.timeZone).toBe('UTC');
+    });
 
-  it('filters games when gameIds is provided', async () => {
-    schedulerRepo.listSeasonTeams.mockResolvedValue([
-      makeTeamSeason(11n, 1001n, 55n),
-      makeTeamSeason(12n, 1002n, 55n),
-    ]);
-    schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
-    schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n)]);
-    schedulerRepo.listSeasonGames.mockResolvedValue([
-      makeGame(999n, 55n, 11n, 12n),
-      makeGame(1000n, 55n, 11n, 12n),
-    ]);
-    rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n)]);
-    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
+    it('filters games when gameIds is provided', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+      schedulerRepo.listSeasonGames.mockResolvedValue([
+        makeGame(999n, 55n, 11n, 12n),
+        makeGame(1000n, 55n, 11n, 12n),
+      ]);
 
-    const request: SchedulerSeasonSolveRequest = {
-      gameIds: ['999'],
-      objectives: { primary: 'maximize_scheduled_games' },
-    };
+      const request: SchedulerSeasonSolveRequest = {
+        gameIds: ['999'],
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
 
-    const spec = await service.buildProblemSpec(accountId, seasonId, request);
-    expect(spec.games).toHaveLength(1);
-    expect(spec.games[0]?.id).toBe('999');
-  });
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
 
-  it('applies umpiresPerGame override to requiredUmpires', async () => {
-    schedulerRepo.listSeasonTeams.mockResolvedValue([
-      makeTeamSeason(11n, 1001n, 55n),
-      makeTeamSeason(12n, 1002n, 55n),
-    ]);
-    schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
-    schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n), makeUmpire(6n)]);
-    schedulerRepo.listSeasonGames.mockResolvedValue([makeGame(999n, 55n, 11n, 12n)]);
-    rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n)]);
-    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
+      expect(spec.games).toHaveLength(1);
+      expect(spec.games[0]?.id).toBe('999');
+    });
 
-    const request: SchedulerSeasonSolveRequest = {
-      objectives: { primary: 'maximize_scheduled_games' },
-      umpiresPerGame: 2,
-    };
+    it('applies umpiresPerGame override to requiredUmpires', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+      schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n), makeUmpire(6n)]);
 
-    const spec = await service.buildProblemSpec(accountId, seasonId, request);
-    expect(spec.games).toHaveLength(1);
-    expect(spec.games[0]?.requiredUmpires).toBe(2);
-  });
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+        umpiresPerGame: 2,
+      };
 
-  it('treats rules with omitted date bounds as covering the derived season window', async () => {
-    schedulerRepo.listSeasonTeams.mockResolvedValue([
-      makeTeamSeason(11n, 1001n, 55n),
-      makeTeamSeason(12n, 1002n, 55n),
-    ]);
-    schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
-    schedulerRepo.listAccountUmpires.mockResolvedValue([makeUmpire(5n)]);
-    schedulerRepo.listSeasonGames.mockResolvedValue([makeGame(999n, 55n, 11n, 12n)]);
-    rulesRepo.listForSeason.mockResolvedValue([makeRule(1n, 100n), makeOpenRule(2n, 100n)]);
-    exclusionsRepo.listForSeason.mockResolvedValue([] as schedulerfieldexclusiondates[]);
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
 
-    const request: SchedulerSeasonSolveRequest = {
-      objectives: { primary: 'maximize_scheduled_games' },
-    };
-
-    const spec = await service.buildProblemSpec(accountId, seasonId, request);
-    expect(spec.season.startDate).toBe('2026-04-06');
-    expect(spec.season.endDate).toBe('2026-04-06');
-
-    const starts = spec.fieldSlots.map((slot) => slot.startTime).sort();
-    expect(starts).toContain('2026-04-06T09:00:00.000Z');
-    expect(starts).toContain('2026-04-06T10:00:00.000Z');
-    expect(starts).toContain('2026-04-06T13:00:00.000Z');
-    expect(starts).toContain('2026-04-06T14:00:00.000Z');
+      expect(spec.games).toHaveLength(1);
+      expect(spec.games[0]?.requiredUmpires).toBe(2);
+    });
   });
 });

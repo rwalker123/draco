@@ -55,6 +55,12 @@ import {
   CreateSponsorSchema,
   CreateMemberBusinessSchema,
   FieldSchema,
+  FieldScheduleConfigSchema,
+  FieldScheduleConfigUpsertSchema,
+  FieldOpenHourSchema,
+  FieldOpenHourUpsertSchema,
+  FieldClosedDateSchema,
+  FieldClosedDateUpsertSchema,
   FieldsSchema,
   UpsertFieldSchema,
   UpsertTeamManagerSchema,
@@ -293,12 +299,6 @@ import {
   SchedulerSolveResultSchema,
   SchedulerApplyRequestSchema,
   SchedulerApplyResultSchema,
-  SchedulerFieldAvailabilityRuleSchema,
-  SchedulerFieldAvailabilityRuleUpsertSchema,
-  SchedulerFieldAvailabilityRulesSchema,
-  SchedulerFieldExclusionDateSchema,
-  SchedulerFieldExclusionDateUpsertSchema,
-  SchedulerFieldExclusionDatesSchema,
   SchedulerSeasonWindowConfigSchema,
   SchedulerSeasonWindowConfigUpsertSchema,
   SchedulerSeasonExclusionSchema,
@@ -455,6 +455,24 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   const FieldSchemaRef = registry.register('Field', FieldSchema);
   const FieldsSchemaRef = registry.register('Fields', FieldsSchema);
   const UpsertFieldSchemaRef = registry.register('UpsertField', UpsertFieldSchema);
+  const FieldScheduleConfigSchemaRef = registry.register(
+    'FieldScheduleConfig',
+    FieldScheduleConfigSchema,
+  );
+  const FieldScheduleConfigUpsertSchemaRef = registry.register(
+    'FieldScheduleConfigUpsert',
+    FieldScheduleConfigUpsertSchema,
+  );
+  const FieldOpenHourSchemaRef = registry.register('FieldOpenHour', FieldOpenHourSchema);
+  const FieldOpenHourUpsertSchemaRef = registry.register(
+    'FieldOpenHourUpsert',
+    FieldOpenHourUpsertSchema,
+  );
+  const FieldClosedDateSchemaRef = registry.register('FieldClosedDate', FieldClosedDateSchema);
+  const FieldClosedDateUpsertSchemaRef = registry.register(
+    'FieldClosedDateUpsert',
+    FieldClosedDateUpsertSchema,
+  );
   const ContactValidationWithSignInSchemaRef = registry.register(
     'ContactValidationWithSignIn',
     ContactValidationWithSignInSchema,
@@ -1314,30 +1332,6 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerApplyResult',
     SchedulerApplyResultSchema,
   );
-  const SchedulerFieldAvailabilityRuleSchemaRef = registry.register(
-    'SchedulerFieldAvailabilityRule',
-    SchedulerFieldAvailabilityRuleSchema,
-  );
-  const SchedulerFieldAvailabilityRuleUpsertSchemaRef = registry.register(
-    'SchedulerFieldAvailabilityRuleUpsert',
-    SchedulerFieldAvailabilityRuleUpsertSchema,
-  );
-  const SchedulerFieldAvailabilityRulesSchemaRef = registry.register(
-    'SchedulerFieldAvailabilityRules',
-    SchedulerFieldAvailabilityRulesSchema,
-  );
-  const SchedulerFieldExclusionDateSchemaRef = registry.register(
-    'SchedulerFieldExclusionDate',
-    SchedulerFieldExclusionDateSchema,
-  );
-  const SchedulerFieldExclusionDateUpsertSchemaRef = registry.register(
-    'SchedulerFieldExclusionDateUpsert',
-    SchedulerFieldExclusionDateUpsertSchema,
-  );
-  const SchedulerFieldExclusionDatesSchemaRef = registry.register(
-    'SchedulerFieldExclusionDates',
-    SchedulerFieldExclusionDatesSchema,
-  );
   const SchedulerSeasonWindowConfigSchemaRef = registry.register(
     'SchedulerSeasonWindowConfig',
     SchedulerSeasonWindowConfigSchema,
@@ -1682,6 +1676,12 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     FieldSchemaRef,
     FieldsSchemaRef,
     UpsertFieldSchemaRef,
+    FieldScheduleConfigSchemaRef,
+    FieldScheduleConfigUpsertSchemaRef,
+    FieldOpenHourSchemaRef,
+    FieldOpenHourUpsertSchemaRef,
+    FieldClosedDateSchemaRef,
+    FieldClosedDateUpsertSchemaRef,
     SeasonManagerSchemaRef,
     SeasonManagerListSchemaRef,
     SeasonManagerWithLeagueSchemaRef,
@@ -1967,12 +1967,6 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerSolveResultSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
-    SchedulerFieldAvailabilityRuleSchemaRef,
-    SchedulerFieldAvailabilityRuleUpsertSchemaRef,
-    SchedulerFieldAvailabilityRulesSchemaRef,
-    SchedulerFieldExclusionDateSchemaRef,
-    SchedulerFieldExclusionDateUpsertSchemaRef,
-    SchedulerFieldExclusionDatesSchemaRef,
     SchedulerSeasonWindowConfigSchemaRef,
     SchedulerSeasonWindowConfigUpsertSchemaRef,
     SchedulerSeasonExclusionSchemaRef,

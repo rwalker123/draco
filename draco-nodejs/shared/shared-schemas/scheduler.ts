@@ -69,93 +69,6 @@ const isoDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
   .openapi({ type: 'string', format: 'date', example: '2026-04-01' });
 
-const hhmmSchema = z
-  .string()
-  .trim()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be formatted as HH:mm')
-  .openapi({ example: '18:30' });
-
-const SchedulerFieldAvailabilityRuleBaseSchema = z.object({
-  id: schedulerIdSchema,
-  seasonId: schedulerIdSchema,
-  fieldId: schedulerIdSchema,
-  startDate: isoDateSchema
-    .optional()
-    .openapi({ description: 'Optional. When omitted, treated as season start date.' }),
-  endDate: isoDateSchema
-    .optional()
-    .openapi({ description: 'Optional. When omitted, treated as season end date.' }),
-  daysOfWeekMask: z.number().int().min(1).max(127).openapi({
-    example: 21,
-    description: 'Bitmask for days of week where bit 0=Mon ... bit 6=Sun.',
-  }),
-  startTimeLocal: hhmmSchema,
-  endTimeLocal: hhmmSchema,
-  enabled: z.boolean(),
-});
-
-const fieldAvailabilityRuleRefinement = (
-  data: { startDate?: string; endDate?: string; startTimeLocal: string; endTimeLocal: string },
-  ctx: z.RefinementCtx,
-) => {
-  if (data.startDate && data.endDate && data.startDate > data.endDate) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['startDate'],
-      message: 'startDate must be on or before endDate',
-    });
-  }
-
-  if (data.startTimeLocal >= data.endTimeLocal) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['startTimeLocal'],
-      message: 'startTimeLocal must be before endTimeLocal',
-    });
-  }
-};
-
-export const SchedulerFieldAvailabilityRuleSchema =
-  SchedulerFieldAvailabilityRuleBaseSchema.superRefine(fieldAvailabilityRuleRefinement).openapi({
-    title: 'SchedulerFieldAvailabilityRule',
-  });
-
-export const SchedulerFieldAvailabilityRuleUpsertSchema =
-  SchedulerFieldAvailabilityRuleBaseSchema.omit({ id: true })
-    .superRefine(fieldAvailabilityRuleRefinement)
-    .openapi({ title: 'SchedulerFieldAvailabilityRuleUpsert' });
-
-export const SchedulerFieldAvailabilityRulesSchema = z
-  .object({
-    rules: SchedulerFieldAvailabilityRuleSchema.array(),
-  })
-  .openapi({ title: 'SchedulerFieldAvailabilityRules' });
-
-export const SchedulerFieldExclusionDateSchema = z
-  .object({
-    id: schedulerIdSchema,
-    seasonId: schedulerIdSchema,
-    fieldId: schedulerIdSchema,
-    date: isoDateSchema,
-    note: z.string().trim().min(1).max(255).optional(),
-    enabled: z.boolean(),
-  })
-  .openapi({
-    title: 'SchedulerFieldExclusionDate',
-    description:
-      'A date-only exclusion for a field. When enabled, no fieldSlots will be generated for the field on this date.',
-  });
-
-export const SchedulerFieldExclusionDateUpsertSchema = SchedulerFieldExclusionDateSchema.omit({
-  id: true,
-}).openapi({ title: 'SchedulerFieldExclusionDateUpsert' });
-
-export const SchedulerFieldExclusionDatesSchema = z
-  .object({
-    exclusions: SchedulerFieldExclusionDateSchema.array(),
-  })
-  .openapi({ title: 'SchedulerFieldExclusionDates' });
-
 export const SchedulerSeasonWindowConfigSchema = z
   .object({
     seasonId: schedulerIdSchema,
@@ -756,16 +669,6 @@ export type SchedulerSeasonConfig = z.infer<typeof SchedulerSeasonConfigSchema>;
 export type SchedulerTeam = z.infer<typeof SchedulerTeamSchema>;
 export type SchedulerField = z.infer<typeof SchedulerFieldSchema>;
 export type SchedulerUmpire = z.infer<typeof SchedulerUmpireSchema>;
-export type SchedulerFieldAvailabilityRule = z.infer<typeof SchedulerFieldAvailabilityRuleSchema>;
-export type SchedulerFieldAvailabilityRuleUpsert = z.infer<
-  typeof SchedulerFieldAvailabilityRuleUpsertSchema
->;
-export type SchedulerFieldAvailabilityRules = z.infer<typeof SchedulerFieldAvailabilityRulesSchema>;
-export type SchedulerFieldExclusionDate = z.infer<typeof SchedulerFieldExclusionDateSchema>;
-export type SchedulerFieldExclusionDateUpsert = z.infer<
-  typeof SchedulerFieldExclusionDateUpsertSchema
->;
-export type SchedulerFieldExclusionDates = z.infer<typeof SchedulerFieldExclusionDatesSchema>;
 export type SchedulerSeasonWindowConfig = z.infer<typeof SchedulerSeasonWindowConfigSchema>;
 export type SchedulerSeasonWindowConfigUpsert = z.infer<
   typeof SchedulerSeasonWindowConfigUpsertSchema
@@ -820,8 +723,6 @@ export const SchedulerProblemSpecPreviewSchema = z
     umpires: SchedulerUmpireSchema.array(),
     games: SchedulerGameRequestSchema.array(),
     fieldSlots: SchedulerFieldSlotSchema.array(),
-    fieldAvailabilityRules: SchedulerFieldAvailabilityRuleSchema.array(),
-    fieldExclusionDates: SchedulerFieldExclusionDateSchema.array(),
     seasonWindowConfig: SchedulerSeasonWindowConfigSchema.optional(),
     seasonExclusions: SchedulerSeasonExclusionSchema.array().optional(),
     teamExclusions: SchedulerTeamExclusionSchema.array().optional(),
@@ -830,7 +731,7 @@ export const SchedulerProblemSpecPreviewSchema = z
   .openapi({
     title: 'SchedulerProblemSpecPreview',
     description:
-      'DB-assembled scheduling problem spec preview. Uses field availability rules expanded into concrete fieldSlots.',
+      'DB-assembled scheduling problem spec preview. Field open hours and closed dates are expanded into concrete fieldSlots.',
   });
 
 export type SchedulerProblemSpecPreview = z.infer<typeof SchedulerProblemSpecPreviewSchema>;

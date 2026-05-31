@@ -2,8 +2,6 @@
 
 import { useRef, useState } from 'react';
 import type {
-  SchedulerFieldAvailabilityRuleUpsert,
-  SchedulerFieldExclusionDateUpsert,
   SchedulerGenerateMatchupsRequest,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonExclusionUpsert,
@@ -92,30 +90,6 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
       getSeasonWindowConfig: list((s, a, i, signal) => s.getSeasonWindowConfig(a, i, signal)),
       upsertSeasonWindowConfig: mutate((s, a, i, input: SchedulerSeasonWindowConfigUpsert) =>
         s.upsertSeasonWindowConfig(a, i, input),
-      ),
-      listFieldAvailabilityRules: list((s, a, i, signal) =>
-        s.listFieldAvailabilityRules(a, i, signal),
-      ),
-      createFieldAvailabilityRule: mutate((s, a, i, input: SchedulerFieldAvailabilityRuleUpsert) =>
-        s.createFieldAvailabilityRule(a, i, input),
-      ),
-      updateFieldAvailabilityRule: mutate(
-        (s, a, i, ruleId: string, input: SchedulerFieldAvailabilityRuleUpsert) =>
-          s.updateFieldAvailabilityRule(a, i, ruleId, input),
-      ),
-      deleteFieldAvailabilityRule: mutate((s, a, i, ruleId: string) =>
-        s.deleteFieldAvailabilityRule(a, i, ruleId),
-      ),
-      listFieldExclusionDates: list((s, a, i, signal) => s.listFieldExclusionDates(a, i, signal)),
-      createFieldExclusionDate: mutate((s, a, i, input: SchedulerFieldExclusionDateUpsert) =>
-        s.createFieldExclusionDate(a, i, input),
-      ),
-      updateFieldExclusionDate: mutate(
-        (s, a, i, exclusionId: string, input: SchedulerFieldExclusionDateUpsert) =>
-          s.updateFieldExclusionDate(a, i, exclusionId, input),
-      ),
-      deleteFieldExclusionDate: mutate((s, a, i, exclusionId: string) =>
-        s.deleteFieldExclusionDate(a, i, exclusionId),
       ),
       listSeasonExclusions: list((s, a, i, signal) => s.listSeasonExclusions(a, i, signal)),
       createSeasonExclusion: mutate((s, a, i, input: SchedulerSeasonExclusionUpsert) =>

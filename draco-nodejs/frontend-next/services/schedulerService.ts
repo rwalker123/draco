@@ -1,9 +1,5 @@
 import type {
   SchedulerApplyResult,
-  SchedulerFieldAvailabilityRule,
-  SchedulerFieldAvailabilityRuleUpsert,
-  SchedulerFieldExclusionDate,
-  SchedulerFieldExclusionDateUpsert,
   SchedulerGenerateMatchupsRequest,
   SchedulerGenerateMatchupsResult,
   SchedulerProblemSpecPreview,
@@ -24,28 +20,20 @@ import type {
 } from '@draco/shared-schemas';
 import {
   applySeasonSchedule,
-  createSchedulerFieldExclusionDate,
-  createSchedulerFieldAvailabilityRule,
   createSchedulerSeasonExclusion,
   createSchedulerTeamExclusion,
   createSchedulerUmpireExclusion,
-  deleteSchedulerFieldExclusionDate,
-  deleteSchedulerFieldAvailabilityRule,
   deleteSchedulerSeasonExclusion,
   deleteSchedulerTeamExclusion,
   deleteSchedulerUmpireExclusion,
   generateSeasonMatchups,
   getSchedulerProblemSpecPreview,
   getSchedulerSeasonWindowConfig,
-  listSchedulerFieldExclusionDates,
-  listSchedulerFieldAvailabilityRules,
   listSchedulerSeasonExclusions,
   listSchedulerTeamExclusions,
   listSchedulerUmpireExclusions,
   solveSeasonSchedule,
   upsertSchedulerSeasonWindowConfig,
-  updateSchedulerFieldExclusionDate,
-  updateSchedulerFieldAvailabilityRule,
   updateSchedulerSeasonExclusion,
   updateSchedulerTeamExclusion,
   updateSchedulerUmpireExclusion,
@@ -159,22 +147,6 @@ export class SchedulerService {
     });
 
     return unwrapApiResult(result, 'Failed to apply schedule proposal');
-  }
-
-  async listFieldAvailabilityRules(
-    accountId: string,
-    seasonId: string,
-    signal?: AbortSignal,
-  ): Promise<SchedulerFieldAvailabilityRule[]> {
-    const result = await listSchedulerFieldAvailabilityRules({
-      client: this.client,
-      path: { accountId, seasonId },
-      signal,
-      throwOnError: false,
-    });
-
-    const payload = unwrapApiResult(result, 'Failed to load field availability rules');
-    return payload.rules;
   }
 
   async listSeasonExclusions(
@@ -367,111 +339,5 @@ export class SchedulerService {
     });
 
     unwrapApiResult(result, 'Failed to delete umpire exclusion');
-  }
-
-  async listFieldExclusionDates(
-    accountId: string,
-    seasonId: string,
-    signal?: AbortSignal,
-  ): Promise<SchedulerFieldExclusionDate[]> {
-    const result = await listSchedulerFieldExclusionDates({
-      client: this.client,
-      path: { accountId, seasonId },
-      signal,
-      throwOnError: false,
-    });
-
-    const payload = unwrapApiResult(result, 'Failed to load field exclusion dates');
-    return payload.exclusions;
-  }
-
-  async createFieldAvailabilityRule(
-    accountId: string,
-    seasonId: string,
-    input: SchedulerFieldAvailabilityRuleUpsert,
-  ): Promise<SchedulerFieldAvailabilityRule> {
-    const result = await createSchedulerFieldAvailabilityRule({
-      client: this.client,
-      path: { accountId, seasonId },
-      body: input,
-      throwOnError: false,
-    });
-
-    return unwrapApiResult(result, 'Failed to create field availability rule');
-  }
-
-  async createFieldExclusionDate(
-    accountId: string,
-    seasonId: string,
-    input: SchedulerFieldExclusionDateUpsert,
-  ): Promise<SchedulerFieldExclusionDate> {
-    const result = await createSchedulerFieldExclusionDate({
-      client: this.client,
-      path: { accountId, seasonId },
-      body: input,
-      throwOnError: false,
-    });
-
-    return unwrapApiResult(result, 'Failed to create field exclusion date');
-  }
-
-  async updateFieldAvailabilityRule(
-    accountId: string,
-    seasonId: string,
-    ruleId: string,
-    input: SchedulerFieldAvailabilityRuleUpsert,
-  ): Promise<SchedulerFieldAvailabilityRule> {
-    const result = await updateSchedulerFieldAvailabilityRule({
-      client: this.client,
-      path: { accountId, seasonId, ruleId },
-      body: input,
-      throwOnError: false,
-    });
-
-    return unwrapApiResult(result, 'Failed to update field availability rule');
-  }
-
-  async updateFieldExclusionDate(
-    accountId: string,
-    seasonId: string,
-    exclusionId: string,
-    input: SchedulerFieldExclusionDateUpsert,
-  ): Promise<SchedulerFieldExclusionDate> {
-    const result = await updateSchedulerFieldExclusionDate({
-      client: this.client,
-      path: { accountId, seasonId, exclusionId },
-      body: input,
-      throwOnError: false,
-    });
-
-    return unwrapApiResult(result, 'Failed to update field exclusion date');
-  }
-
-  async deleteFieldAvailabilityRule(
-    accountId: string,
-    seasonId: string,
-    ruleId: string,
-  ): Promise<void> {
-    const result = await deleteSchedulerFieldAvailabilityRule({
-      client: this.client,
-      path: { accountId, seasonId, ruleId },
-      throwOnError: false,
-    });
-
-    unwrapApiResult(result, 'Failed to delete field availability rule');
-  }
-
-  async deleteFieldExclusionDate(
-    accountId: string,
-    seasonId: string,
-    exclusionId: string,
-  ): Promise<void> {
-    const result = await deleteSchedulerFieldExclusionDate({
-      client: this.client,
-      path: { accountId, seasonId, exclusionId },
-      throwOnError: false,
-    });
-
-    unwrapApiResult(result, 'Failed to delete field exclusion date');
   }
 }

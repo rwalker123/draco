@@ -166,7 +166,9 @@ describe('buildVEvent', () => {
         longitude: '',
         haslights: false,
         maxparallelgames: 1,
-        schedulerstartincrementminutes: 165,
+        scheduleenabled: false,
+        gamelengthminutes: null,
+        bufferminutes: 0,
       },
     });
     const event = buildVEvent(makeVEventInput(game));
@@ -299,7 +301,9 @@ describe('buildIcsCalendar', () => {
         longitude: '',
         haslights: false,
         maxparallelgames: 1,
-        schedulerstartincrementminutes: 165,
+        scheduleenabled: false,
+        gamelengthminutes: null,
+        bufferminutes: 0,
       },
     });
     const event = buildVEvent(makeVEventInput(game));

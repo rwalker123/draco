@@ -2,10 +2,6 @@
 
 import { useRef, useState, useEffect } from 'react';
 import type {
-  SchedulerFieldAvailabilityRule,
-  SchedulerFieldAvailabilityRuleUpsert,
-  SchedulerFieldExclusionDate,
-  SchedulerFieldExclusionDateUpsert,
   SchedulerSeasonExclusion,
   SchedulerSeasonExclusionUpsert,
   SchedulerTeamExclusion,
@@ -19,24 +15,6 @@ type SignalFn<T> = (signal?: AbortSignal) => Promise<T>;
 interface ConstraintOps {
   seasonId: string | null;
   canEdit: boolean;
-  listFieldAvailabilityRules: SignalFn<SchedulerFieldAvailabilityRule[]>;
-  createFieldAvailabilityRule: (
-    input: SchedulerFieldAvailabilityRuleUpsert,
-  ) => Promise<SchedulerFieldAvailabilityRule>;
-  updateFieldAvailabilityRule: (
-    id: string,
-    input: SchedulerFieldAvailabilityRuleUpsert,
-  ) => Promise<SchedulerFieldAvailabilityRule>;
-  deleteFieldAvailabilityRule: (id: string) => Promise<void>;
-  listFieldExclusionDates: SignalFn<SchedulerFieldExclusionDate[]>;
-  createFieldExclusionDate: (
-    input: SchedulerFieldExclusionDateUpsert,
-  ) => Promise<SchedulerFieldExclusionDate>;
-  updateFieldExclusionDate: (
-    id: string,
-    input: SchedulerFieldExclusionDateUpsert,
-  ) => Promise<SchedulerFieldExclusionDate>;
-  deleteFieldExclusionDate: (id: string) => Promise<void>;
   listSeasonExclusions: SignalFn<SchedulerSeasonExclusion[]>;
   createSeasonExclusion: (
     input: SchedulerSeasonExclusionUpsert,
@@ -69,14 +47,6 @@ interface ConstraintOps {
 export const useSeasonSchedulerConstraintHandlers = ({
   seasonId,
   canEdit,
-  listFieldAvailabilityRules,
-  createFieldAvailabilityRule,
-  updateFieldAvailabilityRule,
-  deleteFieldAvailabilityRule,
-  listFieldExclusionDates,
-  createFieldExclusionDate,
-  updateFieldExclusionDate,
-  deleteFieldExclusionDate,
   listSeasonExclusions,
   createSeasonExclusion,
   updateSeasonExclusion,
@@ -92,28 +62,16 @@ export const useSeasonSchedulerConstraintHandlers = ({
   setSuccess,
   setError,
 }: ConstraintOps) => {
-  const listRulesRef = useRef(listFieldAvailabilityRules);
-  const listExclusionsRef = useRef(listFieldExclusionDates);
   const listSeasonExclusionsRef = useRef(listSeasonExclusions);
   const listTeamExclusionsRef = useRef(listTeamExclusions);
   const listUmpireExclusionsRef = useRef(listUmpireExclusions);
 
   useEffect(() => {
-    listRulesRef.current = listFieldAvailabilityRules;
-    listExclusionsRef.current = listFieldExclusionDates;
     listSeasonExclusionsRef.current = listSeasonExclusions;
     listTeamExclusionsRef.current = listTeamExclusions;
     listUmpireExclusionsRef.current = listUmpireExclusions;
-  }, [
-    listFieldAvailabilityRules,
-    listFieldExclusionDates,
-    listSeasonExclusions,
-    listTeamExclusions,
-    listUmpireExclusions,
-  ]);
+  }, [listSeasonExclusions, listTeamExclusions, listUmpireExclusions]);
 
-  const [rules, setRules] = useState<SchedulerFieldAvailabilityRule[]>([]);
-  const [exclusions, setExclusions] = useState<SchedulerFieldExclusionDate[]>([]);
   const [seasonExclusions, setSeasonExclusions] = useState<SchedulerSeasonExclusion[]>([]);
   const [teamExclusions, setTeamExclusions] = useState<SchedulerTeamExclusion[]>([]);
   const [umpireExclusions, setUmpireExclusions] = useState<SchedulerUmpireExclusion[]>([]);
@@ -124,18 +82,13 @@ export const useSeasonSchedulerConstraintHandlers = ({
     const controller = new AbortController();
 
     const doLoad = async () => {
-      const [nextRules, nextExclusions, nextSeasonExcl, nextTeamExcl, nextUmpireExcl] =
-        await Promise.all([
-          listRulesRef.current(controller.signal),
-          listExclusionsRef.current(controller.signal),
-          listSeasonExclusionsRef.current(controller.signal),
-          listTeamExclusionsRef.current(controller.signal),
-          listUmpireExclusionsRef.current(controller.signal),
-        ]);
+      const [nextSeasonExcl, nextTeamExcl, nextUmpireExcl] = await Promise.all([
+        listSeasonExclusionsRef.current(controller.signal),
+        listTeamExclusionsRef.current(controller.signal),
+        listUmpireExclusionsRef.current(controller.signal),
+      ]);
 
       if (controller.signal.aborted) return;
-      setRules(nextRules);
-      setExclusions(nextExclusions);
       setSeasonExclusions(nextSeasonExcl);
       setTeamExclusions(nextTeamExcl);
       setUmpireExclusions(nextUmpireExcl);
@@ -151,16 +104,6 @@ export const useSeasonSchedulerConstraintHandlers = ({
     };
   }, [canEdit, seasonId, setError]);
 
-  const reloadRules = async () => {
-    if (!seasonId) return;
-    setRules(await listRulesRef.current());
-  };
-
-  const reloadExclusions = async () => {
-    if (!seasonId) return;
-    setExclusions(await listExclusionsRef.current());
-  };
-
   const reloadSeasonExclusions = async () => {
     if (!seasonId) return;
     setSeasonExclusions(await listSeasonExclusionsRef.current());
@@ -174,77 +117,6 @@ export const useSeasonSchedulerConstraintHandlers = ({
   const reloadUmpireExclusions = async () => {
     if (!seasonId) return;
     setUmpireExclusions(await listUmpireExclusionsRef.current());
-  };
-
-  const handleCreateRule = async (input: SchedulerFieldAvailabilityRuleUpsert) => {
-    try {
-      if (!seasonId) throw new Error('Missing current season');
-      await createFieldAvailabilityRule(input);
-      setSuccess('Rule created');
-      await reloadRules();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save rule');
-      throw err;
-    }
-  };
-
-  const handleEditRule = async (ruleId: string, input: SchedulerFieldAvailabilityRuleUpsert) => {
-    try {
-      if (!seasonId) throw new Error('Missing current season');
-      await updateFieldAvailabilityRule(ruleId, input);
-      setSuccess('Rule updated');
-      await reloadRules();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save rule');
-      throw err;
-    }
-  };
-
-  const handleDeleteRule = async (rule: SchedulerFieldAvailabilityRule) => {
-    try {
-      await deleteFieldAvailabilityRule(rule.id);
-      await reloadRules();
-      setSuccess('Rule deleted');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete rule');
-    }
-  };
-
-  const handleCreateExclusion = async (input: SchedulerFieldExclusionDateUpsert) => {
-    try {
-      if (!seasonId) throw new Error('Missing current season');
-      await createFieldExclusionDate(input);
-      setSuccess('Exclusion created');
-      await reloadExclusions();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save exclusion');
-      throw err;
-    }
-  };
-
-  const handleEditExclusion = async (
-    exclusionId: string,
-    input: SchedulerFieldExclusionDateUpsert,
-  ) => {
-    try {
-      if (!seasonId) throw new Error('Missing current season');
-      await updateFieldExclusionDate(exclusionId, input);
-      setSuccess('Exclusion updated');
-      await reloadExclusions();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save exclusion');
-      throw err;
-    }
-  };
-
-  const handleDeleteExclusion = async (exclusion: SchedulerFieldExclusionDate) => {
-    try {
-      await deleteFieldExclusionDate(exclusion.id);
-      await reloadExclusions();
-      setSuccess('Exclusion deleted');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete exclusion');
-    }
   };
 
   const handleCreateSeasonExclusion = async (input: SchedulerSeasonExclusionUpsert) => {
@@ -359,17 +231,9 @@ export const useSeasonSchedulerConstraintHandlers = ({
   };
 
   return {
-    rules,
-    exclusions,
     seasonExclusions,
     teamExclusions,
     umpireExclusions,
-    handleCreateRule,
-    handleEditRule,
-    handleDeleteRule,
-    handleCreateExclusion,
-    handleEditExclusion,
-    handleDeleteExclusion,
     handleCreateSeasonExclusion,
     handleEditSeasonExclusion,
     handleDeleteSeasonExclusion,

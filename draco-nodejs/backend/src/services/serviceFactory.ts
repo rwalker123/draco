@@ -40,8 +40,7 @@ import { UmpireService } from './umpireService.js';
 import { ScheduleService } from './scheduleService.js';
 import { SchedulerEngineService } from './schedulerEngineService.js';
 import { SchedulerApplyService } from './schedulerApplyService.js';
-import { SchedulerFieldAvailabilityRulesService } from './schedulerFieldAvailabilityRulesService.js';
-import { SchedulerFieldExclusionDatesService } from './schedulerFieldExclusionDatesService.js';
+import { FieldScheduleConfigService } from './fieldScheduleConfigService.js';
 import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
 import { SchedulerSeasonApplyService } from './schedulerSeasonApplyService.js';
 import { SchedulerSeasonWindowConfigService } from './schedulerSeasonWindowConfigService.js';
@@ -156,8 +155,7 @@ export class ServiceFactory {
   private static scheduleService: ScheduleService;
   private static schedulerEngineService: SchedulerEngineService;
   private static schedulerApplyService: SchedulerApplyService;
-  private static schedulerFieldAvailabilityRulesService: SchedulerFieldAvailabilityRulesService;
-  private static schedulerFieldExclusionDatesService: SchedulerFieldExclusionDatesService;
+  private static fieldScheduleConfigService: FieldScheduleConfigService;
   private static schedulerProblemSpecService: SchedulerProblemSpecService;
   private static schedulerSeasonApplyService: SchedulerSeasonApplyService;
   private static schedulerSeasonWindowConfigService: SchedulerSeasonWindowConfigService;
@@ -494,20 +492,12 @@ export class ServiceFactory {
     return this.schedulerApplyService;
   }
 
-  static getSchedulerFieldAvailabilityRulesService(): SchedulerFieldAvailabilityRulesService {
-    if (!this.schedulerFieldAvailabilityRulesService) {
-      this.schedulerFieldAvailabilityRulesService = new SchedulerFieldAvailabilityRulesService();
+  static getFieldScheduleConfigService(): FieldScheduleConfigService {
+    if (!this.fieldScheduleConfigService) {
+      this.fieldScheduleConfigService = new FieldScheduleConfigService();
     }
 
-    return this.schedulerFieldAvailabilityRulesService;
-  }
-
-  static getSchedulerFieldExclusionDatesService(): SchedulerFieldExclusionDatesService {
-    if (!this.schedulerFieldExclusionDatesService) {
-      this.schedulerFieldExclusionDatesService = new SchedulerFieldExclusionDatesService();
-    }
-
-    return this.schedulerFieldExclusionDatesService;
+    return this.fieldScheduleConfigService;
   }
 
   static getSchedulerProblemSpecService(): SchedulerProblemSpecService {

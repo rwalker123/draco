@@ -4,7 +4,6 @@ import { FieldResponseFormatter } from '../responseFormatters/index.js';
 import { PaginationHelper } from '../utils/pagination.js';
 import { FieldType, FieldsType, UpsertFieldType, PagingType } from '@draco/shared-schemas';
 import { Prisma } from '#prisma/client';
-import { DEFAULT_FIELD_START_INCREMENT_MINUTES } from '../constants/fieldConstants.js';
 
 const FIELD_SORT_FIELDS = [
   'name',
@@ -96,15 +95,6 @@ export class FieldService {
     const rainoutNumber = this.sanitizeOptionalString(fieldData.rainoutNumber);
     const latitude = this.sanitizeCoordinate(fieldData.latitude);
     const longitude = this.sanitizeCoordinate(fieldData.longitude);
-    const schedulerStartIncrementMinutes = Math.max(
-      1,
-      Math.min(
-        1440,
-        Math.floor(
-          fieldData.schedulerStartIncrementMinutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
-        ),
-      ),
-    );
 
     const newField = await this.fieldRepository.create({
       name,
@@ -119,7 +109,6 @@ export class FieldService {
       latitude,
       longitude,
       haslights: hasLights,
-      schedulerstartincrementminutes: schedulerStartIncrementMinutes,
       accounts: {
         connect: { id: accountId },
       },
@@ -161,15 +150,6 @@ export class FieldService {
     const rainoutNumber = this.sanitizeOptionalString(fieldData.rainoutNumber);
     const latitude = this.sanitizeCoordinate(fieldData.latitude);
     const longitude = this.sanitizeCoordinate(fieldData.longitude);
-    const schedulerStartIncrementMinutes = Math.max(
-      1,
-      Math.min(
-        1440,
-        Math.floor(
-          fieldData.schedulerStartIncrementMinutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
-        ),
-      ),
-    );
 
     const updatedField = await this.fieldRepository.update(fieldId, {
       name,
@@ -184,7 +164,6 @@ export class FieldService {
       latitude,
       longitude,
       haslights: hasLights,
-      schedulerstartincrementminutes: schedulerStartIncrementMinutes,
     });
 
     return FieldResponseFormatter.formatField(updatedField);

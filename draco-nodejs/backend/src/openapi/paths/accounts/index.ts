@@ -44,6 +44,8 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
     FieldSchemaRef,
     FieldsSchemaRef,
     UpsertFieldSchemaRef,
+    FieldScheduleConfigSchemaRef,
+    FieldScheduleConfigUpsertSchemaRef,
     UmpireSchemaRef,
     UmpiresSchemaRef,
     CreateUmpireSchemaRef,
@@ -3877,6 +3879,106 @@ export const registerAccountsEndpoints = ({ registry, schemaRefs, z }: RegisterC
             schema: InternalServerErrorSchemaRef,
           },
         },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/fields/{fieldId}/schedule-config',
+    operationId: 'getFieldScheduleConfig',
+    summary: 'Get field schedule config',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'fieldId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Field schedule config',
+        content: { 'application/json': { schema: FieldScheduleConfigSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Field not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/fields/{fieldId}/schedule-config',
+    operationId: 'replaceFieldScheduleConfig',
+    summary: 'Replace field schedule config',
+    tags: ['Accounts'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'fieldId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: FieldScheduleConfigUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated field schedule config',
+        content: { 'application/json': { schema: FieldScheduleConfigSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Field not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
       },
     },
   });
