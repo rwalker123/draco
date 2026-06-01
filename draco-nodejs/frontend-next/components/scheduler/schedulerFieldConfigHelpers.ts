@@ -178,6 +178,7 @@ export const configToUpsert = (config: FieldScheduleConfigType): FieldScheduleCo
   })),
   closedDates: config.closedDates.map((cd) => ({
     date: cd.date,
+    endDate: cd.endDate ?? undefined,
     note: cd.note ?? undefined,
   })),
 });

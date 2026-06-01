@@ -8,6 +8,7 @@ import {
   applyQuickSetToDays,
   groupOpenHoursLabel,
   formatMinutesAsHoursMinutes,
+  configToUpsert,
 } from '../SchedulerFieldsConfig';
 import { DAYS } from '../../../utils/daysOfWeekUtils';
 
@@ -245,6 +246,27 @@ describe('applyQuickSetToDays', () => {
     applyQuickSetToDays(initial, weekdayBits, '10:00', '20:00');
 
     expect(initial.get(0)).toEqual(originalEntry);
+  });
+});
+
+describe('configToUpsert', () => {
+  it('preserves closed-date endDate so unrelated saves do not collapse multi-day ranges', () => {
+    const result = configToUpsert({
+      fieldId: '1',
+      scheduleEnabled: true,
+      gameLengthMinutes: 90,
+      bufferMinutes: 15,
+      openHours: [],
+      closedDates: [
+        { id: '10', date: '2026-07-04', endDate: '2026-07-06' },
+        { id: '11', date: '2026-08-01' },
+      ],
+    });
+
+    expect(result.closedDates).toHaveLength(2);
+    expect(result.closedDates[0].date).toBe('2026-07-04');
+    expect(result.closedDates[0].endDate).toBe('2026-07-06');
+    expect(result.closedDates[1].endDate).toBeUndefined();
   });
 });
 
