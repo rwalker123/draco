@@ -4,8 +4,6 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import {
-  SchedulerFieldAvailabilityRuleUpsertSchema,
-  SchedulerFieldExclusionDateUpsertSchema,
   SchedulerSeasonWindowConfigUpsertSchema,
   SchedulerSeasonExclusionUpsertSchema,
   SchedulerTeamExclusionUpsertSchema,
@@ -17,9 +15,6 @@ import {
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
-const schedulerFieldAvailabilityRulesService =
-  ServiceFactory.getSchedulerFieldAvailabilityRulesService();
-const schedulerFieldExclusionDatesService = ServiceFactory.getSchedulerFieldExclusionDatesService();
 const schedulerSeasonWindowConfigService = ServiceFactory.getSchedulerSeasonWindowConfigService();
 const schedulerSeasonExclusionsService = ServiceFactory.getSchedulerSeasonExclusionsService();
 const schedulerTeamSeasonExclusionsService =
@@ -282,33 +277,6 @@ router.delete(
 );
 
 router.get(
-  '/field-availability-rules',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
-    const rules = await schedulerFieldAvailabilityRulesService.listRules(accountId, seasonId);
-    res.json(rules);
-  }),
-);
-
-router.get(
-  '/field-exclusion-dates',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
-    const exclusions = await schedulerFieldExclusionDatesService.listExclusions(
-      accountId,
-      seasonId,
-    );
-    res.json(exclusions);
-  }),
-);
-
-router.get(
   '/problem-spec',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
@@ -379,128 +347,6 @@ router.post(
       body,
     );
     res.json(result);
-  }),
-);
-
-router.post(
-  '/field-availability-rules',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
-    const input = SchedulerFieldAvailabilityRuleUpsertSchema.parse(req.body);
-    const created = await schedulerFieldAvailabilityRulesService.createRule(
-      accountId,
-      seasonId,
-      input,
-    );
-    res.status(201).json(created);
-  }),
-);
-
-router.post(
-  '/field-exclusion-dates',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
-    const input = SchedulerFieldExclusionDateUpsertSchema.parse(req.body);
-    const created = await schedulerFieldExclusionDatesService.createExclusion(
-      accountId,
-      seasonId,
-      input,
-    );
-    res.status(201).json(created);
-  }),
-);
-
-router.put(
-  '/field-exclusion-dates/:exclusionId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId, exclusionId } = extractBigIntParams(
-      req.params,
-      'accountId',
-      'seasonId',
-      'exclusionId',
-    );
-    const input = SchedulerFieldExclusionDateUpsertSchema.parse(req.body);
-    const updated = await schedulerFieldExclusionDatesService.updateExclusion(
-      accountId,
-      seasonId,
-      exclusionId,
-      input,
-    );
-    res.json(updated);
-  }),
-);
-
-router.delete(
-  '/field-exclusion-dates/:exclusionId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId, exclusionId } = extractBigIntParams(
-      req.params,
-      'accountId',
-      'seasonId',
-      'exclusionId',
-    );
-    const deleted = await schedulerFieldExclusionDatesService.deleteExclusion(
-      accountId,
-      seasonId,
-      exclusionId,
-    );
-    res.json(deleted);
-  }),
-);
-
-router.put(
-  '/field-availability-rules/:ruleId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId, ruleId } = extractBigIntParams(
-      req.params,
-      'accountId',
-      'seasonId',
-      'ruleId',
-    );
-    const input = SchedulerFieldAvailabilityRuleUpsertSchema.parse(req.body);
-    const updated = await schedulerFieldAvailabilityRulesService.updateRule(
-      accountId,
-      seasonId,
-      ruleId,
-      input,
-    );
-    res.json(updated);
-  }),
-);
-
-router.delete(
-  '/field-availability-rules/:ruleId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.games.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { accountId, seasonId, ruleId } = extractBigIntParams(
-      req.params,
-      'accountId',
-      'seasonId',
-      'ruleId',
-    );
-    const deleted = await schedulerFieldAvailabilityRulesService.deleteRule(
-      accountId,
-      seasonId,
-      ruleId,
-    );
-    res.json(deleted);
   }),
 );
 

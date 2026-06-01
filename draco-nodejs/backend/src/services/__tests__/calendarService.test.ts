@@ -263,7 +263,9 @@ describe('CalendarService', () => {
         longitude: '',
         haslights: false,
         maxparallelgames: 1,
-        schedulerstartincrementminutes: 165,
+        scheduleenabled: false,
+        gamelengthminutes: null,
+        bufferminutes: 0,
       };
       repo.listAllGamesForTeam.mockResolvedValue([
         makeGame(1n, { fieldid: 7n, availablefields: { ...fieldBase } }),

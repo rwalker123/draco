@@ -50,8 +50,7 @@ import {
   IAccountBlueskyCredentialsRepository,
   IAccountInstagramCredentialsRepository,
   IInstagramIngestionRepository,
-  ISchedulerFieldAvailabilityRulesRepository,
-  ISchedulerFieldExclusionDatesRepository,
+  IFieldScheduleConfigRepository,
   ISchedulerMatchupRepository,
   ISchedulerProblemSpecRepository,
   ISchedulerSeasonConfigRepository,
@@ -124,8 +123,7 @@ import {
   PrismaAccountBlueskyCredentialsRepository,
   PrismaAccountInstagramCredentialsRepository,
   PrismaInstagramIngestionRepository,
-  PrismaSchedulerFieldAvailabilityRulesRepository,
-  PrismaSchedulerFieldExclusionDatesRepository,
+  PrismaFieldScheduleConfigRepository,
   PrismaSchedulerMatchupRepository,
   PrismaSchedulerProblemSpecRepository,
   PrismaSchedulerSeasonConfigRepository,
@@ -205,8 +203,7 @@ export class RepositoryFactory {
   private static accountBlueskyCredentialsRepository: IAccountBlueskyCredentialsRepository;
   private static accountInstagramCredentialsRepository: IAccountInstagramCredentialsRepository;
   private static instagramIngestionRepository: IInstagramIngestionRepository;
-  private static schedulerFieldAvailabilityRulesRepository: ISchedulerFieldAvailabilityRulesRepository;
-  private static schedulerFieldExclusionDatesRepository: ISchedulerFieldExclusionDatesRepository;
+  private static fieldScheduleConfigRepository: IFieldScheduleConfigRepository;
   private static schedulerMatchupRepository: ISchedulerMatchupRepository;
   private static schedulerProblemSpecRepository: ISchedulerProblemSpecRepository;
   private static schedulerSeasonConfigRepository: ISchedulerSeasonConfigRepository;
@@ -482,20 +479,11 @@ export class RepositoryFactory {
     return this.fieldRepository;
   }
 
-  static getSchedulerFieldAvailabilityRulesRepository(): ISchedulerFieldAvailabilityRulesRepository {
-    if (!this.schedulerFieldAvailabilityRulesRepository) {
-      this.schedulerFieldAvailabilityRulesRepository =
-        new PrismaSchedulerFieldAvailabilityRulesRepository(prisma);
+  static getFieldScheduleConfigRepository(): IFieldScheduleConfigRepository {
+    if (!this.fieldScheduleConfigRepository) {
+      this.fieldScheduleConfigRepository = new PrismaFieldScheduleConfigRepository(prisma);
     }
-    return this.schedulerFieldAvailabilityRulesRepository;
-  }
-
-  static getSchedulerFieldExclusionDatesRepository(): ISchedulerFieldExclusionDatesRepository {
-    if (!this.schedulerFieldExclusionDatesRepository) {
-      this.schedulerFieldExclusionDatesRepository =
-        new PrismaSchedulerFieldExclusionDatesRepository(prisma);
-    }
-    return this.schedulerFieldExclusionDatesRepository;
+    return this.fieldScheduleConfigRepository;
   }
 
   static getSchedulerMatchupRepository(): ISchedulerMatchupRepository {

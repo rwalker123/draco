@@ -7,12 +7,18 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthenticationError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
-import { CreateUmpireSchema, PagingSchema, UpsertFieldSchema } from '@draco/shared-schemas';
+import {
+  CreateUmpireSchema,
+  FieldScheduleConfigUpsertSchema,
+  PagingSchema,
+  UpsertFieldSchema,
+} from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const teamService = ServiceFactory.getTeamService();
 const fieldService = ServiceFactory.getFieldService();
+const fieldScheduleConfigService = ServiceFactory.getFieldScheduleConfigService();
 const umpireService = ServiceFactory.getUmpireService();
 
 /**
@@ -111,6 +117,43 @@ router.delete(
     const field = await fieldService.deleteField(accountId, fieldId);
 
     res.json(field);
+  }),
+);
+
+router.get(
+  '/:accountId/fields/schedule-configs',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const configs = await fieldScheduleConfigService.getConfigs(accountId);
+    res.json(configs);
+  }),
+);
+
+router.get(
+  '/:accountId/fields/:fieldId/schedule-config',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
+    const config = await fieldScheduleConfigService.getConfig(accountId, fieldId);
+    res.json(config);
+  }),
+);
+
+router.put(
+  '/:accountId/fields/:fieldId/schedule-config',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
+    const input = FieldScheduleConfigUpsertSchema.parse(req.body);
+    const config = await fieldScheduleConfigService.replaceConfig(accountId, fieldId, input);
+    res.json(config);
   }),
 );
 

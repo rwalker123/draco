@@ -34,6 +34,6 @@ export * from './SocialFeedResponseFormatter.js';
 export * from './LiveEventResponseFormatter.js';
 export * from './DiscordIntegrationResponseFormatter.js';
 export * from './welcomeMessageResponseFormatter.js';
-export * from './schedulerFieldAvailabilityRuleResponseFormatter.js';
+export * from './fieldScheduleConfigResponseFormatter.js';
 export * from './golfCourseResponseFormatter.js';
 export * from './golfTeeResponseFormatter.js';

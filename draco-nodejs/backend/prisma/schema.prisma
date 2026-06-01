@@ -40,8 +40,6 @@ model accounts {
   accountsurl               accountsurl[]
   accountwelcome            accountwelcome[]
   availablefields           availablefields[]
-  schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
-  schedulerfieldexclusiondates schedulerfieldexclusiondates[]
   schedulerseasonconfig schedulerseasonconfig[]
   schedulerseasonleagueselections schedulerseasonleagueselections[]
   schedulerseasonexclusions schedulerseasonexclusions[]
@@ -366,38 +364,44 @@ model availablefields {
   longitude           String                @db.VarChar(25)
   haslights           Boolean               @default(false)
   maxparallelgames    Int                   @default(1)
-  // See DEFAULT_FIELD_START_INCREMENT_MINUTES in src/constants/fieldConstants.ts
-  schedulerstartincrementminutes Int         @default(165) @db.SmallInt
+  scheduleenabled     Boolean               @default(false)
+  gamelengthminutes   Int?                  @db.SmallInt
+  bufferminutes       Int                   @default(0) @db.SmallInt
   accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_availablefields_accounts")
   fieldcontacts       fieldcontacts[]
+  fieldopenhours      fieldopenhours[]
+  fieldcloseddates    fieldcloseddates[]
   leagueschedule      leagueschedule[]
   playoffgame         playoffgame[]
-  schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
-  schedulerfieldexclusiondates schedulerfieldexclusiondates[]
   workoutannouncement workoutannouncement[]
 }
 
-model schedulerfieldavailabilityrules {
-  id                    BigInt         @id @default(autoincrement())
-  accountid             BigInt
-  seasonid              BigInt
-  fieldid               BigInt
-  startdate             DateTime?      @db.Date
-  enddate               DateTime?      @db.Date
-  daysofweekmask        Int            @db.SmallInt
-  starttimelocal        String         @db.VarChar(5)
-  endtimelocal          String         @db.VarChar(5)
-  startincrementminutes Int            @db.SmallInt @default(30)
-  enabled               Boolean        @default(true)
-  createdat             DateTime       @default(now()) @db.Timestamptz(6)
-  updatedat             DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
-  accounts              accounts       @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldavailabilityrules_accounts")
-  season                season         @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldavailabilityrules_season")
-  availablefields       availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldavailabilityrules_availablefields")
+model fieldopenhours {
+  id             BigInt          @id @default(autoincrement())
+  fieldid        BigInt
+  dayofweek      Int             @db.SmallInt
+  starttimelocal String          @db.VarChar(5)
+  endtimelocal   String          @db.VarChar(5)
+  createdat      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedat      DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_fieldopenhours_availablefields")
 
-  @@index([accountid], map: "idx_schedulerfieldavailabilityrules_accountid")
-  @@index([seasonid], map: "idx_schedulerfieldavailabilityrules_seasonid")
-  @@index([fieldid], map: "idx_schedulerfieldavailabilityrules_fieldid")
+  @@unique([fieldid, dayofweek], map: "uq_fieldopenhours_field_dayofweek")
+  @@index([fieldid], map: "idx_fieldopenhours_fieldid")
+}
+
+model fieldcloseddates {
+  id              BigInt          @id @default(autoincrement())
+  fieldid         BigInt
+  closeddate      DateTime        @db.Date
+  enddate         DateTime?       @db.Date
+  note            String?         @db.VarChar(255)
+  createdat       DateTime        @default(now()) @db.Timestamptz(6)
+  updatedat       DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_fieldcloseddates_availablefields")
+
+  @@unique([fieldid, closeddate], map: "uq_fieldcloseddates_field_date")
+  @@index([fieldid], map: "idx_fieldcloseddates_fieldid")
 }
 
 model schedulerseasonconfig {
@@ -433,27 +437,6 @@ model schedulerseasonleagueselections {
   @@index([accountid], map: "idx_schedulerseasonleagueselections_accountid")
   @@index([seasonid], map: "idx_schedulerseasonleagueselections_seasonid")
   @@index([leagueseasonid], map: "idx_schedulerseasonleagueselections_leagueseasonid")
-}
-
-model schedulerfieldexclusiondates {
-  id            BigInt         @id @default(autoincrement())
-  accountid     BigInt
-  seasonid      BigInt
-  fieldid       BigInt
-  exclusiondate DateTime       @db.Date
-  note          String?        @db.VarChar(255)
-  enabled       Boolean        @default(true)
-  createdat     DateTime       @default(now()) @db.Timestamptz(6)
-  updatedat     DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
-
-  accounts        accounts       @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldexclusiondates_accounts")
-  season          season         @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldexclusiondates_season")
-  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_schedulerfieldexclusiondates_availablefields")
-
-  @@unique([accountid, seasonid, fieldid, exclusiondate], map: "uq_schedulerfieldexclusiondates_account_season_field_date")
-  @@index([accountid], map: "idx_schedulerfieldexclusiondates_accountid")
-  @@index([seasonid], map: "idx_schedulerfieldexclusiondates_seasonid")
-  @@index([fieldid], map: "idx_schedulerfieldexclusiondates_fieldid")
 }
 
 model schedulerseasonexclusions {
@@ -1673,8 +1656,6 @@ model season {
   socialfeeditems             socialfeeditems[]
   socialvideos                socialvideos[]
   discordmessages             discordmessages[]
-  schedulerfieldavailabilityrules schedulerfieldavailabilityrules[]
-  schedulerfieldexclusiondates schedulerfieldexclusiondates[]
   schedulerseasonconfig schedulerseasonconfig?
   schedulerseasonleagueselections schedulerseasonleagueselections[]
   schedulerseasonexclusions schedulerseasonexclusions[]

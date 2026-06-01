@@ -19,6 +19,7 @@ import { useEntityNameMaps } from '../../hooks/useEntityNameMaps';
 import { SeasonSchedulerConfigPanel } from './SeasonSchedulerConfigPanel';
 import { SeasonSchedulerConstraintLists } from './SeasonSchedulerConstraintLists';
 import { SeasonSchedulerProposalReview } from './SeasonSchedulerProposalReview';
+import { SchedulerFieldsConfig } from './SchedulerFieldsConfig';
 import { loadRoundRobinCounts, type LeagueRoundRobinCount } from './SchedulerRoundRobinConfig';
 import {
   clearPersistedProposal,
@@ -140,7 +141,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     teams,
     umpires,
   });
-
   const leagueNameById = new Map<string, string>(leagues.map((l) => [l.id, l.name]));
   const allLeagueSeasonIds = leagues.map((l) => l.id);
   const leagueIdSet = new Set(allLeagueSeasonIds);
@@ -563,27 +563,26 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
+      <SchedulerFieldsConfig
+        accountId={accountId}
+        fields={fields}
+        setSuccess={setSuccess}
+        setError={setError}
+      />
+
+      <Divider sx={{ my: 2 }} />
+
       <SeasonSchedulerConstraintLists
         seasonId={seasonId}
         timeZone={timeZone}
-        fields={fields}
         teams={teams}
         umpires={umpires}
-        rules={constraints.rules}
-        exclusions={constraints.exclusions}
         seasonExclusions={constraints.seasonExclusions}
         teamExclusions={constraints.teamExclusions}
         umpireExclusions={constraints.umpireExclusions}
-        fieldNameById={fieldNameById}
         teamNameById={teamNameById}
         umpireNameById={umpireNameById}
         loading={loading}
-        onCreateRule={constraints.handleCreateRule}
-        onEditRule={constraints.handleEditRule}
-        onDeleteRule={constraints.handleDeleteRule}
-        onCreateExclusion={constraints.handleCreateExclusion}
-        onEditExclusion={constraints.handleEditExclusion}
-        onDeleteExclusion={constraints.handleDeleteExclusion}
         onCreateSeasonExclusion={constraints.handleCreateSeasonExclusion}
         onEditSeasonExclusion={constraints.handleEditSeasonExclusion}
         onDeleteSeasonExclusion={constraints.handleDeleteSeasonExclusion}

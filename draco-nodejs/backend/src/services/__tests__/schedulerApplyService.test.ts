@@ -24,7 +24,6 @@ import type {
   schedulerteamseasonexclusions,
   schedulerumpireexclusions,
 } from '#prisma/client';
-import { DEFAULT_FIELD_START_INCREMENT_MINUTES } from '../../constants/fieldConstants.js';
 
 class ScheduleRepositoryStub implements IScheduleRepository {
   findById = vi.fn<IScheduleRepository['findById']>();
@@ -116,8 +115,9 @@ const makeAvailableField = (
   longitude: overrides.longitude ?? '',
   haslights: overrides.haslights ?? true,
   maxparallelgames: overrides.maxparallelgames ?? 1,
-  schedulerstartincrementminutes:
-    overrides.schedulerstartincrementminutes ?? DEFAULT_FIELD_START_INCREMENT_MINUTES,
+  scheduleenabled: overrides.scheduleenabled ?? false,
+  gamelengthminutes: overrides.gamelengthminutes ?? null,
+  bufferminutes: overrides.bufferminutes ?? 0,
 });
 
 const makeAccountGame = (

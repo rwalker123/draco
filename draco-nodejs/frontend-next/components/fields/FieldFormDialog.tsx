@@ -44,7 +44,6 @@ const DEFAULT_VALUES: FieldFormValues = {
   name: '',
   shortName: '',
   hasLights: false,
-  schedulerStartIncrementMinutes: 165,
   address: '',
   city: '',
   state: '',
@@ -131,7 +130,6 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
             name: field.name ?? '',
             shortName: field.shortName ?? field.name?.slice(0, 5) ?? '',
             hasLights: field.hasLights ?? false,
-            schedulerStartIncrementMinutes: field.schedulerStartIncrementMinutes ?? 165,
             address: field.address ?? '',
             city: field.city ?? '',
             state: field.state ?? '',
@@ -306,20 +304,6 @@ export const FieldFormDialog: React.FC<FieldFormDialogProps> = ({
                     label="Has lights"
                   />
                 )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label="Time Between Games (minutes)"
-                type="number"
-                fullWidth
-                {...register('schedulerStartIncrementMinutes', { valueAsNumber: true })}
-                error={Boolean(errors.schedulerStartIncrementMinutes)}
-                helperText={
-                  errors.schedulerStartIncrementMinutes?.message ??
-                  'Used when generating game start times (default 165).'
-                }
-                inputProps={{ min: 1, max: 1440, step: 1 }}
               />
             </Grid>
             <Grid size={12}>
