@@ -100,7 +100,9 @@ const buildCareerPrependColumns = <
             },
           }}
         >
-          <Link href={`/account/${accountId}/seasons/${seasonId}/teams/${teamId}`}>{label}</Link>
+          <Link href={`/account/${accountId}/seasons/${seasonId}/teams/${teamId}`} prefetch={false}>
+            {label}
+          </Link>
         </Box>
       );
     },

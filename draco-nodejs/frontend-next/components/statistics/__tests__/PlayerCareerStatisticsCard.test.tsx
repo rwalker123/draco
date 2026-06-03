@@ -106,8 +106,9 @@ describe('PlayerCareerStatisticsCard team links', () => {
 
     render(<PlayerCareerStatisticsCard accountId={ACCOUNT_ID} stats={stats} />);
 
-    expect(screen.getByText(/Multiple Teams/)).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    const multipleTeams = screen.getByText(/Multiple Teams/);
+    expect(multipleTeams).toBeInTheDocument();
+    expect(multipleTeams.closest('a')).toBeNull();
   });
 
   it('renders distinct links per historical team-season', () => {

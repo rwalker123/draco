@@ -284,6 +284,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setGamesError(null);
 
     if (isAllTime || !selectedTeamId || !seasonId) {
+      setGamesLoading(false);
       return;
     }
 
