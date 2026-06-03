@@ -44,7 +44,7 @@
     "frontend:e2e:reap": "pnpm --filter @draco/frontend-next e2e:reap",
     "dev": "concurrently \"pnpm --filter @draco/backend dev\" \"pnpm --filter @draco/frontend-next dev\"",
     "dev:debug": "concurrently \"pnpm --filter @draco/backend dev:debug\" \"pnpm --filter @draco/frontend-next dev\"",
-    "build": "pnpm --filter @draco/shared-schemas build && pnpm run sync:api && pnpm --filter @draco/backend build && pnpm --filter @draco/frontend-next build",
+    "build": "pnpm --filter @draco/shared-schemas build && pnpm run sync:api && pnpm --filter @draco/backend build && pnpm --filter @draco/frontend-next build && pnpm --filter @draco/mcp-server build",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
     "format": "pnpm -r run format",
