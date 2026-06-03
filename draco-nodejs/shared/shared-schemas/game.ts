@@ -51,6 +51,10 @@ export const GameSchema = z.object({
   gameStatusShortText: GameStatusShortEnumSchema.optional(),
   gameType: z.number().describe('0=Regular, 1=Playoff, 2=Exhibition'),
   hasGameRecap: z.boolean().optional(),
+  teamsWithStats: bigintToStringSchema
+    .array()
+    .optional()
+    .describe('Team-season IDs (home and/or visitor) that have entered stats for this game'),
   umpire1: ContactIdSchema.optional(),
   umpire2: ContactIdSchema.optional(),
   umpire3: ContactIdSchema.optional(),

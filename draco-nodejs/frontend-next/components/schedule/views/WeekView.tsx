@@ -14,6 +14,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
   onGameResults,
   onEditRecap,
   onViewRecap,
+  onViewStatistics,
   convertGameToGameCardData,
   timeZone,
   filterType,
@@ -94,6 +95,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
         onGameResults={onGameResults}
         onEditRecap={onEditRecap}
         onViewRecap={onViewRecap}
+        onViewStatistics={onViewStatistics}
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
         canEditRecap={canEditRecap}

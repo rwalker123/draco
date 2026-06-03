@@ -75,6 +75,7 @@ const PlayerCareerSearchTab: React.FC<PlayerCareerSearchTabProps> = ({ accountId
       ) : null}
 
       <PlayerCareerStatisticsCard
+        accountId={accountId}
         stats={playerStats}
         loading={playerLoading}
         error={playerError}

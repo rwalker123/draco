@@ -78,6 +78,18 @@ export class TeamStatsService {
       recentGamesPromise,
     ]);
 
+    const teamsWithStatsMap = await this.scheduleRepository.getTeamsWithStatsByGameIds(
+      recentGames.map((game) => game.id),
+    );
+
+    const teamsWithStatsForGame = (game: dbGameInfo): string[] | undefined => {
+      const teams = teamsWithStatsMap.get(game.id.toString());
+      if (!teams || teams.size === 0) {
+        return undefined;
+      }
+      return [game.hteamid.toString(), game.vteamid.toString()].filter((id) => teams.has(id));
+    };
+
     // Map games with team names (async)
     const result: RecentGamesType = {
       upcoming: [],
@@ -92,7 +104,7 @@ export class TeamStatsService {
 
     if (includeRecent) {
       result.recent = recentGames.map((game) =>
-        StatsResponseFormatter.formatGameInfoResponse(game),
+        StatsResponseFormatter.formatGameInfoResponse(game, teamsWithStatsForGame(game)),
       );
     }
 

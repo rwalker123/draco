@@ -31,6 +31,7 @@ export interface Game {
   gameStatusShortText: string;
   gameType: number;
   hasGameRecap?: boolean;
+  teamsWithStats?: string[];
   league: {
     id: string;
     name: string;
@@ -169,6 +170,7 @@ export interface ViewComponentProps {
   onGameResults: (game: Game) => void;
   onEditRecap?: (game: Game) => void;
   onViewRecap?: (game: Game) => void;
+  onViewStatistics?: (game: Game) => void;
   convertGameToGameCardData: (game: Game) => GameCardData;
   timeZone: string;
   filterType: FilterType;

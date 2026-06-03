@@ -58,6 +58,7 @@ export interface ScheduleLayoutProps {
   timeZone: string;
   convertGameToGameCardData: (game: Game) => GameCardData;
   onViewRecap?: (game: Game) => void;
+  onViewStatistics?: (game: Game) => void;
   canEditSchedule?: boolean;
   onGameClick?: (game: Game) => void;
   onEditGame?: (game: Game) => void;
@@ -105,6 +106,7 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   timeZone,
   convertGameToGameCardData,
   onViewRecap,
+  onViewStatistics,
   canEditSchedule = false,
   onGameClick,
   onEditGame,
@@ -273,6 +275,7 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
             onGameResults={onGameResults ?? (() => {})}
             onEditRecap={onEditRecap}
             onViewRecap={onViewRecap}
+            onViewStatistics={onViewStatistics}
             convertGameToGameCardData={convertGameToGameCardData}
             canEditRecap={canEditRecap}
             filterDate={filterDate}

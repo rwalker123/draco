@@ -256,7 +256,7 @@ export class StatsResponseFormatter {
     });
   }
 
-  static formatGameInfoResponse(game: dbGameInfo): GameTypeShared {
+  static formatGameInfoResponse(game: dbGameInfo, teamsWithStats?: string[]): GameTypeShared {
     const field = game.fieldid
       ? formatFieldFromAvailableField(
           game.availablefields ?? {
@@ -287,12 +287,13 @@ export class StatsResponseFormatter {
       gameStatus: game.gamestatus,
       field,
       hasGameRecap: Boolean(game._count?.gamerecap),
+      teamsWithStats: teamsWithStats && teamsWithStats.length > 0 ? teamsWithStats : undefined,
       gameType: game.gametype,
     };
   }
 
   /*
-      gameStatusText: 
+      gameStatusText:
       gameStatusShortText: g,
       
   */

@@ -171,6 +171,7 @@ const mapApiGameToGameCard = (game: ApiGame): Game => {
     fieldDetails,
     hasGameRecap: recaps.length > 0 || Boolean((game as { hasGameRecap?: boolean }).hasGameRecap),
     gameRecaps: recaps,
+    teamsWithStats: (game as { teamsWithStats?: string[] }).teamsWithStats ?? undefined,
     comment: game.comment ?? '',
     gameType: parsedGameType ?? undefined,
     baseballExtras: {
@@ -201,6 +202,7 @@ export const mapGameResponseToScheduleGame = (game: ApiGame): ScheduleGame => {
     visitorScore: Number(game.visitorScore ?? 0),
     comment: game.comment ?? '',
     hasGameRecap: game.hasGameRecap,
+    teamsWithStats: (game as { teamsWithStats?: string[] }).teamsWithStats ?? undefined,
     fieldId: toOptionalString(game.field?.id),
     field: mapScheduleFieldDetails(game),
     gameStatus,
@@ -371,6 +373,7 @@ export function convertGameToGameCardData(
     fieldDetails: mergeFieldDetails(null, fieldFromCollection, fallbackField, targetFieldId),
     hasGameRecap: Boolean(game.hasGameRecap),
     gameRecaps: [],
+    teamsWithStats: game.teamsWithStats ?? undefined,
     comment: game.comment,
     gameType: game.gameType,
     ...(hasGolfData && { golfExtras: game.golfExtras }),

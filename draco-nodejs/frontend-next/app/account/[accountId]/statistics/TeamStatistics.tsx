@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Typography,
@@ -17,6 +18,10 @@ import {
   Alert,
 } from '@mui/material';
 import StatisticsTable from '../../../../components/statistics/StatisticsTable';
+import GameListCard, { type SortOrder } from '@/components/team-stats-entry/GameListCard';
+import BattingStatsViewTable from '@/components/team-stats-entry/BattingStatsViewTable';
+import PitchingStatsViewTable from '@/components/team-stats-entry/PitchingStatsViewTable';
+import { TeamStatsEntryService } from '@/services/teamStatsEntryService';
 import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
@@ -30,8 +35,11 @@ import {
 } from '@draco/shared-api-client';
 import type {
   AllTimeTeamSummaryType,
+  GameBattingStatsType,
+  GamePitchingStatsType,
   PlayerBattingStatsType,
   PlayerPitchingStatsType,
+  TeamCompletedGameType,
 } from '@draco/shared-schemas';
 
 interface TabPanelProps {
@@ -77,6 +85,17 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
   const [battingSortOrder, setBattingSortOrder] = useState<'asc' | 'desc'>('desc');
   const [pitchingSortField, setPitchingSortField] = useState<keyof PlayerPitchingStatsType>('era');
   const [pitchingSortOrder, setPitchingSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [games, setGames] = useState<TeamCompletedGameType[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(false);
+  const [gamesError, setGamesError] = useState<string | null>(null);
+  const [gameSortOrder, setGameSortOrder] = useState<SortOrder>('desc');
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [displayedGame, setDisplayedGame] = useState<{
+    gameId: string;
+    batting: GameBattingStatsType;
+    pitching: GamePitchingStatsType;
+  } | null>(null);
+  const [gameStatsError, setGameStatsError] = useState<string | null>(null);
   const apiClient = useApiClient();
 
   const isAllTime = seasonId === '0';
@@ -259,6 +278,92 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     };
   }, [accountId, seasonId, isAllTime, selectedTeamId, apiClient]);
 
+  useEffect(() => {
+    setGames([]);
+    setSelectedGameId(null);
+    setGamesError(null);
+
+    if (isAllTime || !selectedTeamId || !seasonId) {
+      setGamesLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setGamesLoading(true);
+
+    const loadGames = async () => {
+      try {
+        const service = new TeamStatsEntryService(null, apiClient);
+        const data = await service.listCompletedGames(
+          accountId,
+          seasonId,
+          selectedTeamId,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setGames(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setGamesError(err instanceof Error ? err.message : 'Failed to load completed games');
+        setGames([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setGamesLoading(false);
+        }
+      }
+    };
+
+    void loadGames();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, isAllTime, selectedTeamId, apiClient]);
+
+  useEffect(() => {
+    if (!selectedGameId || !seasonId || !selectedTeamId) {
+      setDisplayedGame(null);
+      setGameStatsError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    setGameStatsError(null);
+
+    const loadGameStats = async () => {
+      try {
+        const service = new TeamStatsEntryService(null, apiClient);
+        const [batting, pitching] = await Promise.all([
+          service.getGameBattingStats(
+            accountId,
+            seasonId,
+            selectedTeamId,
+            selectedGameId,
+            controller.signal,
+          ),
+          service.getGamePitchingStats(
+            accountId,
+            seasonId,
+            selectedTeamId,
+            selectedGameId,
+            controller.signal,
+          ),
+        ]);
+        if (controller.signal.aborted) return;
+        setDisplayedGame({ gameId: selectedGameId, batting, pitching });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setGameStatsError(err instanceof Error ? err.message : 'Failed to load game statistics');
+      }
+    };
+
+    void loadGameStats();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, selectedTeamId, selectedGameId, apiClient]);
+
   const handleTeamChange = (event: SelectChangeEvent) => {
     const teamId = event.target.value;
     setSelectedTeamId(teamId);
@@ -344,6 +449,14 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     return pitchingSortOrder === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
   });
 
+  const sortedGames = [...games].sort((a, b) => {
+    const dateA = new Date(a.gameDate).getTime();
+    const dateB = new Date(b.gameDate).getTime();
+    return gameSortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
+  const showGameList = !isAllTime;
+
   if (error) {
     return (
       <Box p={3}>
@@ -397,45 +510,102 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
       {selectedTeamId && (
         <>
+          {showGameList && (
+            <Box sx={{ mb: 3 }}>
+              <GameListCard
+                games={sortedGames}
+                selectedGameId={selectedGameId}
+                onSelectGame={setSelectedGameId}
+                sortOrder={gameSortOrder}
+                onSortOrderChange={setGameSortOrder}
+                loading={gamesLoading}
+                error={gamesError}
+                canManageStats={false}
+              />
+            </Box>
+          )}
+
           {/* Tabs */}
           <Paper sx={{ width: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: 1,
+                borderColor: 'divider',
+                pr: 2,
+              }}
+            >
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="team statistics tabs">
                 <Tab label="Batting" id="team-stats-tab-0" />
                 <Tab label="Pitching" id="team-stats-tab-1" />
               </Tabs>
+              {selectedGameId && (
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => {
+                    setSelectedGameId(null);
+                    setDisplayedGame(null);
+                  }}
+                  sx={{ textTransform: 'none' }}
+                >
+                  View season totals
+                </Button>
+              )}
             </Box>
 
+            {gameStatsError && (
+              <Alert severity="error" sx={{ m: 2 }}>
+                {gameStatsError}
+              </Alert>
+            )}
+
             <TabPanel value={tabValue} index={0}>
-              <StatisticsTable
-                variant="batting"
-                extendedStats={false}
-                data={sortedBattingStats}
-                loading={loading.batting}
-                emptyMessage="No batting statistics available"
-                getRowKey={(stat) => stat.playerId}
-                sortField={String(battingSortField)}
-                sortOrder={battingSortOrder}
-                onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
-                playerLinkLabel="Team Batting Stats"
-                omitFields={['teamName']}
-              />
+              {displayedGame ? (
+                <BattingStatsViewTable
+                  stats={displayedGame.batting}
+                  totals={displayedGame.batting.totals}
+                />
+              ) : (
+                <StatisticsTable
+                  variant="batting"
+                  extendedStats={false}
+                  data={sortedBattingStats}
+                  loading={loading.batting}
+                  emptyMessage="No batting statistics available"
+                  getRowKey={(stat) => stat.playerId}
+                  sortField={String(battingSortField)}
+                  sortOrder={battingSortOrder}
+                  onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
+                  playerLinkLabel="Team Batting Stats"
+                  omitFields={['teamName']}
+                />
+              )}
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
-              <StatisticsTable
-                variant="pitching"
-                extendedStats={false}
-                data={sortedPitchingStats}
-                loading={loading.pitching}
-                emptyMessage="No pitching statistics available"
-                getRowKey={(stat) => stat.playerId}
-                sortField={String(pitchingSortField)}
-                sortOrder={pitchingSortOrder}
-                onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
-                playerLinkLabel="Team Pitching Stats"
-                omitFields={['teamName']}
-              />
+              {displayedGame ? (
+                <PitchingStatsViewTable
+                  stats={displayedGame.pitching}
+                  totals={displayedGame.pitching.totals}
+                />
+              ) : (
+                <StatisticsTable
+                  variant="pitching"
+                  extendedStats={false}
+                  data={sortedPitchingStats}
+                  loading={loading.pitching}
+                  emptyMessage="No pitching statistics available"
+                  getRowKey={(stat) => stat.playerId}
+                  sortField={String(pitchingSortField)}
+                  sortOrder={pitchingSortOrder}
+                  onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
+                  playerLinkLabel="Team Pitching Stats"
+                  omitFields={['teamName']}
+                />
+              )}
             </TabPanel>
           </Paper>
         </>

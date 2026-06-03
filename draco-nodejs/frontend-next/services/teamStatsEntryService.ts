@@ -95,10 +95,12 @@ export class TeamStatsEntryService {
     seasonId: string,
     teamSeasonId: string,
     gameId: string,
+    signal?: AbortSignal,
   ): Promise<GameBattingStatsType> {
     const result = await apiGetGameBattingStats({
       client: this.client,
       path: { accountId, seasonId, teamSeasonId, gameId },
+      signal,
       throwOnError: false,
     });
 
@@ -161,10 +163,12 @@ export class TeamStatsEntryService {
     seasonId: string,
     teamSeasonId: string,
     gameId: string,
+    signal?: AbortSignal,
   ): Promise<GamePitchingStatsType> {
     const result = await apiGetGamePitchingStats({
       client: this.client,
       path: { accountId, seasonId, teamSeasonId, gameId },
+      signal,
       throwOnError: false,
     });
 

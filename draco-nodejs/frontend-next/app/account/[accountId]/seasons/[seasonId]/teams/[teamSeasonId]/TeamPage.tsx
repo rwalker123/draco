@@ -41,6 +41,7 @@ import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendin
 import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
 import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
+import { useGameStatisticsFlow } from '../../../../../../../hooks/useGameStatisticsFlow';
 import LeadersWidget from '../../../../../../../components/statistics/LeadersWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import SpecialAnnouncementsWidget from '@/components/announcements/SpecialAnnouncementsWidget';
@@ -386,6 +387,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         : null,
       hasGameRecap: game.hasGameRecap ?? false,
       gameRecaps: [],
+      teamsWithStats: game.teamsWithStats ?? undefined,
       gameType: game.gameType ? Number(game.gameType) : undefined,
     });
 
@@ -467,6 +469,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     seasonId,
     fetchRecap: fetchRecapForTeam,
     onRecapSaved: handleRecapSaved,
+  });
+
+  const { openViewStatistics, dialogs: statsDialogs } = useGameStatisticsFlow<Game>({
+    accountId,
+    seasonId,
   });
 
   const handleOpenEditRecap = (game: Game) => {
@@ -577,6 +584,17 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     </Button>
   );
 
+  const teamStatisticsButton = (
+    <Button
+      component={NextLink}
+      href={`/account/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/stat-entry`}
+      variant="outlined"
+      size="small"
+    >
+      Team Statistics
+    </Button>
+  );
+
   return (
     <main className="min-h-screen bg-background">
       {/* Account Header with Team Information */}
@@ -584,7 +602,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box sx={{ flex: 1, textAlign: 'center' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
                 <TeamAvatar
                   name={teamData?.teamName || ''}
                   logoUrl={teamData?.logoUrl || undefined}
@@ -607,6 +633,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     {teamData.teamName}
                   </Typography>
                 )}
+                {teamData?.leagueId ? (
+                  <Box sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>
+                    {teamStatisticsButton}
+                  </Box>
+                ) : null}
               </Box>
               {teamData?.record && (
                 <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 'medium' }}>
@@ -619,6 +650,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                   {teamData.seasonName} Season
                 </Typography>
               )}
+              {teamData?.leagueId ? (
+                <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: 1 }}>
+                  {teamStatisticsButton}
+                </Box>
+              ) : null}
             </Box>
           </Box>
         </Box>
@@ -893,6 +929,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                       canEditRecap={canEditRecap}
                       onEditRecap={handleOpenEditRecap}
                       onViewRecap={handleOpenViewRecap}
+                      onViewStatistics={openViewStatistics}
                       timeZone={timeZone}
                       accountId={accountId}
                       currentTeamSeasonId={teamSeasonId}
@@ -955,6 +992,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       )}
 
       {recapDialogs}
+      {statsDialogs}
 
       <CreatePlayersWantedDialog
         accountId={accountId}

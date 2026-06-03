@@ -26,6 +26,7 @@ import { getGameStatusShortText } from '../utils/gameUtils';
 import { formatDateInTimezone, formatGameTime } from '../utils/dateUtils';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
 import RecapButton from './RecapButton';
+import StatisticsButton from './StatisticsButton';
 import { GameStatus, GameType } from '../types/schedule';
 import FieldDetailsCard, { FieldDetails } from './fields/FieldDetailsCard';
 import AccountOptional from './account/AccountOptional';
@@ -70,6 +71,7 @@ export interface GameCardData {
   fieldDetails?: FieldDetails | null;
   hasGameRecap: boolean;
   gameRecaps: Array<{ teamId: string; recap: string }>;
+  teamsWithStats?: string[];
   comment?: string;
   gameType?: number;
   // Sport-specific extensions
@@ -85,6 +87,7 @@ export interface GameCardProps {
   canEditRecap?: (game: GameCardData) => boolean;
   onEditRecap?: (game: GameCardData) => void;
   onViewRecap?: (game: GameCardData) => void;
+  onViewStatistics?: (game: GameCardData) => void;
   onClick?: (game: GameCardData) => void;
   showActions?: boolean;
   compact?: boolean;
@@ -113,6 +116,7 @@ const GameCard: React.FC<GameCardProps> = ({
   canEditRecap,
   onEditRecap,
   onViewRecap,
+  onViewStatistics,
   onClick,
   showActions = true,
   compact = false,
@@ -237,6 +241,13 @@ const GameCard: React.FC<GameCardProps> = ({
 
     if (onViewRecap) {
       onViewRecap(game);
+    }
+  };
+
+  const handleStatsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onViewStatistics) {
+      onViewStatistics(game);
     }
   };
 
@@ -588,6 +599,9 @@ const GameCard: React.FC<GameCardProps> = ({
                     </Tooltip>
                   )}
                   <RecapButton game={game} onRecapClick={handleRecapClick} {...recapButtonProps} />
+                  {onViewStatistics && (
+                    <StatisticsButton game={game} onStatsClick={handleStatsClick} />
+                  )}
                 </Box>
               )}
             </Box>
@@ -826,6 +840,9 @@ const GameCard: React.FC<GameCardProps> = ({
                   )}
                 {showActions && (
                   <RecapButton game={game} onRecapClick={handleRecapClick} {...recapButtonProps} />
+                )}
+                {showActions && onViewStatistics && (
+                  <StatisticsButton game={game} onStatsClick={handleStatsClick} />
                 )}
               </Box>
             </Box>

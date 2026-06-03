@@ -638,7 +638,10 @@ export class ScheduleService {
       teamIds.add(game.vteamid);
     }
 
-    const teamNames = await this.scheduleRepository.getTeamNames(Array.from(teamIds));
+    const [teamNames, teamsWithStatsMap] = await Promise.all([
+      this.scheduleRepository.getTeamNames(Array.from(teamIds)),
+      this.scheduleRepository.getTeamsWithStatsByGameIds(gamesArray.map((game) => game.id)),
+    ]);
 
     let formattedGames: GamesWithRecapsType['games'];
 
@@ -648,10 +651,14 @@ export class ScheduleService {
       );
 
       formattedGames = gamesWithRecaps.map((game) =>
-        ScheduleResponseFormatter.formatGameWithRecaps(game, teamNames),
+        ScheduleResponseFormatter.formatGameWithRecaps(game, teamNames, teamsWithStatsMap),
       );
     } else {
-      formattedGames = ScheduleResponseFormatter.formatGamesList(gamesArray, teamNames);
+      formattedGames = ScheduleResponseFormatter.formatGamesList(
+        gamesArray,
+        teamNames,
+        teamsWithStatsMap,
+      );
     }
 
     return {

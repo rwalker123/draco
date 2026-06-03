@@ -17621,6 +17621,15 @@
           "hasGameRecap": {
             "type": "boolean"
           },
+          "teamsWithStats": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "example": "12345"
+            },
+            "description": "Team-season IDs (home and/or visitor) that have entered stats for this game"
+          },
           "umpire1": {
             "type": "object",
             "properties": {
@@ -17958,6 +17967,15 @@
                 "hasGameRecap": {
                   "type": "boolean"
                 },
+                "teamsWithStats": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  "description": "Team-season IDs (home and/or visitor) that have entered stats for this game"
+                },
                 "umpire1": {
                   "type": "object",
                   "properties": {
@@ -18262,6 +18280,15 @@
                 },
                 "hasGameRecap": {
                   "type": "boolean"
+                },
+                "teamsWithStats": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  "description": "Team-season IDs (home and/or visitor) that have entered stats for this game"
                 },
                 "umpire1": {
                   "type": "object",
@@ -18576,6 +18603,15 @@
                 },
                 "hasGameRecap": {
                   "type": "boolean"
+                },
+                "teamsWithStats": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  "description": "Team-season IDs (home and/or visitor) that have entered stats for this game"
                 },
                 "umpire1": {
                   "type": "object",
