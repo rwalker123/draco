@@ -135,9 +135,9 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
 
     const resolvedPlayerName = values.playerName;
     const id =
-      stat.playerId !== undefined && stat.playerId !== null && stat.playerId !== ''
-        ? String(stat.playerId)
-        : (stat.playerName ?? `player-${stat.playerId ?? 'unknown'}`);
+      stat.contactId !== undefined && stat.contactId !== null && stat.contactId !== ''
+        ? String(stat.contactId)
+        : (stat.playerName ?? `player-${stat.contactId ?? 'unknown'}`);
 
     return {
       ...(values as Record<string, StatValue>),
@@ -146,7 +146,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
         typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
       ip: stat.ip ?? null,
       ip2: stat.ip2 ?? null,
-      playerId: stat.playerId ?? null,
+      contactId: stat.contactId ?? null,
     };
   });
 
@@ -168,7 +168,7 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
       isTotals: true,
       ip: Number(totals.ip ?? 0),
       ip2: Number(totals.ip2 ?? 0),
-      playerId: null,
+      contactId: null,
     };
 
     tableRows.push(totalsRow);

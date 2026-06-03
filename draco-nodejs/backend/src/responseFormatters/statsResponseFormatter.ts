@@ -52,7 +52,7 @@ export class StatsResponseFormatter {
     return stats.map((stat) => {
       const teams = stat.teams?.length ? stat.teams : undefined;
       const formatted = {
-        playerId: stat.playerId.toString(),
+        contactId: stat.playerId.toString(),
         playerName: stat.playerName,
         teamName: StatsResponseFormatter.resolveTeamName(stat.teamName, teams),
         ab: stat.ab,
@@ -85,7 +85,7 @@ export class StatsResponseFormatter {
     return stats.map((stat) => {
       const teams = stat.teams?.length ? stat.teams : undefined;
       const formatted = {
-        playerId: stat.playerId.toString(),
+        contactId: stat.playerId.toString(),
         playerName: stat.playerName,
         teamName: StatsResponseFormatter.resolveTeamName(stat.teamName, teams),
         ip: stat.ip,
@@ -130,7 +130,7 @@ export class StatsResponseFormatter {
             : undefined;
 
       return {
-        playerId: stat.playerId.toString(),
+        contactId: stat.playerId.toString(),
         playerName: stat.playerName,
         teamName: StatsResponseFormatter.resolveTeamName(stat.teamName, teams),
         teams,
@@ -181,7 +181,7 @@ export class StatsResponseFormatter {
             : undefined;
 
       return {
-        playerId: stat.playerId.toString(),
+        contactId: stat.playerId.toString(),
         playerName: stat.playerName,
         teamName: StatsResponseFormatter.resolveTeamName(stat.teamName, teams),
         teams,
@@ -352,7 +352,7 @@ export class StatsResponseFormatter {
     battingStats: dbBattingStatisticsRow[],
   ): PlayerBattingStatsBriefType[] {
     return battingStats.map((stat) => ({
-      playerId: stat.playerId.toString(),
+      contactId: stat.playerId.toString(),
       playerName: stat.playerName,
       ab: stat.ab,
       h: stat.h,
@@ -374,7 +374,7 @@ export class StatsResponseFormatter {
     pitchingStats: dbPitchingStatisticsRow[],
   ): PlayerPitchingStatsBriefType[] {
     return pitchingStats.map((stat) => ({
-      playerId: stat.playerId.toString(),
+      contactId: stat.playerId.toString(),
       playerName: stat.playerName,
       ip: stat.ip.toString() + '.' + stat.ip2.toString(), // Use ip (string) for brief stats to preserve fractional innings
       w: stat.w,

@@ -11017,7 +11017,7 @@
       "PlayerBattingStats": {
         "type": "object",
         "properties": {
-          "playerId": {
+          "contactId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -11118,7 +11118,7 @@
           }
         },
         "required": [
-          "playerId",
+          "contactId",
           "playerName",
           "teamName",
           "ab",
@@ -11145,7 +11145,7 @@
       "PlayerBattingStatsBrief": {
         "type": "object",
         "properties": {
-          "playerId": {
+          "contactId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -11209,7 +11209,7 @@
           }
         },
         "required": [
-          "playerId",
+          "contactId",
           "playerName",
           "ab",
           "h",
@@ -11229,7 +11229,7 @@
       "PlayerPitchingStats": {
         "type": "object",
         "properties": {
-          "playerId": {
+          "contactId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -11338,7 +11338,7 @@
           }
         },
         "required": [
-          "playerId",
+          "contactId",
           "playerName",
           "teamName",
           "ip",
@@ -11367,7 +11367,7 @@
       "PlayerPitchingStatsBrief": {
         "type": "object",
         "properties": {
-          "playerId": {
+          "contactId": {
             "type": "string",
             "pattern": "^\\d+$",
             "example": "12345"
@@ -11423,7 +11423,7 @@
           }
         },
         "required": [
-          "playerId",
+          "contactId",
           "playerName",
           "w",
           "l",
@@ -11468,7 +11468,7 @@
                 "items": {
                   "type": "object",
                   "properties": {
-                    "playerId": {
+                    "contactId": {
                       "type": "string",
                       "pattern": "^\\d+$",
                       "example": "12345"
@@ -11609,7 +11609,7 @@
                     }
                   },
                   "required": [
-                    "playerId",
+                    "contactId",
                     "playerName",
                     "teamName",
                     "ab",
@@ -11648,7 +11648,7 @@
                 "items": {
                   "type": "object",
                   "properties": {
-                    "playerId": {
+                    "contactId": {
                       "type": "string",
                       "pattern": "^\\d+$",
                       "example": "12345"
@@ -11797,7 +11797,7 @@
                     }
                   },
                   "required": [
-                    "playerId",
+                    "contactId",
                     "playerName",
                     "teamName",
                     "ip",

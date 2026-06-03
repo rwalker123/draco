@@ -6,7 +6,7 @@ import { booleanQueryParam } from './queryParams.js';
 extendZodWithOpenApi(z);
 
 export const PlayerBattingStatsSchema = z.object({
-  playerId: bigintToStringSchema,
+  contactId: bigintToStringSchema,
   playerName: nameSchema,
   teams: nameSchema.array().optional(), // Array of team names player played for
   teamName: nameSchema, // Formatted string of teams for display
@@ -44,7 +44,7 @@ export const PlayerBattingStatsBriefSchema = PlayerBattingStatsSchema.omit({
 });
 
 export const PlayerPitchingStatsSchema = z.object({
-  playerId: bigintToStringSchema,
+  contactId: bigintToStringSchema,
   playerName: nameSchema,
   teams: nameSchema.array().optional(), // Array of team names player played for
   teamName: nameSchema, // Formatted string of teams for display
