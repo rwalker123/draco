@@ -10,6 +10,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
+import Link from 'next/link';
 import StatisticsTable, { type ColumnConfig, type StatsRowBase } from './StatisticsTable';
 import type {
   PlayerCareerBattingRowType,
@@ -20,6 +21,7 @@ import type {
 type CareerTab = 'batting' | 'pitching';
 
 interface PlayerCareerStatisticsCardProps {
+  accountId: string;
   stats: PlayerCareerStatisticsType | null;
   loading?: boolean;
   error?: string | null;
@@ -32,8 +34,12 @@ const buildCareerPrependColumns = <
     seasonName?: string | null;
     leagueName?: string | null;
     teamName?: string | null;
+    teamId?: string | null;
+    seasonId?: string | null;
   },
->(): ColumnConfig<T>[] => {
+>(
+  accountId: string,
+): ColumnConfig<T>[] => {
   const seasonColumn: ColumnConfig<T> = {
     field: 'seasonName' as keyof T & string,
     label: 'Season',
@@ -72,11 +78,31 @@ const buildCareerPrependColumns = <
         return '—';
       }
 
-      if (league && team) {
-        return `${league} ${team}`;
+      const label = league && team ? `${league} ${team}` : (team ?? league ?? '—');
+      const teamId = row.teamId ?? undefined;
+      const seasonId = row.seasonId ?? undefined;
+
+      if (!team || !teamId || !seasonId) {
+        return label;
       }
 
-      return league ?? team ?? '—';
+      return (
+        <Box
+          component="span"
+          sx={{
+            '& a': {
+              color: 'primary.main',
+              textDecoration: 'none',
+              fontWeight: 600,
+              '&:hover': {
+                textDecoration: 'underline',
+              },
+            },
+          }}
+        >
+          <Link href={`/account/${accountId}/seasons/${seasonId}/teams/${teamId}`}>{label}</Link>
+        </Box>
+      );
     },
   };
 
@@ -97,6 +123,7 @@ const getRowKey = (
 };
 
 const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
+  accountId,
   stats,
   loading = false,
   error = null,
@@ -112,9 +139,9 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
 
   const pitchingRows: PlayerCareerPitchingRowType[] = stats?.pitching.rows ?? [];
 
-  const battingPrependColumns = buildCareerPrependColumns<PlayerCareerBattingRowType>();
+  const battingPrependColumns = buildCareerPrependColumns<PlayerCareerBattingRowType>(accountId);
 
-  const pitchingPrependColumns = buildCareerPrependColumns<PlayerCareerPitchingRowType>();
+  const pitchingPrependColumns = buildCareerPrependColumns<PlayerCareerPitchingRowType>(accountId);
 
   if (loading) {
     return (

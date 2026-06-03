@@ -57,6 +57,7 @@ export default function PlayerStatisticsClientWrapper() {
         ) : null}
 
         <PlayerCareerStatisticsCard
+          accountId={accountId}
           stats={playerStats}
           loading={playerLoading}
           error={playerError}
