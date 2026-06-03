@@ -45,7 +45,7 @@ function withCtx<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 const battingRow = {
-  playerId: '500',
+  contactId: '500',
   playerName: 'Jane Slugger',
   teamName: 'Tigers',
   ab: 40,
@@ -68,7 +68,7 @@ const battingRow = {
 };
 
 const pitchingRow = {
-  playerId: '501',
+  contactId: '501',
   playerName: 'John Pitcher',
   teamName: 'Tigers',
   ip: 12.5,

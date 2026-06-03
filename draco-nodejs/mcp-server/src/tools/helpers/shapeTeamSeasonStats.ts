@@ -54,7 +54,7 @@ export interface ShapedTeamPitchingStatsResult {
 
 export function shapeTeamBattingStats(rows: PlayerBattingStats[]): ShapedTeamBattingStatsResult {
   const shaped: ShapedTeamBattingRow[] = rows.map((r) => ({
-    player_id: r.playerId,
+    player_id: r.contactId,
     player_name: r.playerName,
     team_name: r.teamName,
     ab: r.ab,
@@ -86,7 +86,7 @@ export function shapeTeamBattingStats(rows: PlayerBattingStats[]): ShapedTeamBat
 
 export function shapeTeamPitchingStats(rows: PlayerPitchingStats[]): ShapedTeamPitchingStatsResult {
   const shaped: ShapedTeamPitchingRow[] = rows.map((r) => ({
-    player_id: r.playerId,
+    player_id: r.contactId,
     player_name: r.playerName,
     team_name: r.teamName,
     ip: r.ip,
