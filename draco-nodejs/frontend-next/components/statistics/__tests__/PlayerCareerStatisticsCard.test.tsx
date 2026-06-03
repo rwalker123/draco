@@ -16,7 +16,7 @@ const ACCOUNT_ID = '1';
 const buildBattingRow = (
   overrides: Partial<PlayerCareerBattingRowType>,
 ): PlayerCareerBattingRowType => ({
-  playerId: '100',
+  contactId: '100',
   playerName: 'Casey Jones',
   teamName: '',
   ab: 10,

@@ -197,7 +197,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
         data={loading && previousStats.length > 0 ? previousStats : stats}
         loading={loading && previousStats.length === 0}
         emptyMessage="No pitching statistics available for the selected filters."
-        getRowKey={(player, index) => `${player.playerId}-${index}`}
+        getRowKey={(player, index) => `${player.contactId}-${index}`}
         sortField={String(sortField)}
         sortOrder={sortOrder}
         onSort={(field) => handleSort(field as SortField)}

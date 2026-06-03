@@ -676,7 +676,7 @@ const StatisticsTable = <T extends StatsRowBase>({
           return null;
         }
 
-        const candidate = row.playerId ?? row.contactId;
+        const candidate = row.contactId;
         if (candidate === null || candidate === undefined) {
           return null;
         }

@@ -8156,7 +8156,7 @@ components:
     PlayerBattingStats:
       type: object
       properties:
-        playerId:
+        contactId:
           type: string
           pattern: ^\d+$
           example: "12345"
@@ -8232,7 +8232,7 @@ components:
           type: number
           minimum: 0
       required:
-        - playerId
+        - contactId
         - playerName
         - teamName
         - ab
@@ -8257,7 +8257,7 @@ components:
     PlayerBattingStatsBrief:
       type: object
       properties:
-        playerId:
+        contactId:
           type: string
           pattern: ^\d+$
           example: "12345"
@@ -8305,7 +8305,7 @@ components:
           type: number
           minimum: 0
       required:
-        - playerId
+        - contactId
         - playerName
         - ab
         - h
@@ -8323,7 +8323,7 @@ components:
     PlayerPitchingStats:
       type: object
       properties:
-        playerId:
+        contactId:
           type: string
           pattern: ^\d+$
           example: "12345"
@@ -8405,7 +8405,7 @@ components:
           type: number
           minimum: 0
       required:
-        - playerId
+        - contactId
         - playerName
         - teamName
         - ip
@@ -8432,7 +8432,7 @@ components:
     PlayerPitchingStatsBrief:
       type: object
       properties:
-        playerId:
+        contactId:
           type: string
           pattern: ^\d+$
           example: "12345"
@@ -8474,7 +8474,7 @@ components:
           type: string
           description: Innings pitched, rounded to nearest whole inning
       required:
-        - playerId
+        - contactId
         - playerName
         - w
         - l
@@ -8513,7 +8513,7 @@ components:
               items:
                 type: object
                 properties:
-                  playerId:
+                  contactId:
                     type: string
                     pattern: ^\d+$
                     example: "12345"
@@ -8620,7 +8620,7 @@ components:
                   isTotals:
                     type: boolean
                 required:
-                  - playerId
+                  - contactId
                   - playerName
                   - teamName
                   - ab
@@ -8653,7 +8653,7 @@ components:
               items:
                 type: object
                 properties:
-                  playerId:
+                  contactId:
                     type: string
                     pattern: ^\d+$
                     example: "12345"
@@ -8766,7 +8766,7 @@ components:
                   isTotals:
                     type: boolean
                 required:
-                  - playerId
+                  - contactId
                   - playerName
                   - teamName
                   - ip

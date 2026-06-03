@@ -149,16 +149,16 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
 
     const resolvedPlayerName = values.playerName;
     const id =
-      stat.playerId !== undefined && stat.playerId !== null && stat.playerId !== ''
-        ? String(stat.playerId)
-        : (stat.playerName ?? `player-${stat.playerId ?? 'unknown'}`);
+      stat.contactId !== undefined && stat.contactId !== null && stat.contactId !== ''
+        ? String(stat.contactId)
+        : (stat.playerName ?? `player-${stat.contactId ?? 'unknown'}`);
 
     return {
       ...(values as Record<string, StatValue>),
       id,
       playerName:
         typeof resolvedPlayerName === 'string' ? resolvedPlayerName : (stat.playerName ?? null),
-      playerId: stat.playerId ?? null,
+      contactId: stat.contactId ?? null,
     };
   });
 
@@ -184,7 +184,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
       id: 'totals',
       playerName: 'Totals',
       isTotals: true,
-      playerId: null,
+      contactId: null,
     };
 
     tableRows.push(totalsRow);

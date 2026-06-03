@@ -575,7 +575,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                   data={sortedBattingStats}
                   loading={loading.batting}
                   emptyMessage="No batting statistics available"
-                  getRowKey={(stat) => stat.playerId}
+                  getRowKey={(stat) => stat.contactId}
                   sortField={String(battingSortField)}
                   sortOrder={battingSortOrder}
                   onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
@@ -598,7 +598,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                   data={sortedPitchingStats}
                   loading={loading.pitching}
                   emptyMessage="No pitching statistics available"
-                  getRowKey={(stat) => stat.playerId}
+                  getRowKey={(stat) => stat.contactId}
                   sortField={String(pitchingSortField)}
                   sortOrder={pitchingSortOrder}
                   onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
