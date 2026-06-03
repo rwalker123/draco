@@ -30,6 +30,7 @@ export interface GameListDisplayProps {
   canEditRecap?: (game: Game) => boolean;
   onEditRecap?: (game: Game) => void;
   onViewRecap?: (game: Game) => void;
+  onViewStatistics?: (game: Game) => void;
   layout?: 'vertical' | 'horizontal';
   timeZone?: string;
   accent?: WidgetAccent | 'none';
@@ -50,6 +51,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   canEditRecap,
   onEditRecap,
   onViewRecap,
+  onViewStatistics,
   layout = 'vertical',
   timeZone = DEFAULT_TIMEZONE,
   accent = 'warning',
@@ -230,6 +232,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           canEditRecap={canEditRecap}
                           onEditRecap={onEditRecap}
                           onViewRecap={onViewRecap}
+                          onViewStatistics={onViewStatistics}
                           fitContent={true}
                           timeZone={timeZone}
                           hasLiveSession={liveSessionGameIds?.has(game.id)}
@@ -250,6 +253,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                             canEditRecap={canEditRecap}
                             onEditRecap={onEditRecap}
                             onViewRecap={onViewRecap}
+                            onViewStatistics={onViewStatistics}
                             timeZone={timeZone}
                             hasLiveSession={liveSessionGameIds?.has(game.id)}
                             canStartLiveScoring={canStartLiveScoring?.(game)}

@@ -22,6 +22,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
   onGameResults,
   onEditRecap,
   onViewRecap,
+  onViewStatistics,
   convertGameToGameCardData,
   timeZone,
   filterType,
@@ -103,6 +104,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
         onGameResults={onGameResults}
         onEditRecap={onEditRecap}
         onViewRecap={onViewRecap}
+        onViewStatistics={onViewStatistics}
         onZoomClick={(weekStartDate) => {
           setFilterType('week');
           setFilterDate(weekStartDate);

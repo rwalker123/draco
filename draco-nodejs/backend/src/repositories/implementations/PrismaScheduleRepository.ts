@@ -481,6 +481,28 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     return BatchQueryHelper.batchTeamNames(this.prisma, teamIds);
   }
 
+  async getTeamsWithStatsByGameIds(gameIds: bigint[]): Promise<Map<string, Set<string>>> {
+    const result = new Map<string, Set<string>>();
+    if (gameIds.length === 0) {
+      return result;
+    }
+
+    const where = { gameid: { in: gameIds } };
+    const [battingGroups, pitchingGroups] = await Promise.all([
+      this.prisma.batstatsum.groupBy({ by: ['gameid', 'teamid'], where }),
+      this.prisma.pitchstatsum.groupBy({ by: ['gameid', 'teamid'], where }),
+    ]);
+
+    for (const group of [...battingGroups, ...pitchingGroups]) {
+      const gameKey = group.gameid.toString();
+      const teams = result.get(gameKey) ?? new Set<string>();
+      teams.add(group.teamid.toString());
+      result.set(gameKey, teams);
+    }
+
+    return result;
+  }
+
   async listUpcomingGamesForTeam(
     teamSeasonId: bigint,
     seasonId: bigint,

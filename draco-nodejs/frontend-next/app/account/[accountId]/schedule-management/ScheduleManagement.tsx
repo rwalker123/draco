@@ -14,6 +14,7 @@ import { GameCardData } from '../../../../components/GameCard';
 import { getGameSummary } from '../../../../lib/utils';
 import { convertGameToGameCardData } from '../../../../utils/gameTransformers';
 import { useGameRecapFlow } from '../../../../hooks/useGameRecapFlow';
+import { useGameStatisticsFlow } from '../../../../hooks/useGameStatisticsFlow';
 import {
   useScheduleData,
   useScheduleFilters,
@@ -309,6 +310,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     onRecapSaved: handleRecapSaved,
   });
 
+  const { openViewStatistics, dialogs: statsDialogs } = useGameStatisticsFlow<Game>({
+    accountId,
+    resolveSeasonId: (game) => game.season?.id ?? null,
+    getTeamName: (_game, teamId) => getTeamName(teamId),
+  });
+
   const { triggerPrint } = usePrintAction();
 
   const printTitle = currentSeasonName ? `Schedule — ${currentSeasonName}` : 'Schedule';
@@ -381,6 +388,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       timeZone={timeZone}
       convertGameToGameCardData={convertGameToGameCardDataWithTeams}
       onViewRecap={openViewRecap}
+      onViewStatistics={openViewStatistics}
       canEditSchedule={true}
       onEditGame={handleEditGame}
       onGameResults={handleGameResults}
@@ -507,6 +515,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       />
 
       {recapDialogs}
+      {statsDialogs}
 
       <SchedulePrintView games={filteredGames} title={printTitle} timeZone={timeZone} />
 

@@ -41,6 +41,7 @@ import { usePendingPhotoSubmissions } from '../../../../../../../hooks/usePendin
 import { usePhotoGallery } from '../../../../../../../hooks/usePhotoGallery';
 import PhotoGallerySection from '@/components/photo-gallery/PhotoGallerySection';
 import { useGameRecapFlow } from '../../../../../../../hooks/useGameRecapFlow';
+import { useGameStatisticsFlow } from '../../../../../../../hooks/useGameStatisticsFlow';
 import LeadersWidget from '../../../../../../../components/statistics/LeadersWidget';
 import SurveySpotlightWidget from '@/components/surveys/SurveySpotlightWidget';
 import SpecialAnnouncementsWidget from '@/components/announcements/SpecialAnnouncementsWidget';
@@ -386,6 +387,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         : null,
       hasGameRecap: game.hasGameRecap ?? false,
       gameRecaps: [],
+      teamsWithStats: game.teamsWithStats ?? undefined,
       gameType: game.gameType ? Number(game.gameType) : undefined,
     });
 
@@ -467,6 +469,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     seasonId,
     fetchRecap: fetchRecapForTeam,
     onRecapSaved: handleRecapSaved,
+  });
+
+  const { openViewStatistics, dialogs: statsDialogs } = useGameStatisticsFlow<Game>({
+    accountId,
+    seasonId,
   });
 
   const handleOpenEditRecap = (game: Game) => {
@@ -922,6 +929,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                       canEditRecap={canEditRecap}
                       onEditRecap={handleOpenEditRecap}
                       onViewRecap={handleOpenViewRecap}
+                      onViewStatistics={openViewStatistics}
                       timeZone={timeZone}
                       accountId={accountId}
                       currentTeamSeasonId={teamSeasonId}
@@ -984,6 +992,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       )}
 
       {recapDialogs}
+      {statsDialogs}
 
       <CreatePlayersWantedDialog
         accountId={accountId}

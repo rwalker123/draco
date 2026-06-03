@@ -13,6 +13,7 @@ import { GameStatus } from '../types/schedule';
 import { useAuth } from '../context/AuthContext';
 import { getGameSummary } from '../lib/utils';
 import { useGameRecapFlow } from '../hooks/useGameRecapFlow';
+import { useGameStatisticsFlow } from '../hooks/useGameStatisticsFlow';
 
 interface ScoreboardBaseProps {
   accountId: string;
@@ -148,6 +149,18 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     getTeamName: (game, teamSeasonId) =>
       teamSeasonId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
     onRecapSaved: handleRecapSaved,
+  });
+
+  const {
+    openViewStatistics,
+    dialogs: statsDialogs,
+    error: statsError,
+    clearError: clearStatsError,
+  } = useGameStatisticsFlow<Game>({
+    accountId,
+    seasonId: currentSeasonId,
+    getTeamName: (game, teamSeasonId) =>
+      teamSeasonId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
   });
 
   const handleOpenEditRecap = (game: Game) => {
@@ -308,6 +321,11 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
           {recapError}
         </Alert>
       )}
+      {statsError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={clearStatsError}>
+          {statsError}
+        </Alert>
+      )}
       <GameListDisplay
         sections={sections}
         canEditGames={canEditGames}
@@ -315,6 +333,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         canEditRecap={canEditRecap}
         onEditRecap={handleOpenEditRecap}
         onViewRecap={handleOpenViewRecap}
+        onViewStatistics={openViewStatistics}
         layout={layout}
         timeZone={timeZone}
         liveSessionGameIds={liveSessionGameIds}
@@ -333,6 +352,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         />
       )}
       {recapDialogs}
+      {statsDialogs}
     </>
   );
 

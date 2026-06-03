@@ -17,6 +17,7 @@ import { GameCardData } from '../../../../../../../../components/GameCard';
 import { getGameSummary } from '../../../../../../../../lib/utils';
 import { convertGameToGameCardData } from '../../../../../../../../utils/gameTransformers';
 import { useGameRecapFlow } from '../../../../../../../../hooks/useGameRecapFlow';
+import { useGameStatisticsFlow } from '../../../../../../../../hooks/useGameStatisticsFlow';
 import { useSchedulePermissions } from '../../../../../../../../hooks/useSchedulePermissions';
 import {
   ScheduleLayout,
@@ -235,6 +236,11 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     fetchRecap: fetchRecapForTeam,
   });
 
+  const { openViewStatistics, dialogs: statsDialogs } = useGameStatisticsFlow<Game>({
+    accountId,
+    seasonId,
+  });
+
   const { triggerPrint } = usePrintAction();
 
   const printTitle = [teamName ?? 'Team', seasonName ?? ''].filter(Boolean).join(' — ');
@@ -381,6 +387,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       canEditRecap={canEditRecap}
       onEditRecap={openEditRecap}
       onViewRecap={openViewRecap}
+      onViewStatistics={openViewStatistics}
       onGameClick={handleGameClick}
       feedback={feedback}
       onFeedbackClose={handleFeedbackClose}
@@ -414,6 +421,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       />
 
       {recapDialogs}
+      {statsDialogs}
 
       <SchedulePrintView
         games={summaryGames}

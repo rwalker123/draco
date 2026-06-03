@@ -16,6 +16,23 @@ interface FormatGameOptions {
   homeTeamName?: string;
   visitorTeamName?: string;
   hasRecap?: boolean;
+  teamsWithStats?: string[];
+}
+
+function teamsWithStatsForGame(
+  homeTeamId: string,
+  visitorTeamId: string,
+  statsMap?: Map<string, Set<string>>,
+  gameId?: string,
+): string[] | undefined {
+  if (!statsMap || gameId === undefined) {
+    return undefined;
+  }
+  const teams = statsMap.get(gameId);
+  if (!teams || teams.size === 0) {
+    return undefined;
+  }
+  return [homeTeamId, visitorTeamId].filter((id) => teams.has(id));
 }
 
 export class ScheduleResponseFormatter {
@@ -59,6 +76,7 @@ export class ScheduleResponseFormatter {
       gameStatusShortText: getGameStatusShortText(game.gamestatus) as GameStatusShortEnumType,
       gameType: game.gametype,
       hasGameRecap: Boolean(options.hasRecap),
+      teamsWithStats: options.teamsWithStats,
       umpire1: game.umpire1 ? { id: game.umpire1.toString() } : undefined,
       umpire2: game.umpire2 ? { id: game.umpire2.toString() } : undefined,
       umpire3: game.umpire3 ? { id: game.umpire3.toString() } : undefined,
@@ -71,6 +89,7 @@ export class ScheduleResponseFormatter {
   static formatGameWithRecaps(
     game: dbScheduleGameWithRecaps,
     teamNames: Map<string, string>,
+    teamsWithStatsMap?: Map<string, Set<string>>,
   ): ScheduleGameWithRecapsType {
     const homeTeamId = game.hteamid.toString();
     const visitorTeamId = game.vteamid.toString();
@@ -79,6 +98,12 @@ export class ScheduleResponseFormatter {
       homeTeamName: teamNames.get(homeTeamId),
       visitorTeamName: teamNames.get(visitorTeamId),
       hasRecap: Boolean(game.gamerecap?.length),
+      teamsWithStats: teamsWithStatsForGame(
+        homeTeamId,
+        visitorTeamId,
+        teamsWithStatsMap,
+        game.id.toString(),
+      ),
     }) as ScheduleGameWithRecapsType;
 
     if (game.gamerecap?.length) {
@@ -96,16 +121,25 @@ export class ScheduleResponseFormatter {
   static formatGamesList(
     games: dbScheduleGameWithDetails[],
     teamNames: Map<string, string>,
+    teamsWithStatsMap?: Map<string, Set<string>>,
   ): GameType[] {
     return games.map((game) => {
       const recapCount = Number(
         (game as { _count?: { gamerecap?: number } })._count?.gamerecap ?? 0,
       );
+      const homeTeamId = game.hteamid.toString();
+      const visitorTeamId = game.vteamid.toString();
 
       return this.formatGame(game, {
-        homeTeamName: teamNames.get(game.hteamid.toString()),
-        visitorTeamName: teamNames.get(game.vteamid.toString()),
+        homeTeamName: teamNames.get(homeTeamId),
+        visitorTeamName: teamNames.get(visitorTeamId),
         hasRecap: recapCount > 0,
+        teamsWithStats: teamsWithStatsForGame(
+          homeTeamId,
+          visitorTeamId,
+          teamsWithStatsMap,
+          game.id.toString(),
+        ),
       });
     });
   }

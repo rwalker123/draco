@@ -25,6 +25,7 @@ const DayListView: React.FC<DayListViewProps> = ({
   onGameResults,
   onEditRecap,
   onViewRecap,
+  onViewStatistics,
   convertGameToGameCardData,
   timeZone,
   filterType,
@@ -133,9 +134,11 @@ const DayListView: React.FC<DayListViewProps> = ({
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {dayGames.map((game) => {
           const gameCardData = convertGameToGameCardData(game);
+          const hasStats = (gameCardData.teamsWithStats?.length ?? 0) > 0;
           const showActions =
             canEditSchedule ||
             (onViewRecap && gameCardData.hasGameRecap) ||
+            (onViewStatistics && hasStats) ||
             (canEditRecap?.(gameCardData) ?? false);
 
           return (
@@ -153,6 +156,9 @@ const DayListView: React.FC<DayListViewProps> = ({
               onEditRecap={canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined}
               onViewRecap={
                 onViewRecap && gameCardData.hasGameRecap ? () => onViewRecap(game) : undefined
+              }
+              onViewStatistics={
+                onViewStatistics && hasStats ? () => onViewStatistics(game) : undefined
               }
               showActions={showActions}
               timeZone={timeZone}
@@ -236,9 +242,11 @@ const DayListView: React.FC<DayListViewProps> = ({
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {games.map((game) => {
                   const gameCardData = convertGameToGameCardData(game);
+                  const hasStats = (gameCardData.teamsWithStats?.length ?? 0) > 0;
                   const showActions =
                     canEditSchedule ||
                     (onViewRecap && gameCardData.hasGameRecap) ||
+                    (onViewStatistics && hasStats) ||
                     (canEditRecap?.(gameCardData) ?? false);
 
                   return (
@@ -260,6 +268,9 @@ const DayListView: React.FC<DayListViewProps> = ({
                         onViewRecap && gameCardData.hasGameRecap
                           ? () => onViewRecap(game)
                           : undefined
+                      }
+                      onViewStatistics={
+                        onViewStatistics && hasStats ? () => onViewStatistics(game) : undefined
                       }
                       showActions={showActions}
                       timeZone={timeZone}
