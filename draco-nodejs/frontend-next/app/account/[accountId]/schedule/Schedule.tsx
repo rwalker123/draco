@@ -17,6 +17,8 @@ import {
   FilterType,
   ViewMode,
 } from '../../../../components/schedule';
+import { getFilteredScheduleSummary } from '../../../../components/schedule/utils/getFilteredScheduleSummary';
+import SeasonSummaryWidget from '../../../../components/schedule/SeasonSummaryWidget';
 import { isGolfLeagueAccountType } from '../../../../utils/accountTypeUtils';
 import GolfScorecardDialog from '../../../../components/golf/GolfScorecardDialog';
 import usePrintAction from '../../../../components/print/usePrintAction';
@@ -123,6 +125,13 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const leagueTeams = filterLeagueSeasonId
     ? (leagueTeamsCache.get(filterLeagueSeasonId) ?? [])
     : [];
+
+  const filteredSummary = getFilteredScheduleSummary({
+    games: filteredGames,
+    timeZone,
+    teamSeasonId: filterTeamSeasonId || undefined,
+    ready: !loadingStaticData,
+  });
 
   const convertGameToGameCardDataWithTeams = (game: Game): GameCardData => {
     return convertGameToGameCardData(game, teams, locations);
@@ -250,7 +259,18 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
           </Button>
         </Box>
       }
-      summaryContent={scheduleHiddenNotice}
+      summaryContent={
+        <>
+          <SeasonSummaryWidget
+            summary={filteredSummary}
+            loading={false}
+            ready={!loadingStaticData}
+            games={filteredGames}
+            timeZone={timeZone}
+          />
+          {scheduleHiddenNotice}
+        </>
+      }
       filteredGames={filteredGames}
       teams={teams}
       locations={locations}
