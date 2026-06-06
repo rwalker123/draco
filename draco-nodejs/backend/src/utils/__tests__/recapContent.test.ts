@@ -35,6 +35,17 @@ describe('collapseHtmlBlankLines', () => {
     expect(collapseHtmlBlankLines(html)).toBe('<p>Only real line.</p>');
   });
 
+  it('removes leading and trailing standalone <br> tags', () => {
+    expect(collapseHtmlBlankLines('<br><br>Text')).toBe('Text');
+    expect(collapseHtmlBlankLines('Text<br><br>')).toBe('Text');
+    expect(collapseHtmlBlankLines('<br /><br/>Text<br /><br>')).toBe('Text');
+  });
+
+  it('removes mixed leading and trailing blank primitives (<br> and empty blocks)', () => {
+    const html = '<br><p><br></p><p>Real line.</p><p><br></p><br>';
+    expect(collapseHtmlBlankLines(html)).toBe('<p>Real line.</p>');
+  });
+
   it('preserves content paragraphs and inline formatting verbatim', () => {
     const html =
       '<p>Royals win <strong>big</strong>.</p>' +

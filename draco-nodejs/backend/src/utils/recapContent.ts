@@ -26,9 +26,10 @@ export const collapseHtmlBlankLines = (
     return blocks.slice(0, limit).join('');
   });
 
-  const leadingEmptyBlocks = new RegExp(`^(?:\\s*${EMPTY_BLOCK})+`, 'i');
-  const trailingEmptyBlocks = new RegExp(`(?:${EMPTY_BLOCK}\\s*)+$`, 'i');
-  result = result.replace(leadingEmptyBlocks, '').replace(trailingEmptyBlocks, '');
+  const BLANK_UNIT = `(?:${EMPTY_BLOCK}|${BR})`;
+  const leadingBlanks = new RegExp(`^(?:\\s*${BLANK_UNIT})+`, 'i');
+  const trailingBlanks = new RegExp(`(?:${BLANK_UNIT}\\s*)+$`, 'i');
+  result = result.replace(leadingBlanks, '').replace(trailingBlanks, '');
 
   return result.trim();
 };
