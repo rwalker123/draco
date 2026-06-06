@@ -40,6 +40,7 @@ import { getGameStatusText } from '../utils/gameStatus.js';
 import { GameStatus } from '../types/gameEnums.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { sanitizePlainText } from '../utils/htmlSanitizer.js';
+import { collapseHtmlBlankLines } from '../utils/recapContent.js';
 
 interface GameListFilters {
   startDate?: Date;
@@ -896,7 +897,7 @@ export class ScheduleService {
       return '';
     }
 
-    return recap.recap;
+    return collapseHtmlBlankLines(recap.recap);
   }
 
   async upsertGameRecap(
@@ -915,8 +916,9 @@ export class ScheduleService {
 
     this.ensureTeamInGame(game, teamSeasonId);
 
-    const recap = await this.scheduleRepository.upsertRecap(gameId, teamSeasonId, payload.recap);
-    return recap.recap;
+    const normalized = collapseHtmlBlankLines(payload.recap);
+    const recap = await this.scheduleRepository.upsertRecap(gameId, teamSeasonId, normalized);
+    return collapseHtmlBlankLines(recap.recap);
   }
 
   private async validateTeamsBelongToLeagueSeason(
