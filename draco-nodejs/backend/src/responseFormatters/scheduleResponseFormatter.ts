@@ -8,6 +8,7 @@ import {
 import { dbScheduleGameWithDetails, dbScheduleGameWithRecaps } from '../repositories/index.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameStatus.js';
+import { collapseHtmlBlankLines } from '../utils/recapContent.js';
 import { formatFieldFromAvailableField } from './fieldFormatterUtils.js';
 
 export type ScheduleGameWithRecapsType = GamesWithRecapsType['games'][number];
@@ -111,7 +112,7 @@ export class ScheduleResponseFormatter {
         team: {
           id: recap.teamid.toString(),
         },
-        recap: recap.recap,
+        recap: collapseHtmlBlankLines(recap.recap),
       }));
     }
 
