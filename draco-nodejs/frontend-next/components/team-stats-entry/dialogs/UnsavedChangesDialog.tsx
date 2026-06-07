@@ -24,19 +24,26 @@ interface UnsavedChangesDialogProps {
   onClose: () => void;
 }
 
+const TAB_LABELS: Record<UnsavedChangesPrompt['tab'], string> = {
+  batting: 'Batting',
+  pitching: 'Pitching',
+  recap: 'Recap',
+  lineScore: 'Line Score',
+};
+
 const buildDescription = (prompt: UnsavedChangesPrompt | null): string => {
   if (!prompt) {
     return '';
   }
 
   const { reason, playerName, tab } = prompt;
-  const capitalizedTab = tab.charAt(0).toUpperCase() + tab.slice(1);
+  const tabLabel = TAB_LABELS[tab];
 
   switch (reason) {
     case 'switch-row':
       return `You have unsaved changes for ${playerName}. Save or discard them before editing another row.`;
     case 'tab-change':
-      return `You have unsaved changes for ${playerName}. Save or discard them before leaving the ${capitalizedTab} tab.`;
+      return `You have unsaved changes for ${playerName}. Save or discard them before leaving the ${tabLabel} tab.`;
     case 'exit-edit':
       return `You have unsaved changes for ${playerName}. Save or discard them before exiting edit mode.`;
     case 'game-change':
