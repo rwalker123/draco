@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -183,60 +183,17 @@ const GameLineScoreSection = forwardRef<GameLineScoreSectionHandle, GameLineScor
       setSaveError(null);
     };
 
+    const handleRef = useRef({ homeDirty, awayDirty, handleSave, handleDiscard });
+    handleRef.current = { homeDirty, awayDirty, handleSave, handleDiscard };
+
     useImperativeHandle(
       ref,
       () => ({
-        hasDirtyContent: () => homeDirty || awayDirty,
-        saveContent: async (): Promise<boolean> => {
-          setSaveError(null);
-          const payload: UpsertLineScoreType = {};
-          if (homeEditable && homeDirty) {
-            payload.home = toUpsertSide(home);
-          }
-          if (awayEditable && awayDirty) {
-            payload.away = toUpsertSide(away);
-          }
-          if (!payload.home && !payload.away) {
-            return true;
-          }
-          setIsSaving(true);
-          try {
-            await onSave(payload);
-            return true;
-          } catch (err) {
-            setSaveError(err instanceof Error ? err.message : 'Failed to save line score.');
-            return false;
-          } finally {
-            setIsSaving(false);
-          }
-        },
-        discardContent: () => {
-          setHome(
-            baselineHome
-              ? toEditableSide(baselineHome)
-              : { runsByInning: [], errors: null, hitsOverride: null },
-          );
-          setAway(
-            baselineAway
-              ? toEditableSide(baselineAway)
-              : { runsByInning: [], errors: null, hitsOverride: null },
-          );
-          setInningCount(lineScore ? getInningCount(lineScore) : 7);
-          setSaveError(null);
-        },
+        hasDirtyContent: () => handleRef.current.homeDirty || handleRef.current.awayDirty,
+        saveContent: () => handleRef.current.handleSave(),
+        discardContent: () => handleRef.current.handleDiscard(),
       }),
-      [
-        home,
-        away,
-        homeDirty,
-        awayDirty,
-        homeEditable,
-        awayEditable,
-        onSave,
-        baselineHome,
-        baselineAway,
-        lineScore,
-      ],
+      [],
     );
 
     if (loading) {
