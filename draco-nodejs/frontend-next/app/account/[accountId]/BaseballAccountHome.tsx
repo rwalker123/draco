@@ -792,6 +792,12 @@ const BaseballAccountHome: React.FC = () => {
               <Box sx={{ order: { xs: 0 }, minWidth: 0 }}>{joinLeagueDashboard}</Box>
             )}
 
+            {currentSeason && !scheduleHidden ? (
+              <Box sx={{ order: { xs: 3 }, minWidth: 0, '&:empty': { display: 'none' } }}>
+                <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
+              </Box>
+            ) : null}
+
             {showInformationWidget && accountIdStr ? (
               <Box sx={{ order: { xs: 7 }, minWidth: 0 }}>
                 <InformationWidget
@@ -942,12 +948,6 @@ const BaseballAccountHome: React.FC = () => {
                   onWatchLiveScoring={handleWatchLiveScoring}
                   refreshTrigger={scoreboardRefreshTrigger}
                 />
-              </Box>
-            ) : null}
-
-            {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 3 }, minWidth: 0, '&:empty': { display: 'none' } }}>
-                <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
               </Box>
             ) : null}
 
