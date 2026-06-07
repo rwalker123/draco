@@ -1,15 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  List,
-  ListItemButton,
-  ListItemText,
-} from '@mui/material';
-import MuiButton from '@mui/material/Button';
-import GameStatisticsDialog from '../components/GameStatisticsDialog';
+import GameStatisticsDialog, { type StatsTab } from '../components/GameStatisticsDialog';
+import { useUserTeams } from './useUserTeams';
 import { GameStatus } from '@/types/schedule';
 
 export interface StatisticsGameBase {
@@ -30,16 +21,6 @@ export interface StatisticsGameBase {
   } | null;
 }
 
-interface StatisticsSelectionOption {
-  id: string;
-  name: string;
-}
-
-interface StatisticsSelectionState<GameType extends StatisticsGameBase> {
-  game: GameType;
-  options: StatisticsSelectionOption[];
-}
-
 interface StatisticsDialogState<GameType extends StatisticsGameBase> {
   game: GameType;
   teamSeasonId: string;
@@ -50,6 +31,8 @@ interface StatisticsDialogState<GameType extends StatisticsGameBase> {
   visitorScore?: number;
   homeTeamName?: string;
   visitorTeamName?: string;
+  statsTabs?: StatsTab[];
+  initialTeamSeasonId?: string;
 }
 
 export interface UseGameStatisticsFlowParams<GameType extends StatisticsGameBase> {
@@ -71,10 +54,8 @@ export function useGameStatisticsFlow<GameType extends StatisticsGameBase>(
 ): UseGameStatisticsFlowResult<GameType> {
   const { accountId, seasonId, resolveSeasonId, getTeamName } = params;
 
+  const { isUserTeam } = useUserTeams(accountId);
   const [dialogState, setDialogState] = useState<StatisticsDialogState<GameType> | null>(null);
-  const [selectionState, setSelectionState] = useState<StatisticsSelectionState<GameType> | null>(
-    null,
-  );
   const [error, setError] = useState<string | null>(null);
 
   const deriveSeasonId = (game: GameType): string | null => {
@@ -111,14 +92,17 @@ export function useGameStatisticsFlow<GameType extends StatisticsGameBase>(
 
   const resolveGameDate = (game: GameType): string | undefined => game.gameDate ?? game.date;
 
-  const openDialog = (game: GameType, teamSeasonId: string) => {
+  const openDialog = (
+    game: GameType,
+    teamSeasonId: string,
+    options: { statsTabs?: StatsTab[]; initialTeamSeasonId?: string } = {},
+  ) => {
     const seasonIdentifier = deriveSeasonId(game);
     if (!seasonIdentifier) {
       setError('Missing season information for the selected game.');
       return;
     }
 
-    setSelectionState(null);
     setError(null);
     setDialogState({
       game,
@@ -130,6 +114,8 @@ export function useGameStatisticsFlow<GameType extends StatisticsGameBase>(
       visitorScore: typeof game.visitorScore === 'number' ? game.visitorScore : undefined,
       homeTeamName: game.homeTeamName ?? resolveTeamName(game, game.homeTeamId),
       visitorTeamName: game.visitorTeamName ?? resolveTeamName(game, game.visitorTeamId),
+      statsTabs: options.statsTabs,
+      initialTeamSeasonId: options.initialTeamSeasonId,
     });
   };
 
@@ -152,25 +138,19 @@ export function useGameStatisticsFlow<GameType extends StatisticsGameBase>(
       return;
     }
 
-    if (eligibleTeamIds.length === 1) {
-      openDialog(game, eligibleTeamIds[0]);
-      return;
-    }
+    const statsTabs: StatsTab[] = eligibleTeamIds.map((teamId) => ({
+      teamSeasonId: teamId,
+      teamName: resolveTeamName(game, teamId),
+    }));
 
-    setSelectionState({
-      game,
-      options: eligibleTeamIds.map((teamId) => ({
-        id: teamId,
-        name: resolveTeamName(game, teamId),
-      })),
+    const userTeamTab = statsTabs.find((tab) => isUserTeam(tab.teamSeasonId));
+    const homeTeamTab = statsTabs.find((tab) => tab.teamSeasonId === game.homeTeamId);
+    const defaultTab = userTeamTab ?? homeTeamTab ?? statsTabs[0];
+
+    openDialog(game, defaultTab.teamSeasonId, {
+      statsTabs,
+      initialTeamSeasonId: defaultTab.teamSeasonId,
     });
-  };
-
-  const handleSelection = (teamSeasonId: string) => {
-    if (!selectionState) {
-      return;
-    }
-    openDialog(selectionState.game, teamSeasonId);
   };
 
   const clearError = () => setError(null);
@@ -191,31 +171,9 @@ export function useGameStatisticsFlow<GameType extends StatisticsGameBase>(
           visitorScore={dialogState.visitorScore}
           homeTeamName={dialogState.homeTeamName}
           visitorTeamName={dialogState.visitorTeamName}
+          statsTabs={dialogState.statsTabs}
+          initialTeamSeasonId={dialogState.initialTeamSeasonId}
         />
-      )}
-      {selectionState && (
-        <Dialog open onClose={() => setSelectionState(null)} fullWidth maxWidth="xs">
-          <DialogTitle
-            sx={{
-              fontWeight: 700,
-              color: (theme) => theme.palette.widget.headerText,
-            }}
-          >
-            Select Team Statistics to View
-          </DialogTitle>
-          <DialogContent dividers>
-            <List>
-              {selectionState.options.map((option) => (
-                <ListItemButton key={option.id} onClick={() => handleSelection(option.id)}>
-                  <ListItemText primary={option.name} secondary="View statistics" />
-                </ListItemButton>
-              ))}
-            </List>
-          </DialogContent>
-          <DialogActions>
-            <MuiButton onClick={() => setSelectionState(null)}>Cancel</MuiButton>
-          </DialogActions>
-        </Dialog>
       )}
     </>
   );

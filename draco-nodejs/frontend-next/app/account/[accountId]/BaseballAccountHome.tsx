@@ -18,13 +18,13 @@ import SponsorCard from '../../../components/sponsors/SponsorCard';
 import LeadersWidget from '../../../components/statistics/LeadersWidget';
 import {
   getAccountById,
-  getAccountUserTeams,
   listSeasonLeagueSeasons,
   getActiveBaseballLiveScoringSessions,
 } from '@draco/shared-api-client';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { useAccountMembership } from '../../../hooks/useAccountMembership';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
+import { useUserTeams } from '../../../hooks/useUserTeams';
 import { unwrapApiResult } from '@/utils/apiResult';
 import {
   AccountSeasonWithStatusType,
@@ -55,7 +55,6 @@ import type { Game } from '@/components/GameListDisplay';
 const BaseballAccountHome: React.FC = () => {
   const [account, setAccount] = useState<AccountType | null>(null);
   const [currentSeason, setCurrentSeason] = useState<AccountSeasonWithStatusType | null>(null);
-  const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accountSponsors, setAccountSponsors] = useState<SponsorType[]>([]);
@@ -82,6 +81,15 @@ const BaseballAccountHome: React.FC = () => {
     error: membershipError,
   } = useAccountMembership(accountIdStr);
   const { currentSeasonScheduleVisible, fetchCurrentSeason } = useCurrentSeason(accountIdStr ?? '');
+  const { teams: rawUserTeams } = useUserTeams(accountIdStr);
+  const userTeams: UserTeam[] = rawUserTeams.map((team) => ({
+    id: team.id,
+    name: team.name ?? 'Team',
+    leagueName: team.league?.name ?? 'Unknown League',
+    divisionName: team.division?.name ?? undefined,
+    teamId: team.team?.id,
+    logoUrl: team.team?.logoUrl ?? undefined,
+  }));
 
   useEffect(() => {
     if (accountIdStr) {
@@ -586,55 +594,6 @@ const BaseballAccountHome: React.FC = () => {
     };
   }, [accountIdStr, currentSeason?.id, apiClient]);
 
-  // Fetch user teams if logged in
-  useEffect(() => {
-    if (!accountIdStr || !user || !token) return;
-
-    const controller = new AbortController();
-
-    const fetchUserTeams = async () => {
-      try {
-        const result = await getAccountUserTeams({
-          client: apiClient,
-          path: { accountId: accountIdStr },
-          signal: controller.signal,
-          throwOnError: false,
-        });
-
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
-
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        const normalizedTeams = Array.isArray(teamsResponse) ? teamsResponse : [];
-        const teams: UserTeam[] = normalizedTeams.map((team) => ({
-          id: team.id,
-          name: team.name ?? 'Team',
-          leagueName: team.league?.name ?? 'Unknown League',
-          divisionName: team.division?.name ?? undefined,
-          teamId: team.team?.id,
-          logoUrl: team.team?.logoUrl ?? undefined,
-        }));
-
-        setUserTeams(teams);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.warn('Failed to fetch user teams:', err);
-      }
-    };
-
-    fetchUserTeams();
-
-    return () => {
-      controller.abort();
-    };
-  }, [accountIdStr, user, token, apiClient]);
-
   useEffect(() => {
     if (!accountIdStr) return;
 
@@ -833,6 +792,12 @@ const BaseballAccountHome: React.FC = () => {
               <Box sx={{ order: { xs: 0 }, minWidth: 0 }}>{joinLeagueDashboard}</Box>
             )}
 
+            {currentSeason && !scheduleHidden ? (
+              <Box sx={{ order: { xs: 3 }, minWidth: 0, '&:empty': { display: 'none' } }}>
+                <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
+              </Box>
+            ) : null}
+
             {showInformationWidget && accountIdStr ? (
               <Box sx={{ order: { xs: 7 }, minWidth: 0 }}>
                 <InformationWidget
@@ -983,12 +948,6 @@ const BaseballAccountHome: React.FC = () => {
                   onWatchLiveScoring={handleWatchLiveScoring}
                   refreshTrigger={scoreboardRefreshTrigger}
                 />
-              </Box>
-            ) : null}
-
-            {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 3 }, minWidth: 0, '&:empty': { display: 'none' } }}>
-                <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
               </Box>
             ) : null}
 

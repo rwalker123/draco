@@ -1,4 +1,11 @@
-import { PrismaClient, Prisma, leagueschedule, teamsseason, gamerecap } from '#prisma/client';
+import {
+  PrismaClient,
+  Prisma,
+  leagueschedule,
+  teamsseason,
+  gamerecap,
+  gamelinescore,
+} from '#prisma/client';
 import {
   IScheduleRepository,
   ScheduleListFilters,
@@ -479,6 +486,49 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       return new Map();
     }
     return BatchQueryHelper.batchTeamNames(this.prisma, teamIds);
+  }
+
+  async findLineScore(gameId: bigint): Promise<gamelinescore | null> {
+    return this.prisma.gamelinescore.findUnique({
+      where: { gameid: gameId },
+    });
+  }
+
+  async upsertLineScoreSides(
+    gameId: bigint,
+    sides: { home?: Prisma.InputJsonValue; away?: Prisma.InputJsonValue },
+  ): Promise<gamelinescore> {
+    const update: Prisma.gamelinescoreUpdateInput = {};
+    if (sides.home !== undefined) {
+      update.home = sides.home;
+    }
+    if (sides.away !== undefined) {
+      update.away = sides.away;
+    }
+
+    return this.prisma.gamelinescore.upsert({
+      where: { gameid: gameId },
+      update,
+      create: {
+        gameid: gameId,
+        ...(sides.home !== undefined ? { home: sides.home } : {}),
+        ...(sides.away !== undefined ? { away: sides.away } : {}),
+      },
+    });
+  }
+
+  async sumBattingHitsByGame(gameId: bigint): Promise<Map<string, number>> {
+    const groups = await this.prisma.batstatsum.groupBy({
+      by: ['teamid'],
+      where: { gameid: gameId },
+      _sum: { h: true },
+    });
+
+    const result = new Map<string, number>();
+    for (const group of groups) {
+      result.set(group.teamid.toString(), group._sum.h ?? 0);
+    }
+    return result;
   }
 
   async getTeamsWithStatsByGameIds(gameIds: bigint[]): Promise<Map<string, Set<string>>> {

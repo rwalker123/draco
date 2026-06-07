@@ -1322,9 +1322,22 @@ model leagueschedule {
   pitchstatsum                                        pitchstatsum[]
   playerrecap                                         playerrecap[]
   baseballlivescoringsession                          baseballlivescoringsession?
+  gamelinescore                                       gamelinescore?
 
   @@index([hteamid], map: "fki_L")
   @@index([vteamid], map: "fki_fk_leagueschedule_visitingteam")
+}
+
+model gamelinescore {
+  id             BigInt         @id @default(autoincrement())
+  gameid         BigInt         @unique
+  home           Json?
+  away           Json?
+  createdat      DateTime       @default(now()) @db.Timestamptz(6)
+  updatedat      DateTime       @updatedAt @db.Timestamptz(6)
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_gamelinescore_leagueschedule")
+
+  @@index([gameid], map: "idx_gamelinescore_gameid")
 }
 
 model leagueseason {

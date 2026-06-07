@@ -18,7 +18,6 @@ import { getGameSummary } from '../../../../../../../../lib/utils';
 import { convertGameToGameCardData } from '../../../../../../../../utils/gameTransformers';
 import { useGameRecapFlow } from '../../../../../../../../hooks/useGameRecapFlow';
 import { useGameStatisticsFlow } from '../../../../../../../../hooks/useGameStatisticsFlow';
-import { useSchedulePermissions } from '../../../../../../../../hooks/useSchedulePermissions';
 import {
   ScheduleLayout,
   useScheduleFilters,
@@ -206,8 +205,6 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     onError: setError,
   });
 
-  const { canEditRecap } = useSchedulePermissions({ accountId, teamSeasonId });
-
   const convertGameToGameCardDataWithTeams = (game: Game): GameCardData => {
     return convertGameToGameCardData(game, [], locations);
   };
@@ -225,7 +222,6 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
   };
 
   const {
-    openEditRecap,
     openViewRecap,
     dialogs: recapDialogs,
     error: recapError,
@@ -384,8 +380,6 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       setFilterDate={updateFilterDate}
       timeZone={timeZone}
       convertGameToGameCardData={convertGameToGameCardDataWithTeams}
-      canEditRecap={canEditRecap}
-      onEditRecap={openEditRecap}
       onViewRecap={openViewRecap}
       onViewStatistics={openViewStatistics}
       onGameClick={handleGameClick}

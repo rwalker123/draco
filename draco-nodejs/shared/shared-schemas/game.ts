@@ -185,6 +185,39 @@ export const UpsertGameRecapSchema = GameRecapSchema.omit({
   team: true,
 });
 
+export const LineScoreSideInputSchema = z.object({
+  runsByInning: z
+    .array(z.number().int().min(0).max(99).nullable())
+    .max(18)
+    .describe('Runs per inning; null = not entered. Grows for extra innings (max 18).'),
+  errors: z.number().int().min(0).max(99).nullable(),
+  hitsOverride: z.number().int().min(0).max(999).nullable().optional(),
+});
+
+export const UpsertLineScoreSchema = z.object({
+  home: LineScoreSideInputSchema.optional(),
+  away: LineScoreSideInputSchema.optional(),
+});
+
+export const LineScoreSideSchema = z.object({
+  teamSeasonId: bigintToStringSchema,
+  teamName: z.string(),
+  runsByInning: z.array(z.number().int().min(0).max(99).nullable()),
+  errors: z.number().int().min(0).max(99).nullable(),
+  hitsOverride: z.number().int().min(0).max(999).nullable(),
+  runs: z.number().int().min(0).max(99),
+  hits: z.number().int().min(0).nullable(),
+  authoritative: z.boolean().describe('True when entered by its own team'),
+  enteredByContactId: bigintToStringSchema.nullable().optional(),
+  enteredAt: isoDateTimeSchema.nullable().optional(),
+});
+
+export const LineScoreSchema = z.object({
+  gameId: bigintToStringSchema,
+  home: LineScoreSideSchema,
+  away: LineScoreSideSchema,
+});
+
 export const GameTeamRecipientCountSchema = z.object({
   count: z.number().int().min(0),
 });
@@ -218,3 +251,7 @@ export type GameTypeEnumType = z.infer<typeof GameTypeEnumSchema>;
 export type RecentGamesQueryType = z.infer<typeof RecentGamesQuerySchema>;
 export type GameRecapsType = z.infer<typeof GameRecapsSchema>;
 export type GameTeamRecipientCountType = z.infer<typeof GameTeamRecipientCountSchema>;
+export type LineScoreSideInputType = z.infer<typeof LineScoreSideInputSchema>;
+export type UpsertLineScoreType = z.infer<typeof UpsertLineScoreSchema>;
+export type LineScoreSideType = z.infer<typeof LineScoreSideSchema>;
+export type LineScoreType = z.infer<typeof LineScoreSchema>;

@@ -16,14 +16,11 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import Grid from '@mui/material/Grid';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  getAccountUserTeams,
-  getCurrentUserContact,
-  getMyAccounts,
-} from '@draco/shared-api-client';
+import { getCurrentUserContact, getMyAccounts } from '@draco/shared-api-client';
 import type { AccountType, BaseContactType, TeamSeasonType } from '@draco/shared-schemas';
 import { ApiClientError, unwrapApiResult } from '@/utils/apiResult';
 import { useApiClient } from '@/hooks/useApiClient';
+import { getUserTeamsCached } from '@/lib/userTeamsCache';
 import { useAuth } from '@/context/AuthContext';
 import { useAccount } from '@/context/AccountContext';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
@@ -254,22 +251,12 @@ const ProfilePageClient: React.FC = () => {
       await Promise.all(
         organizationsToFetch.map(async (organization) => {
           try {
-            const result = await getAccountUserTeams({
-              client: apiClient,
-              path: { accountId: organization.id },
-              signal: controller.signal,
-              throwOnError: false,
-            });
-
-            const data = unwrapApiResult(result, 'Failed to load teams for this organization.') as
-              | TeamSeasonType[]
-              | undefined;
+            const normalizedTeams = await getUserTeamsCached(organization.id, token, apiClient);
 
             if (controller.signal.aborted) {
               return;
             }
 
-            const normalizedTeams = Array.isArray(data) ? data : [];
             const userTeams = normalizedTeams.map((team) => mapTeamSeasonToUserTeam(team));
 
             setTeamsByAccount((prev) => ({

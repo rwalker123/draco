@@ -1,4 +1,4 @@
-import { Prisma, leagueschedule, teamsseason, gamerecap } from '#prisma/client';
+import { Prisma, leagueschedule, teamsseason, gamerecap, gamelinescore } from '#prisma/client';
 import { IBaseRepository } from './IBaseRepository.js';
 import {
   dbScheduleGameWithDetails,
@@ -88,6 +88,12 @@ export interface IScheduleRepository extends IBaseRepository<leagueschedule> {
   countUmpireAssignmentsForAccount(umpireId: bigint, accountId: bigint): Promise<number>;
   findRecap(gameId: bigint, teamSeasonId: bigint): Promise<dbGameRecap | null>;
   upsertRecap(gameId: bigint, teamSeasonId: bigint, recap: string): Promise<gamerecap>;
+  findLineScore(gameId: bigint): Promise<gamelinescore | null>;
+  upsertLineScoreSides(
+    gameId: bigint,
+    sides: { home?: Prisma.InputJsonValue; away?: Prisma.InputJsonValue },
+  ): Promise<gamelinescore>;
+  sumBattingHitsByGame(gameId: bigint): Promise<Map<string, number>>;
   getTeamNames(teamIds: bigint[]): Promise<Map<string, string>>;
   getTeamsWithStatsByGameIds(gameIds: bigint[]): Promise<Map<string, Set<string>>>;
   listUpcomingGamesForTeam(

@@ -214,6 +214,12 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
+        teamSeasonId="1"
+        canManageAllTeams={false}
+        lineScoreData={null}
+        lineScoreLoading={false}
+        lineScoreError={null}
+        onLineScoreSave={asyncNoop}
       />,
     );
 
@@ -259,6 +265,12 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
+        teamSeasonId="1"
+        canManageAllTeams={false}
+        lineScoreData={null}
+        lineScoreLoading={false}
+        lineScoreError={null}
+        onLineScoreSave={asyncNoop}
       />,
     );
 
@@ -306,6 +318,12 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
+        teamSeasonId="1"
+        canManageAllTeams={false}
+        lineScoreData={null}
+        lineScoreLoading={false}
+        lineScoreError={null}
+        onLineScoreSave={asyncNoop}
       />,
     );
 
@@ -354,6 +372,12 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
+        teamSeasonId="1"
+        canManageAllTeams={false}
+        lineScoreData={null}
+        lineScoreLoading={false}
+        lineScoreError={null}
+        onLineScoreSave={asyncNoop}
       />,
     );
 
@@ -402,6 +426,12 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
+        teamSeasonId="1"
+        canManageAllTeams={false}
+        lineScoreData={null}
+        lineScoreLoading={false}
+        lineScoreError={null}
+        onLineScoreSave={asyncNoop}
       />,
     );
 
@@ -450,6 +480,12 @@ describe('StatsTabsCard', () => {
         recapLoading={false}
         recapError={null}
         onRecapSave={asyncNoop}
+        teamSeasonId="1"
+        canManageAllTeams={false}
+        lineScoreData={null}
+        lineScoreLoading={false}
+        lineScoreError={null}
+        onLineScoreSave={asyncNoop}
       />,
     );
 

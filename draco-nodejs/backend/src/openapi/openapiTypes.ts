@@ -239,6 +239,8 @@ import {
   UpdateGameResultsSchema,
   UpsertGameSchema,
   UpsertGameRecapSchema,
+  LineScoreSchema,
+  UpsertLineScoreSchema,
   GameTeamRecipientCountSchema,
   CreatePlayerSurveyCategorySchema,
   UpdatePlayerSurveyCategorySchema,
@@ -1253,6 +1255,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
   );
   const UpsertGameSchemaRef = registry.register('UpsertGame', UpsertGameSchema);
   const UpsertGameRecapSchemaRef = registry.register('UpsertGameRecap', UpsertGameRecapSchema);
+  const LineScoreSchemaRef = registry.register('LineScore', LineScoreSchema);
+  const UpsertLineScoreSchemaRef = registry.register('UpsertLineScore', UpsertLineScoreSchema);
   const GameTeamRecipientCountSchemaRef = registry.register(
     'GameTeamRecipientCount',
     GameTeamRecipientCountSchema,
@@ -1911,6 +1915,8 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,
+    LineScoreSchemaRef,
+    UpsertLineScoreSchemaRef,
     GameTeamRecipientCountSchemaRef,
     UpsertSeasonSchemaRef,
     UpsertDivisionSeasonSchemaRef,

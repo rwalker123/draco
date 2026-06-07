@@ -2,12 +2,12 @@
 
 import React from 'react';
 import {
-  getAccountUserTeams as apiGetAccountUserTeams,
   getTeamSeasonDetails as apiGetTeamSeasonDetails,
   listAccountSeasons as apiListAccountSeasons,
 } from '@draco/shared-api-client';
-import type { SeasonType, TeamSeasonRecordType, TeamSeasonType } from '@draco/shared-schemas';
+import type { SeasonType, TeamSeasonRecordType } from '@draco/shared-schemas';
 import { unwrapApiResult } from '../utils/apiResult';
+import { getUserTeamsCached } from '../lib/userTeamsCache';
 import { useApiClient } from './useApiClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -185,19 +185,11 @@ export function useTeamHandoutHeader({
       setNotMember(false);
 
       try {
-        const result = await apiGetAccountUserTeams({
-          client: apiClient,
-          path: { accountId: accountIdValue },
-          signal: controller.signal,
-          throwOnError: false,
-        });
+        const teams = await getUserTeamsCached(accountIdValue, token, apiClient);
 
         if (controller.signal.aborted) {
           return;
         }
-
-        const payload = unwrapApiResult(result, 'Failed to load team memberships');
-        const teams = Array.isArray(payload) ? (payload as TeamSeasonType[]) : [];
 
         const match = teams.find(
           (team) => team && typeof team === 'object' && team.team?.id === teamIdValue,

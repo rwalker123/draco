@@ -9,10 +9,40 @@ import {
   type UseGameStatisticsFlowResult,
   useGameStatisticsFlow,
 } from '../useGameStatisticsFlow';
+import type { StatsTab } from '../../components/GameStatisticsDialog';
 
 vi.mock('../../components/GameStatisticsDialog', () => ({
-  default: ({ open, teamName }: { open: boolean; teamName?: string }) =>
-    open ? <div data-testid="stats-dialog">StatsDialog:{teamName}</div> : null,
+  default: ({
+    open,
+    statsTabs,
+    initialTeamSeasonId,
+  }: {
+    open: boolean;
+    statsTabs?: StatsTab[];
+    initialTeamSeasonId?: string;
+  }) =>
+    open ? (
+      <div data-testid="stats-dialog" data-initial={initialTeamSeasonId}>
+        {(statsTabs ?? []).map((tab) => (
+          <span key={tab.teamSeasonId} data-testid={`stats-tab-${tab.teamSeasonId}`}>
+            {tab.teamName}
+          </span>
+        ))}
+      </div>
+    ) : null,
+}));
+
+let userTeamIds: string[] = [];
+
+vi.mock('../useUserTeams', () => ({
+  useUserTeams: () => ({
+    teams: [],
+    loading: false,
+    error: null,
+    initialized: true,
+    isUserTeam: (teamSeasonId: string) => userTeamIds.includes(teamSeasonId),
+    refetch: () => {},
+  }),
 }));
 
 const baseGame: Game = {
@@ -55,8 +85,12 @@ const baseParams: UseGameStatisticsFlowParams<Game> = {
     teamId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
 };
 
+beforeEach(() => {
+  userTeamIds = [];
+});
+
 describe('useGameStatisticsFlow', () => {
-  it('reports an error and shows neither dialog nor picker when no team has stats', async () => {
+  it('reports an error and shows no dialog when no team has stats', async () => {
     const hookRef = React.createRef<UseGameStatisticsFlowResult<Game>>();
     render(<HookHarness ref={hookRef} params={baseParams} />);
 
@@ -66,10 +100,9 @@ describe('useGameStatisticsFlow', () => {
 
     expect(hookRef.current?.error).toBe('No statistics available for this game.');
     expect(screen.queryByTestId('stats-dialog')).not.toBeInTheDocument();
-    expect(screen.queryByText('Select Team Statistics to View')).not.toBeInTheDocument();
   });
 
-  it('opens the stats dialog directly when only one team has stats', async () => {
+  it('opens the stats dialog with a single tab when only one team has stats', async () => {
     const hookRef = React.createRef<UseGameStatisticsFlowResult<Game>>();
     render(<HookHarness ref={hookRef} params={baseParams} />);
 
@@ -80,11 +113,13 @@ describe('useGameStatisticsFlow', () => {
       });
     });
 
-    expect(screen.getByTestId('stats-dialog')).toHaveTextContent('StatsDialog:Visitor Team');
-    expect(screen.queryByText('Select Team Statistics to View')).not.toBeInTheDocument();
+    const dialog = screen.getByTestId('stats-dialog');
+    expect(dialog).toHaveAttribute('data-initial', 'visitor-team');
+    expect(screen.getByTestId('stats-tab-visitor-team')).toHaveTextContent('Visitor Team');
+    expect(screen.queryByTestId('stats-tab-home-team')).not.toBeInTheDocument();
   });
 
-  it('prompts for team selection when both teams have stats, then opens the chosen team', async () => {
+  it('opens directly with both tabs (no selection dialog) when both teams have stats', async () => {
     const hookRef = React.createRef<UseGameStatisticsFlowResult<Game>>();
     render(<HookHarness ref={hookRef} params={baseParams} />);
 
@@ -95,15 +130,26 @@ describe('useGameStatisticsFlow', () => {
       });
     });
 
-    expect(screen.getByText('Select Team Statistics to View')).toBeInTheDocument();
-    expect(screen.getByText('Home Team')).toBeInTheDocument();
-    expect(screen.getByText('Visitor Team')).toBeInTheDocument();
-    expect(screen.queryByTestId('stats-dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Select Team Statistics to View')).not.toBeInTheDocument();
+    const dialog = screen.getByTestId('stats-dialog');
+    expect(screen.getByTestId('stats-tab-home-team')).toHaveTextContent('Home Team');
+    expect(screen.getByTestId('stats-tab-visitor-team')).toHaveTextContent('Visitor Team');
+    expect(dialog).toHaveAttribute('data-initial', 'home-team');
+  });
+
+  it("defaults to the authenticated user's team when both teams have stats", async () => {
+    userTeamIds = ['visitor-team'];
+
+    const hookRef = React.createRef<UseGameStatisticsFlowResult<Game>>();
+    render(<HookHarness ref={hookRef} params={baseParams} />);
 
     await act(async () => {
-      screen.getByText('Home Team').click();
+      hookRef.current?.openViewStatistics({
+        ...baseGame,
+        teamsWithStats: [baseGame.homeTeamId, baseGame.visitorTeamId],
+      });
     });
 
-    expect(screen.getByTestId('stats-dialog')).toHaveTextContent('StatsDialog:Home Team');
+    expect(screen.getByTestId('stats-dialog')).toHaveAttribute('data-initial', 'visitor-team');
   });
 });

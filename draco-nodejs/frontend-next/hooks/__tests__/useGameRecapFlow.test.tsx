@@ -18,6 +18,28 @@ vi.mock('../../context/RoleContext', () => ({
   }),
 }));
 
+let userTeamIds: string[] = [];
+
+vi.mock('../useUserTeams', () => ({
+  useUserTeams: () => ({
+    teams: [],
+    loading: false,
+    error: null,
+    initialized: true,
+    isUserTeam: (teamSeasonId: string) => userTeamIds.includes(teamSeasonId),
+    refetch: () => {},
+  }),
+}));
+
+vi.mock('../useApiClient', () => ({
+  useApiClient: () => ({}),
+}));
+
+vi.mock('@draco/shared-api-client', () => ({
+  getGameLineScore: vi.fn().mockResolvedValue({ data: null }),
+  upsertGameRecap: vi.fn(),
+}));
+
 const baseGame: Game = {
   id: 'game-1',
   date: '2024-01-20T18:00:00Z',
@@ -51,6 +73,13 @@ const HookHarness = React.forwardRef<UseGameRecapFlowResult<Game>, HookHarnessPr
 );
 HookHarness.displayName = 'HookHarness';
 
+const teamNameResolver = (game: Game, teamId: string) =>
+  teamId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName;
+
+beforeEach(() => {
+  userTeamIds = [];
+});
+
 describe('useGameRecapFlow', () => {
   it('prompts for team selection when editing with multiple editable teams and no existing recaps', async () => {
     const determineEditableTeams = vi
@@ -62,8 +91,7 @@ describe('useGameRecapFlow', () => {
       seasonId: 'season-1',
       fetchRecap: vi.fn().mockResolvedValue(null),
       determineEditableTeams,
-      getTeamName: (game, teamId) =>
-        teamId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
+      getTeamName: teamNameResolver,
     };
 
     const hookRef = React.createRef<UseGameRecapFlowResult<Game>>();
@@ -78,5 +106,92 @@ describe('useGameRecapFlow', () => {
     expect(screen.getByText('Select Team Recap')).toBeInTheDocument();
     expect(screen.getByText('Home Team')).toBeInTheDocument();
     expect(screen.getByText('Visitor Team')).toBeInTheDocument();
+  });
+
+  it('shows both recaps as tabs in the view dialog without a selection dialog', async () => {
+    const fetchRecap = vi
+      .fn<(game: Game, teamSeasonId: string) => Promise<string | null>>()
+      .mockImplementation(async (_game, teamSeasonId) => `<p>${teamSeasonId} recap</p>`);
+
+    const params: UseGameRecapFlowParams<Game> = {
+      accountId: 'account-1',
+      seasonId: 'season-1',
+      fetchRecap,
+      getTeamName: teamNameResolver,
+    };
+
+    const hookRef = React.createRef<UseGameRecapFlowResult<Game>>();
+
+    render(<HookHarness ref={hookRef} params={params} />);
+
+    await act(async () => {
+      await hookRef.current?.openViewRecap({ ...baseGame, hasGameRecap: true });
+    });
+
+    expect(screen.queryByText('Select Team Recap to View')).not.toBeInTheDocument();
+    expect(screen.getByText('Game Recap')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Home Team' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Visitor Team' })).toBeInTheDocument();
+  });
+
+  it('shows the team name without tabs when only one team has a recap', async () => {
+    const fetchRecap = vi
+      .fn<(game: Game, teamSeasonId: string) => Promise<string | null>>()
+      .mockImplementation(async (_game, teamSeasonId) =>
+        teamSeasonId === 'home-team' ? '<p>home-team recap</p>' : null,
+      );
+
+    const params: UseGameRecapFlowParams<Game> = {
+      accountId: 'account-1',
+      seasonId: 'season-1',
+      fetchRecap,
+      getTeamName: teamNameResolver,
+    };
+
+    const hookRef = React.createRef<UseGameRecapFlowResult<Game>>();
+
+    render(<HookHarness ref={hookRef} params={params} />);
+
+    await act(async () => {
+      await hookRef.current?.openViewRecap({ ...baseGame, hasGameRecap: true });
+    });
+
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.getByText('Game Recap')).toBeInTheDocument();
+    expect(screen.getByText('Home Team')).toBeInTheDocument();
+    expect(screen.getByTestId('game-summary-readonly')).toHaveTextContent('home-team recap');
+  });
+
+  it("defaults the active tab to the authenticated user's team", async () => {
+    userTeamIds = ['visitor-team'];
+
+    const fetchRecap = vi
+      .fn<(game: Game, teamSeasonId: string) => Promise<string | null>>()
+      .mockImplementation(async (_game, teamSeasonId) => `<p>${teamSeasonId} recap</p>`);
+
+    const params: UseGameRecapFlowParams<Game> = {
+      accountId: 'account-1',
+      seasonId: 'season-1',
+      fetchRecap,
+      getTeamName: teamNameResolver,
+    };
+
+    const hookRef = React.createRef<UseGameRecapFlowResult<Game>>();
+
+    render(<HookHarness ref={hookRef} params={params} />);
+
+    await act(async () => {
+      await hookRef.current?.openViewRecap({ ...baseGame, hasGameRecap: true });
+    });
+
+    expect(screen.getByRole('tab', { name: 'Visitor Team' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: 'Home Team' })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    );
+    expect(screen.getByTestId('game-summary-readonly')).toHaveTextContent('visitor-team recap');
   });
 });

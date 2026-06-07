@@ -9,7 +9,6 @@ import { useRole } from '../context/RoleContext';
 import { useAccountTimezone } from '../context/AccountContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
 import { getGameStatusShortText, getGameStatusText } from '../utils/gameUtils';
-import { GameStatus } from '../types/schedule';
 import { useAuth } from '../context/AuthContext';
 import { getGameSummary } from '../lib/utils';
 import { useGameRecapFlow } from '../hooks/useGameRecapFlow';
@@ -58,41 +57,13 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     game: Game | null;
   }>({ open: false, game: null });
 
-  const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
+  const { hasRole } = useRole();
   const timeZone = useAccountTimezone();
   const { token } = useAuth();
   const canEditGames = isAccountAdministrator(hasRole, accountId);
 
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
-  };
-
-  const determineEditableTeams = (game: Game): string[] => {
-    if (game.gameStatus !== GameStatus.Completed) {
-      return [];
-    }
-
-    const editableTeamIds: string[] = [];
-    const isAdministrator = hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId);
-
-    const canEditHome =
-      isAdministrator ||
-      hasRoleInTeam('TeamAdmin', game.homeTeamId) ||
-      hasRoleInTeam('TeamManager', game.homeTeamId);
-    const canEditVisitor =
-      isAdministrator ||
-      hasRoleInTeam('TeamAdmin', game.visitorTeamId) ||
-      hasRoleInTeam('TeamManager', game.visitorTeamId);
-
-    if (canEditHome) {
-      editableTeamIds.push(game.homeTeamId);
-    }
-
-    if (canEditVisitor && !editableTeamIds.includes(game.visitorTeamId)) {
-      editableTeamIds.push(game.visitorTeamId);
-    }
-
-    return editableTeamIds;
   };
 
   const fetchRecapForTeam = async (game: Game, teamSeasonId: string): Promise<string | null> => {
@@ -135,17 +106,14 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   };
 
   const {
-    openEditRecap,
     openViewRecap,
     dialogs: recapDialogs,
     error: recapError,
     clearError: clearRecapError,
-    canEditRecap,
   } = useGameRecapFlow<Game>({
     accountId,
     seasonId: currentSeasonId,
     fetchRecap: fetchRecapForTeam,
-    determineEditableTeams,
     getTeamName: (game, teamSeasonId) =>
       teamSeasonId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
     onRecapSaved: handleRecapSaved,
@@ -162,19 +130,6 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
     getTeamName: (game, teamSeasonId) =>
       teamSeasonId === game.homeTeamId ? game.homeTeamName : game.visitorTeamName,
   });
-
-  const handleOpenEditRecap = (game: Game) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug('[ScoreboardBase] openEditRecap click', {
-        gameId: game.id,
-        homeTeamId: game.homeTeamId,
-        visitorTeamId: game.visitorTeamId,
-        hasGameRecap: game.hasGameRecap,
-        availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
-      });
-    }
-    openEditRecap(game);
-  };
 
   const handleOpenViewRecap = (game: Game) => {
     if (process.env.NODE_ENV !== 'production') {
@@ -330,8 +285,6 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         sections={sections}
         canEditGames={canEditGames}
         onEnterGameResults={handleEditGame}
-        canEditRecap={canEditRecap}
-        onEditRecap={handleOpenEditRecap}
         onViewRecap={handleOpenViewRecap}
         onViewStatistics={openViewStatistics}
         layout={layout}

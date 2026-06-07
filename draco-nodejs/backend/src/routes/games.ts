@@ -15,6 +15,7 @@ import {
   UpdateGameResultsSchema,
   UpsertGameRecapSchema,
   UpsertGameSchema,
+  UpsertLineScoreSchema,
 } from '@draco/shared-schemas';
 
 const router = Router({ mergeParams: true });
@@ -334,6 +335,54 @@ router.put(
     );
 
     res.json(recap);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/games/:gameId/line-score
+ * Get the line score (runs by inning + R/H/E) for a game. Public read.
+ */
+router.get(
+  '/:gameId/line-score',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, gameId } = extractGameParams(req.params);
+
+    const lineScore = await scheduleService.getGameLineScore(accountId, seasonId, gameId);
+
+    res.json(lineScore);
+  }),
+);
+
+/**
+ * PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId/line-score
+ * Create or update the line score for a game. Per-side authorization is enforced
+ * in the service: a manager may write their own team's side at any time, the
+ * opposing team's side only until that team has entered it, and admins may write
+ * either side. Body: { home?: LineScoreSideInput, away?: LineScoreSideInput }
+ */
+router.put(
+  '/:gameId/line-score',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, gameId } = extractGameParams(req.params);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const input = UpsertLineScoreSchema.parse(req.body);
+
+    const lineScore = await scheduleService.upsertGameLineScore(
+      accountId,
+      seasonId,
+      gameId,
+      userId,
+      input,
+    );
+
+    res.json(lineScore);
   }),
 );
 

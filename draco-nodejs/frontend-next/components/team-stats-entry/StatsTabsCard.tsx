@@ -9,11 +9,13 @@ import type {
   GameBattingStatsType,
   GamePitchingStatLineType,
   GamePitchingStatsType,
+  LineScoreType,
   PlayerBattingStatsType,
   PlayerPitchingStatsType,
   TeamStatsPlayerSummaryType,
   UpdateGameBattingStatType,
   UpdateGamePitchingStatType,
+  UpsertLineScoreType,
 } from '@draco/shared-schemas';
 
 import AttendanceSection from './AttendanceSection';
@@ -22,6 +24,7 @@ import PitchingStatsSection from './PitchingStatsSection';
 import SeasonBattingStatsSection from './SeasonBattingStatsSection';
 import SeasonPitchingStatsSection from './SeasonPitchingStatsSection';
 import GameRecapSection, { type GameRecapSectionHandle } from './GameRecapSection';
+import GameLineScoreSection, { type GameLineScoreSectionHandle } from './GameLineScoreSection';
 import UnsavedChangesDialog from './dialogs/UnsavedChangesDialog';
 import type {
   EditableGridHandle,
@@ -32,12 +35,14 @@ import type {
   UnsavedChangesReason,
 } from './types';
 
-export type TabKey = 'batting' | 'pitching' | 'recap' | 'attendance';
+export type TabKey = 'batting' | 'pitching' | 'lineScore' | 'recap' | 'attendance';
 
 interface StatsTabsCardProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
   canManageStats: boolean;
+  teamSeasonId: string;
+  canManageAllTeams: boolean;
   enableAttendanceTracking: boolean;
   loading: boolean;
   error: string | null;
@@ -72,6 +77,10 @@ interface StatsTabsCardProps {
   recapLoading: boolean;
   recapError: string | null;
   onRecapSave: (content: string) => Promise<void>;
+  lineScoreData: LineScoreType | null;
+  lineScoreLoading: boolean;
+  lineScoreError: string | null;
+  onLineScoreSave: (payload: UpsertLineScoreType) => Promise<void>;
 }
 
 const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
@@ -80,6 +89,8 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       tab,
       onTabChange,
       canManageStats,
+      teamSeasonId,
+      canManageAllTeams,
       enableAttendanceTracking,
       error,
       selectedGameId,
@@ -113,6 +124,10 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       recapLoading,
       recapError,
       onRecapSave,
+      lineScoreData,
+      lineScoreLoading,
+      lineScoreError,
+      onLineScoreSave,
     },
     ref,
   ) => {
@@ -120,6 +135,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
     const battingGridRef = useRef<EditableGridHandle | null>(null);
     const pitchingGridRef = useRef<EditableGridHandle | null>(null);
     const recapSectionRef = useRef<GameRecapSectionHandle | null>(null);
+    const lineScoreSectionRef = useRef<GameLineScoreSectionHandle | null>(null);
 
     const [battingDirty, setBattingDirty] = useState(false);
     const [pitchingDirty, setPitchingDirty] = useState(false);
@@ -131,8 +147,12 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
     const showAttendanceTab = enableAttendanceTracking && canManageStats && Boolean(selectedGameId);
     const showRecapTab = Boolean(selectedGameId);
+    const showLineScoreTab = Boolean(selectedGameId);
 
     const tabs: TabKey[] = ['batting', 'pitching'];
+    if (showLineScoreTab) {
+      tabs.push('lineScore');
+    }
     if (showRecapTab) {
       tabs.push('recap');
     }
@@ -217,6 +237,27 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
         }
         return false;
       }
+      if (tabKey === 'lineScore') {
+        const handle = lineScoreSectionRef.current;
+        if (!handle || !handle.hasDirtyContent()) {
+          return true;
+        }
+
+        const decision = await requestUnsavedDecision({
+          reason,
+          playerName: 'Line Score',
+          tab: 'lineScore',
+        });
+
+        if (decision === 'save') {
+          return handle.saveContent();
+        }
+        if (decision === 'discard') {
+          handle.discardContent();
+          return true;
+        }
+        return false;
+      }
       return true;
     };
 
@@ -227,7 +268,10 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
       if (
         editMode &&
-        (currentTab === 'batting' || currentTab === 'pitching' || currentTab === 'recap')
+        (currentTab === 'batting' ||
+          currentTab === 'pitching' ||
+          currentTab === 'recap' ||
+          currentTab === 'lineScore')
       ) {
         const ok = await ensureTabClean(currentTab, 'tab-change');
         if (!ok) {
@@ -266,6 +310,10 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
         if (!recapOk) {
           return;
         }
+        const lineScoreOk = await ensureTabClean('lineScore', 'exit-edit');
+        if (!lineScoreOk) {
+          return;
+        }
 
         setEditModeEnabled(false);
       } catch (error) {
@@ -291,6 +339,10 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       if (!recapOk) {
         return;
       }
+      const lineScoreOk = await ensureTabClean('lineScore', 'game-change');
+      if (!lineScoreOk) {
+        return;
+      }
 
       onClearGameSelection();
     };
@@ -300,7 +352,8 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       () => ({
         hasPendingEdits: () => {
           const recapDirty = recapSectionRef.current?.hasDirtyContent() ?? false;
-          return battingDirty || pitchingDirty || recapDirty;
+          const lineScoreDirty = lineScoreSectionRef.current?.hasDirtyContent() ?? false;
+          return battingDirty || pitchingDirty || recapDirty || lineScoreDirty;
         },
         resolvePendingEdits: async (reason: UnsavedChangesReason) => {
           const resolveGrid = async (
@@ -356,6 +409,24 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
             }
           }
 
+          const lineScoreHandle = lineScoreSectionRef.current;
+          if (lineScoreHandle && lineScoreHandle.hasDirtyContent()) {
+            const lineScoreDecision = await new Promise<UnsavedChangesDecision>((resolve) => {
+              unsavedResolverRef.current = resolve;
+              setUnsavedPrompt({ reason, playerName: 'Line Score', tab: 'lineScore' });
+            });
+            if (lineScoreDecision === 'save') {
+              const saved = await lineScoreHandle.saveContent();
+              if (!saved) {
+                return false;
+              }
+            } else if (lineScoreDecision === 'discard') {
+              lineScoreHandle.discardContent();
+            } else {
+              return false;
+            }
+          }
+
           return true;
         },
       }),
@@ -392,6 +463,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
             >
               <Tab label="Batting" />
               <Tab label="Pitching" />
+              {showLineScoreTab && <Tab label="Line Score" />}
               {showRecapTab && <Tab label="Recap" />}
               {showAttendanceTab && <Tab label="Attendance" />}
             </Tabs>
@@ -466,6 +538,21 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                       />
                     )}
 
+                    {currentTab === 'lineScore' && showLineScoreTab && (
+                      <GameLineScoreSection
+                        key={`line-score-${selectedGameId}-${lineScoreData ? 'loaded' : 'pending'}`}
+                        ref={lineScoreSectionRef}
+                        lineScore={lineScoreData}
+                        loading={lineScoreLoading}
+                        error={lineScoreError}
+                        editMode={editMode}
+                        canEdit={canManageStats}
+                        currentTeamSeasonId={teamSeasonId}
+                        canManageAllTeams={canManageAllTeams}
+                        onSave={onLineScoreSave}
+                      />
+                    )}
+
                     {currentTab === 'recap' && showRecapTab && (
                       <GameRecapSection
                         ref={recapSectionRef}
@@ -510,6 +597,12 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
 
                 {currentTab === 'pitching' && (
                   <SeasonPitchingStatsSection stats={seasonPitchingStats} />
+                )}
+
+                {currentTab === 'lineScore' && (
+                  <Alert severity="info">
+                    Line scores are available once a completed game is selected.
+                  </Alert>
                 )}
 
                 {currentTab === 'recap' && (
