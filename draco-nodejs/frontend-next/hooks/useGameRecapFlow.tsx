@@ -9,9 +9,10 @@ import {
   ListItemText,
 } from '@mui/material';
 import MuiButton from '@mui/material/Button';
-import EnterGameRecapDialog from '../components/EnterGameRecapDialog';
+import EnterGameRecapDialog, { type RecapTab } from '../components/EnterGameRecapDialog';
 import type { UpsertGameRecapType } from '@draco/shared-schemas';
 import { useRole } from '../context/RoleContext';
+import { useUserTeams } from './useUserTeams';
 import { GameStatus } from '@/types/schedule';
 
 export interface RecapGameBase {
@@ -69,6 +70,8 @@ interface RecapDialogState<GameType extends RecapGameBase> {
   visitorScore?: number;
   homeTeamName?: string;
   visitorTeamName?: string;
+  recapTabs?: RecapTab[];
+  initialTeamSeasonId?: string;
 }
 
 export interface UseGameRecapFlowResult<GameType extends RecapGameBase> {
@@ -122,6 +125,7 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
   } = params;
 
   const { hasRole, hasRoleInAccount, hasRoleInTeam } = useRole();
+  const { isUserTeam } = useUserTeams(accountId);
   const [dialogState, setDialogState] = useState<RecapDialogState<GameType> | null>(null);
   const [selectionState, setSelectionState] = useState<RecapSelectionState<GameType> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -299,7 +303,12 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
   const openDialog = (
     game: GameType,
     teamSeasonId: string,
-    options: { readOnly: boolean; initialRecap?: string },
+    options: {
+      readOnly: boolean;
+      initialRecap?: string;
+      recapTabs?: RecapTab[];
+      initialTeamSeasonId?: string;
+    },
   ) => {
     const seasonIdentifier = deriveSeasonId(game);
     if (!seasonIdentifier) {
@@ -318,6 +327,8 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
       visitorScore: resolveVisitorScore(game),
       homeTeamName: resolveHomeTeamName(game),
       visitorTeamName: resolveVisitorTeamName(game),
+      recapTabs: options.recapTabs,
+      initialTeamSeasonId: options.initialTeamSeasonId,
     });
     setSelectionState(null);
     setError(null);
@@ -456,23 +467,21 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
         return;
       }
 
-      if (availableRecaps.length === 1) {
-        const recap = availableRecaps[0];
-        openDialog(game, recap.teamId, { readOnly: true, initialRecap: recap.recap });
-        return;
-      }
-
-      const options: RecapOption[] = availableRecaps.map(({ teamId, teamName, recap }) => ({
-        id: teamId,
-        name: teamName,
-        canEdit: false,
+      const recapTabs: RecapTab[] = availableRecaps.map(({ teamId, teamName, recap }) => ({
+        teamSeasonId: teamId,
+        teamName,
         recap,
       }));
 
-      setSelectionState({
-        game,
-        options,
-        title: 'Select Team Recap to View',
+      const userTeamTab = recapTabs.find((tab) => isUserTeam(tab.teamSeasonId));
+      const homeTeamTab = recapTabs.find((tab) => tab.teamSeasonId === game.homeTeamId);
+      const defaultTab = userTeamTab ?? homeTeamTab ?? recapTabs[0];
+
+      openDialog(game, defaultTab.teamSeasonId, {
+        readOnly: true,
+        initialRecap: defaultTab.recap,
+        recapTabs,
+        initialTeamSeasonId: defaultTab.teamSeasonId,
       });
     } catch (err) {
       const message = normalizeError(err, 'Failed to load game summary');
@@ -543,6 +552,8 @@ export function useGameRecapFlow<GameType extends RecapGameBase>(
           homeTeamName={dialogState.homeTeamName}
           visitorTeamName={dialogState.visitorTeamName}
           readOnly={dialogState.readOnly}
+          recapTabs={dialogState.recapTabs}
+          initialTeamSeasonId={dialogState.initialTeamSeasonId}
           onSuccess={handleRecapSuccess}
           onError={(message) => setError(message)}
           loading={loading}

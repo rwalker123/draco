@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApiClient } from './useApiClient';
-import { getAccountUserTeams } from '@draco/shared-api-client';
-import { unwrapApiResult } from '../utils/apiResult';
+import { getUserTeamsCached } from '../lib/userTeamsCache';
 import type { TeamSeasonType } from '@draco/shared-schemas';
 
 export function useTeamMembership(
@@ -33,19 +32,11 @@ export function useTeamMembership(
       setError(null);
 
       try {
-        const result = await getAccountUserTeams({
-          client: apiClient,
-          path: { accountId },
-          signal: controller.signal,
-          throwOnError: false,
-        });
+        const teams = await getUserTeamsCached(accountId, token, apiClient);
 
         if (controller.signal.aborted) {
           return;
         }
-
-        const payload = unwrapApiResult(result, 'Failed to load team memberships');
-        const teams = Array.isArray(payload) ? (payload as TeamSeasonType[]) : [];
 
         const match = teams.find((team) => {
           if (!team || typeof team !== 'object') {

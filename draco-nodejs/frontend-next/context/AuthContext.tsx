@@ -10,6 +10,7 @@ import {
   refreshToken as refreshTokenApi,
 } from '@draco/shared-api-client';
 import { createApiClient, setOnUnauthorizedCallback } from '../lib/apiClientFactory';
+import { clearUserTeamsCache } from '../lib/userTeamsCache';
 import { unwrapApiResult } from '../utils/apiResult';
 import { getTokenTimeRemaining, getTokenRememberMe } from '../utils/authHelpers';
 
@@ -231,6 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('jwtToken');
+    clearUserTeamsCache();
     setInitialized(true);
 
     if (refreshPage) {
@@ -244,6 +246,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setError(null);
     localStorage.removeItem('jwtToken');
+    clearUserTeamsCache();
     setInitialized(true);
   };
 
@@ -289,6 +292,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(null);
       setUser(null);
       localStorage.removeItem('jwtToken');
+      clearUserTeamsCache();
       setInitialized(true);
     });
     return () => {

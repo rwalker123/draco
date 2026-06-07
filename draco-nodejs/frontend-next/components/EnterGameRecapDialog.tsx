@@ -11,6 +11,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
@@ -27,6 +29,12 @@ import { sanitizeRichContent } from '../utils/sanitization';
 import RichTextContent from './common/RichTextContent';
 import LineScoreTable from './team-stats-entry/LineScoreTable';
 
+export interface RecapTab {
+  teamSeasonId: string;
+  teamName: string;
+  recap: string;
+}
+
 interface EnterGameRecapDialogProps {
   open: boolean;
   onClose: () => void;
@@ -42,6 +50,8 @@ interface EnterGameRecapDialogProps {
   homeTeamName?: string;
   visitorTeamName?: string;
   readOnly?: boolean;
+  recapTabs?: RecapTab[];
+  initialTeamSeasonId?: string;
   onSuccess?: (recap: UpsertGameRecapType) => void;
   onError?: (message: string) => void;
   loading?: boolean;
@@ -71,6 +81,8 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   homeTeamName,
   visitorTeamName,
   readOnly = false,
+  recapTabs,
+  initialTeamSeasonId,
   onSuccess,
   onError,
   loading = false,
@@ -85,6 +97,9 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   });
 
   const [lineScore, setLineScore] = useState<LineScoreType | null>(null);
+  const [selectedTeamSeasonId, setSelectedTeamSeasonId] = useState<string>(
+    initialTeamSeasonId ?? recapTabs?.[0]?.teamSeasonId ?? teamSeasonId,
+  );
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const editorResetKeyRef = useRef(0);
@@ -104,8 +119,9 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       setPlainTextContent(extractPlainText(initialRecap ?? ''));
       setIsDirty(false);
       setSubmitError(null);
+      setSelectedTeamSeasonId(initialTeamSeasonId ?? recapTabs?.[0]?.teamSeasonId ?? teamSeasonId);
     }
-  }, [initialRecap, open]);
+  }, [initialRecap, open, initialTeamSeasonId, recapTabs, teamSeasonId]);
 
   useEffect(() => {
     if (!open || !accountId || !seasonId || !gameId) {
@@ -221,6 +237,20 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
     }
   };
 
+  const hasTabs = Boolean(recapTabs && recapTabs.length > 1);
+  const singleRecapTeamName =
+    recapTabs && recapTabs.length === 1 ? recapTabs[0].teamName : undefined;
+  const activeRecapHtml =
+    recapTabs && recapTabs.length > 0
+      ? (recapTabs.find((tab) => tab.teamSeasonId === selectedTeamSeasonId)?.recap ??
+        recapTabs[0].recap)
+      : editorContent;
+  const sanitizedReadOnlyContent = sanitizeRichContent(activeRecapHtml ?? '');
+  const readOnlyDisplayContent =
+    extractPlainText(sanitizedReadOnlyContent).length > 0
+      ? sanitizedReadOnlyContent
+      : '<span style="color:#888;">(No recap provided)</span>';
+
   return (
     <Dialog
       open={open}
@@ -242,7 +272,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
           color: theme.palette.widget.headerText,
         }}
       >
-        {readOnly ? 'Game Recap for' : 'Enter Game Recap for'} {teamName}
+        {readOnly ? 'Game Recap' : `Enter Game Recap for ${teamName}`}
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         {formattedGameDate && (
@@ -269,29 +299,40 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
             <CircularProgress size={32} />
           </Box>
         ) : readOnly ? (
-          (() => {
-            const sanitizedContent = sanitizeRichContent(editorContent ?? '');
-            const hasContent = extractPlainText(sanitizedContent).length > 0;
-            const displayContent = hasContent
-              ? sanitizedContent
-              : '<span style="color:#888;">(No recap provided)</span>';
-            return (
-              <RichTextContent
-                html={displayContent}
-                sanitize={false}
-                data-testid="game-summary-readonly"
-                sx={{
-                  padding: '12px 16px',
-                  minHeight: 200,
-                  borderRadius: 1,
-                  bgcolor:
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.background.default, 0.4)
-                      : alpha(theme.palette.background.default, 0.35),
-                }}
-              />
-            );
-          })()
+          <>
+            {hasTabs ? (
+              <Tabs
+                value={selectedTeamSeasonId}
+                onChange={(_event, value: string) => setSelectedTeamSeasonId(value)}
+                variant="fullWidth"
+                sx={{ mb: 2 }}
+              >
+                {recapTabs?.map((tab) => (
+                  <Tab key={tab.teamSeasonId} value={tab.teamSeasonId} label={tab.teamName} />
+                ))}
+              </Tabs>
+            ) : (
+              singleRecapTeamName && (
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  {singleRecapTeamName}
+                </Typography>
+              )
+            )}
+            <RichTextContent
+              html={readOnlyDisplayContent}
+              sanitize={false}
+              data-testid="game-summary-readonly"
+              sx={{
+                padding: '12px 16px',
+                minHeight: 200,
+                borderRadius: 1,
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.background.default, 0.4)
+                    : alpha(theme.palette.background.default, 0.35),
+              }}
+            />
+          </>
         ) : (
           <RichTextEditor
             key={editorInstanceKey}

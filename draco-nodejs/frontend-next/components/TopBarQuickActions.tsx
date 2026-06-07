@@ -27,20 +27,14 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { DarkMode as DarkModeIcon, LightMode as LightModeIcon } from '@mui/icons-material';
-import {
-  AnnouncementType,
-  AnnouncementSummaryType,
-  HandoutType,
-  TeamSeasonType,
-} from '@draco/shared-schemas';
-import { getAccountUserTeams } from '@draco/shared-api-client';
+import { AnnouncementType, AnnouncementSummaryType, HandoutType } from '@draco/shared-schemas';
 import { HandoutService } from '../services/handoutService';
 import { AnnouncementService } from '../services/announcementService';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useIsIndividualGolfAccount } from '../context/AccountContext';
 import { useApiClient } from '../hooks/useApiClient';
-import { unwrapApiResult } from '../utils/apiResult';
+import { getUserTeamsCached } from '../lib/userTeamsCache';
 import ThemeSwitcher from './ThemeSwitcher';
 import AnnouncementDetailDialog from './announcements/AnnouncementDetailDialog';
 import { formatDateTime } from '../utils/dateUtils';
@@ -264,16 +258,8 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
     const load = async () => {
       try {
-        const teamsResult = await getAccountUserTeams({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-          signal: controller.signal,
-        });
+        const teamsArray = await getUserTeamsCached(accountId, token, apiClient);
         if (controller.signal.aborted) return;
-
-        const teamsPayload = unwrapApiResult(teamsResult, 'Failed to load your teams');
-        const teamsArray = Array.isArray(teamsPayload) ? (teamsPayload as TeamSeasonType[]) : [];
 
         if (teamsArray.length === 0) {
           setTeamHandoutSections([]);
@@ -344,7 +330,7 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     return () => {
       controller.abort();
     };
-  }, [authInitialized, showHandouts, accountId, user, apiClient, teamHandoutsRetryKey]);
+  }, [authInitialized, showHandouts, accountId, user, token, apiClient, teamHandoutsRetryKey]);
 
   React.useEffect(() => {
     if (!authInitialized) return;
@@ -403,16 +389,8 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
 
     const load = async () => {
       try {
-        const teamsResult = await getAccountUserTeams({
-          client: apiClient,
-          path: { accountId },
-          throwOnError: false,
-          signal: controller.signal,
-        });
+        const teamsArray = await getUserTeamsCached(accountId, token, apiClient);
         if (controller.signal.aborted) return;
-
-        const teamsPayload = unwrapApiResult(teamsResult, 'Failed to load your teams');
-        const teamsArray = Array.isArray(teamsPayload) ? (teamsPayload as TeamSeasonType[]) : [];
 
         if (teamsArray.length === 0) {
           setTeamAnnouncementSections([]);
@@ -486,7 +464,15 @@ const TopBarQuickActions: React.FC<TopBarQuickActionsProps> = ({
     return () => {
       controller.abort();
     };
-  }, [authInitialized, showAnnouncements, accountId, user, apiClient, teamAnnouncementsRetryKey]);
+  }, [
+    authInitialized,
+    showAnnouncements,
+    accountId,
+    user,
+    token,
+    apiClient,
+    teamAnnouncementsRetryKey,
+  ]);
 
   const handleHandoutMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setHandoutAnchorEl(event.currentTarget);

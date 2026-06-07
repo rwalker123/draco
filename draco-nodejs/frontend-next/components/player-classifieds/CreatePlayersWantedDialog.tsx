@@ -30,9 +30,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { PLAYER_CLASSIFIED_VALIDATION } from '../../utils/characterValidation';
 import CharacterCounter from '../common/CharacterCounter';
-import { getAccountUserTeams } from '@draco/shared-api-client';
 import { useApiClient } from '../../hooks/useApiClient';
-import { unwrapApiResult } from '../../utils/apiResult';
+import { getUserTeamsCached } from '../../lib/userTeamsCache';
 import { usePlayersWantedClassifieds } from '../../hooks/useClassifiedsService';
 import { useClassifiedsConfig } from '../../hooks/useClassifiedsConfig';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -269,17 +268,9 @@ const CreatePlayersWantedDialog: React.FC<CreatePlayersWantedDialogProps> = ({
     const fetchTeams = async () => {
       try {
         setTeamsLoading(true);
-        const result = await getAccountUserTeams({
-          client: apiClient,
-          path: { accountId },
-          signal: controller.signal,
-          throwOnError: false,
-        });
+        const normalizedTeams = await getUserTeamsCached(accountId, token, apiClient);
 
         if (controller.signal.aborted) return;
-
-        const teamsResponse = unwrapApiResult(result, 'Failed to load teams');
-        const normalizedTeams = Array.isArray(teamsResponse) ? teamsResponse : [];
 
         const teams: string[] = Array.from(
           new Set(
