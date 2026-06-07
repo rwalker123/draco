@@ -14,6 +14,8 @@ export const registerGamesEndpoints = ({ registry, schemaRefs, z }: RegisterCont
     UpdateGameResultsSchemaRef,
     UpsertGameSchemaRef,
     UpsertGameRecapSchemaRef,
+    LineScoreSchemaRef,
+    UpsertLineScoreSchemaRef,
     ValidationErrorSchemaRef,
   } = schemaRefs;
 
@@ -874,6 +876,160 @@ export const registerGamesEndpoints = ({ registry, schemaRefs, z }: RegisterCont
       },
       403: {
         description: 'Insufficient permissions to manage recaps',
+        content: {
+          'application/json': {
+            schema: AuthorizationErrorSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Game not found for the provided context',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * GET /api/accounts/:accountId/seasons/:seasonId/games/:gameId/line-score
+   * Get the line score for a game
+   */
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/line-score',
+    operationId: 'getGameLineScore',
+    summary: 'Get game line score',
+    description: 'Return the inning-by-inning line score (runs, hits, errors) for a game.',
+    tags: ['Games'],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'gameId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Line score',
+        content: {
+          'application/json': {
+            schema: LineScoreSchemaRef,
+          },
+        },
+      },
+      404: {
+        description: 'Game not found',
+        content: {
+          'application/json': {
+            schema: NotFoundErrorSchemaRef,
+          },
+        },
+      },
+      500: {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: InternalServerErrorSchemaRef,
+          },
+        },
+      },
+    },
+  });
+
+  /**
+   * PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId/line-score
+   * Upsert the line score for a game
+   */
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/line-score',
+    operationId: 'upsertGameLineScore',
+    summary: 'Upsert game line score',
+    description:
+      'Create or update the line score for a game. A manager may write their own team’s side at any time and the opposing team’s side only until that team has entered it; admins may write either side.',
+    tags: ['Games'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'gameId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: UpsertLineScoreSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Line score saved',
+        content: {
+          'application/json': {
+            schema: LineScoreSchemaRef,
+          },
+        },
+      },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
+      401: {
+        description: 'Authentication required',
+        content: {
+          'application/json': {
+            schema: AuthenticationErrorSchemaRef,
+          },
+        },
+      },
+      403: {
+        description: 'Insufficient permissions to edit this line score',
         content: {
           'application/json': {
             schema: AuthorizationErrorSchemaRef,

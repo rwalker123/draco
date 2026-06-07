@@ -4,12 +4,15 @@ import {
   UpsertGameType,
   UpdateGameResultsType,
   UpsertGameRecapType,
+  UpsertLineScoreType,
+  LineScoreType,
   GameType,
   GameTeamRecipientCountType,
   EmailSendType,
   AccountSettingKey,
 } from '@draco/shared-schemas';
 import type { PagingType } from '@draco/shared-schemas';
+import { Prisma, gamelinescore } from '#prisma/client';
 import {
   IScheduleRepository,
   ScheduleListFilters,
@@ -17,8 +20,23 @@ import {
 } from '../repositories/interfaces/IScheduleRepository.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
-import { ScheduleResponseFormatter } from '../responseFormatters/index.js';
-import { NotFoundError, ValidationError, ConflictError } from '../utils/customErrors.js';
+import {
+  ScheduleResponseFormatter,
+  LineScoreResponseFormatter,
+} from '../responseFormatters/index.js';
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+  AuthorizationError,
+} from '../utils/customErrors.js';
+import { ROLE_IDS } from '../config/roles.js';
+import { RoleNamesType } from '../types/roles.js';
+import {
+  buildStoredLineScoreSide,
+  parseStoredLineScoreSide,
+  StoredLineScoreSide,
+} from '../utils/lineScore.js';
 import {
   dbScheduleGameForAccount,
   dbScheduleGameWithDetails,
@@ -919,6 +937,177 @@ export class ScheduleService {
     const normalized = collapseHtmlBlankLines(payload.recap);
     const recap = await this.scheduleRepository.upsertRecap(gameId, teamSeasonId, normalized);
     return collapseHtmlBlankLines(recap.recap);
+  }
+
+  async getGameLineScore(
+    accountId: bigint,
+    seasonId: bigint,
+    gameId: bigint,
+  ): Promise<LineScoreType> {
+    const game = await this.ensureGameInAccount(gameId, accountId);
+
+    if (game.leagueseason.seasonid !== seasonId) {
+      throw new NotFoundError('Game not found');
+    }
+
+    return this.buildLineScoreResponse(game);
+  }
+
+  async upsertGameLineScore(
+    accountId: bigint,
+    seasonId: bigint,
+    gameId: bigint,
+    userId: string,
+    payload: UpsertLineScoreType,
+  ): Promise<LineScoreType> {
+    const game = await this.ensureGameInAccount(gameId, accountId);
+
+    if (game.leagueseason.seasonid !== seasonId) {
+      throw new ValidationError('Game does not belong to specified account/season');
+    }
+
+    if (!payload.home && !payload.away) {
+      throw new ValidationError('No line score data provided');
+    }
+
+    const homeTeamId = game.hteamid;
+    const awayTeamId = game.vteamid;
+
+    const [managesHome, managesAway] = await Promise.all([
+      this.canManageTeam(userId, accountId, seasonId, homeTeamId),
+      this.canManageTeam(userId, accountId, seasonId, awayTeamId),
+    ]);
+
+    const existing = await this.scheduleRepository.findLineScore(gameId);
+    const authorContactId = await this.resolveContactId(userId, accountId);
+    const enteredAt = new Date().toISOString();
+
+    const sides: { home?: Prisma.InputJsonValue; away?: Prisma.InputJsonValue } = {};
+
+    if (payload.home) {
+      const authorTeamId = this.authorizeLineScoreSide(
+        'home',
+        existing,
+        managesHome,
+        managesAway,
+        homeTeamId,
+        awayTeamId,
+      );
+      sides.home = this.serializeLineScoreSide(
+        buildStoredLineScoreSide(payload.home, authorContactId, authorTeamId, enteredAt),
+      );
+    }
+
+    if (payload.away) {
+      const authorTeamId = this.authorizeLineScoreSide(
+        'away',
+        existing,
+        managesAway,
+        managesHome,
+        awayTeamId,
+        homeTeamId,
+      );
+      sides.away = this.serializeLineScoreSide(
+        buildStoredLineScoreSide(payload.away, authorContactId, authorTeamId, enteredAt),
+      );
+    }
+
+    await this.scheduleRepository.upsertLineScoreSides(gameId, sides);
+
+    return this.buildLineScoreResponse(game);
+  }
+
+  private async buildLineScoreResponse(game: dbScheduleGameForAccount): Promise<LineScoreType> {
+    const [row, hitsByTeam, teamNames] = await Promise.all([
+      this.scheduleRepository.findLineScore(game.id),
+      this.scheduleRepository.sumBattingHitsByGame(game.id),
+      this.scheduleRepository.getTeamNames([game.hteamid, game.vteamid]),
+    ]);
+
+    return LineScoreResponseFormatter.format({
+      gameId: game.id,
+      homeTeamSeasonId: game.hteamid,
+      awayTeamSeasonId: game.vteamid,
+      homeRuns: game.hscore,
+      awayRuns: game.vscore,
+      row,
+      hitsByTeam,
+      teamNames,
+    });
+  }
+
+  private authorizeLineScoreSide(
+    side: 'home' | 'away',
+    existing: gamelinescore | null,
+    managesOwnTeam: boolean,
+    managesOpponentTeam: boolean,
+    sideTeamId: bigint,
+    opponentTeamId: bigint,
+  ): bigint {
+    if (managesOwnTeam) {
+      return sideTeamId;
+    }
+
+    if (managesOpponentTeam) {
+      const storedSide = parseStoredLineScoreSide(
+        side === 'home' ? existing?.home : existing?.away,
+      );
+      const claimedByOwner = storedSide?.enteredByTeamSeasonId === sideTeamId.toString();
+      if (claimedByOwner) {
+        throw new AuthorizationError(
+          'That team has already entered their own line score; only they can edit it now',
+        );
+      }
+      return opponentTeamId;
+    }
+
+    throw new AuthorizationError('You do not have permission to edit this line score');
+  }
+
+  private async canManageTeam(
+    userId: string,
+    accountId: bigint,
+    seasonId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<boolean> {
+    const roleService = ServiceFactory.getRoleService();
+    const userRoles = await roleService.getUserRoles(userId, accountId);
+
+    if (userRoles.globalRoles.includes(ROLE_IDS[RoleNamesType.ADMINISTRATOR])) {
+      return true;
+    }
+
+    if (
+      userRoles.contactRoles.some(
+        (contactRole) => contactRole.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN],
+      )
+    ) {
+      return true;
+    }
+
+    const check = await roleService.hasRole(userId, ROLE_IDS[RoleNamesType.TEAM_ADMIN], {
+      accountId,
+      teamId: teamSeasonId,
+      seasonId,
+    });
+
+    return check.hasRole;
+  }
+
+  private async resolveContactId(userId: string, accountId: bigint): Promise<string | null> {
+    try {
+      const contact = await ServiceFactory.getContactService().getContactByUserId(
+        userId,
+        accountId,
+      );
+      return contact?.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private serializeLineScoreSide(side: StoredLineScoreSide): Prisma.InputJsonValue {
+    return JSON.parse(JSON.stringify(side)) as Prisma.InputJsonValue;
   }
 
   private async validateTeamsBelongToLeagueSeason(

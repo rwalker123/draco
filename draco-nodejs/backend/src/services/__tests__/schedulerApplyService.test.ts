@@ -51,6 +51,9 @@ class ScheduleRepositoryStub implements IScheduleRepository {
     vi.fn<IScheduleRepository['countUmpireAssignmentsForAccount']>();
   findRecap = vi.fn<IScheduleRepository['findRecap']>();
   upsertRecap = vi.fn<IScheduleRepository['upsertRecap']>();
+  findLineScore = vi.fn<IScheduleRepository['findLineScore']>();
+  upsertLineScoreSides = vi.fn<IScheduleRepository['upsertLineScoreSides']>();
+  sumBattingHitsByGame = vi.fn<IScheduleRepository['sumBattingHitsByGame']>();
   getTeamNames = vi.fn<IScheduleRepository['getTeamNames']>();
   getTeamsWithStatsByGameIds = vi.fn<IScheduleRepository['getTeamsWithStatsByGameIds']>(
     async () => new Map(),

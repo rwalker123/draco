@@ -16903,6 +16903,184 @@ components:
           maxLength: 5000
       required:
         - recap
+    LineScore:
+      type: object
+      properties:
+        gameId:
+          type: string
+          pattern: ^\d+$
+          example: "12345"
+        home:
+          type: object
+          properties:
+            teamSeasonId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            teamName:
+              type: string
+            runsByInning:
+              type: array
+              items:
+                type: integer
+                nullable: true
+                minimum: 0
+                maximum: 99
+            errors:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 99
+            hitsOverride:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 999
+            runs:
+              type: integer
+              minimum: 0
+              maximum: 99
+            hits:
+              type: integer
+              nullable: true
+              minimum: 0
+            authoritative:
+              type: boolean
+              description: True when entered by its own team
+            enteredByContactId:
+              type: string
+              nullable: true
+              pattern: ^\d+$
+              example: "12345"
+            enteredAt:
+              type: string
+              format: date-time
+              example: 2024-03-01T18:30:00Z
+              description: ISO 8601 timestamp string with timezone offset.
+          required:
+            - teamSeasonId
+            - teamName
+            - runsByInning
+            - errors
+            - hitsOverride
+            - runs
+            - hits
+            - authoritative
+        away:
+          type: object
+          properties:
+            teamSeasonId:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            teamName:
+              type: string
+            runsByInning:
+              type: array
+              items:
+                type: integer
+                nullable: true
+                minimum: 0
+                maximum: 99
+            errors:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 99
+            hitsOverride:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 999
+            runs:
+              type: integer
+              minimum: 0
+              maximum: 99
+            hits:
+              type: integer
+              nullable: true
+              minimum: 0
+            authoritative:
+              type: boolean
+              description: True when entered by its own team
+            enteredByContactId:
+              type: string
+              nullable: true
+              pattern: ^\d+$
+              example: "12345"
+            enteredAt:
+              type: string
+              format: date-time
+              example: 2024-03-01T18:30:00Z
+              description: ISO 8601 timestamp string with timezone offset.
+          required:
+            - teamSeasonId
+            - teamName
+            - runsByInning
+            - errors
+            - hitsOverride
+            - runs
+            - hits
+            - authoritative
+      required:
+        - gameId
+        - home
+        - away
+    UpsertLineScore:
+      type: object
+      properties:
+        home:
+          type: object
+          properties:
+            runsByInning:
+              type: array
+              items:
+                type: integer
+                nullable: true
+                minimum: 0
+                maximum: 99
+              maxItems: 18
+              description: Runs per inning; null = not entered. Grows for extra innings (max
+                18).
+            errors:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 99
+            hitsOverride:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 999
+          required:
+            - runsByInning
+            - errors
+        away:
+          type: object
+          properties:
+            runsByInning:
+              type: array
+              items:
+                type: integer
+                nullable: true
+                minimum: 0
+                maximum: 99
+              maxItems: 18
+              description: Runs per inning; null = not entered. Grows for extra innings (max
+                18).
+            errors:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 99
+            hitsOverride:
+              type: integer
+              nullable: true
+              minimum: 0
+              maximum: 999
+          required:
+            - runsByInning
+            - errors
     GameTeamRecipientCount:
       type: object
       properties:
@@ -36160,6 +36338,123 @@ paths:
                 $ref: "#/components/schemas/AuthenticationError"
         "403":
           description: Insufficient permissions to manage recaps
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Game not found for the provided context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/line-score:
+    get:
+      operationId: getGameLineScore
+      summary: Get game line score
+      description: Return the inning-by-inning line score (runs, hits, errors) for a game.
+      tags:
+        - Games
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      responses:
+        "200":
+          description: Line score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineScore"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      operationId: upsertGameLineScore
+      summary: Upsert game line score
+      description: Create or update the line score for a game. A manager may write
+        their own team’s side at any time and the opposing team’s side only
+        until that team has entered it; admins may write either side.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertLineScore"
+      responses:
+        "200":
+          description: Line score saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineScore"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to edit this line score
           content:
             application/json:
               schema:

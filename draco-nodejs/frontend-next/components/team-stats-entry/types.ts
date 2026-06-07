@@ -5,7 +5,7 @@ export type UnsavedChangesDecision = 'save' | 'discard' | 'cancel';
 export interface UnsavedChangesPrompt {
   reason: UnsavedChangesReason;
   playerName: string;
-  tab: 'batting' | 'pitching' | 'recap';
+  tab: 'batting' | 'pitching' | 'recap' | 'lineScore';
 }
 
 export type GameOutcome = 'win' | 'loss' | 'tie' | null;

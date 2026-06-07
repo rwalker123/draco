@@ -12,6 +12,8 @@ import {
   putApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdAttendance as apiUpdateGameAttendance,
   listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
+  getGameLineScore as apiGetGameLineScore,
+  upsertGameLineScore as apiUpsertGameLineScore,
 } from '@draco/shared-api-client';
 import type { Client } from '@draco/shared-api-client/generated/client';
 import type {
@@ -26,6 +28,8 @@ import type {
   UpdateGamePitchingStatType,
   PlayerBattingStatsType,
   PlayerPitchingStatsType,
+  LineScoreType,
+  UpsertLineScoreType,
 } from '@draco/shared-schemas';
 
 import { createApiClient } from '../lib/apiClientFactory';
@@ -224,6 +228,38 @@ export class TeamStatsEntryService {
     });
 
     assertNoApiError(result, 'Failed to delete pitching stat');
+  }
+
+  async getGameLineScore(
+    accountId: string,
+    seasonId: string,
+    gameId: string,
+    signal?: AbortSignal,
+  ): Promise<LineScoreType> {
+    const result = await apiGetGameLineScore({
+      client: this.client,
+      path: { accountId, seasonId, gameId },
+      signal,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to load line score for game');
+  }
+
+  async saveGameLineScore(
+    accountId: string,
+    seasonId: string,
+    gameId: string,
+    payload: UpsertLineScoreType,
+  ): Promise<LineScoreType> {
+    const result = await apiUpsertGameLineScore({
+      client: this.client,
+      path: { accountId, seasonId, gameId },
+      body: payload,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to save line score');
   }
 
   async getGameAttendance(

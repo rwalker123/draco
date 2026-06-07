@@ -17,6 +17,8 @@ import {
   type PlayerPitchingStatsType,
   type TeamCompletedGameType,
   type TeamStatsPlayerSummaryType,
+  type LineScoreType,
+  type UpsertLineScoreType,
 } from '@draco/shared-schemas';
 
 import { getGameRecap } from '@draco/shared-api-client';
@@ -57,6 +59,7 @@ type CachedGameStats = {
   attendance: GameAttendanceType | null;
   attendanceSelection: string[];
   recap: string | null;
+  lineScore?: LineScoreType | null;
 };
 
 const calculateBattingTotals = (
@@ -271,10 +274,9 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const apiClient = useApiClient();
   const { settings: accountSettings } = useAccountSettings(accountId);
 
-  const canManageStats =
-    hasRole('Administrator') ||
-    hasRoleInAccount('AccountAdmin', accountId) ||
-    hasRoleInTeam('TeamAdmin', teamSeasonId);
+  const canManageAllTeams = hasRole('Administrator') || hasRoleInAccount('AccountAdmin', accountId);
+
+  const canManageStats = canManageAllTeams || hasRoleInTeam('TeamAdmin', teamSeasonId);
 
   const trackGamesPlayedEnabled = ((): boolean => {
     if (!accountSettings) {
@@ -322,6 +324,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const [recapLoading, setRecapLoading] = useState(false);
   const [recapError, setRecapError] = useState<string | null>(null);
 
+  const [lineScoreData, setLineScoreData] = useState<LineScoreType | null>(null);
+  const [lineScoreLoading, setLineScoreLoading] = useState(false);
+  const [lineScoreError, setLineScoreError] = useState<string | null>(null);
+
   const [tabValue, setTabValue] = useState<TabKey>('batting');
   const { notification, showNotification, hideNotification } = useNotifications();
 
@@ -349,6 +355,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     setAttendance(canManageStats ? (cached.attendance ?? emptyAttendance) : emptyAttendance);
     setAttendanceSelection(cached.attendanceSelection);
     setRecapContent(cached.recap);
+    setLineScoreData(cached.lineScore ?? null);
   };
 
   const updateCachedAttendance = (
@@ -533,6 +540,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     setStatsError(null);
     setRecapLoading(true);
     setRecapError(null);
+    setLineScoreLoading(true);
+    setLineScoreError(null);
 
     if (shouldLoadAttendance) {
       setAttendanceLoading(true);
@@ -606,12 +615,24 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
         setRecapLoading(false);
       }
 
+      let lineScoreResult: LineScoreType | null = null;
+      try {
+        lineScoreResult = await service.getGameLineScore(accountId, seasonId, gameId);
+      } catch (lineScoreErr) {
+        const message =
+          lineScoreErr instanceof Error ? lineScoreErr.message : 'Failed to load line score.';
+        setLineScoreError(message);
+      } finally {
+        setLineScoreLoading(false);
+      }
+
       const nextCache: CachedGameStats = {
         batting,
         pitching,
         attendance: attendanceData,
         attendanceSelection: attendanceSelectionData,
         recap: recapData,
+        lineScore: lineScoreResult,
       };
 
       cachedGameStatsRef.current.set(gameId, nextCache);
@@ -1272,6 +1293,27 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     showSnackbar('Game recap saved.');
   };
 
+  const handleLineScoreSave = async (payload: UpsertLineScoreType) => {
+    const gameId = selectedGameId;
+    if (!gameId) {
+      throw new Error('No game selected');
+    }
+
+    const service = new TeamStatsEntryService(token, apiClient);
+    const updated = await service.saveGameLineScore(accountId, seasonId, gameId, payload);
+
+    setLineScoreData(updated);
+    const cached = cachedGameStatsRef.current.get(gameId);
+    if (cached) {
+      cachedGameStatsRef.current.set(gameId, {
+        ...cached,
+        lineScore: updated,
+      });
+    }
+
+    showSnackbar('Line score saved.');
+  };
+
   useEffect(() => {
     if (!trackGamesPlayedEnabled) {
       setAttendance(emptyAttendance);
@@ -1311,6 +1353,9 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
       setRecapContent(null);
       setRecapError(null);
       setRecapLoading(false);
+      setLineScoreData(null);
+      setLineScoreError(null);
+      setLineScoreLoading(false);
     }
   }, [selectedGameId]);
 
@@ -1466,6 +1511,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           tab={tabValue}
           onTabChange={handleTabChange}
           canManageStats={canManageStats}
+          teamSeasonId={teamSeasonId}
+          canManageAllTeams={canManageAllTeams}
           enableAttendanceTracking={trackGamesPlayedEnabled}
           loading={statsLoading}
           error={statsError}
@@ -1502,6 +1549,10 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           recapLoading={recapLoading}
           recapError={recapError}
           onRecapSave={handleRecapSave}
+          lineScoreData={lineScoreData}
+          lineScoreLoading={lineScoreLoading}
+          lineScoreError={lineScoreError}
+          onLineScoreSave={handleLineScoreSave}
         />
 
         <AsyncConfirmDialog

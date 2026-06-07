@@ -14,11 +14,18 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
-import { UpsertGameRecapSchema, UpsertGameRecapType } from '@draco/shared-schemas';
+import {
+  UpsertGameRecapSchema,
+  UpsertGameRecapType,
+  type LineScoreType,
+} from '@draco/shared-schemas';
+import { getGameLineScore } from '@draco/shared-api-client';
 import { useGameRecap } from '../hooks/useGameRecap';
+import { useApiClient } from '../hooks/useApiClient';
 import RichTextEditor from './email/RichTextEditor';
 import { sanitizeRichContent } from '../utils/sanitization';
 import RichTextContent from './common/RichTextContent';
+import LineScoreTable from './team-stats-entry/LineScoreTable';
 
 interface EnterGameRecapDialogProps {
   open: boolean;
@@ -69,12 +76,15 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
   loading = false,
 }) => {
   const theme = useTheme();
+  const apiClient = useApiClient();
   const { saveRecap, loading: isSaving } = useGameRecap({
     accountId,
     seasonId,
     gameId,
     teamSeasonId,
   });
+
+  const [lineScore, setLineScore] = useState<LineScoreType | null>(null);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const editorResetKeyRef = useRef(0);
@@ -96,6 +106,40 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       setSubmitError(null);
     }
   }, [initialRecap, open]);
+
+  useEffect(() => {
+    if (!open || !accountId || !seasonId || !gameId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadLineScore = async () => {
+      try {
+        const result = await getGameLineScore({
+          client: apiClient,
+          path: { accountId, seasonId, gameId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+        if (controller.signal.aborted) {
+          return;
+        }
+        setLineScore(result.data ?? null);
+      } catch {
+        if (controller.signal.aborted) {
+          return;
+        }
+        setLineScore(null);
+      }
+    };
+
+    void loadLineScore();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open, accountId, seasonId, gameId, apiClient]);
 
   const formattedGameDate = gameDate
     ? Number.isNaN(new Date(gameDate).getTime())
@@ -206,10 +250,16 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
             {formattedGameDate}
           </Typography>
         )}
-        {scoreboardLine && (
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {scoreboardLine}
-          </Typography>
+        {lineScore ? (
+          <Box sx={{ mb: 2 }}>
+            <LineScoreTable lineScore={lineScore} />
+          </Box>
+        ) : (
+          scoreboardLine && (
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {scoreboardLine}
+            </Typography>
+          )
         )}
 
         {loading ? (

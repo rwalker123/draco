@@ -6,7 +6,6 @@ import React from 'react';
 import { getGameSummary } from '../../../../../../../lib/utils';
 import { useAuth } from '../../../../../../../context/AuthContext';
 import { useAccountTimezone } from '../../../../../../../context/AccountContext';
-import { useSchedulePermissions } from '../../../../../../../hooks/useSchedulePermissions';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import AdPlacement from '../../../../../../../components/ads/AdPlacement';
 import Box from '@mui/material/Box';
@@ -99,10 +98,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     UpsertPlayersWantedClassifiedType | undefined
   >(undefined);
   const { token } = useAuth();
-  const { canEditRecap } = useSchedulePermissions({
-    accountId,
-    teamSeasonId,
-  });
   const { hasRole, hasRoleInAccount, hasRoleInTeam, hasPermission } = useRole();
   const timeZone = useAccountTimezone();
   const { isMember } = useAccountMembership(accountId);
@@ -459,7 +454,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   };
 
   const {
-    openEditRecap,
     openViewRecap,
     dialogs: recapDialogs,
     error: recapError,
@@ -475,19 +469,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     accountId,
     seasonId,
   });
-
-  const handleOpenEditRecap = (game: Game) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug('[TeamPage] openEditRecap click', {
-        gameId: game.id,
-        homeTeamId: game.homeTeamId,
-        visitorTeamId: game.visitorTeamId,
-        hasGameRecap: game.hasGameRecap,
-        availableRecaps: game.gameRecaps?.map((entry) => entry.teamId),
-      });
-    }
-    openEditRecap(game);
-  };
 
   const handleOpenViewRecap = (game: Game) => {
     if (process.env.NODE_ENV !== 'production') {
@@ -926,8 +907,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                     <GameListDisplay
                       sections={completedSections}
                       emptyMessage="No completed games."
-                      canEditRecap={canEditRecap}
-                      onEditRecap={handleOpenEditRecap}
                       onViewRecap={handleOpenViewRecap}
                       onViewStatistics={openViewStatistics}
                       timeZone={timeZone}
