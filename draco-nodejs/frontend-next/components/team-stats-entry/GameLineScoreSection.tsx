@@ -139,23 +139,63 @@ const GameLineScoreSection = forwardRef<GameLineScoreSectionHandle, GameLineScor
     const awayEditable =
       canEdit && (isAwayYours || canManageAllTeams || !(baselineAway?.authoritative ?? false));
 
-    useImperativeHandle(ref, () => {
-      const buildPayload = (): UpsertLineScoreType => {
-        const payload: UpsertLineScoreType = {};
-        if (homeEditable && homeDirty) {
-          payload.home = toUpsertSide(home);
-        }
-        if (awayEditable && awayDirty) {
-          payload.away = toUpsertSide(away);
-        }
-        return payload;
-      };
+    const buildPayload = (): UpsertLineScoreType => {
+      const payload: UpsertLineScoreType = {};
+      if (homeEditable && homeDirty) {
+        payload.home = toUpsertSide(home);
+      }
+      if (awayEditable && awayDirty) {
+        payload.away = toUpsertSide(away);
+      }
+      return payload;
+    };
 
-      return {
+    const handleSave = async (): Promise<boolean> => {
+      setSaveError(null);
+      const payload = buildPayload();
+      if (!payload.home && !payload.away) {
+        return true;
+      }
+      setIsSaving(true);
+      try {
+        await onSave(payload);
+        return true;
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : 'Failed to save line score.');
+        return false;
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    const handleDiscard = () => {
+      setHome(
+        baselineHome
+          ? toEditableSide(baselineHome)
+          : { runsByInning: [], errors: null, hitsOverride: null },
+      );
+      setAway(
+        baselineAway
+          ? toEditableSide(baselineAway)
+          : { runsByInning: [], errors: null, hitsOverride: null },
+      );
+      setInningCount(lineScore ? getInningCount(lineScore) : 7);
+      setSaveError(null);
+    };
+
+    useImperativeHandle(
+      ref,
+      () => ({
         hasDirtyContent: () => homeDirty || awayDirty,
         saveContent: async (): Promise<boolean> => {
           setSaveError(null);
-          const payload = buildPayload();
+          const payload: UpsertLineScoreType = {};
+          if (homeEditable && homeDirty) {
+            payload.home = toUpsertSide(home);
+          }
+          if (awayEditable && awayDirty) {
+            payload.away = toUpsertSide(away);
+          }
           if (!payload.home && !payload.away) {
             return true;
           }
@@ -184,19 +224,20 @@ const GameLineScoreSection = forwardRef<GameLineScoreSectionHandle, GameLineScor
           setInningCount(lineScore ? getInningCount(lineScore) : 7);
           setSaveError(null);
         },
-      };
-    }, [
-      home,
-      away,
-      homeDirty,
-      awayDirty,
-      homeEditable,
-      awayEditable,
-      onSave,
-      baselineHome,
-      baselineAway,
-      lineScore,
-    ]);
+      }),
+      [
+        home,
+        away,
+        homeDirty,
+        awayDirty,
+        homeEditable,
+        awayEditable,
+        onSave,
+        baselineHome,
+        baselineAway,
+        lineScore,
+      ],
+    );
 
     if (loading) {
       return (
@@ -416,6 +457,25 @@ const GameLineScoreSection = forwardRef<GameLineScoreSectionHandle, GameLineScor
         )}
 
         {saveError && <Alert severity="error">{saveError}</Alert>}
+
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleDiscard}
+            disabled={isSaving || (!homeDirty && !awayDirty)}
+          >
+            Discard
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => void handleSave()}
+            disabled={isSaving || (!homeDirty && !awayDirty)}
+          >
+            {isSaving ? 'Saving...' : 'Save Line Score'}
+          </Button>
+        </Box>
       </Stack>
     );
   },

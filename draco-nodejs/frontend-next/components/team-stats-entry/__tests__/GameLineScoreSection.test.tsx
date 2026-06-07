@@ -1,6 +1,6 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import type { LineScoreType } from '@draco/shared-schemas';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { LineScoreType, UpsertLineScoreType } from '@draco/shared-schemas';
 
 import GameLineScoreSection from '../GameLineScoreSection';
 
@@ -48,6 +48,7 @@ const renderSection = (
     editMode?: boolean;
     currentTeamSeasonId?: string;
     canManageAllTeams?: boolean;
+    onSave?: (payload: UpsertLineScoreType) => Promise<void>;
   } = {},
 ) =>
   render(
@@ -59,9 +60,12 @@ const renderSection = (
       canEdit
       currentTeamSeasonId={props.currentTeamSeasonId ?? '200'}
       canManageAllTeams={props.canManageAllTeams ?? false}
-      onSave={asyncNoop}
+      onSave={props.onSave ?? asyncNoop}
     />,
   );
+
+const button = (name: RegExp): HTMLButtonElement =>
+  screen.getByRole('button', { name }) as HTMLButtonElement;
 
 describe('GameLineScoreSection', () => {
   it('renders "x" for the home half when the home team won without batting in the last inning', () => {
@@ -140,5 +144,44 @@ describe('GameLineScoreSection', () => {
     renderSection(lineScore, { editMode: true, currentTeamSeasonId: '100' });
 
     expect(screen.queryByText(/don’t add up to the final score/i)).toBeNull();
+  });
+
+  it('disables Discard and Save until an editable value changes', () => {
+    renderSection(makeLineScore({}), { editMode: true, currentTeamSeasonId: '200' });
+
+    expect(button(/discard/i).disabled).toBe(true);
+    expect(button(/save line score/i).disabled).toBe(true);
+
+    fireEvent.change(inningInput('Away Team inning 1 runs'), { target: { value: '5' } });
+
+    expect(button(/discard/i).disabled).toBe(false);
+    expect(button(/save line score/i).disabled).toBe(false);
+  });
+
+  it('saves only the edited side via onSave', async () => {
+    const onSave = vi.fn(async () => {});
+    renderSection(makeLineScore({}), { editMode: true, currentTeamSeasonId: '200', onSave });
+
+    fireEvent.change(inningInput('Away Team inning 1 runs'), { target: { value: '7' } });
+    fireEvent.click(button(/save line score/i));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    const payload = onSave.mock.calls[0][0] as UpsertLineScoreType;
+    expect(payload.away?.runsByInning[0]).toBe(7);
+    expect(payload.home).toBeUndefined();
+  });
+
+  it('reverts edits when Discard is clicked', () => {
+    renderSection(makeLineScore({}), { editMode: true, currentTeamSeasonId: '200' });
+
+    const input = inningInput('Away Team inning 1 runs');
+    expect(input.value).toBe('0');
+
+    fireEvent.change(input, { target: { value: '9' } });
+    expect(inningInput('Away Team inning 1 runs').value).toBe('9');
+
+    fireEvent.click(button(/discard/i));
+    expect(inningInput('Away Team inning 1 runs').value).toBe('0');
+    expect(button(/discard/i).disabled).toBe(true);
   });
 });
