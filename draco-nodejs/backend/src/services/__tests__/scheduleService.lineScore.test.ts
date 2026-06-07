@@ -16,7 +16,7 @@ import type { RosterService } from '../rosterService.js';
 import type { AccountsService } from '../accountsService.js';
 import type { dbScheduleGameForAccount } from '../../repositories/types/index.js';
 import type { gamelinescore, Prisma } from '#prisma/client';
-import type { UserRolesType, RoleCheckType } from '@draco/shared-schemas';
+import type { UserRolesType } from '@draco/shared-schemas';
 import { ROLE_IDS } from '../../config/roles.js';
 import { RoleNamesType } from '../../types/roles.js';
 import { AuthorizationError } from '../../utils/customErrors.js';
@@ -63,11 +63,14 @@ const makeRow = (home: Prisma.JsonValue, away: Prisma.JsonValue): gamelinescore 
   updatedat: new Date('2026-06-06T00:00:00.000Z'),
 });
 
+// ROLE_IDS are populated from the database at app startup; in unit tests they
+// default to empty strings, which would make distinct roles collide. Assign
+// distinct ids in setup so canManageTeam's role checks are actually meaningful.
+const ADMINISTRATOR_ROLE_ID = 'administrator-role-id';
+const ACCOUNT_ADMIN_ROLE_ID = 'account-admin-role-id';
+const TEAM_ADMIN_ROLE_ID = 'team-admin-role-id';
+
 const teamManagerRoles: UserRolesType = { globalRoles: [], contactRoles: [] };
-const administratorRoles: UserRolesType = {
-  globalRoles: [ROLE_IDS[RoleNamesType.ADMINISTRATOR]],
-  contactRoles: [],
-};
 
 const sideJson = (
   overrides: Partial<{
@@ -95,6 +98,10 @@ describe('ScheduleService — line score', () => {
   let service: ScheduleService;
 
   beforeEach(() => {
+    ROLE_IDS[RoleNamesType.ADMINISTRATOR] = ADMINISTRATOR_ROLE_ID;
+    ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] = ACCOUNT_ADMIN_ROLE_ID;
+    ROLE_IDS[RoleNamesType.TEAM_ADMIN] = TEAM_ADMIN_ROLE_ID;
+
     scheduleRepositoryMock = partialMock<IScheduleRepository>({
       findGameWithAccountContext: vi.fn().mockResolvedValue(makeGame(4, 3)),
       findLineScore: vi.fn().mockResolvedValue(null),
@@ -110,15 +117,6 @@ describe('ScheduleService — line score', () => {
 
     roleServiceMock = partialMock<IRoleService>({
       getUserRoles: vi.fn().mockResolvedValue(teamManagerRoles),
-      hasRole: vi.fn().mockImplementation(
-        async (userId: string, roleId: string, context): Promise<RoleCheckType> => ({
-          userId,
-          roleId,
-          hasRole: false,
-          roleLevel: 'none',
-          context: context?.teamId?.toString(),
-        }),
-      ),
     });
 
     contactServiceMock = partialMock<ContactService>({
@@ -154,18 +152,27 @@ describe('ScheduleService — line score', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    ROLE_IDS[RoleNamesType.ADMINISTRATOR] = '';
+    ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] = '';
+    ROLE_IDS[RoleNamesType.TEAM_ADMIN] = '';
   });
 
-  // Lets userId manage only the given team (simulates that team's TeamAdmin).
+  // Lets userId manage only the given team (simulates that team's TeamAdmin via a
+  // team-scoped TEAM_ADMIN contact role, matching what getUserRoles returns).
   const grantTeamManager = (managedTeamId: bigint) => {
-    roleServiceMock.hasRole.mockImplementation(
-      async (userId: string, roleId: string, context): Promise<RoleCheckType> => ({
-        userId,
-        roleId,
-        hasRole: context?.teamId === managedTeamId,
-        roleLevel: 'none',
-      }),
-    );
+    roleServiceMock.getUserRoles.mockResolvedValue({
+      globalRoles: [],
+      contactRoles: [
+        {
+          id: '0',
+          roleId: ROLE_IDS[RoleNamesType.TEAM_ADMIN],
+          roleName: RoleNamesType.TEAM_ADMIN,
+          roleData: managedTeamId.toString(),
+          accountId: accountId.toString(),
+          contact: { id: 'contact-1' },
+        },
+      ],
+    });
   };
 
   const capturedSide = (call: number, side: 'home' | 'away') => {
@@ -275,7 +282,10 @@ describe('ScheduleService — line score', () => {
     });
 
     it('lets an administrator write either side authoritatively', async () => {
-      roleServiceMock.getUserRoles.mockResolvedValue(administratorRoles);
+      roleServiceMock.getUserRoles.mockResolvedValue({
+        globalRoles: [ROLE_IDS[RoleNamesType.ADMINISTRATOR]],
+        contactRoles: [],
+      });
 
       await service.upsertGameLineScore(accountId, seasonId, gameId, 'user-admin', {
         home: input,
