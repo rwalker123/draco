@@ -222,12 +222,15 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
           throwOnError: false,
         });
         if (controller.signal.aborted) return;
+        if (result.error) {
+          setLineScores((prev) => ({ ...prev, [gameId]: null }));
+          return;
+        }
         const value = result.data ?? null;
         lineScoreCacheRef.current[gameId] = value;
         setLineScores((prev) => ({ ...prev, [gameId]: value }));
       } catch {
         if (controller.signal.aborted) return;
-        lineScoreCacheRef.current[gameId] = null;
         setLineScores((prev) => ({ ...prev, [gameId]: null }));
       } finally {
         inFlightLineScoresRef.current.delete(gameId);
@@ -243,7 +246,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
 
   const sanitizedRecapHtml = (() => {
     if (!recapList.length) {
-      return '<span style="color:#888;">(No recap provided)</span>';
+      return '';
     }
 
     const clampedIndex = Math.min(currentIndex, recapList.length - 1);
@@ -254,7 +257,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
       .replace(/\s+/g, ' ')
       .trim();
     if (!plainText.length) {
-      return '<span style="color:#888;">(No recap provided)</span>';
+      return '';
     }
     return sanitized;
   })();
@@ -406,7 +409,20 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
               >
                 {recapItem.teamName}
               </Typography>
-              <RichTextContent html={sanitizedRecapHtml} sanitize={false} sx={{ mb: 2 }} />
+              <RichTextContent
+                html={sanitizedRecapHtml}
+                sanitize={false}
+                sx={{ mb: 2 }}
+                emptyFallback={
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontStyle: 'italic', mb: 2 }}
+                  >
+                    (No recap provided)
+                  </Typography>
+                }
+              />
               {recapList.length > 1 && (
                 <Box
                   sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}

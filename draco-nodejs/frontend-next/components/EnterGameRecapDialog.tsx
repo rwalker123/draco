@@ -248,9 +248,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       : editorContent;
   const sanitizedReadOnlyContent = sanitizeRichContent(activeRecapHtml ?? '');
   const readOnlyDisplayContent =
-    extractPlainText(sanitizedReadOnlyContent).length > 0
-      ? sanitizedReadOnlyContent
-      : '<span style="color:#888;">(No recap provided)</span>';
+    extractPlainText(sanitizedReadOnlyContent).length > 0 ? sanitizedReadOnlyContent : '';
 
   return (
     <Dialog
@@ -323,6 +321,11 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
               html={readOnlyDisplayContent}
               sanitize={false}
               data-testid="game-summary-readonly"
+              emptyFallback={
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  (No recap provided)
+                </Typography>
+              }
               sx={{
                 padding: '12px 16px',
                 minHeight: 200,

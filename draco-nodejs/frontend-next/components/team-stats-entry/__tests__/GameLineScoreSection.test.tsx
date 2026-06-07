@@ -159,14 +159,14 @@ describe('GameLineScoreSection', () => {
   });
 
   it('saves only the edited side via onSave', async () => {
-    const onSave = vi.fn(async () => {});
+    const onSave = vi.fn(async (_payload: UpsertLineScoreType) => {});
     renderSection(makeLineScore({}), { editMode: true, currentTeamSeasonId: '200', onSave });
 
     fireEvent.change(inningInput('Away Team inning 1 runs'), { target: { value: '7' } });
     fireEvent.click(button(/save line score/i));
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    const payload = onSave.mock.calls[0][0] as UpsertLineScoreType;
+    const payload = onSave.mock.calls[0][0];
     expect(payload.away?.runsByInning[0]).toBe(7);
     expect(payload.home).toBeUndefined();
   });
