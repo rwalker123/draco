@@ -76,7 +76,7 @@ const sideEquals = (current: EditableSide, baseline: LineScoreSideType): boolean
 const inningRunsSum = (runs: (number | null)[]): number =>
   runs.reduce((total: number, value) => total + (value ?? 0), 0);
 
-const parseStatValue = (raw: string): number | null => {
+const parseStatValue = (raw: string, max = 99): number | null => {
   const trimmed = raw.trim();
   if (trimmed === '') {
     return null;
@@ -85,7 +85,7 @@ const parseStatValue = (raw: string): number | null => {
   if (Number.isNaN(parsed)) {
     return null;
   }
-  return Math.min(99, Math.max(0, parsed));
+  return Math.min(max, Math.max(0, parsed));
 };
 
 const toUpsertSide = (side: EditableSide): UpsertLineScoreType['home'] => ({
@@ -254,7 +254,7 @@ const GameLineScoreSection = forwardRef<GameLineScoreSectionHandle, GameLineScor
     };
 
     const setHitsOverrideValue = (side: 'home' | 'away', rawValue: string) => {
-      const value = parseStatValue(rawValue);
+      const value = parseStatValue(rawValue, 999);
       const setter = side === 'home' ? setHome : setAway;
       setter((previous) => ({ ...previous, hitsOverride: value }));
     };

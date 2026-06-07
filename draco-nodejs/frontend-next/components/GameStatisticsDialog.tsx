@@ -87,6 +87,7 @@ const GameStatisticsDialog: React.FC<GameStatisticsDialogProps> = ({
       setInitializing(true);
       setBattingStats(null);
       setPitchingStats(null);
+      setLineScore(null);
       setError(null);
     }
   }, [open, defaultTeamSeasonId]);

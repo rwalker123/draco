@@ -119,6 +119,7 @@ const EnterGameRecapDialog: React.FC<EnterGameRecapDialogProps> = ({
       setPlainTextContent(extractPlainText(initialRecap ?? ''));
       setIsDirty(false);
       setSubmitError(null);
+      setLineScore(null);
       setSelectedTeamSeasonId(initialTeamSeasonId ?? recapTabs?.[0]?.teamSeasonId ?? teamSeasonId);
     }
   }, [initialRecap, open, initialTeamSeasonId, recapTabs, teamSeasonId]);
