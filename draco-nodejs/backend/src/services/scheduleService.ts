@@ -974,8 +974,8 @@ export class ScheduleService {
     const awayTeamId = game.vteamid;
 
     const [managesHome, managesAway] = await Promise.all([
-      this.canManageTeam(userId, accountId, seasonId, homeTeamId),
-      this.canManageTeam(userId, accountId, seasonId, awayTeamId),
+      this.canManageTeam(userId, accountId, homeTeamId),
+      this.canManageTeam(userId, accountId, awayTeamId),
     ]);
 
     const existing = await this.scheduleRepository.findLineScore(gameId);
@@ -1067,7 +1067,6 @@ export class ScheduleService {
   private async canManageTeam(
     userId: string,
     accountId: bigint,
-    seasonId: bigint,
     teamSeasonId: bigint,
   ): Promise<boolean> {
     const roleService = ServiceFactory.getRoleService();
@@ -1085,13 +1084,11 @@ export class ScheduleService {
       return true;
     }
 
-    const check = await roleService.hasRole(userId, ROLE_IDS[RoleNamesType.TEAM_ADMIN], {
-      accountId,
-      teamId: teamSeasonId,
-      seasonId,
-    });
-
-    return check.hasRole;
+    const teamAdminRoleId = ROLE_IDS[RoleNamesType.TEAM_ADMIN];
+    return userRoles.contactRoles.some(
+      (contactRole) =>
+        contactRole.roleId === teamAdminRoleId && contactRole.roleData === teamSeasonId.toString(),
+    );
   }
 
   private async resolveContactId(userId: string, accountId: bigint): Promise<string | null> {
