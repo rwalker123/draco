@@ -13,10 +13,18 @@ const inflight = new Map<string, Promise<TeamSeasonType[]>>();
 
 const normalizeToken = (token: string | null | undefined): string | null => token ?? null;
 
+const inflightKey = (accountId: string, normalizedToken: string | null): string =>
+  `${accountId}:${normalizedToken ?? ''}`;
+
 export const clearUserTeamsCache = (accountId?: string): void => {
   if (accountId) {
     teamsCache.delete(accountId);
-    inflight.delete(accountId);
+    const prefix = `${accountId}:`;
+    for (const key of inflight.keys()) {
+      if (key.startsWith(prefix)) {
+        inflight.delete(key);
+      }
+    }
     return;
   }
   teamsCache.clear();
@@ -34,7 +42,8 @@ export const getUserTeamsCached = async (
     return cached.teams;
   }
 
-  const existing = inflight.get(accountId);
+  const key = inflightKey(accountId, normalizedToken);
+  const existing = inflight.get(key);
   if (existing) {
     return existing;
   }
@@ -51,11 +60,11 @@ export const getUserTeamsCached = async (
     return teams;
   })();
 
-  inflight.set(accountId, request);
+  inflight.set(key, request);
 
   try {
     return await request;
   } finally {
-    inflight.delete(accountId);
+    inflight.delete(key);
   }
 };
