@@ -16,11 +16,13 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { AnimatePresence, motion } from 'framer-motion';
 import './GameRecapsWidget.css';
-import { listSeasonGames } from '@draco/shared-api-client';
+import { listSeasonGames, getGameLineScore } from '@draco/shared-api-client';
+import type { LineScoreType } from '@draco/shared-schemas';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
 import { sanitizeRichContent } from '../utils/sanitization';
 import WidgetShell from './ui/WidgetShell';
+import LineScoreTable from './team-stats-entry/LineScoreTable';
 import RichTextContent from './common/RichTextContent';
 
 interface GameRecapFlat {
@@ -60,6 +62,9 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   const progressRef = React.useRef<number>(0);
   const progressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [lineScores, setLineScores] = useState<Record<string, LineScoreType | null>>({});
+  const lineScoreCacheRef = React.useRef<Record<string, LineScoreType | null>>({});
+  const inFlightLineScoresRef = React.useRef<Set<string>>(new Set());
   const theme = useTheme();
   const apiClient = useApiClient();
 
@@ -196,6 +201,46 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     };
   }, [accountId, apiClient, seasonId, teamSeasonId, maxRecaps]);
 
+  useEffect(() => {
+    if (!recapList.length || !accountId || !seasonId) return;
+
+    const clampedIndex = Math.min(currentIndex, recapList.length - 1);
+    const gameId = recapList[clampedIndex]?.id;
+    if (!gameId) return;
+    if (gameId in lineScoreCacheRef.current) return;
+    if (inFlightLineScoresRef.current.has(gameId)) return;
+
+    const controller = new AbortController();
+    inFlightLineScoresRef.current.add(gameId);
+
+    const loadLineScore = async () => {
+      try {
+        const result = await getGameLineScore({
+          client: apiClient,
+          path: { accountId, seasonId, gameId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+        if (controller.signal.aborted) return;
+        const value = result.data ?? null;
+        lineScoreCacheRef.current[gameId] = value;
+        setLineScores((prev) => ({ ...prev, [gameId]: value }));
+      } catch {
+        if (controller.signal.aborted) return;
+        lineScoreCacheRef.current[gameId] = null;
+        setLineScores((prev) => ({ ...prev, [gameId]: null }));
+      } finally {
+        inFlightLineScoresRef.current.delete(gameId);
+      }
+    };
+
+    void loadLineScore();
+
+    return () => {
+      controller.abort();
+    };
+  }, [currentIndex, recapList, accountId, seasonId, apiClient]);
+
   const sanitizedRecapHtml = (() => {
     if (!recapList.length) {
       return '<span style="color:#888;">(No recap provided)</span>';
@@ -239,6 +284,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
 
     const clampedIndex = Math.min(currentIndex, recapList.length - 1);
     const recapItem = recapList[clampedIndex];
+    const currentLineScore = lineScores[recapItem.id] ?? null;
 
     const variants = {
       slide: {
@@ -339,10 +385,16 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
                   </Typography>
                 )}
               </Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
-                {recapItem.homeScore}
-              </Typography>
+              {currentLineScore ? (
+                <Box sx={{ mb: 2 }}>
+                  <LineScoreTable lineScore={currentLineScore} />
+                </Box>
+              ) : (
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
+                  {recapItem.homeScore}
+                </Typography>
+              )}
               <Typography
                 variant="caption"
                 sx={{
