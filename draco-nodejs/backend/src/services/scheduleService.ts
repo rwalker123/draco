@@ -209,6 +209,7 @@ export class ScheduleService {
       }
 
       const accountHeader = await this.accountsService.getAccountHeader(accountId);
+      const accountTimeZone = await this.accountsService.getAccountTimeZone(accountId);
       const baseUrl = getFrontendBaseUrlOrFallback();
       const homeTeamName = (game.hteamid && teamNames.get(game.hteamid.toString())) || 'Home Team';
       const visitorTeamName =
@@ -216,7 +217,7 @@ export class ScheduleService {
       const scoreLine = `${homeTeamName} ${game.hscore ?? '-'} - ${game.vscore ?? '-'} ${visitorTeamName}`;
       const statusLine = getGameStatusText(Number(game.gamestatus ?? GameStatus.Scheduled));
       const gameDate = game.gamedate
-        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, 'UTC') ?? undefined)
+        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, accountTimeZone) ?? undefined)
         : undefined;
       const scheduleUrl = `${baseUrl}/account/${accountHeader.id}/schedule`;
 
@@ -551,6 +552,7 @@ export class ScheduleService {
       }
 
       const accountHeader = await this.accountsService.getAccountHeader(accountId);
+      const accountTimeZone = await this.accountsService.getAccountTimeZone(accountId);
       const baseUrl = getFrontendBaseUrlOrFallback();
       const homeTeamName = (game.hteamid && teamNames.get(game.hteamid.toString())) || 'Home Team';
       const visitorTeamName =
@@ -558,7 +560,7 @@ export class ScheduleService {
       const leagueName = game.leagueseason?.league?.name ?? '';
       const statusLine = getGameStatusText(Number(game.gamestatus ?? GameStatus.Scheduled));
       const gameDate = game.gamedate
-        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, 'UTC') ?? undefined)
+        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, accountTimeZone) ?? undefined)
         : undefined;
       const fieldName = game.availablefields?.name ?? undefined;
       const fieldCity = game.availablefields?.city ?? '';

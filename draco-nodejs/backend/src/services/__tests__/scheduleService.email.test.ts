@@ -185,6 +185,7 @@ describe('ScheduleService — schedule change emails', () => {
 
     accountsServiceMock = partialMock<AccountsService>({
       getAccountHeader: vi.fn().mockResolvedValue({ id: '99', name: 'Test League' }),
+      getAccountTimeZone: vi.fn().mockResolvedValue('America/New_York'),
     });
 
     accountSettingsServiceMock = partialMock<AccountSettingsService>({
@@ -543,6 +544,111 @@ describe('ScheduleService — schedule change emails', () => {
 
       const [, , emailRequest] = emailServiceMock.composeAndSendEmailFromUser.mock.calls[0];
       expect(emailRequest.subject).toMatch(/^CANCELLED:/);
+    });
+  });
+
+  describe('account timezone in email dates', () => {
+    const gameId = 1n;
+
+    const eveningEstGameDate = new Date('2025-06-11T00:30:00Z');
+
+    it('renders the schedule-change email date in the account timezone (evening EST game)', async () => {
+      const existingGame = makeGameForAccount({
+        id: gameId,
+        gamedate: new Date('2025-06-09T19:00:00Z'),
+        gamestatus: 0,
+      });
+      scheduleRepositoryMock.findGameWithAccountContext.mockResolvedValue(existingGame as never);
+      scheduleRepositoryMock.findTeamsInLeagueSeason.mockResolvedValue([
+        { id: 100n } as never,
+        { id: 200n } as never,
+      ]);
+      scheduleRepositoryMock.updateGame.mockResolvedValue(
+        makeGame({ gamedate: eveningEstGameDate }),
+      );
+
+      await service.updateGame(
+        accountId,
+        seasonId,
+        gameId,
+        { ...baseUpdatePayload, notifyTeams: true },
+        userId,
+      );
+
+      await vi.waitFor(() => {
+        expect(emailServiceMock.composeAndSendEmailFromUser).toHaveBeenCalledTimes(1);
+      });
+
+      const [, , emailRequest] = emailServiceMock.composeAndSendEmailFromUser.mock.calls[0];
+      expect(emailRequest.body).toContain('June 10th');
+      expect(emailRequest.body).not.toContain('June 11th');
+    });
+
+    it('renders the game-result email date in the account timezone (evening EST game)', async () => {
+      accountSettingsServiceMock.getAccountSettings.mockResolvedValue([
+        { definition: { key: 'EmailGameResultsToTeams' }, value: true },
+      ] as never);
+
+      scheduleRepositoryMock.findGameWithAccountContext.mockResolvedValue(
+        makeGameForAccount({ id: gameId }) as never,
+      );
+      scheduleRepositoryMock.updateGameResults.mockResolvedValue(
+        makeGame({ gamedate: eveningEstGameDate, gamestatus: 1, hscore: 5, vscore: 3 }),
+      );
+
+      await service.updateGameResults(
+        accountId,
+        gameId,
+        {
+          homeScore: 5,
+          visitorScore: 3,
+          gameStatus: 1,
+          emailPlayers: true,
+          postToTwitter: false,
+          postToBluesky: false,
+          postToFacebook: false,
+        },
+        userId,
+      );
+
+      await vi.waitFor(() => {
+        expect(emailServiceMock.composeAndSendEmailFromUser).toHaveBeenCalledTimes(1);
+      });
+
+      const [, , emailRequest] = emailServiceMock.composeAndSendEmailFromUser.mock.calls[0];
+      expect(emailRequest.body).toContain('June 10th');
+      expect(emailRequest.body).not.toContain('June 11th');
+    });
+
+    it('renders a daytime game date unchanged across timezones', async () => {
+      const existingGame = makeGameForAccount({
+        id: gameId,
+        gamedate: new Date('2025-06-09T19:00:00Z'),
+        gamestatus: 0,
+      });
+      scheduleRepositoryMock.findGameWithAccountContext.mockResolvedValue(existingGame as never);
+      scheduleRepositoryMock.findTeamsInLeagueSeason.mockResolvedValue([
+        { id: 100n } as never,
+        { id: 200n } as never,
+      ]);
+      scheduleRepositoryMock.updateGame.mockResolvedValue(
+        makeGame({ gamedate: new Date('2025-06-15T15:00:00Z') }),
+      );
+
+      await service.updateGame(
+        accountId,
+        seasonId,
+        gameId,
+        { ...baseUpdatePayload, notifyTeams: true },
+        userId,
+      );
+
+      await vi.waitFor(() => {
+        expect(emailServiceMock.composeAndSendEmailFromUser).toHaveBeenCalledTimes(1);
+      });
+
+      const [, , emailRequest] = emailServiceMock.composeAndSendEmailFromUser.mock.calls[0];
+      expect(emailRequest.body).toContain('June 15th');
     });
   });
 
