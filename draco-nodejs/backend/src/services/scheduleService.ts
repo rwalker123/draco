@@ -129,10 +129,13 @@ export class ScheduleService {
         ? await this.scheduleRepository.getTeamNames(teamIds)
         : new Map<string, string>();
 
+      const accountTimeZone = await this.accountsService.getAccountTimeZone(accountId);
+
       const payload = {
         gameId: game.id,
         gameDate: game.gamedate ?? undefined,
         gameStatus: game.gamestatus ?? undefined,
+        accountTimeZone,
         homeScore: game.hscore ?? undefined,
         visitorScore: game.vscore ?? undefined,
         homeTeamName:

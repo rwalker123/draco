@@ -94,6 +94,7 @@ interface TwitterGameResultPayload {
   visitorTeamName?: string;
   leagueName?: string | null;
   seasonName?: string | null;
+  accountTimeZone?: string | null;
 }
 
 type TwitterWorkoutPayload = WorkoutPostPayload;

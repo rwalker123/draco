@@ -38,6 +38,7 @@ import { encryptSecret, decryptSecret } from '../utils/secretEncryption.js';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { getDiscordOAuthConfig, type DiscordOAuthConfig } from '../config/discordIntegration.js';
 import { HttpError, fetchJson } from '../utils/fetchJson.js';
+import { DateUtils } from '../utils/dateUtils.js';
 import type { dbTeamSeasonWithLeaguesAndTeams } from '../repositories/types/dbTypes.js';
 import type { DiscordIngestionTarget } from '../config/socialIngestion.js';
 import {
@@ -113,6 +114,7 @@ interface DiscordGameResultPayload {
   visitorTeamName?: string;
   leagueName?: string | null;
   seasonName?: string | null;
+  accountTimeZone?: string | null;
 }
 
 type DiscordWorkoutPayload = WorkoutPostPayload;
@@ -2515,7 +2517,10 @@ export class DiscordIntegrationService {
       : [topBorder, formatRow(visitorName), middleBorder, formatRow(homeName), bottomBorder];
 
     const statusLabel = this.describeGameStatus(payload.gameStatus);
-    const formattedDate = payload.gameDate ? payload.gameDate.toISOString().split('T')[0] : null;
+    const formattedDate = DateUtils.formatIsoDateInTimeZone(
+      payload.gameDate,
+      payload.accountTimeZone,
+    );
 
     const header = [payload.leagueName, payload.seasonName]
       .filter((segment): segment is string => Boolean(segment))

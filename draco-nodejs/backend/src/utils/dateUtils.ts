@@ -239,6 +239,37 @@ export class DateUtils {
     return trimmed;
   }
 
+  static formatIsoDateInTimeZone(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    if (!date) {
+      return null;
+    }
+
+    const tz = timeZone?.trim() || 'UTC';
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: tz,
+      }).formatToParts(date);
+
+      const year = parts.find((part) => part.type === 'year')?.value;
+      const month = parts.find((part) => part.type === 'month')?.value;
+      const day = parts.find((part) => part.type === 'day')?.value;
+
+      if (!year || !month || !day) {
+        return null;
+      }
+
+      return `${year}-${month}-${day}`;
+    } catch {
+      return null;
+    }
+  }
+
   static getHourInTimeZone(date: Date, timeZone: string): number | null {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
       return null;

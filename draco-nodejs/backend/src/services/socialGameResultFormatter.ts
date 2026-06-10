@@ -8,6 +8,7 @@ export interface GameResultPostPayload {
   visitorTeamName?: string | null;
   leagueName?: string | null;
   seasonName?: string | null;
+  accountTimeZone?: string | null;
 }
 
 const describeGameStatus = (gameStatus?: number | null): string | null => {
@@ -33,11 +34,12 @@ export const composeGameResultMessage = (
   payload: Omit<GameResultPostPayload, 'gameId'>,
   options?: { characterLimit?: number },
 ): string | null => {
+  const timeZone = payload.accountTimeZone?.trim() || 'UTC';
   const formatDate = (date?: Date) => {
     if (!date) {
       return null;
     }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone });
   };
 
   const statusLabel = describeGameStatus(payload.gameStatus) ?? 'Final';

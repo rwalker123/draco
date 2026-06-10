@@ -71,6 +71,7 @@ interface BlueskyGameResultPayload {
   visitorTeamName?: string;
   leagueName?: string | null;
   seasonName?: string | null;
+  accountTimeZone?: string | null;
 }
 
 type BlueskyWorkoutPayload = WorkoutPostPayload;
