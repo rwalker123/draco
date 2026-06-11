@@ -11,6 +11,19 @@ export class DateUtils {
    */
   private static readonly SENTINEL_DATE = '1900-01-01T00:00:00.000Z';
 
+  static resolveTimeZone(timeZone?: string | null): string {
+    const tz = timeZone?.trim();
+    if (!tz) {
+      return 'UTC';
+    }
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      return tz;
+    } catch {
+      return 'UTC';
+    }
+  }
+
   static formatMonthDayWithOrdinal(
     date: Date | null | undefined,
     timeZone?: string | null,

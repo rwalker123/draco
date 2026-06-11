@@ -680,7 +680,7 @@ export class AccountsService {
 
   async getAccountTimeZone(accountId: bigint): Promise<string> {
     const account = await this.accountRepository.findById(accountId);
-    return account?.timezoneid?.trim() || 'UTC';
+    return DateUtils.resolveTimeZone(account?.timezoneid);
   }
 
   async getAccountTypes(): Promise<AccountTypeReference[]> {

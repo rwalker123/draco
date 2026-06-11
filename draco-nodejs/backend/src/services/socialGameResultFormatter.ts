@@ -1,3 +1,5 @@
+import { DateUtils } from '../utils/dateUtils.js';
+
 export interface GameResultPostPayload {
   gameId: bigint;
   gameDate?: Date;
@@ -34,7 +36,7 @@ export const composeGameResultMessage = (
   payload: Omit<GameResultPostPayload, 'gameId'>,
   options?: { characterLimit?: number },
 ): string | null => {
-  const timeZone = payload.accountTimeZone?.trim() || 'UTC';
+  const timeZone = DateUtils.resolveTimeZone(payload.accountTimeZone);
   const formatDate = (date?: Date) => {
     if (!date) {
       return null;
