@@ -32,7 +32,7 @@ export class DateUtils {
       return null;
     }
 
-    const tz = timeZone?.trim() || 'UTC';
+    const tz = DateUtils.resolveTimeZone(timeZone);
     try {
       const parts = new Intl.DateTimeFormat('en-US', {
         month: 'long',
@@ -260,7 +260,7 @@ export class DateUtils {
       return null;
     }
 
-    const tz = timeZone?.trim() || 'UTC';
+    const tz = DateUtils.resolveTimeZone(timeZone);
     try {
       const parts = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',

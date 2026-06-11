@@ -211,8 +211,10 @@ export class ScheduleService {
         return;
       }
 
-      const accountHeader = await this.accountsService.getAccountHeader(accountId);
-      const accountTimeZone = await this.accountsService.getAccountTimeZone(accountId);
+      const [accountHeader, accountTimeZone] = await Promise.all([
+        this.accountsService.getAccountHeader(accountId),
+        this.accountsService.getAccountTimeZone(accountId),
+      ]);
       const baseUrl = getFrontendBaseUrlOrFallback();
       const homeTeamName = (game.hteamid && teamNames.get(game.hteamid.toString())) || 'Home Team';
       const visitorTeamName =
@@ -554,8 +556,10 @@ export class ScheduleService {
         return;
       }
 
-      const accountHeader = await this.accountsService.getAccountHeader(accountId);
-      const accountTimeZone = await this.accountsService.getAccountTimeZone(accountId);
+      const [accountHeader, accountTimeZone] = await Promise.all([
+        this.accountsService.getAccountHeader(accountId),
+        this.accountsService.getAccountTimeZone(accountId),
+      ]);
       const baseUrl = getFrontendBaseUrlOrFallback();
       const homeTeamName = (game.hteamid && teamNames.get(game.hteamid.toString())) || 'Home Team';
       const visitorTeamName =
