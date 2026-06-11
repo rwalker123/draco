@@ -69,6 +69,40 @@ export class DateUtils {
     }
   }
 
+  static formatTimeInTimeZone(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    if (!date) {
+      return null;
+    }
+
+    const tz = DateUtils.resolveTimeZone(timeZone);
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: tz,
+      }).format(date);
+    } catch {
+      return null;
+    }
+  }
+
+  static formatMonthDayWithOrdinalAndTime(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    const datePart = DateUtils.formatMonthDayWithOrdinal(date, timeZone);
+    if (!datePart) {
+      return null;
+    }
+
+    const timePart = DateUtils.formatTimeInTimeZone(date, timeZone);
+    return timePart ? `${datePart} at ${timePart}` : datePart;
+  }
+
   /**
    * Convert database date to frontend-safe value
    * Returns null for sentinel dates (1900-01-01), ISO string for valid dates

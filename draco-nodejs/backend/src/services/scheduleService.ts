@@ -567,7 +567,7 @@ export class ScheduleService {
       const leagueName = game.leagueseason?.league?.name ?? '';
       const statusLine = getGameStatusText(Number(game.gamestatus ?? GameStatus.Scheduled));
       const gameDate = game.gamedate
-        ? (DateUtils.formatMonthDayWithOrdinal(game.gamedate, accountTimeZone) ?? undefined)
+        ? (DateUtils.formatMonthDayWithOrdinalAndTime(game.gamedate, accountTimeZone) ?? undefined)
         : undefined;
       const fieldName = game.availablefields?.name ?? undefined;
       const fieldCity = game.availablefields?.city ?? '';
