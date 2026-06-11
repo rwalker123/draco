@@ -428,7 +428,11 @@ export class AccountsService {
     });
 
     const authService = ServiceFactory.getAuthService();
-    const token = authService.generateTokenForUser(result.userId, payload.email, result.securityStamp);
+    const token = authService.generateTokenForUser(
+      result.userId,
+      payload.email,
+      result.securityStamp,
+    );
 
     void ServiceFactory.getEmailService().sendGeneralWelcomeEmail(payload.email);
 
@@ -672,6 +676,11 @@ export class AccountsService {
       name: account.name,
       accountLogoUrl: getAccountLogoUrl(account.id.toString()),
     };
+  }
+
+  async getAccountTimeZone(accountId: bigint): Promise<string> {
+    const account = await this.accountRepository.findById(accountId);
+    return DateUtils.resolveTimeZone(account?.timezoneid);
   }
 
   async getAccountTypes(): Promise<AccountTypeReference[]> {

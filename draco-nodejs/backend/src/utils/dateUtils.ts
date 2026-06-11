@@ -11,6 +11,19 @@ export class DateUtils {
    */
   private static readonly SENTINEL_DATE = '1900-01-01T00:00:00.000Z';
 
+  static resolveTimeZone(timeZone?: string | null): string {
+    const tz = timeZone?.trim();
+    if (!tz) {
+      return 'UTC';
+    }
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      return tz;
+    } catch {
+      return 'UTC';
+    }
+  }
+
   static formatMonthDayWithOrdinal(
     date: Date | null | undefined,
     timeZone?: string | null,
@@ -19,7 +32,7 @@ export class DateUtils {
       return null;
     }
 
-    const tz = timeZone?.trim() || 'UTC';
+    const tz = DateUtils.resolveTimeZone(timeZone);
     try {
       const parts = new Intl.DateTimeFormat('en-US', {
         month: 'long',
@@ -54,6 +67,40 @@ export class DateUtils {
     } catch {
       return null;
     }
+  }
+
+  static formatTimeInTimeZone(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    if (!date) {
+      return null;
+    }
+
+    const tz = DateUtils.resolveTimeZone(timeZone);
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: tz,
+      }).format(date);
+    } catch {
+      return null;
+    }
+  }
+
+  static formatMonthDayWithOrdinalAndTime(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    const datePart = DateUtils.formatMonthDayWithOrdinal(date, timeZone);
+    if (!datePart) {
+      return null;
+    }
+
+    const timePart = DateUtils.formatTimeInTimeZone(date, timeZone);
+    return timePart ? `${datePart} at ${timePart}` : datePart;
   }
 
   /**
@@ -237,6 +284,37 @@ export class DateUtils {
       return `${trimmed}T23:59:59.999Z`;
     }
     return trimmed;
+  }
+
+  static formatIsoDateInTimeZone(
+    date: Date | null | undefined,
+    timeZone?: string | null,
+  ): string | null {
+    if (!date) {
+      return null;
+    }
+
+    const tz = DateUtils.resolveTimeZone(timeZone);
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: tz,
+      }).formatToParts(date);
+
+      const year = parts.find((part) => part.type === 'year')?.value;
+      const month = parts.find((part) => part.type === 'month')?.value;
+      const day = parts.find((part) => part.type === 'day')?.value;
+
+      if (!year || !month || !day) {
+        return null;
+      }
+
+      return `${year}-${month}-${day}`;
+    } catch {
+      return null;
+    }
   }
 
   static getHourInTimeZone(date: Date, timeZone: string): number | null {
