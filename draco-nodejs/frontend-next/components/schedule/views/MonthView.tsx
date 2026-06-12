@@ -92,6 +92,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
         currentTeamSeasonId={currentTeamSeasonId}
         gridType="month"
         showZoomColumn={true}
+        focusDate={filterDate}
         days={monthDays}
         filteredGames={filteredGames}
         minHeight="200px"

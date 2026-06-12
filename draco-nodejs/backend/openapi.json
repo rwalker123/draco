@@ -11191,11 +11191,27 @@
             "type": "number",
             "minimum": 0
           },
+          "cs": {
+            "type": "number",
+            "minimum": 0
+          },
           "sf": {
             "type": "number",
             "minimum": 0
           },
           "sh": {
+            "type": "number",
+            "minimum": 0
+          },
+          "re": {
+            "type": "number",
+            "minimum": 0
+          },
+          "intr": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lob": {
             "type": "number",
             "minimum": 0
           },
@@ -11403,6 +11419,14 @@
             "type": "number",
             "minimum": 0
           },
+          "d": {
+            "type": "number",
+            "minimum": 0
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0
+          },
           "bf": {
             "type": "number",
             "minimum": 0
@@ -11412,6 +11436,14 @@
             "minimum": 0
           },
           "hbp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "bk": {
+            "type": "number",
+            "minimum": 0
+          },
+          "sc": {
             "type": "number",
             "minimum": 0
           },
@@ -11642,11 +11674,27 @@
                       "type": "number",
                       "minimum": 0
                     },
+                    "cs": {
+                      "type": "number",
+                      "minimum": 0
+                    },
                     "sf": {
                       "type": "number",
                       "minimum": 0
                     },
                     "sh": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "re": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "intr": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "lob": {
                       "type": "number",
                       "minimum": 0
                     },
@@ -11822,6 +11870,14 @@
                       "type": "number",
                       "minimum": 0
                     },
+                    "d": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "t": {
+                      "type": "number",
+                      "minimum": 0
+                    },
                     "bf": {
                       "type": "number",
                       "minimum": 0
@@ -11831,6 +11887,14 @@
                       "minimum": 0
                     },
                     "hbp": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "bk": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "sc": {
                       "type": "number",
                       "minimum": 0
                     },
