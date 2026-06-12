@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import StatisticsTable, { type StatsRowBase } from '../StatisticsTable';
+import { statColumnOrderKey } from '../../../constants/storageKeys';
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ accountId: '1' }),
@@ -57,5 +58,72 @@ describe('StatisticsTable player links', () => {
 
     expect(screen.getByText('Totals')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Totals' })).not.toBeInTheDocument();
+  });
+});
+
+describe('StatisticsTable column reordering', () => {
+  const battingKey = statColumnOrderKey('batting');
+
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  const renderExtended = (data: Row[]) =>
+    render(
+      <StatisticsTable
+        variant="batting"
+        extendedStats
+        data={data}
+        getRowKey={(row) => (row as Row).id}
+      />,
+    );
+
+  const headerLabels = (): string[] =>
+    screen.getAllByRole('columnheader').map((cell) => cell.textContent?.trim() ?? '');
+
+  it('applies a persisted column order, moving PA ahead of AB while keeping Player pinned first', () => {
+    window.localStorage.setItem(battingKey, JSON.stringify(['pa', 'ab']));
+
+    renderExtended([{ id: 'r1', playerName: 'Ordered Player', contactId: '1', ab: 10, pa: 12 }]);
+
+    const labels = headerLabels();
+    const playerIdx = labels.indexOf('Player');
+    const paIdx = labels.indexOf('PA');
+    const abIdx = labels.indexOf('AB');
+
+    expect(playerIdx).toBe(1);
+    expect(paIdx).toBeGreaterThan(playerIdx);
+    expect(paIdx).toBeLessThan(abIdx);
+  });
+
+  it('renders stat headers as sortable draggable cells but leaves pinned identity columns non-draggable', () => {
+    renderExtended([{ id: 'r1', playerName: 'Drag Player', contactId: '1', ab: 10 }]);
+
+    const headers = screen.getAllByRole('columnheader');
+    const abHeader = headers.find((cell) => within(cell).queryByText('AB'));
+    const playerHeader = headers.find((cell) => within(cell).queryByText('Player'));
+
+    expect(abHeader?.getAttribute('aria-roledescription')).toBe('sortable column');
+    expect(playerHeader?.getAttribute('aria-roledescription')).toBeNull();
+  });
+
+  it('shows a reset control only when a custom order is saved, and clears it on click', () => {
+    const { rerender } = renderExtended([{ id: 'r1', playerName: 'P', contactId: '1', ab: 10 }]);
+    expect(screen.queryByRole('button', { name: /reset columns/i })).not.toBeInTheDocument();
+
+    window.localStorage.setItem(battingKey, JSON.stringify(['pa', 'ab']));
+    rerender(
+      <StatisticsTable
+        variant="batting"
+        extendedStats
+        data={[{ id: 'r1', playerName: 'P', contactId: '1', ab: 10 }]}
+        getRowKey={(row) => (row as Row).id}
+      />,
+    );
+
+    const resetButton = screen.getByRole('button', { name: /reset columns/i });
+    fireEvent.click(resetButton);
+
+    expect(window.localStorage.getItem(battingKey)).toBeNull();
   });
 });

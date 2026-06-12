@@ -32,6 +32,11 @@ export const battingViewFieldOrder = [
   ...battingSummaryFields,
 ] as const;
 
+export const BATTING_STAT_FIELD_ORDER: string[] = [
+  ...editableBattingFields,
+  ...battingSummaryFields,
+];
+
 export type BattingViewField = (typeof battingViewFieldOrder)[number];
 
 export type BattingFieldMetadata = {
