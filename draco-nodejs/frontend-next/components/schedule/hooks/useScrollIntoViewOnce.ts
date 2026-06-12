@@ -18,13 +18,27 @@ export function useScrollIntoViewOnce<T extends HTMLElement>(
       return;
     }
 
-    const element = ref.current;
-    if (!element) {
-      return;
-    }
+    let frameId: number | null = null;
 
-    element.scrollIntoView({ block, behavior });
-    hasScrolledRef.current = true;
+    const attempt = () => {
+      const element = ref.current;
+      if (!element) {
+        frameId = requestAnimationFrame(attempt);
+        return;
+      }
+
+      element.scrollIntoView({ block, behavior });
+      hasScrolledRef.current = true;
+      frameId = null;
+    };
+
+    attempt();
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
   }, [targetKey, block, behavior]);
 
   return ref;

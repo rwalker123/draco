@@ -116,14 +116,14 @@ const computePitchingTotals = (
   const whip = innings > 0 ? (aggregate.bb + aggregate.h) / innings : null;
   const k9 = innings > 0 ? (aggregate.so * 9) / innings : null;
   const bb9 = innings > 0 ? (aggregate.bb * 9) / innings : null;
-  const battersFacedExclBbHbp = aggregate.bf - aggregate.bb - aggregate.hbp;
-  const oba = battersFacedExclBbHbp > 0 ? aggregate.h / battersFacedExclBbHbp : null;
+  const opponentAtBats = aggregate.bf - aggregate.bb - aggregate.hbp - aggregate.sc;
+  const oba = opponentAtBats > 0 ? aggregate.h / opponentAtBats : null;
   const totalBasesAgainst =
     aggregate.d * 2 +
     aggregate.t * 3 +
     aggregate.hr * 4 +
     (aggregate.h - aggregate.d - aggregate.t - aggregate.hr);
-  const slg = battersFacedExclBbHbp > 0 ? totalBasesAgainst / battersFacedExclBbHbp : null;
+  const slg = opponentAtBats > 0 ? totalBasesAgainst / opponentAtBats : null;
 
   return {
     ...aggregate,

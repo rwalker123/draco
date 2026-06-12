@@ -126,11 +126,11 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
         CASE WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
              ELSE (SUM(ps.bb)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)) * 9.0
         END as bb9,
-        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp)) = 0 THEN 0
-             ELSE SUM(ps.h)::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp))
+        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc)) <= 0 THEN 0
+             ELSE SUM(ps.h)::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc))
         END as oba,
-        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp)) = 0 THEN 0
-             ELSE (SUM(ps.d) * 2 + SUM(ps.t) * 3 + SUM(ps.hr) * 4 + (SUM(ps.h) - SUM(ps.d) - SUM(ps.t) - SUM(ps.hr)))::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp))
+        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc)) <= 0 THEN 0
+             ELSE (SUM(ps.d) * 2 + SUM(ps.t) * 3 + SUM(ps.hr) * 4 + (SUM(ps.h) - SUM(ps.d) - SUM(ps.t) - SUM(ps.hr)))::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc))
         END as slg,
         (SUM(ps.ip) + SUM(ps.ip2) / 3.0)::float as "ipDecimal"
       FROM pitchstatsum ps
@@ -225,11 +225,11 @@ export class PrismaPitchingStatisticsRepository implements IPitchingStatisticsRe
         CASE WHEN (SUM(ps.ip) + SUM(ps.ip2) / 3.0) = 0 THEN 0
              ELSE (SUM(ps.bb)::float / (SUM(ps.ip) + SUM(ps.ip2) / 3.0)) * 9.0
         END as bb9,
-        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp)) = 0 THEN 0
-             ELSE SUM(ps.h)::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp))
+        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc)) <= 0 THEN 0
+             ELSE SUM(ps.h)::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc))
         END as oba,
-        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp)) = 0 THEN 0
-             ELSE (SUM(ps.d) * 2 + SUM(ps.t) * 3 + SUM(ps.hr) * 4 + (SUM(ps.h) - SUM(ps.d) - SUM(ps.t) - SUM(ps.hr)))::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp))
+        CASE WHEN (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc)) <= 0 THEN 0
+             ELSE (SUM(ps.d) * 2 + SUM(ps.t) * 3 + SUM(ps.hr) * 4 + (SUM(ps.h) - SUM(ps.d) - SUM(ps.t) - SUM(ps.hr)))::float / (SUM(ps.bf) - SUM(ps.bb) - SUM(ps.hbp) - SUM(ps.sc))
         END as slg,
         (SUM(ps.ip) + SUM(ps.ip2) / 3.0)::float as "ipDecimal"
       FROM pitchstatsum ps
