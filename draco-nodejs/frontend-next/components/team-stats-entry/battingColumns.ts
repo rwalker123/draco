@@ -111,11 +111,11 @@ const battingFieldMetadata: Record<BattingViewField, BattingFieldMetadata> = {
   },
   re: {
     label: 'RE',
-    tooltip: 'RE',
+    tooltip: 'Reached On Error',
   },
   intr: {
     label: 'INTR',
-    tooltip: 'INTR',
+    tooltip: 'Catcher/Fielder Interference',
   },
   lob: {
     label: 'LOB',
