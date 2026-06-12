@@ -12,7 +12,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Chip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Link from 'next/link';
@@ -20,6 +19,7 @@ import { getSeasonStandings } from '@draco/shared-api-client';
 import type { SeasonStandingsResponse } from '@draco/shared-api-client';
 import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
 import { useApiClient } from '../hooks/useApiClient';
+import { useAccountSettings } from '../hooks/useAccountSettings';
 import { unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
 
@@ -51,6 +51,40 @@ const formatTies = (value: number): string => {
   return value.toString();
 };
 
+const PYTHAGOREAN_EXPONENT = 2;
+
+const formatRuns = (value: number): string => {
+  const num = Number.isFinite(value) ? value : 0;
+  return Math.round(num).toString();
+};
+
+export const formatRunDifferential = (rs: number, ra: number): string => {
+  const diff = (Number.isFinite(rs) ? rs : 0) - (Number.isFinite(ra) ? ra : 0);
+  if (diff > 0) return `+${diff}`;
+  return diff.toString();
+};
+
+export const formatExpectedRecord = (rs: number, ra: number, games: number): string => {
+  if (games <= 0 || rs + ra <= 0) return '-';
+  const scored = Math.pow(rs, PYTHAGOREAN_EXPONENT);
+  const allowed = Math.pow(ra, PYTHAGOREAN_EXPONENT);
+  const expectedWinPct = scored / (scored + allowed);
+  const expectedWins = Math.round(expectedWinPct * games);
+  const expectedLosses = games - expectedWins;
+  return `${expectedWins}-${expectedLosses}`;
+};
+
+const nextGameDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: 'numeric',
+});
+
+const formatNextGameDate = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return nextGameDateFormatter.format(date);
+};
+
 export default function Standings({
   accountId,
   seasonId,
@@ -58,9 +92,17 @@ export default function Standings({
   showHeader = true,
 }: StandingsProps) {
   const apiClient = useApiClient();
+  const { settings: accountSettings } = useAccountSettings(accountId);
   const [groupedStandings, setGroupedStandings] = useState<StandingsLeagueType[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const showDivisionRecord =
+    accountSettings?.some(
+      (setting) =>
+        setting.definition.key === 'UseDivisionRecordInStandings' &&
+        setting.effectiveValue === true,
+    ) ?? false;
 
   useEffect(() => {
     if (!seasonId || seasonId === '0') return;
@@ -119,7 +161,7 @@ export default function Standings({
       component={Paper}
       sx={{
         mb: 3,
-        maxWidth: 800,
+        maxWidth: 1150,
         mx: 'auto',
         borderRadius: 2,
         backgroundColor: (theme) => theme.palette.widget.surface,
@@ -141,7 +183,7 @@ export default function Standings({
           <TableRow
             sx={{
               backgroundColor: (theme) =>
-                alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.08),
+                alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.04),
               '& .MuiTableCell-root': {
                 borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
                 color: (theme) => theme.palette.widget.headerText,
@@ -164,21 +206,32 @@ export default function Standings({
             <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
               GB
             </TableCell>
+            {showDivisionRecord && (
+              <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+                Div
+              </TableCell>
+            )}
             <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
-              Div
+              RS
             </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              RA
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              DIFF
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap', width: '1%' }}>
+              X-W/L
+            </TableCell>
+            <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>NEXT GAME</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {sortTeams(teams).map((team, index) => (
+          {sortTeams(teams).map((team) => (
             <TableRow
               key={team.team.id}
               sx={{
                 '&:hover': { backgroundColor: (theme) => theme.palette.action.hover },
-                backgroundColor: (theme) =>
-                  index === 0
-                    ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.3 : 0.12)
-                    : 'transparent',
                 borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
               }}
             >
@@ -194,19 +247,9 @@ export default function Standings({
                   },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Link href={`/account/${accountId}/seasons/${seasonId}/teams/${team.team.id}`}>
-                    {team.team.name ?? 'Unnamed Team'}
-                  </Link>
-                  {index === 0 && (
-                    <Chip
-                      label="1st"
-                      size="small"
-                      color="success"
-                      sx={{ fontSize: '0.65rem', height: 18, ml: 0.5 }}
-                    />
-                  )}
-                </Box>
+                <Link href={`/account/${accountId}/seasons/${seasonId}/teams/${team.team.id}`}>
+                  {team.team.name ?? 'Unnamed Team'}
+                </Link>
               </TableCell>
               <TableCell
                 align="right"
@@ -223,10 +266,9 @@ export default function Standings({
               <TableCell
                 align="right"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 600,
                   whiteSpace: 'nowrap',
                   width: '1%',
-                  color: (theme) => theme.palette.primary.main,
                 }}
               >
                 {formatPercentage(team.pct)}
@@ -234,16 +276,82 @@ export default function Standings({
               <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}>
                 {formatGamesBehind(team.gb)}
               </TableCell>
+              {showDivisionRecord && (
+                <TableCell
+                  align="right"
+                  sx={{
+                    fontSize: '0.875rem',
+                    whiteSpace: 'nowrap',
+                    width: '1%',
+                    color: 'text.secondary',
+                  }}
+                >
+                  {formatDivisionRecord(team.divisionRecord)}
+                </TableCell>
+              )}
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}>
+                {formatRuns(team.rs)}
+              </TableCell>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}>
+                {formatRuns(team.ra)}
+              </TableCell>
               <TableCell
                 align="right"
                 sx={{
-                  fontSize: '0.875rem',
+                  fontWeight: 'medium',
                   whiteSpace: 'nowrap',
                   width: '1%',
-                  color: 'text.secondary',
+                  color: (theme) => {
+                    const diff = team.rs - team.ra;
+                    if (diff > 0) return theme.palette.success.main;
+                    if (diff < 0) return theme.palette.error.main;
+                    return theme.palette.text.secondary;
+                  },
                 }}
               >
-                {formatDivisionRecord(team.divisionRecord)}
+                {formatRunDifferential(team.rs, team.ra)}
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ whiteSpace: 'nowrap', width: '1%', color: 'text.secondary' }}
+              >
+                {formatExpectedRecord(team.rs, team.ra, team.w + team.l + team.t)}
+              </TableCell>
+              <TableCell
+                sx={{
+                  whiteSpace: 'nowrap',
+                  color: 'text.secondary',
+                  '& a': {
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  },
+                }}
+              >
+                {team.nextGame ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <span>
+                      {formatNextGameDate(team.nextGame.gameDate)}
+                      {team.nextGame.isHome ? ' vs. ' : ' @ '}
+                    </span>
+                    <Link
+                      href={`/account/${accountId}/seasons/${seasonId}/teams/${team.nextGame.opponent.id}`}
+                      title={team.nextGame.opponent.name ?? undefined}
+                      style={{
+                        display: 'inline-block',
+                        maxWidth: '6rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        verticalAlign: 'bottom',
+                      }}
+                    >
+                      {team.nextGame.opponent.name ?? 'Unnamed Team'}
+                    </Link>
+                  </Box>
+                ) : (
+                  '-'
+                )}
               </TableCell>
             </TableRow>
           ))}
@@ -256,7 +364,7 @@ export default function Standings({
     if (!groupedStandings) return null;
 
     return (
-      <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 1250, mx: 'auto' }}>
         {groupedStandings.map((league) => (
           <Box key={league.league.id ?? 'no-league'} sx={{ mb: 5 }}>
             <Typography
@@ -266,7 +374,7 @@ export default function Standings({
                 fontWeight: 'bold',
                 textAlign: 'center',
                 color: (theme) => theme.palette.widget.headerText,
-                borderBottom: (theme) => `2px solid ${theme.palette.primary.main}`,
+                borderBottom: (theme) => `2px solid ${theme.palette.widget.border}`,
                 pb: 1,
                 letterSpacing: '0.05em',
               }}
@@ -286,12 +394,11 @@ export default function Standings({
                       mb: 2,
                       fontWeight: 700,
                       textAlign: 'center',
-                      color: (theme) => theme.palette.secondary.main,
+                      color: (theme) => theme.palette.text.secondary,
                       textTransform: 'uppercase',
                       fontSize: '1rem',
                       letterSpacing: '0.08em',
-                      borderBottom: (theme) =>
-                        `1px solid ${alpha(theme.palette.secondary.main, 0.4)}`,
+                      borderBottom: (theme) => `1px solid ${theme.palette.widget.border}`,
                       pb: 0.5,
                       display: 'inline-block',
                       minWidth: '200px',

@@ -346,12 +346,14 @@ export class ServiceFactory {
       const pitchingRepository = RepositoryFactory.getPitchingStatisticsRepository();
       const leagueLeadersRepository = RepositoryFactory.getLeagueLeadersDisplayRepository();
       const contactRepository = RepositoryFactory.getContactRepository();
+      const scheduleRepository = RepositoryFactory.getScheduleRepository();
       this.statisticsService = new StatisticsService(
         prisma,
         battingRepository,
         pitchingRepository,
         leagueLeadersRepository,
         contactRepository,
+        scheduleRepository,
       );
     }
     return this.statisticsService;

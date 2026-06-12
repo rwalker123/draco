@@ -35,11 +35,24 @@ router.get(
             t: team.t,
             pct: team.pct,
             gb: team.gb,
+            rs: team.rs,
+            ra: team.ra,
             divisionRecord: team.divisionRecord
               ? {
                   w: team.divisionRecord.w,
                   l: team.divisionRecord.l,
                   t: team.divisionRecord.t,
+                }
+              : undefined,
+            nextGame: team.nextGame
+              ? {
+                  id: team.nextGame.id,
+                  gameDate: team.nextGame.gameDate,
+                  opponent: {
+                    id: team.nextGame.opponentId,
+                    name: team.nextGame.opponentName,
+                  },
+                  isHome: team.nextGame.isHome,
                 }
               : undefined,
           })),
@@ -57,6 +70,8 @@ router.get(
         t: team.t,
         pct: team.pct,
         gb: team.gb,
+        rs: team.rs,
+        ra: team.ra,
         league: team.leagueId ? { id: team.leagueId.toString(), name: team.leagueName } : undefined,
         division: team.divisionId
           ? { id: team.divisionId.toString(), name: team.divisionName || '' }
@@ -66,6 +81,14 @@ router.get(
               w: team.divisionRecord.w,
               l: team.divisionRecord.l,
               t: team.divisionRecord.t,
+            }
+          : undefined,
+        nextGame: team.nextGame
+          ? {
+              id: team.nextGame.id,
+              gameDate: team.nextGame.gameDate,
+              opponent: { id: team.nextGame.opponentId, name: team.nextGame.opponentName },
+              isHome: team.nextGame.isHome,
             }
           : undefined,
       }));

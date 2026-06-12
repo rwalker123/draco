@@ -17,6 +17,7 @@ import {
   IContactRepository,
   ILeagueLeadersDisplayRepository,
   IPitchingStatisticsRepository,
+  IScheduleRepository,
   PlayerTeamsQueryOptions,
 } from '../repositories/interfaces/index.js';
 import {
@@ -25,6 +26,7 @@ import {
   dbPlayerTeamAssignment,
   dbPlayerCareerBattingRow,
   dbPlayerCareerPitchingRow,
+  dbGameInfo,
 } from '../repositories/types/dbTypes.js';
 import { StatsResponseFormatter } from '../responseFormatters/statsResponseFormatter.js';
 import { NotFoundError } from '../utils/customErrors.js';
@@ -44,6 +46,15 @@ export interface StandingsRow {
   pct: number;
   gb: number; // games back
   divisionRecord?: { w: number; l: number; t: number };
+  rs: number; // runs scored
+  ra: number; // runs against
+  nextGame?: {
+    id: string;
+    gameDate: string;
+    opponentId: string;
+    opponentName: string;
+    isHome: boolean;
+  };
 }
 
 export interface GroupedStandingsResponse {
@@ -87,6 +98,7 @@ export class StatisticsService {
     private readonly pitchingStatisticsRepository: IPitchingStatisticsRepository,
     private readonly leagueLeadersDisplayRepository: ILeagueLeadersDisplayRepository,
     private readonly contactRepository: IContactRepository,
+    private readonly scheduleRepository: IScheduleRepository,
   ) {
     this.minimumCalculator = new MinimumCalculator(prisma);
   }
@@ -402,7 +414,17 @@ export class StatisticsService {
             AND hts.divisionseasonid = vts.divisionseasonid
             AND hts.divisionseasonid = ts.divisionseasonid
             AND hts.divisionseasonid IS NOT NULL
-          THEN 1 ELSE 0 END), 0)::int as div_t
+          THEN 1 ELSE 0 END), 0)::int as div_t,
+        -- Runs Scored
+        COALESCE(SUM(CASE
+          WHEN lg.gamestatus IN (1, 4) AND lg.hteamid = ts.id THEN lg.hscore
+          WHEN lg.gamestatus IN (1, 4) AND lg.vteamid = ts.id THEN lg.vscore
+          ELSE 0 END), 0)::int as rs,
+        -- Runs Against
+        COALESCE(SUM(CASE
+          WHEN lg.gamestatus IN (1, 4) AND lg.hteamid = ts.id THEN lg.vscore
+          WHEN lg.gamestatus IN (1, 4) AND lg.vteamid = ts.id THEN lg.hscore
+          ELSE 0 END), 0)::int as ra
       FROM teams t
       INNER JOIN teamsseason ts ON t.id = ts.teamid
       INNER JOIN leagueseason ls ON ts.leagueseasonid = ls.id
@@ -435,7 +457,11 @@ export class StatisticsService {
       div_w: number;
       div_l: number;
       div_t: number;
+      rs: number;
+      ra: number;
     }>;
+
+    const nextGames = await this.getNextGames(seasonId);
 
     // Map to StandingsRow format and calculate pct
     const standings: StandingsRow[] = rawStandings.map((team) => {
@@ -459,10 +485,52 @@ export class StatisticsService {
         pct,
         gb: 0, // Will be calculated later
         divisionRecord: { w: team.div_w, l: team.div_l, t: team.div_t },
+        rs: Number(team.rs),
+        ra: Number(team.ra),
+        nextGame: nextGames.get(team.teamId.toString()),
       };
     });
 
     return standings;
+  }
+
+  private async getNextGames(
+    seasonId: bigint,
+  ): Promise<Map<string, NonNullable<StandingsRow['nextGame']>>> {
+    const games: dbGameInfo[] = await this.scheduleRepository.listScheduledGamesForSeason(
+      seasonId,
+      new Date(),
+    );
+
+    const nextGames = new Map<string, NonNullable<StandingsRow['nextGame']>>();
+
+    for (const game of games) {
+      const gameDate = game.gamedate.toISOString();
+      const homeId = game.hteamid.toString();
+      const awayId = game.vteamid.toString();
+
+      if (!nextGames.has(homeId)) {
+        nextGames.set(homeId, {
+          id: game.id.toString(),
+          gameDate,
+          opponentId: game.visitingteam.id.toString(),
+          opponentName: game.visitingteam.name,
+          isHome: true,
+        });
+      }
+
+      if (!nextGames.has(awayId)) {
+        nextGames.set(awayId, {
+          id: game.id.toString(),
+          gameDate,
+          opponentId: game.hometeam.id.toString(),
+          opponentName: game.hometeam.name,
+          isHome: false,
+        });
+      }
+    }
+
+    return nextGames;
   }
 
   async getGroupedStandings(

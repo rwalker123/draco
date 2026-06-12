@@ -7827,7 +7827,8 @@
                     "SyncInstagramToGallery",
                     "NotifyTeamsWantedOnPlayersWanted",
                     "NotifyPlayersWantedOnTeamsWanted",
-                    "EnableLiveScoring"
+                    "EnableLiveScoring",
+                    "UseDivisionRecordInStandings"
                   ]
                 },
                 "label": {
@@ -7917,7 +7918,8 @@
                           "SyncInstagramToGallery",
                           "NotifyTeamsWantedOnPlayersWanted",
                           "NotifyPlayersWantedOnTeamsWanted",
-                          "EnableLiveScoring"
+                          "EnableLiveScoring",
+                          "UseDivisionRecordInStandings"
                         ]
                       },
                       "value": {
@@ -8074,7 +8076,8 @@
                   "SyncInstagramToGallery",
                   "NotifyTeamsWantedOnPlayersWanted",
                   "NotifyPlayersWantedOnTeamsWanted",
-                  "EnableLiveScoring"
+                  "EnableLiveScoring",
+                  "UseDivisionRecordInStandings"
                 ]
               },
               "label": {
@@ -8164,7 +8167,8 @@
                         "SyncInstagramToGallery",
                         "NotifyTeamsWantedOnPlayersWanted",
                         "NotifyPlayersWantedOnTeamsWanted",
-                        "EnableLiveScoring"
+                        "EnableLiveScoring",
+                        "UseDivisionRecordInStandings"
                       ]
                     },
                     "value": {
@@ -8332,7 +8336,8 @@
           "SyncInstagramToGallery",
           "NotifyTeamsWantedOnPlayersWanted",
           "NotifyPlayersWantedOnTeamsWanted",
-          "EnableLiveScoring"
+          "EnableLiveScoring",
+          "UseDivisionRecordInStandings"
         ]
       },
       "Sponsor": {
@@ -10593,6 +10598,50 @@
                           "l",
                           "t"
                         ]
+                      },
+                      "rs": {
+                        "type": "number"
+                      },
+                      "ra": {
+                        "type": "number"
+                      },
+                      "nextGame": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "gameDate": {
+                            "type": "string"
+                          },
+                          "opponent": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^\\d+$",
+                                "example": "12345"
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ]
+                          },
+                          "isHome": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "gameDate",
+                          "opponent",
+                          "isHome"
+                        ]
                       }
                     },
                     "required": [
@@ -10601,7 +10650,9 @@
                       "t",
                       "team",
                       "pct",
-                      "gb"
+                      "gb",
+                      "rs",
+                      "ra"
                     ]
                   }
                 }
@@ -10710,6 +10761,50 @@
               "l",
               "t"
             ]
+          },
+          "rs": {
+            "type": "number"
+          },
+          "ra": {
+            "type": "number"
+          },
+          "nextGame": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "gameDate": {
+                "type": "string"
+              },
+              "opponent": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "example": "12345"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              "isHome": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "gameDate",
+              "opponent",
+              "isHome"
+            ]
           }
         },
         "required": [
@@ -10718,7 +10813,9 @@
           "t",
           "team",
           "pct",
-          "gb"
+          "gb",
+          "rs",
+          "ra"
         ]
       },
       "TeamSeasonRecord": {
@@ -40424,7 +40521,8 @@
                 "SyncInstagramToGallery",
                 "NotifyTeamsWantedOnPlayersWanted",
                 "NotifyPlayersWantedOnTeamsWanted",
-                "EnableLiveScoring"
+                "EnableLiveScoring",
+                "UseDivisionRecordInStandings"
               ]
             }
           }
