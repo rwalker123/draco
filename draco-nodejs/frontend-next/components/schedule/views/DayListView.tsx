@@ -10,6 +10,7 @@ import {
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
 import WidgetShell from '../../ui/WidgetShell';
+import { useScrollIntoViewOnce } from '../hooks/useScrollIntoViewOnce';
 import { useTheme } from '@mui/material/styles';
 
 interface DayListViewProps extends ViewComponentProps {
@@ -118,6 +119,13 @@ const DayListView: React.FC<DayListViewProps> = ({
   const computedWeekStart = isDayView ? startOfWeek(currentDate) : _startDate;
   const computedWeekEnd = isDayView ? endOfWeek(currentDate) : _endDate;
 
+  const focusDateKey = getDateKeyInTimezone(filterDate, timeZone);
+  const scrollTargetKey =
+    !isDayView && sortedDates && focusDateKey
+      ? (sortedDates.find((key) => key >= focusDateKey) ?? sortedDates[sortedDates.length - 1])
+      : undefined;
+  const focusGroupRef = useScrollIntoViewOnce<HTMLDivElement>(scrollTargetKey, { block: 'start' });
+
   const renderDayContent = () => {
     if (dayGames.length === 0) {
       return (
@@ -201,7 +209,9 @@ const DayListView: React.FC<DayListViewProps> = ({
           return (
             <Paper
               key={dateKey}
+              ref={dateKey === scrollTargetKey ? focusGroupRef : undefined}
               sx={{
+                scrollMarginTop: 16,
                 p: 2,
                 backgroundColor: isTodayDate ? highlightBg : theme.palette.widget.surface,
                 borderWidth: 1,

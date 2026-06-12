@@ -16,12 +16,16 @@ const seasonColumnKeys = [
   't',
   'hr',
   'rbi',
-  'bb',
   'so',
+  'bb',
   'hbp',
   'sb',
+  'cs',
   'sf',
   'sh',
+  're',
+  'intr',
+  'lob',
   'tb',
   'pa',
   'avg',
@@ -78,8 +82,12 @@ const computeBattingTotals = (
       acc.so += current.so;
       acc.hbp += current.hbp;
       acc.sb += current.sb;
+      acc.cs += current.cs ?? 0;
       acc.sf += current.sf;
       acc.sh += current.sh;
+      acc.re += current.re ?? 0;
+      acc.intr += current.intr ?? 0;
+      acc.lob += current.lob ?? 0;
       acc.tb += current.tb;
       acc.pa += current.pa;
       return acc;
@@ -96,8 +104,12 @@ const computeBattingTotals = (
       so: 0,
       hbp: 0,
       sb: 0,
+      cs: 0,
       sf: 0,
       sh: 0,
+      re: 0,
+      intr: 0,
+      lob: 0,
       tb: 0,
       pa: 0,
     },
@@ -208,7 +220,8 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
       ) : (
         <StatisticsTable
           variant="batting"
-          extendedStats={false}
+          extendedStats
+          omitFields={['playerNumber']}
           data={tableRows}
           getRowKey={(row) => row.id}
           sortField={sortField ? String(sortField) : undefined}

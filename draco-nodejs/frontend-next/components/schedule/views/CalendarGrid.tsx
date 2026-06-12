@@ -9,6 +9,7 @@ import {
   getDateKeyInTimezone,
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
+import { useScrollIntoViewOnce } from '../hooks/useScrollIntoViewOnce';
 import { alpha, useTheme } from '@mui/material/styles';
 
 export interface CalendarGridProps {
@@ -19,6 +20,7 @@ export interface CalendarGridProps {
   gridType: 'week' | 'month';
   showZoomColumn?: boolean;
   currentMonthDate?: Date;
+  focusDate?: Date;
 
   // Data
   days: Date[];
@@ -67,6 +69,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   gridType: _gridType,
   showZoomColumn = false,
   currentMonthDate,
+  focusDate,
   days,
   filteredGames,
   minHeight = '300px',
@@ -143,6 +146,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   };
 
   const gamesByDateKey = buildGamesByDateKey(filteredGames, timeZone);
+
+  const focusDateKey = focusDate ? getDateKeyInTimezone(focusDate, timeZone) : null;
+  const focusCellRef = useScrollIntoViewOnce<HTMLDivElement>(focusDateKey, { block: 'nearest' });
 
   const monthReference = currentMonthDate
     ? {
@@ -278,8 +284,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     return (
                       <Box
                         key={day.toISOString()}
+                        ref={
+                          focusDateKey && getDateKeyInTimezone(day, timeZone) === focusDateKey
+                            ? focusCellRef
+                            : undefined
+                        }
                         sx={{
                           ...dayCellStyles,
+                          scrollMarginTop: 16,
                           borderRight: `1px solid ${borderColor}`,
                           borderBottom: `1px solid ${borderColor}`,
                           backgroundColor: isToday ? todayBg : theme.palette.widget.surface,
@@ -429,8 +441,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
               return (
                 <Box
                   key={day.toISOString()}
+                  ref={
+                    focusDateKey && getDateKeyInTimezone(day, timeZone) === focusDateKey
+                      ? focusCellRef
+                      : undefined
+                  }
                   sx={{
                     ...dayCellStyles,
+                    scrollMarginTop: 16,
                     borderRight: index < 6 ? `1px solid ${borderColor}` : 'none',
                     borderBottom: `1px solid ${borderColor}`,
                     backgroundColor: isToday ? todayBg : theme.palette.widget.surface,

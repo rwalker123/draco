@@ -9,20 +9,29 @@ import StatisticsTable, { type StatsRowBase } from '../statistics/StatisticsTabl
 
 const seasonColumnKeys = [
   'playerName',
+  'ipDecimal',
   'w',
   'l',
   's',
-  'ipDecimal',
   'h',
   'r',
   'er',
-  'bb',
-  'so',
+  'd',
+  't',
   'hr',
+  'so',
+  'bb',
+  'bf',
+  'wp',
+  'hbp',
+  'bk',
+  'sc',
   'era',
   'whip',
   'k9',
   'bb9',
+  'oba',
+  'slg',
 ] as const;
 
 type SeasonPitchingColumnKey = (typeof seasonColumnKeys)[number];
@@ -70,6 +79,13 @@ const computePitchingTotals = (
       acc.bb += current.bb;
       acc.so += current.so;
       acc.hr += current.hr;
+      acc.d += current.d ?? 0;
+      acc.t += current.t ?? 0;
+      acc.bf += current.bf;
+      acc.wp += current.wp;
+      acc.hbp += current.hbp;
+      acc.bk += current.bk ?? 0;
+      acc.sc += current.sc ?? 0;
       return acc;
     },
     {
@@ -85,6 +101,13 @@ const computePitchingTotals = (
       bb: 0,
       so: 0,
       hr: 0,
+      d: 0,
+      t: 0,
+      bf: 0,
+      wp: 0,
+      hbp: 0,
+      bk: 0,
+      sc: 0,
     },
   );
 
@@ -93,6 +116,14 @@ const computePitchingTotals = (
   const whip = innings > 0 ? (aggregate.bb + aggregate.h) / innings : null;
   const k9 = innings > 0 ? (aggregate.so * 9) / innings : null;
   const bb9 = innings > 0 ? (aggregate.bb * 9) / innings : null;
+  const opponentAtBats = aggregate.bf - aggregate.bb - aggregate.hbp - aggregate.sc;
+  const oba = opponentAtBats > 0 ? aggregate.h / opponentAtBats : null;
+  const totalBasesAgainst =
+    aggregate.d * 2 +
+    aggregate.t * 3 +
+    aggregate.hr * 4 +
+    (aggregate.h - aggregate.d - aggregate.t - aggregate.hr);
+  const slg = opponentAtBats > 0 ? totalBasesAgainst / opponentAtBats : null;
 
   return {
     ...aggregate,
@@ -100,6 +131,8 @@ const computePitchingTotals = (
     whip,
     k9,
     bb9,
+    oba,
+    slg,
   } as Record<string, number | string | null>;
 };
 
@@ -194,7 +227,8 @@ const SeasonPitchingStatsSection: React.FC<SeasonPitchingStatsSectionProps> = ({
       ) : (
         <StatisticsTable
           variant="pitching"
-          extendedStats={false}
+          extendedStats
+          omitFields={['playerNumber']}
           data={tableRows}
           getRowKey={(row) => row.id}
           sortField={sortField ? String(sortField) : undefined}

@@ -21,8 +21,12 @@ export const PlayerBattingStatsSchema = z.object({
   so: z.number().min(0),
   hbp: z.number().min(0),
   sb: z.number().min(0),
+  cs: z.number().min(0).optional(),
   sf: z.number().min(0),
   sh: z.number().min(0),
+  re: z.number().min(0).optional(),
+  intr: z.number().min(0).optional(),
+  lob: z.number().min(0).optional(),
   // Calculated fields
   avg: z.number().min(0),
   obp: z.number().min(0),
@@ -37,8 +41,12 @@ export const PlayerBattingStatsBriefSchema = PlayerBattingStatsSchema.omit({
   teamName: true,
   hbp: true,
   sb: true,
+  cs: true,
   sf: true,
   sh: true,
+  re: true,
+  intr: true,
+  lob: true,
   tb: true,
   pa: true,
 });
@@ -59,9 +67,13 @@ export const PlayerPitchingStatsSchema = z.object({
   bb: z.number().min(0),
   so: z.number().min(0),
   hr: z.number().min(0),
+  d: z.number().min(0).optional(), // doubles allowed
+  t: z.number().min(0).optional(), // triples allowed
   bf: z.number().min(0), // batters faced
   wp: z.number().min(0), // wild pitches
   hbp: z.number().min(0),
+  bk: z.number().min(0).optional(), // balks
+  sc: z.number().min(0).optional(), // sac hits/flies allowed
   // Calculated fields
   era: z.number().min(0),
   whip: z.number().min(0),
@@ -78,10 +90,14 @@ export const PlayerPitchingStatsBriefSchema = PlayerPitchingStatsSchema.omit({
   ip: true,
   ip2: true,
   hr: true,
+  d: true,
+  t: true,
   ipDecimal: true,
   bf: true,
   wp: true,
   hbp: true,
+  bk: true,
+  sc: true,
   k9: true,
   bb9: true,
   oba: true,

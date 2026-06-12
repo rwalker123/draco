@@ -198,8 +198,12 @@ export type dbBattingStatisticsRow = {
   so: number;
   hbp: number;
   sb: number;
+  cs?: number;
   sf: number;
   sh: number;
+  re?: number;
+  intr?: number;
+  lob?: number;
   avg: number;
   obp: number;
   slg: number;
@@ -230,6 +234,8 @@ export type dbPitchingStatisticsRow = {
   hbp: number;
   d?: number;
   t?: number;
+  bk?: number;
+  sc?: number;
   ab?: number;
   era: number;
   whip: number;

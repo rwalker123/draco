@@ -571,7 +571,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               ) : (
                 <StatisticsTable
                   variant="batting"
-                  extendedStats={false}
+                  extendedStats
                   data={sortedBattingStats}
                   loading={loading.batting}
                   emptyMessage="No batting statistics available"
@@ -580,7 +580,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                   sortOrder={battingSortOrder}
                   onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
                   playerLinkLabel="Team Batting Stats"
-                  omitFields={['teamName']}
+                  omitFields={['playerNumber']}
                 />
               )}
             </TabPanel>
@@ -594,7 +594,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               ) : (
                 <StatisticsTable
                   variant="pitching"
-                  extendedStats={false}
+                  extendedStats
                   data={sortedPitchingStats}
                   loading={loading.pitching}
                   emptyMessage="No pitching statistics available"
@@ -603,7 +603,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                   sortOrder={pitchingSortOrder}
                   onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
                   playerLinkLabel="Team Pitching Stats"
-                  omitFields={['teamName']}
+                  omitFields={['playerNumber']}
                 />
               )}
             </TabPanel>
