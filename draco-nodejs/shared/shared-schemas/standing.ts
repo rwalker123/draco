@@ -3,6 +3,8 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { DivisionNameSchema, DivisionSeasonSchema } from './division.js';
 import { LeagueNameSchema } from './league.js';
 import { TeamSeasonNameSchema, TeamSeasonSchema } from './team.js';
+import { bigintToStringSchema } from './standardSchema.js';
+import { isoDateTimeSchema } from './date.js';
 
 extendZodWithOpenApi(z);
 
@@ -13,8 +15,8 @@ export const TeamRecordSchema = z.object({
 });
 
 export const StandingsNextGameSchema = z.object({
-  id: z.string(),
-  gameDate: z.string(),
+  id: bigintToStringSchema,
+  gameDate: isoDateTimeSchema,
   opponent: TeamSeasonNameSchema,
   isHome: z.boolean(),
 });

@@ -7862,8 +7862,13 @@ components:
                       properties:
                         id:
                           type: string
+                          pattern: ^\d+$
+                          example: "12345"
                         gameDate:
                           type: string
+                          format: date-time
+                          example: 2024-03-01T18:30:00Z
+                          description: ISO 8601 timestamp string with timezone offset.
                         opponent:
                           type: object
                           properties:
@@ -7975,8 +7980,13 @@ components:
           properties:
             id:
               type: string
+              pattern: ^\d+$
+              example: "12345"
             gameDate:
               type: string
+              format: date-time
+              example: 2024-03-01T18:30:00Z
+              description: ISO 8601 timestamp string with timezone offset.
             opponent:
               type: object
               properties:
