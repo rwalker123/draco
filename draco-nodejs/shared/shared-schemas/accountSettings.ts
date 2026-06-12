@@ -35,6 +35,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'NotifyTeamsWantedOnPlayersWanted',
   'NotifyPlayersWantedOnTeamsWanted',
   'EnableLiveScoring',
+  'UseDivisionRecordInStandings',
 ] as const;
 
 export const AccountSettingKeySchema = z.enum(ACCOUNT_SETTING_KEYS);
@@ -652,6 +653,15 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         expectedValue: true,
       },
     ],
+  }),
+  booleanSetting({
+    key: 'UseDivisionRecordInStandings',
+    label: 'Show Division Record in Standings',
+    description:
+      'Adds a Division (Div) record column to the standings tables. Useful when teams play games against other divisions; otherwise the division record always matches the overall record.',
+    groupId: AccountSettingGroupEnum.enum.accountFeatures,
+    groupLabel: 'Account Features',
+    sortOrder: 25,
   }),
 ];
 

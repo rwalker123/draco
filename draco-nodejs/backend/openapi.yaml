@@ -5826,6 +5826,7 @@ components:
                   - NotifyTeamsWantedOnPlayersWanted
                   - NotifyPlayersWantedOnTeamsWanted
                   - EnableLiveScoring
+                  - UseDivisionRecordInStandings
               label:
                 type: string
               description:
@@ -5896,6 +5897,7 @@ components:
                         - NotifyTeamsWantedOnPlayersWanted
                         - NotifyPlayersWantedOnTeamsWanted
                         - EnableLiveScoring
+                        - UseDivisionRecordInStandings
                     value:
                       anyOf:
                         - type: boolean
@@ -6002,6 +6004,7 @@ components:
                 - NotifyTeamsWantedOnPlayersWanted
                 - NotifyPlayersWantedOnTeamsWanted
                 - EnableLiveScoring
+                - UseDivisionRecordInStandings
             label:
               type: string
             description:
@@ -6072,6 +6075,7 @@ components:
                       - NotifyTeamsWantedOnPlayersWanted
                       - NotifyPlayersWantedOnTeamsWanted
                       - EnableLiveScoring
+                      - UseDivisionRecordInStandings
                   value:
                     anyOf:
                       - type: boolean
@@ -6181,6 +6185,7 @@ components:
         - NotifyTeamsWantedOnPlayersWanted
         - NotifyPlayersWantedOnTeamsWanted
         - EnableLiveScoring
+        - UseDivisionRecordInStandings
     Sponsor:
       type: object
       properties:
@@ -7848,6 +7853,42 @@ components:
                         - w
                         - l
                         - t
+                    rs:
+                      type: number
+                    ra:
+                      type: number
+                    nextGame:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          pattern: ^\d+$
+                          example: "12345"
+                        gameDate:
+                          type: string
+                          format: date-time
+                          example: 2024-03-01T18:30:00Z
+                          description: ISO 8601 timestamp string with timezone offset.
+                        opponent:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              pattern: ^\d+$
+                              example: "12345"
+                            name:
+                              type: string
+                              minLength: 1
+                              maxLength: 100
+                          required:
+                            - id
+                        isHome:
+                          type: boolean
+                      required:
+                        - id
+                        - gameDate
+                        - opponent
+                        - isHome
                   required:
                     - w
                     - l
@@ -7855,6 +7896,8 @@ components:
                     - team
                     - pct
                     - gb
+                    - rs
+                    - ra
             required:
               - division
               - teams
@@ -7928,6 +7971,42 @@ components:
             - w
             - l
             - t
+        rs:
+          type: number
+        ra:
+          type: number
+        nextGame:
+          type: object
+          properties:
+            id:
+              type: string
+              pattern: ^\d+$
+              example: "12345"
+            gameDate:
+              type: string
+              format: date-time
+              example: 2024-03-01T18:30:00Z
+              description: ISO 8601 timestamp string with timezone offset.
+            opponent:
+              type: object
+              properties:
+                id:
+                  type: string
+                  pattern: ^\d+$
+                  example: "12345"
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+              required:
+                - id
+            isHome:
+              type: boolean
+          required:
+            - id
+            - gameDate
+            - opponent
+            - isHome
       required:
         - w
         - l
@@ -7935,6 +8014,8 @@ components:
         - team
         - pct
         - gb
+        - rs
+        - ra
     TeamSeasonRecord:
       type: object
       properties:
@@ -29638,6 +29719,7 @@ paths:
               - NotifyTeamsWantedOnPlayersWanted
               - NotifyPlayersWantedOnTeamsWanted
               - EnableLiveScoring
+              - UseDivisionRecordInStandings
       requestBody:
         content:
           application/json:

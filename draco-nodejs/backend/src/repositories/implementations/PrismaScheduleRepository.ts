@@ -601,6 +601,20 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     return games;
   }
 
+  async listScheduledGamesForSeason(seasonId: bigint, referenceDate: Date): Promise<dbGameInfo[]> {
+    const games: TeamGameInfoPayload[] = await this.prisma.leagueschedule.findMany({
+      where: {
+        leagueseason: { seasonid: seasonId },
+        gamestatus: 0,
+        gamedate: { gte: referenceDate },
+      },
+      select: teamGameSelect,
+      orderBy: [{ gamedate: 'asc' }, { id: 'asc' }],
+    });
+
+    return games;
+  }
+
   async findTeamSeasonCalendarContext(teamSeasonId: bigint): Promise<{
     teamName: string;
     leagueName: string;
