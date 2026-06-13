@@ -18,14 +18,20 @@ function Harness({ targetKey, ready, trigger }: HarnessProps) {
 }
 
 describe('useScrollToTarget', () => {
-  let scrollSpy: ReturnType<typeof vi.fn>;
+  let scrollSpy: ReturnType<typeof vi.fn<(arg?: boolean | ScrollIntoViewOptions) => void>>;
+  const originalScrollIntoView = Element.prototype.scrollIntoView;
 
   beforeEach(() => {
-    scrollSpy = vi.fn();
-    Element.prototype.scrollIntoView = scrollSpy;
+    scrollSpy = vi.fn<(arg?: boolean | ScrollIntoViewOptions) => void>();
+    Element.prototype.scrollIntoView = function scrollIntoView(
+      arg?: boolean | ScrollIntoViewOptions,
+    ) {
+      scrollSpy(arg);
+    };
   });
 
   afterEach(() => {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
     vi.restoreAllMocks();
   });
 

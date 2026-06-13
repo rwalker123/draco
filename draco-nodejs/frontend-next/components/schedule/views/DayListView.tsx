@@ -123,15 +123,17 @@ const DayListView: React.FC<DayListViewProps> = ({
   const computedWeekStart = isDayView ? startOfWeek(currentDate) : _startDate;
   const computedWeekEnd = isDayView ? endOfWeek(currentDate) : _endDate;
 
+  const periodStartKey = _startDate ? getDateKeyInTimezone(_startDate, timeZone) : null;
+  const periodEndKey = _endDate ? getDateKeyInTimezone(_endDate, timeZone) : null;
   const todayInRange =
     !isDayView &&
     !!todayKey &&
-    sortedDates !== null &&
-    sortedDates.length > 0 &&
-    todayKey >= sortedDates[0] &&
-    todayKey <= sortedDates[sortedDates.length - 1];
+    (periodStartKey === null || todayKey >= periodStartKey) &&
+    (periodEndKey === null || todayKey <= periodEndKey);
   const scrollTargetKey =
-    todayInRange && todayKey ? sortedDates!.find((key) => key >= todayKey) : undefined;
+    todayInRange && todayKey && sortedDates !== null && sortedDates.length > 0
+      ? (sortedDates.find((key) => key >= todayKey) ?? sortedDates[sortedDates.length - 1])
+      : undefined;
   const focusGroupRef = useScrollToTarget<HTMLDivElement>(scrollTargetKey, {
     block: 'start',
     ready: !loadingGames,
