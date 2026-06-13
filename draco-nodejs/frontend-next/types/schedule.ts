@@ -186,6 +186,8 @@ export interface ViewComponentProps {
   navigate?: (direction: NavigationDirection, type?: FilterType) => void;
   loadingGames: boolean;
   canEditRecap?: (game: GameCardData) => boolean;
+  scrollToTodayNonce?: number;
+  onScrollToToday?: () => void;
 }
 
 export interface DialogComponentProps {

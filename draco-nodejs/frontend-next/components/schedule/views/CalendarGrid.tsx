@@ -9,7 +9,7 @@ import {
   getDateKeyInTimezone,
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
-import { useScrollIntoViewOnce } from '../hooks/useScrollIntoViewOnce';
+import { useScrollToTarget } from '../hooks/useScrollToTarget';
 import { alpha, useTheme } from '@mui/material/styles';
 
 export interface CalendarGridProps {
@@ -20,7 +20,8 @@ export interface CalendarGridProps {
   gridType: 'week' | 'month';
   showZoomColumn?: boolean;
   currentMonthDate?: Date;
-  focusDate?: Date;
+  loadingGames?: boolean;
+  scrollToTodayNonce?: number;
 
   // Data
   days: Date[];
@@ -69,7 +70,8 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   gridType: _gridType,
   showZoomColumn = false,
   currentMonthDate,
-  focusDate,
+  loadingGames = false,
+  scrollToTodayNonce,
   days,
   filteredGames,
   minHeight = '300px',
@@ -147,8 +149,15 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   const gamesByDateKey = buildGamesByDateKey(filteredGames, timeZone);
 
-  const focusDateKey = focusDate ? getDateKeyInTimezone(focusDate, timeZone) : null;
-  const focusCellRef = useScrollIntoViewOnce<HTMLDivElement>(focusDateKey, { block: 'nearest' });
+  const todayKey = getDateKeyInTimezone(new Date(), timeZone);
+  const todayInView =
+    !!todayKey && days.some((day) => getDateKeyInTimezone(day, timeZone) === todayKey);
+  const focusDateKey = todayInView ? todayKey : null;
+  const focusCellRef = useScrollToTarget<HTMLDivElement>(focusDateKey, {
+    block: 'nearest',
+    ready: !loadingGames,
+    trigger: scrollToTodayNonce,
+  });
 
   const monthReference = currentMonthDate
     ? {

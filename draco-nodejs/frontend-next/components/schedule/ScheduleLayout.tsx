@@ -71,6 +71,8 @@ export interface ScheduleLayoutProps {
   onRecapErrorClose?: () => void;
   showLeagueTeamFilters?: boolean;
   summaryContent?: React.ReactNode;
+  scrollToTodayNonce?: number;
+  onScrollToToday?: () => void;
   children?: React.ReactNode;
 }
 
@@ -119,6 +121,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
   onRecapErrorClose,
   showLeagueTeamFilters = true,
   summaryContent,
+  scrollToTodayNonce,
+  onScrollToToday,
   children,
 }) => {
   if (loadingStaticData) {
@@ -288,6 +292,8 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
             isNavigating={isNavigating}
             navigateToWeek={navigateToWeek}
             navigate={navigate}
+            scrollToTodayNonce={scrollToTodayNonce}
+            onScrollToToday={onScrollToToday}
           />
         </Container>
 

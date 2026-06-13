@@ -10,7 +10,7 @@ import {
   isSameDayInTimezone,
 } from '../../../utils/dateUtils';
 import WidgetShell from '../../ui/WidgetShell';
-import { useScrollIntoViewOnce } from '../hooks/useScrollIntoViewOnce';
+import { useScrollToTarget } from '../hooks/useScrollToTarget';
 import { useTheme } from '@mui/material/styles';
 
 interface DayListViewProps extends ViewComponentProps {
@@ -42,6 +42,9 @@ const DayListView: React.FC<DayListViewProps> = ({
   isNavigating,
   viewMode,
   canEditRecap,
+  loadingGames,
+  scrollToTodayNonce,
+  onScrollToToday,
 }) => {
   const theme = useTheme();
   const [currentDate, setCurrentDate] = React.useState(filterDate);
@@ -68,6 +71,7 @@ const DayListView: React.FC<DayListViewProps> = ({
     const today = new Date();
     setCurrentDate(today);
     setFilterDate(today);
+    onScrollToToday?.();
   };
 
   const navigateList = (direction: 'prev' | 'next') => {
@@ -119,12 +123,22 @@ const DayListView: React.FC<DayListViewProps> = ({
   const computedWeekStart = isDayView ? startOfWeek(currentDate) : _startDate;
   const computedWeekEnd = isDayView ? endOfWeek(currentDate) : _endDate;
 
-  const focusDateKey = getDateKeyInTimezone(filterDate, timeZone);
+  const periodStartKey = _startDate ? getDateKeyInTimezone(_startDate, timeZone) : null;
+  const periodEndKey = _endDate ? getDateKeyInTimezone(_endDate, timeZone) : null;
+  const todayInRange =
+    !isDayView &&
+    !!todayKey &&
+    (periodStartKey === null || todayKey >= periodStartKey) &&
+    (periodEndKey === null || todayKey <= periodEndKey);
   const scrollTargetKey =
-    !isDayView && sortedDates && focusDateKey
-      ? (sortedDates.find((key) => key >= focusDateKey) ?? sortedDates[sortedDates.length - 1])
+    todayInRange && todayKey && sortedDates !== null && sortedDates.length > 0
+      ? (sortedDates.find((key) => key >= todayKey) ?? sortedDates[sortedDates.length - 1])
       : undefined;
-  const focusGroupRef = useScrollIntoViewOnce<HTMLDivElement>(scrollTargetKey, { block: 'start' });
+  const focusGroupRef = useScrollToTarget<HTMLDivElement>(scrollTargetKey, {
+    block: 'start',
+    ready: !loadingGames,
+    trigger: scrollToTodayNonce,
+  });
 
   const renderDayContent = () => {
     if (dayGames.length === 0) {

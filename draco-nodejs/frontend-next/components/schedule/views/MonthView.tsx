@@ -32,6 +32,9 @@ const MonthView: React.FC<ViewComponentProps> = ({
   navigate,
   isNavigating,
   canEditRecap,
+  loadingGames,
+  scrollToTodayNonce,
+  onScrollToToday,
 }) => {
   const [currentMonth, setCurrentMonth] = React.useState(filterDate);
 
@@ -56,6 +59,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
     const today = new Date();
     setCurrentMonth(today);
     setFilterDate(today);
+    onScrollToToday?.();
   };
 
   // Calculate month days including padding days from previous/next months
@@ -92,7 +96,8 @@ const MonthView: React.FC<ViewComponentProps> = ({
         currentTeamSeasonId={currentTeamSeasonId}
         gridType="month"
         showZoomColumn={true}
-        focusDate={filterDate}
+        loadingGames={loadingGames}
+        scrollToTodayNonce={scrollToTodayNonce}
         days={monthDays}
         filteredGames={filteredGames}
         minHeight="200px"

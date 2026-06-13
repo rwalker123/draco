@@ -29,6 +29,9 @@ const WeekView: React.FC<ViewComponentProps> = ({
   navigateToWeek,
   navigate,
   canEditRecap,
+  loadingGames,
+  scrollToTodayNonce,
+  onScrollToToday,
 }) => {
   const weekDays =
     startDate && endDate ? eachDayOfInterval({ start: startDate, end: endDate }) : [];
@@ -42,6 +45,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
     setStartDate(todayStart);
     setEndDate(todayEnd);
     setFilterDate(today);
+    onScrollToToday?.();
   };
 
   // Navigation function for week view
@@ -83,6 +87,8 @@ const WeekView: React.FC<ViewComponentProps> = ({
         currentTeamSeasonId={currentTeamSeasonId}
         gridType="week"
         showZoomColumn={false}
+        loadingGames={loadingGames}
+        scrollToTodayNonce={scrollToTodayNonce}
         days={weekDays}
         filteredGames={filteredGames}
         minHeight="300px"
