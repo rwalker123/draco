@@ -41,6 +41,7 @@ interface StatsTabsCardProps {
   tab: TabKey;
   onTabChange: (tab: TabKey) => void;
   canManageStats: boolean;
+  accountId: string;
   teamSeasonId: string;
   canManageAllTeams: boolean;
   enableAttendanceTracking: boolean;
@@ -53,6 +54,7 @@ interface StatsTabsCardProps {
   pitchingTotals: GamePitchingStatsType['totals'] | null;
   availableBatters: TeamStatsPlayerSummaryType[];
   availablePitchers: TeamStatsPlayerSummaryType[];
+  onAddGuestPlayer: (contactId: string) => Promise<TeamStatsPlayerSummaryType>;
   onCreateBattingStat: (payload: CreateGameBattingStatType) => Promise<void>;
   onUpdateBattingStat: (statId: string, payload: UpdateGameBattingStatType) => Promise<void>;
   onDeleteBattingStat: (stat: GameBattingStatLineType) => void;
@@ -91,6 +93,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       tab,
       onTabChange,
       canManageStats,
+      accountId,
       teamSeasonId,
       canManageAllTeams,
       enableAttendanceTracking,
@@ -102,6 +105,7 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       pitchingTotals,
       availableBatters,
       availablePitchers,
+      onAddGuestPlayer,
       onCreateBattingStat,
       onUpdateBattingStat,
       onDeleteBattingStat,
@@ -511,6 +515,8 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                         stats={battingStats}
                         totals={battingTotals}
                         availablePlayers={availableBatters}
+                        accountId={accountId}
+                        onAddGuestPlayer={onAddGuestPlayer}
                         onCreateStat={onCreateBattingStat}
                         onUpdateStat={onUpdateBattingStat}
                         onDeleteStat={onDeleteBattingStat}
@@ -529,6 +535,8 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
                         stats={pitchingStats}
                         totals={pitchingTotals}
                         availablePlayers={availablePitchers}
+                        accountId={accountId}
+                        onAddGuestPlayer={onAddGuestPlayer}
                         onCreateStat={onCreatePitchingStat}
                         onUpdateStat={onUpdatePitchingStat}
                         onDeleteStat={onDeletePitchingStat}

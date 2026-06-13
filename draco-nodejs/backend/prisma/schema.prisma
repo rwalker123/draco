@@ -1645,6 +1645,7 @@ model rosterseason {
   teamseasonid    BigInt
   playernumber    String          @default("") @db.VarChar(2)
   inactive        Boolean
+  substitute      Boolean         @default(false)
   submittedwaiver Boolean
   dateadded       DateTime?       @db.Timestamptz(6)
   batstatsum      batstatsum[]

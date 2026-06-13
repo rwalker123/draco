@@ -2,6 +2,7 @@ import { RegisterContext } from '../../openapiTypes.js';
 
 const registerTeamStatsEntryEndpoints = ({ registry, schemaRefs }: RegisterContext) => {
   const {
+    AddGuestPlayerSchemaRef,
     AuthenticationErrorSchemaRef,
     AuthorizationErrorSchemaRef,
     ConflictErrorSchemaRef,
@@ -13,6 +14,7 @@ const registerTeamStatsEntryEndpoints = ({ registry, schemaRefs }: RegisterConte
     InternalServerErrorSchemaRef,
     NotFoundErrorSchemaRef,
     TeamCompletedGamesSchemaRef,
+    TeamStatsPlayerSummarySchemaRef,
     UpdateGameAttendanceSchemaRef,
     CreateGameBattingStatSchemaRef,
     UpdateGameBattingStatSchemaRef,
@@ -100,6 +102,34 @@ const registerTeamStatsEntryEndpoints = ({ registry, schemaRefs }: RegisterConte
       200: {
         description: 'Completed games retrieved.',
         content: { 'application/json': { schema: TeamCompletedGamesSchemaRef } },
+      },
+      ...errorResponses,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/guests',
+    summary: 'Add a guest (substitute) player for stat entry',
+    description:
+      'Adds an existing account contact as a non-rostered guest player on the team so their stats can be recorded for a game. Does not affect the contact’s active roster membership elsewhere.',
+    tags: ['Team Stats Entry'],
+    security: [{ bearerAuth: [] }],
+    parameters: [...commonParameters],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: AddGuestPlayerSchemaRef } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Guest player added.',
+        content: { 'application/json': { schema: TeamStatsPlayerSummarySchemaRef } },
+      },
+      409: {
+        description: 'Player is already on this team roster.',
+        content: { 'application/json': { schema: ConflictErrorSchemaRef } },
       },
       ...errorResponses,
     },

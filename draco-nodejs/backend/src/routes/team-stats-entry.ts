@@ -4,6 +4,7 @@ import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
 import {
+  AddGuestPlayerSchema,
   CreateGameBattingStatSchema,
   CreateGamePitchingStatSchema,
   UpdateGameAttendanceSchema,
@@ -13,6 +14,7 @@ import {
 
 const router = Router({ mergeParams: true });
 const statsEntryService = ServiceFactory.getStatsEntryService();
+const rosterService = ServiceFactory.getRosterService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 const teamStatMiddlewares = [
@@ -37,6 +39,28 @@ router.get(
 
     const games = await statsEntryService.listCompletedGames(accountId, seasonId, teamSeasonId);
     res.json(games);
+  }),
+);
+
+router.post(
+  '/:teamSeasonId/stat-entry/guests',
+  teamStatMiddlewares,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+    );
+    const payload = AddGuestPlayerSchema.parse(req.body);
+
+    const player = await rosterService.addSubstitutePlayer(
+      teamSeasonId,
+      seasonId,
+      accountId,
+      BigInt(payload.contactId),
+    );
+    res.status(201).json(player);
   }),
 );
 

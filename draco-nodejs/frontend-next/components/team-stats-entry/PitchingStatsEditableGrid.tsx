@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
-import { Add, Check, Close, Delete } from '@mui/icons-material';
+import { Add, Check, Close, Delete, PersonAddAlt1 } from '@mui/icons-material';
 import {
   DataGrid,
   GridCellParams,
@@ -46,11 +46,14 @@ import {
   PITCHING_FIELD_TOOLTIPS,
 } from './pitchingColumns';
 import { focusEditor, useCellFocusEditMode } from './useCellFocusEditMode';
+import GuestPlayerDialog from './GuestPlayerDialog';
 
 interface PitchingStatsEditableGridProps {
   stats: GamePitchingStatsType | null;
   totals: GamePitchingStatsType['totals'] | null;
   availablePlayers: TeamStatsPlayerSummaryType[];
+  accountId: string;
+  onAddGuestPlayer: (contactId: string) => Promise<TeamStatsPlayerSummaryType>;
   onCreateStat: (payload: CreateGamePitchingStatType) => Promise<void>;
   onUpdateStat: (statId: string, payload: UpdateGamePitchingStatType) => Promise<void>;
   onDeleteStat: (stat: GamePitchingStatLineType) => void;
@@ -303,6 +306,8 @@ const PitchingStatsEditableGrid = forwardRef<
       stats,
       totals,
       availablePlayers,
+      accountId,
+      onAddGuestPlayer,
       onCreateStat,
       onUpdateStat,
       onDeleteStat,
@@ -316,6 +321,7 @@ const PitchingStatsEditableGrid = forwardRef<
     ref,
   ) => {
     const apiRef = useGridApiRef();
+    const [guestDialogOpen, setGuestDialogOpen] = useState(false);
     const originalRowsRef = useRef<Map<string, PitchingRow>>(new Map());
 
     const [rowsState, setRowsState] = useState<PitchingRow[]>(
@@ -845,22 +851,35 @@ const PitchingStatsEditableGrid = forwardRef<
                   event.stopPropagation();
                 }}
               >
-                <Autocomplete
-                  options={availablePlayers}
-                  getOptionLabel={(option) => option.playerName}
-                  value={selectedNewRowPlayer}
-                  onChange={(_event, option) =>
-                    setNewRow((prev) => ({
-                      ...prev,
-                      rosterSeasonId: option?.rosterSeasonId ?? '',
-                    }))
-                  }
-                  renderInput={(inputParams) => (
-                    <TextField {...inputParams} variant="standard" placeholder="Select player" />
-                  )}
-                  size="small"
-                  fullWidth
-                />
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Autocomplete
+                    options={availablePlayers}
+                    getOptionLabel={(option) =>
+                      option.isSubstitute ? `${option.playerName} (Guest)` : option.playerName
+                    }
+                    value={selectedNewRowPlayer}
+                    onChange={(_event, option) =>
+                      setNewRow((prev) => ({
+                        ...prev,
+                        rosterSeasonId: option?.rosterSeasonId ?? '',
+                      }))
+                    }
+                    renderInput={(inputParams) => (
+                      <TextField {...inputParams} variant="standard" placeholder="Select player" />
+                    )}
+                    size="small"
+                    fullWidth
+                  />
+                  <Tooltip title="Add guest player">
+                    <IconButton
+                      size="small"
+                      aria-label="Add guest player"
+                      onClick={() => setGuestDialogOpen(true)}
+                    >
+                      <PersonAddAlt1 fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
               </Box>
             );
           }
@@ -1215,6 +1234,18 @@ const PitchingStatsEditableGrid = forwardRef<
             '& .MuiDataGrid-cell': { outline: 'none !important' },
           }}
         />
+
+        {guestDialogOpen && (
+          <GuestPlayerDialog
+            accountId={accountId}
+            open
+            onClose={() => setGuestDialogOpen(false)}
+            onAdd={async (contactId) => {
+              const summary = await onAddGuestPlayer(contactId);
+              setNewRow((prev) => ({ ...prev, rosterSeasonId: summary.rosterSeasonId }));
+            }}
+          />
+        )}
       </Box>
     );
   },

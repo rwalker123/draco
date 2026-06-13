@@ -137,7 +137,7 @@ export class StatsEntryService {
 
     const [statsRows, rosterMembers] = await Promise.all([
       this.statsEntryRepository.listGameBattingStats(gameId, teamSeasonId),
-      this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId),
+      this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId, true),
     ]);
 
     const stats = statsRows.map((row) => this.mapBattingStatRow(row));
@@ -145,7 +145,10 @@ export class StatsEntryService {
     const usedRosterIds = new Set(statsRows.map((row) => row.playerid.toString()));
 
     const availablePlayers = rosterMembers
-      .filter((member) => !member.inactive && !usedRosterIds.has(member.id.toString()))
+      .filter(
+        (member) =>
+          (!member.inactive || member.substitute) && !usedRosterIds.has(member.id.toString()),
+      )
       .map((member) => this.mapPlayerSummary(member));
 
     return {
@@ -280,7 +283,7 @@ export class StatsEntryService {
 
     const [statsRows, rosterMembers] = await Promise.all([
       this.statsEntryRepository.listGamePitchingStats(gameId, teamSeasonId),
-      this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId),
+      this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId, true),
     ]);
 
     const stats = statsRows.map((row) => this.mapPitchingStatRow(row));
@@ -289,7 +292,10 @@ export class StatsEntryService {
 
     const usedRosterIds = new Set(statsRows.map((row) => row.playerid.toString()));
     const availablePlayers = rosterMembers
-      .filter((member) => !member.inactive && !usedRosterIds.has(member.id.toString()))
+      .filter(
+        (member) =>
+          (!member.inactive || member.substitute) && !usedRosterIds.has(member.id.toString()),
+      )
       .map((member) => this.mapPlayerSummary(member));
 
     return {
@@ -485,8 +491,8 @@ export class StatsEntryService {
     teamSeasonId: bigint,
     rosterSeasonId: bigint,
   ): Promise<dbRosterSeason> {
-    const members = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId);
-    const member = members.find((m) => m.id === rosterSeasonId && !m.inactive);
+    const members = await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId, true);
+    const member = members.find((m) => m.id === rosterSeasonId && (!m.inactive || m.substitute));
     if (!member) {
       throw new NotFoundError('Player not found on team roster.');
     }
@@ -517,6 +523,7 @@ export class StatsEntryService {
       playerName: formatName(contact?.firstname, contact?.lastname),
       playerNumber: member.playernumber ?? null,
       photoUrl: null,
+      isSubstitute: member.substitute,
     };
   }
 

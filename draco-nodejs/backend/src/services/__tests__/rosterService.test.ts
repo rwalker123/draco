@@ -38,6 +38,9 @@ class RosterRepositoryStub implements IRosterRepository {
 
   createRosterSeasonEntry = vi.fn<IRosterRepository['createRosterSeasonEntry']>();
 
+  createSubstituteRosterSeasonEntry =
+    vi.fn<IRosterRepository['createSubstituteRosterSeasonEntry']>();
+
   updateRosterSeasonEntry = vi.fn<IRosterRepository['updateRosterSeasonEntry']>();
 
   deleteRosterMember = vi.fn<IRosterRepository['deleteRosterMember']>();
@@ -220,5 +223,177 @@ describe('RosterService.addPlayerToRoster', () => {
       '',
       false,
     );
+  });
+});
+
+describe('RosterService.addSubstitutePlayer', () => {
+  let rosterRepo: RosterRepositoryStub;
+  let teamRepo: ITeamRepository;
+  let contactRepo: IContactRepository;
+  let seasonsRepo: ISeasonsRepository;
+  let service: RosterService;
+
+  const teamSeasonId = 10n;
+  const seasonId = 20n;
+  const accountId = 30n;
+  const contactId = 2n;
+
+  const mockTeamSeason = {
+    id: teamSeasonId,
+    leagueseasonid: 40n,
+    teamid: 50n,
+    name: 'Test Team',
+    divisionseasonid: null,
+  };
+
+  const mockRosterPlayer: dbRosterPlayer = partialMock<dbRosterPlayer>({
+    id: 1n,
+    contactid: contactId,
+    submitteddriverslicense: false,
+    firstyear: 0,
+    contacts: partialMock<dbRosterPlayer['contacts']>({
+      id: contactId,
+      firstname: 'Jane',
+      lastname: 'Doe',
+    }),
+  });
+
+  const mockSubstituteMember: dbRosterMember = partialMock<dbRosterMember>({
+    id: 200n,
+    playerid: 1n,
+    teamseasonid: teamSeasonId,
+    playernumber: '',
+    inactive: true,
+    substitute: true,
+    submittedwaiver: false,
+    dateadded: new Date(),
+    roster: mockRosterPlayer,
+  });
+
+  beforeEach(() => {
+    rosterRepo = new RosterRepositoryStub();
+    teamRepo = partialMock<ITeamRepository>({
+      findTeamSeason: vi.fn().mockResolvedValue(mockTeamSeason),
+    });
+    contactRepo = partialMock<IContactRepository>({
+      findContactInAccount: vi.fn().mockResolvedValue({ id: contactId }),
+    });
+    seasonsRepo = partialMock<ISeasonsRepository>({});
+
+    vi.spyOn(ServiceFactory, 'getAccountsService').mockReturnValue(
+      {} as ReturnType<typeof ServiceFactory.getAccountsService>,
+    );
+    vi.spyOn(ServiceFactory, 'getDiscordIntegrationService').mockReturnValue(
+      partialMock<ReturnType<typeof ServiceFactory.getDiscordIntegrationService>>({
+        updateTeamForumMemberForContact: vi.fn().mockResolvedValue(undefined),
+      }),
+    );
+
+    rosterRepo.findRosterPlayerByContactId.mockResolvedValue(mockRosterPlayer);
+    rosterRepo.createSubstituteRosterSeasonEntry.mockResolvedValue(mockSubstituteMember);
+
+    service = new RosterService(rosterRepo, teamRepo, contactRepo, seasonsRepo);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('creates an inactive substitute entry and returns a guest summary without the league active-roster check', async () => {
+    rosterRepo.findRosterMembersByTeamSeason.mockResolvedValue([]);
+
+    const result = await service.addSubstitutePlayer(teamSeasonId, seasonId, accountId, contactId);
+
+    expect(rosterRepo.createSubstituteRosterSeasonEntry).toHaveBeenCalledWith(
+      mockRosterPlayer.id,
+      teamSeasonId,
+    );
+    // Guests are active elsewhere by design — the one-team conflict check must not run.
+    expect(rosterRepo.findRosterMemberInLeagueSeason).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      rosterSeasonId: '200',
+      playerName: 'Jane Doe',
+      isSubstitute: true,
+    });
+  });
+
+  it('reuses an existing substitute row instead of creating a duplicate', async () => {
+    rosterRepo.findRosterMembersByTeamSeason.mockResolvedValue([mockSubstituteMember]);
+
+    const result = await service.addSubstitutePlayer(teamSeasonId, seasonId, accountId, contactId);
+
+    expect(rosterRepo.createSubstituteRosterSeasonEntry).not.toHaveBeenCalled();
+    expect(result.rosterSeasonId).toBe('200');
+  });
+
+  it('throws when the contact is already an active roster member of this team', async () => {
+    const activeMember: dbRosterMember = partialMock<dbRosterMember>({
+      id: 300n,
+      playerid: 1n,
+      teamseasonid: teamSeasonId,
+      inactive: false,
+      substitute: false,
+      roster: mockRosterPlayer,
+    });
+    rosterRepo.findRosterMembersByTeamSeason.mockResolvedValue([activeMember]);
+
+    await expect(
+      service.addSubstitutePlayer(teamSeasonId, seasonId, accountId, contactId),
+    ).rejects.toThrow('already on this team');
+    expect(rosterRepo.createSubstituteRosterSeasonEntry).not.toHaveBeenCalled();
+  });
+});
+
+describe('RosterService.releaseOrActivatePlayer substitute guard', () => {
+  let rosterRepo: RosterRepositoryStub;
+  let teamRepo: ITeamRepository;
+  let contactRepo: IContactRepository;
+  let seasonsRepo: ISeasonsRepository;
+  let service: RosterService;
+
+  const teamSeasonId = 10n;
+  const seasonId = 20n;
+  const accountId = 30n;
+
+  beforeEach(() => {
+    rosterRepo = new RosterRepositoryStub();
+    teamRepo = partialMock<ITeamRepository>({});
+    contactRepo = partialMock<IContactRepository>({});
+    seasonsRepo = partialMock<ISeasonsRepository>({});
+
+    vi.spyOn(ServiceFactory, 'getAccountsService').mockReturnValue(
+      {} as ReturnType<typeof ServiceFactory.getAccountsService>,
+    );
+    vi.spyOn(ServiceFactory, 'getDiscordIntegrationService').mockReturnValue(
+      partialMock<ReturnType<typeof ServiceFactory.getDiscordIntegrationService>>({
+        updateTeamForumMemberForContact: vi.fn().mockResolvedValue(undefined),
+      }),
+    );
+
+    service = new RosterService(rosterRepo, teamRepo, contactRepo, seasonsRepo);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('refuses to release or activate a substitute (guest) roster row', async () => {
+    const substituteMember: dbRosterMember = partialMock<dbRosterMember>({
+      id: 200n,
+      playerid: 1n,
+      teamseasonid: teamSeasonId,
+      inactive: true,
+      substitute: true,
+      roster: partialMock<dbRosterMember['roster']>({
+        contactid: 2n,
+        contacts: partialMock<dbRosterMember['roster']['contacts']>({ userid: null }),
+      }),
+    });
+    rosterRepo.findRosterMemberForAccount.mockResolvedValue(substituteMember);
+
+    await expect(
+      service.releaseOrActivatePlayer(200n, teamSeasonId, seasonId, accountId, true),
+    ).rejects.toThrow('Substitute');
+    expect(rosterRepo.updateRosterSeasonEntry).not.toHaveBeenCalled();
   });
 });

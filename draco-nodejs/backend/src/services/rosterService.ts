@@ -7,6 +7,7 @@ import {
   TeamRosterCardType,
   TeamRosterMembersType,
   TeamRosterWaiverSummariesType,
+  TeamStatsPlayerSummaryType,
   UpdateRosterMemberType,
 } from '@draco/shared-schemas';
 import { RosterResponseFormatter, ContactResponseFormatter } from '../responseFormatters/index.js';
@@ -53,10 +54,9 @@ export class RosterService {
       throw new NotFoundError('Team season not found');
     }
 
-    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
-      teamSeasonId,
-      includeInactive,
-    );
+    const rosterMembers = (
+      await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId, includeInactive)
+    ).filter((member) => !member.substitute);
 
     let gamesPlayedMap: Map<string, number> | undefined;
     if (includeGamesPlayed) {
@@ -91,10 +91,9 @@ export class RosterService {
       throw new NotFoundError('Team season not found');
     }
 
-    const rosterMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
-      teamSeasonId,
-      includeInactive,
-    );
+    const rosterMembers = (
+      await this.rosterRepository.findRosterMembersByTeamSeason(teamSeasonId, includeInactive)
+    ).filter((member) => !member.substitute);
 
     let gamesPlayedMap: Map<string, number> | undefined;
     if (includeGamesPlayed) {
@@ -308,6 +307,73 @@ export class RosterService {
     return RosterResponseFormatter.formatRosterMemberResponse(rosterMember);
   }
 
+  async addSubstitutePlayer(
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+    contactId: bigint,
+  ): Promise<TeamStatsPlayerSummaryType> {
+    const teamSeason = await this.teamRepository.findTeamSeason(teamSeasonId, seasonId, accountId);
+
+    if (!teamSeason) {
+      throw new NotFoundError('Team season not found');
+    }
+
+    const existingContact = await this.contactRepository.findContactInAccount(contactId, accountId);
+
+    if (!existingContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    let rosterPlayer: dbRosterPlayer | null =
+      await this.rosterRepository.findRosterPlayerByContactId(contactId);
+
+    if (!rosterPlayer) {
+      rosterPlayer = await this.rosterRepository.createRosterPlayer(contactId, false, 0);
+    }
+
+    const teamMembers = await this.rosterRepository.findRosterMembersByTeamSeason(
+      teamSeasonId,
+      true,
+    );
+
+    const activeMember = teamMembers.find(
+      (member) => member.playerid === rosterPlayer.id && !member.inactive && !member.substitute,
+    );
+
+    if (activeMember) {
+      throw new ConflictError('Player is already on this team roster');
+    }
+
+    let substituteMember: dbRosterMember | undefined = teamMembers.find(
+      (member) => member.playerid === rosterPlayer.id && member.substitute,
+    );
+
+    if (!substituteMember) {
+      substituteMember = await this.rosterRepository.createSubstituteRosterSeasonEntry(
+        rosterPlayer.id,
+        teamSeasonId,
+      );
+    }
+
+    return this.formatSubstituteSummary(substituteMember);
+  }
+
+  private formatSubstituteSummary(member: dbRosterMember): TeamStatsPlayerSummaryType {
+    const contact = member.roster?.contacts;
+    const name = `${contact?.firstname ?? ''} ${contact?.lastname ?? ''}`.trim();
+
+    return {
+      rosterSeasonId: member.id.toString(),
+      playerId: member.playerid.toString(),
+      contactId: contact?.id.toString() ?? '0',
+      playerName: name.length > 0 ? name : 'Unknown Player',
+      playerNumber: member.playernumber ?? null,
+      photoUrl: null,
+      isSubstitute: member.substitute,
+    };
+  }
+
   async updateRosterMember(
     rosterMemberId: bigint,
     teamSeasonId: bigint,
@@ -364,6 +430,10 @@ export class RosterService {
       seasonId,
       accountId,
     );
+
+    if (rosterMember.substitute) {
+      throw new ConflictError('Substitute (guest) players cannot be released or activated');
+    }
 
     if (inactive && rosterMember.inactive) {
       throw new ConflictError('Player is already released');

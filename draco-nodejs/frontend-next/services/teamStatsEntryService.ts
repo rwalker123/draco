@@ -10,6 +10,7 @@ import {
   deleteApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdPitchingByStatId as apiDeleteGamePitchingStat,
   getApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdAttendance as apiGetGameAttendance,
   putApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGamesByGameIdAttendance as apiUpdateGameAttendance,
+  postApiAccountsByAccountIdSeasonsBySeasonIdTeamsByTeamSeasonIdStatEntryGuests as apiAddGuestPlayer,
   listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
   getGameLineScore as apiGetGameLineScore,
@@ -30,6 +31,7 @@ import type {
   PlayerPitchingStatsType,
   LineScoreType,
   UpsertLineScoreType,
+  TeamStatsPlayerSummaryType,
 } from '@draco/shared-schemas';
 
 import { createApiClient } from '../lib/apiClientFactory';
@@ -228,6 +230,22 @@ export class TeamStatsEntryService {
     });
 
     assertNoApiError(result, 'Failed to delete pitching stat');
+  }
+
+  async addGuestPlayer(
+    accountId: string,
+    seasonId: string,
+    teamSeasonId: string,
+    contactId: string,
+  ): Promise<TeamStatsPlayerSummaryType> {
+    const result = await apiAddGuestPlayer({
+      client: this.client,
+      path: { accountId, seasonId, teamSeasonId },
+      body: { contactId },
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to add guest player');
   }
 
   async getGameLineScore(

@@ -34,6 +34,8 @@ class RosterRepositoryStub implements IRosterRepository {
   createRosterPlayer = vi.fn<IRosterRepository['createRosterPlayer']>();
   updateRosterPlayer = vi.fn<IRosterRepository['updateRosterPlayer']>();
   createRosterSeasonEntry = vi.fn<IRosterRepository['createRosterSeasonEntry']>();
+  createSubstituteRosterSeasonEntry =
+    vi.fn<IRosterRepository['createSubstituteRosterSeasonEntry']>();
   updateRosterSeasonEntry = vi.fn<IRosterRepository['updateRosterSeasonEntry']>();
   deleteRosterMember = vi.fn<IRosterRepository['deleteRosterMember']>();
   hasGameStats = vi.fn<IRosterRepository['hasGameStats']>();
