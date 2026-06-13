@@ -139,7 +139,11 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, playerId } = extractBigIntParams(req.params, 'accountId', 'playerId');
 
-    const type = req.query.type === 'pitching' ? 'pitching' : 'batting';
+    const rawType = req.query.type;
+    if (rawType !== undefined && rawType !== 'batting' && rawType !== 'pitching') {
+      throw new ValidationError("Query parameter 'type' must be 'batting' or 'pitching'");
+    }
+    const type = rawType === 'pitching' ? 'pitching' : 'batting';
 
     const playerStats = await statisticsService.getPlayerCareerStatistics(accountId, playerId);
 

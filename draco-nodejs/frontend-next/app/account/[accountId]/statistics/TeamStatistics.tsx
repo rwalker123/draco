@@ -37,7 +37,7 @@ import {
   exportAllTimeTeamBattingStatistics,
   exportAllTimeTeamPitchingStatistics,
 } from '@draco/shared-api-client';
-import { downloadBlob } from '@/utils/downloadUtils';
+import { downloadBlob, sanitizeDownloadName } from '@/utils/downloadUtils';
 import type {
   AllTimeTeamSummaryType,
   GameBattingStatsType,
@@ -465,8 +465,8 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     }
 
     const blob = unwrapApiResult(result, 'Failed to export statistics') as Blob;
-    const teamLabel = selectedTeam?.teamName ?? 'team';
-    downloadBlob(blob, `${teamLabel}-${type}-statistics.csv`);
+    const teamSlug = sanitizeDownloadName(selectedTeam?.teamName ?? 'team');
+    downloadBlob(blob, `${teamSlug}-${type}-statistics.csv`);
   };
 
   // Sort the batting stats

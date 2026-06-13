@@ -15,7 +15,7 @@ import { exportPlayerStatistics } from '@draco/shared-api-client';
 import StatisticsTable, { type ColumnConfig, type StatsRowBase } from './StatisticsTable';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
-import { downloadBlob } from '@/utils/downloadUtils';
+import { downloadBlob, sanitizeDownloadName } from '@/utils/downloadUtils';
 import type {
   PlayerCareerBattingRowType,
   PlayerCareerPitchingRowType,
@@ -154,7 +154,8 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
       throwOnError: false,
     });
     const blob = unwrapApiResult(result, 'Failed to export statistics') as Blob;
-    downloadBlob(blob, `${stats.playerName ?? 'player'}-${type}-statistics.csv`);
+    const playerSlug = sanitizeDownloadName(stats.playerName ?? 'player');
+    downloadBlob(blob, `${playerSlug}-${type}-statistics.csv`);
   };
 
   const battingRows: PlayerCareerBattingRowType[] = stats?.batting.rows ?? [];
