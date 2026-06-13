@@ -21,6 +21,12 @@ describe('reconcileOrder', () => {
       'avg',
     ]);
   });
+
+  it('deduplicates repeated saved fields (corrupted storage), keeping first-seen order and all canonical fields once', () => {
+    const result = reconcileOrder(['pa', 'ab', 'pa', 'ab'], canonical);
+    expect(result).toEqual(['pa', 'ab', 'h', 'r', 'avg']);
+    expect(new Set(result).size).toBe(result.length);
+  });
 });
 
 describe('applyColumnOrder', () => {

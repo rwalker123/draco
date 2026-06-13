@@ -1,12 +1,24 @@
-export const reconcileOrder = (saved: string[], canonical: string[]): string[] => {
+export const reconcileOrder = (
+  saved: readonly string[],
+  canonical: readonly string[],
+): string[] => {
   const canonicalSet = new Set(canonical);
-  const kept = saved.filter((field) => canonicalSet.has(field));
-  const keptSet = new Set(kept);
-  const appended = canonical.filter((field) => !keptSet.has(field));
+  const seen = new Set<string>();
+  const kept: string[] = [];
+  for (const field of saved) {
+    if (canonicalSet.has(field) && !seen.has(field)) {
+      seen.add(field);
+      kept.push(field);
+    }
+  }
+  const appended = canonical.filter((field) => !seen.has(field));
   return [...kept, ...appended];
 };
 
-export const applyColumnOrder = (originalVisibleFields: string[], saved: string[]): string[] => {
+export const applyColumnOrder = (
+  originalVisibleFields: readonly string[],
+  saved: readonly string[],
+): string[] => {
   if (saved.length === 0) {
     return [...originalVisibleFields];
   }
@@ -18,9 +30,9 @@ export const applyColumnOrder = (originalVisibleFields: string[], saved: string[
 };
 
 export const mergeColumnOrder = (
-  storedFull: string[],
-  visibleFields: string[],
-  newVisibleOrder: string[],
+  storedFull: readonly string[],
+  visibleFields: readonly string[],
+  newVisibleOrder: readonly string[],
 ): string[] => {
   const visibleSet = new Set(visibleFields);
   const queue = [...newVisibleOrder];

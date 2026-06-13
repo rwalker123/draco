@@ -94,7 +94,7 @@ export const SortableStatHeaderCell: React.FC<SortableStatHeaderCellProps> = ({
   onSort,
   active,
 }) => {
-  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column.field,
   });
 
@@ -102,6 +102,8 @@ export const SortableStatHeaderCell: React.FC<SortableStatHeaderCellProps> = ({
     <TableCell
       ref={setNodeRef}
       align={column.align}
+      {...attributes}
+      role="columnheader"
       aria-roledescription="sortable column"
       style={{
         transform: CSS.Transform.toString(transform),

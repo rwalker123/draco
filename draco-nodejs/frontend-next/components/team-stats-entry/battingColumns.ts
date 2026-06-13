@@ -32,7 +32,7 @@ export const battingViewFieldOrder = [
   ...battingSummaryFields,
 ] as const;
 
-export const BATTING_STAT_FIELD_ORDER: string[] = [
+export const BATTING_STAT_FIELD_ORDER: readonly string[] = [
   ...editableBattingFields,
   ...battingSummaryFields,
 ];

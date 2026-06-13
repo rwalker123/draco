@@ -8,7 +8,7 @@ import { applyColumnOrder, mergeColumnOrder, reconcileOrder } from '../utils/sta
 
 export type StatColumnVariant = 'batting' | 'pitching';
 
-const CANONICAL_ORDER: Record<StatColumnVariant, string[]> = {
+const CANONICAL_ORDER: Record<StatColumnVariant, readonly string[]> = {
   batting: BATTING_STAT_FIELD_ORDER,
   pitching: PITCHING_STAT_FIELD_ORDER,
 };
@@ -29,7 +29,7 @@ const parseSavedOrder = (raw: string | null): string[] => {
 };
 
 interface StatColumnOrderStore {
-  canonical: string[];
+  canonical: readonly string[];
   getSnapshot: () => string | null;
   subscribe: (callback: () => void) => () => void;
   write: (value: string[] | null) => void;

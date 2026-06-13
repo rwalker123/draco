@@ -104,6 +104,8 @@ describe('StatisticsTable column reordering', () => {
     const playerHeader = headers.find((cell) => within(cell).queryByText('Player'));
 
     expect(abHeader?.getAttribute('aria-roledescription')).toBe('sortable column');
+    expect(abHeader?.getAttribute('role')).toBe('columnheader');
+    expect(abHeader?.getAttribute('tabindex')).toBe('0');
     expect(playerHeader?.getAttribute('aria-roledescription')).toBeNull();
   });
 
