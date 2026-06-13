@@ -964,7 +964,8 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
     path: '/api/accounts/{accountId}/statistics/batting/{leagueId}/export',
     operationId: 'exportBattingStatistics',
     summary: 'Export batting statistics',
-    description: 'Export league batting statistics for all players to a CSV file.',
+    description:
+      'Export league batting statistics for all players to a CSV file. Division, team, historical, minimum at-bats, and sort filters are applied, but the page and pageSize query parameters are ignored — every matching player is included in a single file.',
     tags: ['Statistics'],
     parameters: [numberPathParam('accountId'), numberPathParam('leagueId')],
     request: {
@@ -979,7 +980,8 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
     path: '/api/accounts/{accountId}/statistics/pitching/{leagueId}/export',
     operationId: 'exportPitchingStatistics',
     summary: 'Export pitching statistics',
-    description: 'Export league pitching statistics for all players to a CSV file.',
+    description:
+      'Export league pitching statistics for all players to a CSV file. Division, team, historical, minimum innings, and sort filters are applied, but the page and pageSize query parameters are ignored — every matching player is included in a single file.',
     tags: ['Statistics'],
     parameters: [numberPathParam('accountId'), numberPathParam('leagueId')],
     request: {

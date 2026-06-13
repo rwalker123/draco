@@ -4,6 +4,7 @@ import type {
   PlayerBattingStatsType,
   PlayerPitchingStatsType,
   PlayerCareerBattingRowType,
+  PlayerCareerPitchingRowType,
 } from '@draco/shared-schemas';
 import { IRosterRepository } from '../../repositories/interfaces/IRosterRepository.js';
 import { IManagerRepository } from '../../repositories/interfaces/IManagerRepository.js';
@@ -1610,5 +1611,35 @@ describe('CsvExportService statistics exports', () => {
     expect(rows).toHaveLength(2);
     expect(rows[1][0]).toBe('2024');
     expect(rows[1][1]).toBe('Premier Hawks');
+  });
+
+  it('exports career pitching with Season/Team columns, dropped totals, and rate formatting', async () => {
+    const careerRows: PlayerCareerPitchingRowType[] = [
+      {
+        ...createPitchingStat({ playerName: 'Jane Doe' }),
+        level: 'season',
+        seasonName: '2024',
+        leagueName: 'Premier',
+        teamName: 'Hawks',
+      },
+      {
+        ...createPitchingStat({ playerName: 'Jane Doe' }),
+        level: 'career',
+        isTotals: true,
+        seasonName: null,
+      },
+    ];
+
+    const result = await service.exportCareerPitchingStatistics(careerRows, 'player-pitching');
+    const rows = parseCsv(result.buffer);
+
+    expect(rows[0].slice(0, 2)).toEqual(['Season', 'Team']);
+    // Only the season-level row remains (career totals dropped)
+    expect(rows).toHaveLength(2);
+    expect(rows[1][0]).toBe('2024');
+    expect(rows[1][1]).toBe('Premier Hawks');
+    // ERA formatted to 2 decimals, IP to 1
+    expect(rows[1][rows[0].indexOf('ERA')]).toBe('3.38');
+    expect(rows[1][rows[0].indexOf('IP')]).toBe('5.1');
   });
 });
