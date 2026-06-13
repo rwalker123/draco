@@ -63,6 +63,11 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const defaultViewMode = prefersListView ? 'list' : 'calendar';
   const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(null);
   const viewMode = manualViewMode ?? defaultViewMode;
+  const [scrollToTodayNonce, setScrollToTodayNonce] = useState(0);
+
+  const handleScrollToToday = () => {
+    setScrollToTodayNonce((nonce) => nonce + 1);
+  };
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
@@ -303,6 +308,8 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       onFeedbackClose={handleFeedbackClose}
       recapError={recapError}
       onRecapErrorClose={clearRecapError}
+      scrollToTodayNonce={scrollToTodayNonce}
+      onScrollToToday={handleScrollToToday}
     >
       {!isGolfLeague && (
         <GameDialog

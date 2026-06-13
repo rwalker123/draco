@@ -1,20 +1,27 @@
 import { useEffect, useRef } from 'react';
 
-interface ScrollIntoViewOnceOptions {
+interface ScrollToTargetOptions {
   block?: ScrollLogicalPosition;
   behavior?: ScrollBehavior;
+  ready?: boolean;
+  trigger?: number;
 }
 
-export function useScrollIntoViewOnce<T extends HTMLElement>(
+export function useScrollToTarget<T extends HTMLElement>(
   targetKey: string | null | undefined,
-  options: ScrollIntoViewOnceOptions = {},
+  options: ScrollToTargetOptions = {},
 ) {
-  const { block = 'start', behavior = 'smooth' } = options;
+  const { block = 'start', behavior = 'smooth', ready = true, trigger = 0 } = options;
   const ref = useRef<T | null>(null);
-  const hasScrolledRef = useRef(false);
+  const lastScrolledRef = useRef<{ key: string; trigger: number } | null>(null);
 
   useEffect(() => {
-    if (hasScrolledRef.current || !targetKey) {
+    if (!ready || !targetKey) {
+      return;
+    }
+
+    const last = lastScrolledRef.current;
+    if (last && last.key === targetKey && last.trigger === trigger) {
       return;
     }
 
@@ -28,7 +35,7 @@ export function useScrollIntoViewOnce<T extends HTMLElement>(
       }
 
       element.scrollIntoView({ block, behavior });
-      hasScrolledRef.current = true;
+      lastScrolledRef.current = { key: targetKey, trigger };
       frameId = null;
     };
 
@@ -39,7 +46,7 @@ export function useScrollIntoViewOnce<T extends HTMLElement>(
         cancelAnimationFrame(frameId);
       }
     };
-  }, [targetKey, block, behavior]);
+  }, [targetKey, ready, trigger, block, behavior]);
 
   return ref;
 }
