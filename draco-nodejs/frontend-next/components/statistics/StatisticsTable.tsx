@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import {
   DndContext,
   closestCenter,
@@ -767,8 +768,10 @@ const StatisticsTable = <T extends StatsRowBase>({
 
   const reorderActive = !disableColumnReorder && !hideHeader;
   const showReset = reorderActive && isCustomized;
+  const showReorderHint =
+    reorderActive && !isCustomized && data.length > 0 && reorderableFields.length > 1;
   const showExport = !!onExport && !hideHeader && data.length > 0;
-  const showToolbar = showReset || showExport;
+  const showToolbar = showReset || showReorderHint || showExport;
 
   const handleInternalSort = (field: string) => {
     onSort?.(field);
@@ -815,6 +818,13 @@ const StatisticsTable = <T extends StatsRowBase>({
             >
               Reset columns
             </Button>
+          ) : showReorderHint ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <DragIndicatorIcon fontSize="small" color="disabled" />
+              <Typography variant="caption" color="text.secondary">
+                Drag a column header to reorder
+              </Typography>
+            </Box>
           ) : (
             <Box />
           )}
