@@ -71,6 +71,8 @@ interface StatsTabsCardProps {
   seasonPitchingStats: PlayerPitchingStatsType[] | null;
   seasonLoading: boolean;
   seasonError: string | null;
+  onExportSeasonBattingStats?: () => Promise<void>;
+  onExportSeasonPitchingStats?: () => Promise<void>;
   gameOutcome: GameOutcome;
   onClearGameSelection?: () => void;
   recapContent: string | null;
@@ -118,6 +120,8 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
       seasonPitchingStats,
       seasonLoading,
       seasonError,
+      onExportSeasonBattingStats,
+      onExportSeasonPitchingStats,
       gameOutcome,
       onClearGameSelection,
       recapContent,
@@ -592,11 +596,17 @@ const StatsTabsCard = forwardRef<StatsTabsCardHandle, StatsTabsCardProps>(
             ) : (
               <>
                 {currentTab === 'batting' && (
-                  <SeasonBattingStatsSection stats={seasonBattingStats} />
+                  <SeasonBattingStatsSection
+                    stats={seasonBattingStats}
+                    onExport={editMode ? undefined : onExportSeasonBattingStats}
+                  />
                 )}
 
                 {currentTab === 'pitching' && (
-                  <SeasonPitchingStatsSection stats={seasonPitchingStats} />
+                  <SeasonPitchingStatsSection
+                    stats={seasonPitchingStats}
+                    onExport={editMode ? undefined : onExportSeasonPitchingStats}
+                  />
                 )}
 
                 {currentTab === 'lineScore' && (

@@ -53,7 +53,7 @@ import type {
 import { useApiClient } from '../../../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../../../utils/apiResult';
 import { mapLeagueSetup } from '../../../../../../utils/leagueSeasonMapper';
-import { downloadBlob } from '../../../../../../utils/downloadUtils';
+import { downloadBlob, sanitizeDownloadName } from '../../../../../../utils/downloadUtils';
 import { useAuth } from '../../../../../../context/AuthContext';
 import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import { AdminBreadcrumbs } from '../../../../../../components/admin';
@@ -598,9 +598,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
       });
 
       const blob = unwrapApiResult(result, 'Failed to export league roster') as Blob;
-      const sanitizedName = selectedLeagueForExport.league.name
-        .replace(/[^a-zA-Z0-9-_]/g, '-')
-        .toLowerCase();
+      const sanitizedName = sanitizeDownloadName(selectedLeagueForExport.league.name);
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
       showNotification(
@@ -623,9 +621,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
       });
 
       const blob = unwrapApiResult(result, 'Failed to export league managers') as Blob;
-      const sanitizedName = selectedLeagueForExport.league.name
-        .replace(/[^a-zA-Z0-9-_]/g, '-')
-        .toLowerCase();
+      const sanitizedName = sanitizeDownloadName(selectedLeagueForExport.league.name);
       downloadBlob(blob, `${sanitizedName}-managers.csv`);
     } catch (err) {
       showNotification(
@@ -734,9 +730,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({ account
       });
 
       const blob = unwrapApiResult(result, 'Failed to export team roster') as Blob;
-      const sanitizedName = (teamSeason.name ?? 'team')
-        .replace(/[^a-zA-Z0-9-_]/g, '-')
-        .toLowerCase();
+      const sanitizedName = sanitizeDownloadName(teamSeason.name ?? 'team');
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
       showNotification(

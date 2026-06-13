@@ -57,7 +57,7 @@ import {
 import { exportTeamRoster } from '@draco/shared-api-client';
 import { useApiClient } from '@/hooks/useApiClient';
 import { unwrapApiResult } from '@/utils/apiResult';
-import { downloadBlob } from '@/utils/downloadUtils';
+import { downloadBlob, sanitizeDownloadName } from '@/utils/downloadUtils';
 import { getContactDisplayName } from '../../../../../../../../utils/contactUtils';
 import NotificationSnackbar from '../../../../../../../../components/common/NotificationSnackbar';
 import { useNotifications } from '../../../../../../../../hooks/useNotifications';
@@ -483,7 +483,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
       const blob = unwrapApiResult(result, 'Failed to export roster') as Blob;
       const teamName = rosterData?.teamSeason?.name ?? 'team';
-      const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+      const sanitizedName = sanitizeDownloadName(teamName);
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
       showNotification(err instanceof Error ? err.message : 'Failed to export roster', 'error');

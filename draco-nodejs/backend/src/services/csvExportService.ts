@@ -21,15 +21,27 @@ import {
   ContactExportRow,
   WorkoutRegistrationExportRow,
   WaiverExportRow,
+  BattingStatsExportRow,
+  PitchingStatsExportRow,
   ROSTER_EXPORT_HEADERS,
   MANAGER_EXPORT_HEADERS,
   CONTACT_EXPORT_HEADERS,
   WORKOUT_REGISTRATION_EXPORT_HEADERS,
   WAIVER_EXPORT_HEADERS,
+  BATTING_STATS_EXPORT_HEADERS,
+  PITCHING_STATS_EXPORT_HEADERS,
+  CAREER_BATTING_STATS_EXPORT_HEADERS,
+  CAREER_PITCHING_STATS_EXPORT_HEADERS,
 } from '../utils/csvGenerator.js';
 import { PayloadTooLargeError } from '../utils/customErrors.js';
+import type {
+  PlayerBattingStatsType,
+  PlayerPitchingStatsType,
+  PlayerCareerBattingRowType,
+  PlayerCareerPitchingRowType,
+} from '@draco/shared-schemas';
 
-const MAX_EXPORT_ROWS = 10000;
+export const MAX_EXPORT_ROWS = 10000;
 
 export interface CsvExportResult {
   buffer: Buffer;
@@ -430,6 +442,194 @@ export class CsvExportService {
 
   private formatDate(date: Date | null): string {
     return DateUtils.formatDateOfBirthForResponse(date) ?? '';
+  }
+
+  exportBattingStatistics(
+    stats: PlayerBattingStatsType[],
+    fileNameBase: string,
+  ): Promise<CsvExportResult> {
+    return this.buildStatisticsCsv(
+      stats,
+      BATTING_STATS_EXPORT_HEADERS,
+      (row) => this.mapBattingStatRow(row),
+      fileNameBase,
+      'batting statistics',
+    );
+  }
+
+  exportPitchingStatistics(
+    stats: PlayerPitchingStatsType[],
+    fileNameBase: string,
+  ): Promise<CsvExportResult> {
+    return this.buildStatisticsCsv(
+      stats,
+      PITCHING_STATS_EXPORT_HEADERS,
+      (row) => this.mapPitchingStatRow(row),
+      fileNameBase,
+      'pitching statistics',
+    );
+  }
+
+  exportCareerBattingStatistics(
+    rows: PlayerCareerBattingRowType[],
+    fileNameBase: string,
+  ): Promise<CsvExportResult> {
+    return this.buildStatisticsCsv(
+      rows.filter((row) => row.level !== 'career' && !row.isTotals),
+      CAREER_BATTING_STATS_EXPORT_HEADERS,
+      (row) => ({
+        season: row.seasonName ?? '',
+        teamName: this.careerAffiliationLabel(row.leagueName, row.teamName),
+        ...this.mapBattingStatColumns(row),
+      }),
+      fileNameBase,
+      'career batting statistics',
+    );
+  }
+
+  exportCareerPitchingStatistics(
+    rows: PlayerCareerPitchingRowType[],
+    fileNameBase: string,
+  ): Promise<CsvExportResult> {
+    return this.buildStatisticsCsv(
+      rows.filter((row) => row.level !== 'career' && !row.isTotals),
+      CAREER_PITCHING_STATS_EXPORT_HEADERS,
+      (row) => ({
+        season: row.seasonName ?? '',
+        teamName: this.careerAffiliationLabel(row.leagueName, row.teamName),
+        ...this.mapPitchingStatColumns(row),
+      }),
+      fileNameBase,
+      'career pitching statistics',
+    );
+  }
+
+  private async buildStatisticsCsv<TSource, TRow extends object>(
+    source: TSource[],
+    headers: { key: keyof TRow; header: string }[],
+    mapRow: (item: TSource) => TRow,
+    fileNameBase: string,
+    exportType: string,
+  ): Promise<CsvExportResult> {
+    const startTime = Date.now();
+    this.checkExportLimit(source.length, exportType, fileNameBase);
+    const rows = source.map(mapRow);
+    const buffer = await generateCsv(rows, headers);
+    const sanitizedName = this.sanitizeFileName(fileNameBase);
+    this.logExportMetrics(exportType, fileNameBase, rows.length, buffer.length, startTime);
+    return {
+      buffer,
+      fileName: `${sanitizedName}.csv`,
+    };
+  }
+
+  private mapBattingStatColumns(
+    row: PlayerBattingStatsType,
+  ): Omit<BattingStatsExportRow, 'playerName' | 'teamName'> {
+    return {
+      ab: this.formatCount(row.ab),
+      h: this.formatCount(row.h),
+      r: this.formatCount(row.r),
+      d: this.formatCount(row.d),
+      t: this.formatCount(row.t),
+      hr: this.formatCount(row.hr),
+      rbi: this.formatCount(row.rbi),
+      so: this.formatCount(row.so),
+      bb: this.formatCount(row.bb),
+      hbp: this.formatCount(row.hbp),
+      sb: this.formatCount(row.sb),
+      cs: this.formatCount(row.cs),
+      sf: this.formatCount(row.sf),
+      sh: this.formatCount(row.sh),
+      re: this.formatCount(row.re),
+      intr: this.formatCount(row.intr),
+      lob: this.formatCount(row.lob),
+      tb: this.formatCount(row.tb),
+      pa: this.formatCount(row.pa),
+      avg: this.formatRate(row.avg, 3),
+      obp: this.formatRate(row.obp, 3),
+      slg: this.formatRate(row.slg, 3),
+      ops: this.formatRate(row.ops, 3),
+    };
+  }
+
+  private mapBattingStatRow(row: PlayerBattingStatsType): BattingStatsExportRow {
+    return {
+      playerName: row.playerName ?? '',
+      teamName: this.teamLabel(row.teams, row.teamName),
+      ...this.mapBattingStatColumns(row),
+    };
+  }
+
+  private mapPitchingStatColumns(
+    row: PlayerPitchingStatsType,
+  ): Omit<PitchingStatsExportRow, 'playerName' | 'teamName'> {
+    return {
+      w: this.formatCount(row.w),
+      l: this.formatCount(row.l),
+      s: this.formatCount(row.s),
+      ipDecimal: this.formatRate(row.ipDecimal, 1),
+      h: this.formatCount(row.h),
+      r: this.formatCount(row.r),
+      er: this.formatCount(row.er),
+      d: this.formatCount(row.d),
+      t: this.formatCount(row.t),
+      hr: this.formatCount(row.hr),
+      so: this.formatCount(row.so),
+      bb: this.formatCount(row.bb),
+      bf: this.formatCount(row.bf),
+      wp: this.formatCount(row.wp),
+      hbp: this.formatCount(row.hbp),
+      bk: this.formatCount(row.bk),
+      sc: this.formatCount(row.sc),
+      era: this.formatRate(row.era, 2),
+      whip: this.formatRate(row.whip, 2),
+      k9: this.formatRate(row.k9, 2),
+      bb9: this.formatRate(row.bb9, 2),
+      oba: this.formatRate(row.oba, 3),
+      slg: this.formatRate(row.slg, 3),
+    };
+  }
+
+  private mapPitchingStatRow(row: PlayerPitchingStatsType): PitchingStatsExportRow {
+    return {
+      playerName: row.playerName ?? '',
+      teamName: this.teamLabel(row.teams, row.teamName),
+      ...this.mapPitchingStatColumns(row),
+    };
+  }
+
+  private teamLabel(teams: string[] | undefined, teamName: string | undefined): string {
+    if (Array.isArray(teams) && teams.length > 0) {
+      return teams.join('; ');
+    }
+    return teamName ?? '';
+  }
+
+  private careerAffiliationLabel(
+    leagueName: string | null | undefined,
+    teamName: string | null | undefined,
+  ): string {
+    const league = leagueName?.trim();
+    const team = teamName?.trim();
+    if (league && team) {
+      return `${league} ${team}`;
+    }
+    return team ?? league ?? '';
+  }
+
+  private formatCount(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+      return '';
+    }
+    return String(value);
+  }
+
+  private formatRate(value: number | null | undefined, digits: number): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+      return '';
+    }
+    return value.toFixed(digits);
   }
 
   private sanitizeFileName(name: string): string {

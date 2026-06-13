@@ -182,3 +182,147 @@ export const CONTACT_EXPORT_HEADERS: CsvHeader<ContactExportRow>[] = [
   { key: 'phone3', header: 'Phone 3 (Work)' },
   { key: 'roles', header: 'Roles' },
 ];
+
+export interface BattingStatsExportRow {
+  playerName: string;
+  teamName: string;
+  ab: string;
+  h: string;
+  r: string;
+  d: string;
+  t: string;
+  hr: string;
+  rbi: string;
+  so: string;
+  bb: string;
+  hbp: string;
+  sb: string;
+  cs: string;
+  sf: string;
+  sh: string;
+  re: string;
+  intr: string;
+  lob: string;
+  tb: string;
+  pa: string;
+  avg: string;
+  obp: string;
+  slg: string;
+  ops: string;
+}
+
+const BATTING_STAT_COLUMN_HEADERS: CsvHeader<
+  Omit<BattingStatsExportRow, 'playerName' | 'teamName'>
+>[] = [
+  { key: 'ab', header: 'AB' },
+  { key: 'h', header: 'H' },
+  { key: 'r', header: 'R' },
+  { key: 'd', header: '2B' },
+  { key: 't', header: '3B' },
+  { key: 'hr', header: 'HR' },
+  { key: 'rbi', header: 'RBI' },
+  { key: 'so', header: 'SO' },
+  { key: 'bb', header: 'BB' },
+  { key: 'hbp', header: 'HBP' },
+  { key: 'sb', header: 'SB' },
+  { key: 'cs', header: 'CS' },
+  { key: 'sf', header: 'SF' },
+  { key: 'sh', header: 'SH' },
+  { key: 're', header: 'RE' },
+  { key: 'intr', header: 'INTR' },
+  { key: 'lob', header: 'LOB' },
+  { key: 'tb', header: 'TB' },
+  { key: 'pa', header: 'PA' },
+  { key: 'avg', header: 'AVG' },
+  { key: 'obp', header: 'OBP' },
+  { key: 'slg', header: 'SLG' },
+  { key: 'ops', header: 'OPS' },
+];
+
+export const BATTING_STATS_EXPORT_HEADERS: CsvHeader<BattingStatsExportRow>[] = [
+  { key: 'playerName', header: 'Player' },
+  { key: 'teamName', header: 'Team' },
+  ...BATTING_STAT_COLUMN_HEADERS,
+];
+
+export interface PitchingStatsExportRow {
+  playerName: string;
+  teamName: string;
+  w: string;
+  l: string;
+  s: string;
+  ipDecimal: string;
+  h: string;
+  r: string;
+  er: string;
+  d: string;
+  t: string;
+  hr: string;
+  so: string;
+  bb: string;
+  bf: string;
+  wp: string;
+  hbp: string;
+  bk: string;
+  sc: string;
+  era: string;
+  whip: string;
+  k9: string;
+  bb9: string;
+  oba: string;
+  slg: string;
+}
+
+const PITCHING_STAT_COLUMN_HEADERS: CsvHeader<
+  Omit<PitchingStatsExportRow, 'playerName' | 'teamName'>
+>[] = [
+  { key: 'w', header: 'W' },
+  { key: 'l', header: 'L' },
+  { key: 's', header: 'S' },
+  { key: 'ipDecimal', header: 'IP' },
+  { key: 'h', header: 'H' },
+  { key: 'r', header: 'R' },
+  { key: 'er', header: 'ER' },
+  { key: 'd', header: '2B' },
+  { key: 't', header: '3B' },
+  { key: 'hr', header: 'HR' },
+  { key: 'so', header: 'SO' },
+  { key: 'bb', header: 'BB' },
+  { key: 'bf', header: 'BF' },
+  { key: 'wp', header: 'WP' },
+  { key: 'hbp', header: 'HBP' },
+  { key: 'bk', header: 'BK' },
+  { key: 'sc', header: 'SC' },
+  { key: 'era', header: 'ERA' },
+  { key: 'whip', header: 'WHIP' },
+  { key: 'k9', header: 'K/9' },
+  { key: 'bb9', header: 'BB/9' },
+  { key: 'oba', header: 'OBA' },
+  { key: 'slg', header: 'SLG' },
+];
+
+export const PITCHING_STATS_EXPORT_HEADERS: CsvHeader<PitchingStatsExportRow>[] = [
+  { key: 'playerName', header: 'Player' },
+  { key: 'teamName', header: 'Team' },
+  ...PITCHING_STAT_COLUMN_HEADERS,
+];
+
+export interface CareerBattingStatsExportRow extends Omit<BattingStatsExportRow, 'playerName'> {
+  season: string;
+}
+
+export const CAREER_BATTING_STATS_EXPORT_HEADERS: CsvHeader<CareerBattingStatsExportRow>[] = [
+  { key: 'season', header: 'Season' },
+  { key: 'teamName', header: 'Team' },
+  ...BATTING_STAT_COLUMN_HEADERS,
+];
+
+export interface CareerPitchingStatsExportRow extends Omit<PitchingStatsExportRow, 'playerName'> {
+  season: string;
+}
+
+export const CAREER_PITCHING_STATS_EXPORT_HEADERS: CsvHeader<CareerPitchingStatsExportRow>[] = [
+  { key: 'season', header: 'Season' },
+  { key: 'teamName', header: 'Team' },
+  ...PITCHING_STAT_COLUMN_HEADERS,
+];

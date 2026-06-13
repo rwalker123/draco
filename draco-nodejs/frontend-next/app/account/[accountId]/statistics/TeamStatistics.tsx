@@ -32,7 +32,12 @@ import {
   listAllTimeTeams as apiListAllTimeTeams,
   listAllTimeTeamBattingStats as apiListAllTimeTeamBattingStats,
   listAllTimeTeamPitchingStats as apiListAllTimeTeamPitchingStats,
+  exportTeamBattingStatistics,
+  exportTeamPitchingStatistics,
+  exportAllTimeTeamBattingStatistics,
+  exportAllTimeTeamPitchingStatistics,
 } from '@draco/shared-api-client';
+import { downloadBlob, sanitizeDownloadName } from '@/utils/downloadUtils';
 import type {
   AllTimeTeamSummaryType,
   GameBattingStatsType,
@@ -421,6 +426,49 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     ? teams.find((team) => team.teamId === selectedTeamId)
     : null;
 
+  const handleExport = async (type: 'batting' | 'pitching') => {
+    if (!selectedTeamId) {
+      return;
+    }
+
+    let result;
+    if (isAllTime) {
+      result =
+        type === 'batting'
+          ? await exportAllTimeTeamBattingStatistics({
+              client: apiClient,
+              path: { accountId, teamId: selectedTeamId },
+              parseAs: 'blob',
+              throwOnError: false,
+            })
+          : await exportAllTimeTeamPitchingStatistics({
+              client: apiClient,
+              path: { accountId, teamId: selectedTeamId },
+              parseAs: 'blob',
+              throwOnError: false,
+            });
+    } else {
+      result =
+        type === 'batting'
+          ? await exportTeamBattingStatistics({
+              client: apiClient,
+              path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+              parseAs: 'blob',
+              throwOnError: false,
+            })
+          : await exportTeamPitchingStatistics({
+              client: apiClient,
+              path: { accountId, seasonId, teamSeasonId: selectedTeamId },
+              parseAs: 'blob',
+              throwOnError: false,
+            });
+    }
+
+    const blob = unwrapApiResult(result, 'Failed to export statistics') as Blob;
+    const teamSlug = sanitizeDownloadName(selectedTeam?.teamName ?? 'team');
+    downloadBlob(blob, `${teamSlug}-${type}-statistics.csv`);
+  };
+
   // Sort the batting stats
   const sortedBattingStats = [...battingStats].sort((a, b) => {
     const aValue = a[battingSortField];
@@ -581,6 +629,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                   onSort={(field) => handleBattingSort(field as keyof PlayerBattingStatsType)}
                   playerLinkLabel="Team Batting Stats"
                   omitFields={['playerNumber']}
+                  onExport={() => handleExport('batting')}
                 />
               )}
             </TabPanel>
@@ -604,6 +653,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
                   onSort={(field) => handlePitchingSort(field as keyof PlayerPitchingStatsType)}
                   playerLinkLabel="Team Pitching Stats"
                   omitFields={['playerNumber']}
+                  onExport={() => handleExport('pitching')}
                 />
               )}
             </TabPanel>

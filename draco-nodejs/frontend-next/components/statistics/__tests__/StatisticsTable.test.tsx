@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import StatisticsTable, { type StatsRowBase } from '../StatisticsTable';
 import { statColumnOrderKey } from '../../../constants/storageKeys';
@@ -127,5 +127,69 @@ describe('StatisticsTable column reordering', () => {
     fireEvent.click(resetButton);
 
     expect(window.localStorage.getItem(battingKey)).toBeNull();
+  });
+});
+
+describe('StatisticsTable CSV export', () => {
+  const sampleData: Row[] = [{ id: 'r1', playerName: 'P', contactId: '1', ab: 10 }];
+
+  const renderWithExport = (onExport?: () => Promise<void>) =>
+    render(
+      <StatisticsTable
+        variant="batting"
+        extendedStats={false}
+        data={sampleData}
+        getRowKey={(row) => (row as Row).id}
+        onExport={onExport}
+      />,
+    );
+
+  it('renders the Export CSV button only when onExport is provided', () => {
+    const { rerender } = renderWithExport(undefined);
+    expect(screen.queryByRole('button', { name: /export csv/i })).not.toBeInTheDocument();
+
+    rerender(
+      <StatisticsTable
+        variant="batting"
+        extendedStats={false}
+        data={sampleData}
+        getRowKey={(row) => (row as Row).id}
+        onExport={() => Promise.resolve()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /export csv/i })).toBeInTheDocument();
+  });
+
+  it('disables the button and shows a progress label while exporting', async () => {
+    let resolveExport: (() => void) | undefined;
+    const onExport = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveExport = resolve;
+        }),
+    );
+
+    renderWithExport(onExport);
+
+    const button = screen.getByRole('button', { name: /export csv/i });
+    fireEvent.click(button);
+
+    expect(onExport).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByRole('button', { name: /exporting/i })).toBeDisabled());
+
+    resolveExport?.();
+    await waitFor(() => expect(screen.getByRole('button', { name: /export csv/i })).toBeEnabled());
+  });
+
+  it('surfaces an error alert when the export rejects', async () => {
+    const onExport = vi.fn(() => Promise.reject(new Error('Export blew up')));
+
+    renderWithExport(onExport);
+
+    fireEvent.click(screen.getByRole('button', { name: /export csv/i }));
+
+    expect(await screen.findByText('Export blew up')).toBeInTheDocument();
+    // Button returns to its idle, enabled state after failure
+    expect(screen.getByRole('button', { name: /export csv/i })).toBeEnabled();
   });
 });

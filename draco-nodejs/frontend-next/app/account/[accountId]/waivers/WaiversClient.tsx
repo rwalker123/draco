@@ -45,7 +45,7 @@ import { useAccountSettings } from '../../../../hooks/useAccountSettings';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { unwrapApiResult } from '../../../../utils/apiResult';
-import { downloadBlob } from '../../../../utils/downloadUtils';
+import { downloadBlob, sanitizeDownloadName } from '../../../../utils/downloadUtils';
 import { useLeagueWaiverData, type WaiverMember } from './useLeagueWaiverData';
 import NoWaiverPlayersDialog, { type NoWaiverPlayer } from './NoWaiverPlayersDialog';
 import { useSeasonLeaguesAndTeams } from './useSeasonLeaguesAndTeams';
@@ -532,7 +532,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
         });
         const blob = unwrapApiResult(result, 'Failed to export waivers') as Blob;
         const teamName = selectedTeam?.teamName ?? 'team';
-        const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+        const sanitizedName = sanitizeDownloadName(teamName);
         downloadBlob(blob, `${sanitizedName}-waivers.csv`);
       } else {
         const selectedLeague = leagues.find((l) => l.leagueSeasonId === selectedLeagueSeasonId);
@@ -548,7 +548,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
         });
         const blob = unwrapApiResult(result, 'Failed to export waivers') as Blob;
         const leagueName = selectedLeague?.leagueName ?? 'league';
-        const sanitizedName = leagueName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+        const sanitizedName = sanitizeDownloadName(leagueName);
         downloadBlob(blob, `${sanitizedName}-waivers.csv`);
       }
     } catch (err) {
@@ -579,7 +579,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
         });
         const blob = unwrapApiResult(result, 'Failed to export missing waivers') as Blob;
         const teamName = selectedTeam?.teamName ?? 'team';
-        const sanitizedName = teamName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+        const sanitizedName = sanitizeDownloadName(teamName);
         downloadBlob(blob, `${sanitizedName}-missing-waivers.csv`);
       } else if (noWaiverScope === 'league' && selectedLeagueSeasonId) {
         const selectedLeague = leagues.find((l) => l.leagueSeasonId === selectedLeagueSeasonId);
@@ -595,7 +595,7 @@ export default function WaiversClient({ accountId }: WaiversClientProps) {
         });
         const blob = unwrapApiResult(result, 'Failed to export missing waivers') as Blob;
         const leagueName = selectedLeague?.leagueName ?? 'league';
-        const sanitizedName = leagueName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+        const sanitizedName = sanitizeDownloadName(leagueName);
         downloadBlob(blob, `${sanitizedName}-missing-waivers.csv`);
       }
     } catch (err) {

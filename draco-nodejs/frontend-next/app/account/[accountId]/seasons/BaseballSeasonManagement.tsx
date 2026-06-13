@@ -40,7 +40,7 @@ import {
 import { UpsertSeasonType, SeasonType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { unwrapApiResult } from '../../../../utils/apiResult';
-import { downloadBlob } from '../../../../utils/downloadUtils';
+import { downloadBlob, sanitizeDownloadName } from '../../../../utils/downloadUtils';
 import NotificationSnackbar from '../../../../components/common/NotificationSnackbar';
 import { useNotifications } from '../../../../hooks/useNotifications';
 import {
@@ -343,9 +343,7 @@ const BaseballSeasonManagement: React.FC = () => {
       });
 
       const blob = unwrapApiResult(result, 'Failed to export season roster') as Blob;
-      const sanitizedName = selectedSeasonForExport.name
-        .replace(/[^a-zA-Z0-9-_]/g, '-')
-        .toLowerCase();
+      const sanitizedName = sanitizeDownloadName(selectedSeasonForExport.name);
       downloadBlob(blob, `${sanitizedName}-roster.csv`);
     } catch (err) {
       showNotification(
@@ -368,9 +366,7 @@ const BaseballSeasonManagement: React.FC = () => {
       });
 
       const blob = unwrapApiResult(result, 'Failed to export season managers') as Blob;
-      const sanitizedName = selectedSeasonForExport.name
-        .replace(/[^a-zA-Z0-9-_]/g, '-')
-        .toLowerCase();
+      const sanitizedName = sanitizeDownloadName(selectedSeasonForExport.name);
       downloadBlob(blob, `${sanitizedName}-managers.csv`);
     } catch (err) {
       showNotification(

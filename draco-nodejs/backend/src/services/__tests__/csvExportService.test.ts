@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CsvExportService } from '../csvExportService.js';
+import type {
+  PlayerBattingStatsType,
+  PlayerPitchingStatsType,
+  PlayerCareerBattingRowType,
+  PlayerCareerPitchingRowType,
+} from '@draco/shared-schemas';
 import { IRosterRepository } from '../../repositories/interfaces/IRosterRepository.js';
 import { IManagerRepository } from '../../repositories/interfaces/IManagerRepository.js';
 import {
@@ -1432,5 +1438,208 @@ describe('CsvExportService', () => {
       expect(csvContent).toContain('Phone 3');
       expect(csvContent).toContain('Roles');
     });
+  });
+});
+
+const createBattingStat = (
+  overrides: Partial<PlayerBattingStatsType> = {},
+): PlayerBattingStatsType => ({
+  contactId: '1',
+  playerName: 'Jane Doe',
+  teams: ['Hawks'],
+  teamName: 'Hawks',
+  ab: 10,
+  h: 3,
+  r: 2,
+  d: 1,
+  t: 0,
+  hr: 1,
+  rbi: 4,
+  bb: 2,
+  so: 1,
+  hbp: 0,
+  sb: 1,
+  cs: 0,
+  sf: 0,
+  sh: 0,
+  re: 0,
+  intr: 0,
+  lob: 1,
+  avg: 0.3,
+  obp: 0.4,
+  slg: 0.6,
+  ops: 1.0,
+  tb: 6,
+  pa: 12,
+  ...overrides,
+});
+
+const createPitchingStat = (
+  overrides: Partial<PlayerPitchingStatsType> = {},
+): PlayerPitchingStatsType => ({
+  contactId: '1',
+  playerName: 'Jane Doe',
+  teams: ['Hawks'],
+  teamName: 'Hawks',
+  ip: 5,
+  ip2: 1,
+  w: 1,
+  l: 0,
+  s: 0,
+  h: 4,
+  r: 2,
+  er: 2,
+  bb: 1,
+  so: 6,
+  hr: 1,
+  d: 0,
+  t: 0,
+  bf: 20,
+  wp: 0,
+  hbp: 0,
+  bk: 0,
+  sc: 0,
+  era: 3.375,
+  whip: 1.0,
+  k9: 10.125,
+  bb9: 1.6875,
+  oba: 0.222,
+  slg: 0.333,
+  ipDecimal: 5.1,
+  ...overrides,
+});
+
+describe('CsvExportService statistics exports', () => {
+  let service: CsvExportService;
+
+  beforeEach(() => {
+    service = new CsvExportService(new RosterRepositoryStub(), new ManagerRepositoryStub());
+  });
+
+  const parseCsv = (buffer: Buffer): string[][] =>
+    buffer
+      .toString('utf-8')
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => line.split(','));
+
+  it('exports batting statistics with canonical headers and formatted values', async () => {
+    const result = await service.exportBattingStatistics(
+      [createBattingStat()],
+      'batting-statistics',
+    );
+
+    const rows = parseCsv(result.buffer);
+    expect(result.fileName).toBe('batting-statistics.csv');
+    expect(rows[0]).toEqual([
+      'Player',
+      'Team',
+      'AB',
+      'H',
+      'R',
+      '2B',
+      '3B',
+      'HR',
+      'RBI',
+      'SO',
+      'BB',
+      'HBP',
+      'SB',
+      'CS',
+      'SF',
+      'SH',
+      'RE',
+      'INTR',
+      'LOB',
+      'TB',
+      'PA',
+      'AVG',
+      'OBP',
+      'SLG',
+      'OPS',
+    ]);
+    expect(rows[1][0]).toBe('Jane Doe');
+    expect(rows[1][1]).toBe('Hawks');
+    // avg/obp/slg/ops formatted to 3 decimals
+    expect(rows[1][rows[0].indexOf('AVG')]).toBe('0.300');
+    expect(rows[1][rows[0].indexOf('OPS')]).toBe('1.000');
+  });
+
+  it('joins multiple teams with a semicolon', async () => {
+    const result = await service.exportBattingStatistics(
+      [createBattingStat({ teams: ['Hawks', 'Eagles'] })],
+      'batting-statistics',
+    );
+    const rows = parseCsv(result.buffer);
+    expect(rows[1][1]).toBe('Hawks; Eagles');
+  });
+
+  it('formats pitching rates and innings as displayed', async () => {
+    const result = await service.exportPitchingStatistics(
+      [createPitchingStat()],
+      'pitching-statistics',
+    );
+    const rows = parseCsv(result.buffer);
+    expect(rows[0]).toContain('ERA');
+    expect(rows[0]).toContain('IP');
+    expect(rows[1][rows[0].indexOf('ERA')]).toBe('3.38');
+    expect(rows[1][rows[0].indexOf('IP')]).toBe('5.1');
+  });
+
+  it('exports career batting with Season/Team columns and drops career totals rows', async () => {
+    const careerRows: PlayerCareerBattingRowType[] = [
+      {
+        ...createBattingStat({ playerName: 'Jane Doe' }),
+        level: 'season',
+        seasonName: '2024',
+        leagueName: 'Premier',
+        teamName: 'Hawks',
+      },
+      {
+        ...createBattingStat({ playerName: 'Jane Doe' }),
+        level: 'career',
+        isTotals: true,
+        seasonName: null,
+      },
+    ];
+
+    const result = await service.exportCareerBattingStatistics(careerRows, 'player-batting');
+    const rows = parseCsv(result.buffer);
+
+    expect(rows[0].slice(0, 2)).toEqual(['Season', 'Team']);
+    // Only the season-level row remains (career totals dropped)
+    expect(rows).toHaveLength(2);
+    expect(rows[1][0]).toBe('2024');
+    expect(rows[1][1]).toBe('Premier Hawks');
+  });
+
+  it('exports career pitching with Season/Team columns, dropped totals, and rate formatting', async () => {
+    const careerRows: PlayerCareerPitchingRowType[] = [
+      {
+        ...createPitchingStat({ playerName: 'Jane Doe' }),
+        level: 'season',
+        seasonName: '2024',
+        leagueName: 'Premier',
+        teamName: 'Hawks',
+      },
+      {
+        ...createPitchingStat({ playerName: 'Jane Doe' }),
+        level: 'career',
+        isTotals: true,
+        seasonName: null,
+      },
+    ];
+
+    const result = await service.exportCareerPitchingStatistics(careerRows, 'player-pitching');
+    const rows = parseCsv(result.buffer);
+
+    expect(rows[0].slice(0, 2)).toEqual(['Season', 'Team']);
+    // Only the season-level row remains (career totals dropped)
+    expect(rows).toHaveLength(2);
+    expect(rows[1][0]).toBe('2024');
+    expect(rows[1][1]).toBe('Premier Hawks');
+    // ERA formatted to 2 decimals, IP to 1
+    expect(rows[1][rows[0].indexOf('ERA')]).toBe('3.38');
+    expect(rows[1][rows[0].indexOf('IP')]).toBe('5.1');
   });
 });

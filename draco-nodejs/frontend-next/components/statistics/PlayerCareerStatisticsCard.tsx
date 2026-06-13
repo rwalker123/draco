@@ -11,7 +11,11 @@ import {
   Typography,
 } from '@mui/material';
 import Link from 'next/link';
+import { exportPlayerStatistics } from '@draco/shared-api-client';
 import StatisticsTable, { type ColumnConfig, type StatsRowBase } from './StatisticsTable';
+import { useApiClient } from '@/hooks/useApiClient';
+import { unwrapApiResult } from '@/utils/apiResult';
+import { downloadBlob, sanitizeDownloadName } from '@/utils/downloadUtils';
 import type {
   PlayerCareerBattingRowType,
   PlayerCareerPitchingRowType,
@@ -132,9 +136,26 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
   photoUrl,
 }) => {
   const [tab, setTab] = useState<CareerTab>('batting');
+  const apiClient = useApiClient();
 
   const handleTabChange = (_event: React.SyntheticEvent, value: number) => {
     setTab(value === 0 ? 'batting' : 'pitching');
+  };
+
+  const handleExport = async (type: CareerTab) => {
+    if (!stats) {
+      return;
+    }
+    const result = await exportPlayerStatistics({
+      client: apiClient,
+      path: { accountId, playerId: stats.playerId },
+      query: { type },
+      parseAs: 'blob',
+      throwOnError: false,
+    });
+    const blob = unwrapApiResult(result, 'Failed to export statistics') as Blob;
+    const playerSlug = sanitizeDownloadName(stats.playerName ?? 'player');
+    downloadBlob(blob, `${playerSlug}-${type}-statistics.csv`);
   };
 
   const battingRows: PlayerCareerBattingRowType[] = stats?.batting.rows ?? [];
@@ -227,6 +248,7 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
                 omitFields={['playerName', 'playerNumber', 'teamName']}
                 emptyMessage="No batting statistics recorded for this player."
                 playerLinkLabel="Player Statistics"
+                onExport={() => handleExport('batting')}
               />
             )}
           </Box>
@@ -244,6 +266,7 @@ const PlayerCareerStatisticsCard: React.FC<PlayerCareerStatisticsCardProps> = ({
                 omitFields={['playerName', 'playerNumber', 'teamName']}
                 emptyMessage="No pitching statistics recorded for this player."
                 playerLinkLabel="Player Statistics"
+                onExport={() => handleExport('pitching')}
               />
             )}
           </Box>

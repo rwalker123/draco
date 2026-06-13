@@ -4,6 +4,10 @@ import { describe, it, expect, vi } from 'vitest';
 import type { PlayerCareerBattingRowType, PlayerCareerStatisticsType } from '@draco/shared-schemas';
 import PlayerCareerStatisticsCard from '../PlayerCareerStatisticsCard';
 
+vi.mock('@/hooks/useApiClient', () => ({
+  useApiClient: () => ({}),
+}));
+
 const mockResizeObserver = class {
   observe() {}
   unobserve() {}

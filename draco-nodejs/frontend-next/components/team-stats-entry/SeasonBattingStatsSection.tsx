@@ -45,6 +45,7 @@ type SeasonBattingRow = StatsRowBase & {
 
 interface SeasonBattingStatsSectionProps {
   stats: PlayerBattingStatsType[] | null;
+  onExport?: () => Promise<void>;
 }
 
 const getColumnValue = (
@@ -131,7 +132,10 @@ const computeBattingTotals = (
   } as Record<string, number | string | null>;
 };
 
-const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ stats }) => {
+const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({
+  stats,
+  onExport,
+}) => {
   const getValue = (row: PlayerBattingStatsType, key: SeasonBattingColumnKey) =>
     getColumnValue(row, key);
 
@@ -229,6 +233,7 @@ const SeasonBattingStatsSection: React.FC<SeasonBattingStatsSectionProps> = ({ s
           onSort={(field) => handleTableSort(field as keyof SeasonBattingRow)}
           emptyMessage="No batting statistics available for this season."
           playerLinkLabel="Season Batting Stats"
+          onExport={onExport}
         />
       )}
     </Box>

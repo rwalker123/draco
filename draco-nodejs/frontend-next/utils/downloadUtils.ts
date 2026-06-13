@@ -1,3 +1,7 @@
+export function sanitizeDownloadName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
+}
+
 export function downloadBlob(blob: Blob, fileName: string): void {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
