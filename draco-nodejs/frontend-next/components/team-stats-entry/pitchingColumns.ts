@@ -29,6 +29,11 @@ export const pitchingViewFieldOrder = [
   ...pitchingSummaryFields,
 ] as const;
 
+export const PITCHING_STAT_FIELD_ORDER: readonly string[] = [
+  ...editablePitchingFields,
+  ...pitchingSummaryFields,
+];
+
 export type PitchingViewField = (typeof pitchingViewFieldOrder)[number];
 export type PitchingSummaryField = (typeof pitchingSummaryFields)[number];
 

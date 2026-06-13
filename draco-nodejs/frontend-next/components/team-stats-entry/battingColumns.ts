@@ -32,6 +32,11 @@ export const battingViewFieldOrder = [
   ...battingSummaryFields,
 ] as const;
 
+export const BATTING_STAT_FIELD_ORDER: readonly string[] = [
+  ...editableBattingFields,
+  ...battingSummaryFields,
+];
+
 export type BattingViewField = (typeof battingViewFieldOrder)[number];
 
 export type BattingFieldMetadata = {
@@ -106,11 +111,11 @@ const battingFieldMetadata: Record<BattingViewField, BattingFieldMetadata> = {
   },
   re: {
     label: 'RE',
-    tooltip: 'RE',
+    tooltip: 'Reached On Error',
   },
   intr: {
     label: 'INTR',
-    tooltip: 'INTR',
+    tooltip: 'Catcher/Fielder Interference',
   },
   lob: {
     label: 'LOB',

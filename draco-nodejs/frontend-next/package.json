@@ -27,6 +27,9 @@
     "e2e:reap": "dotenv -e ../backend/.env -e .env.e2e -- tsx e2e/scripts/reap-e2e-data.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@draco/shared-api-client": "workspace:*",
     "@draco/shared-schemas": "workspace:*",
     "@emotion/cache": "^11.14.0",

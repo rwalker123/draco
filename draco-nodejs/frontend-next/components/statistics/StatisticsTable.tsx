@@ -5,23 +5,41 @@ import NextLink from 'next/link';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import {
   Box,
+  Button,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Paper,
   Typography,
   CircularProgress,
-  Tooltip,
   alpha,
   Chip,
 } from '@mui/material';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  arrayMove,
+} from '@dnd-kit/sortable';
 
 import ScrollableTable from './ScrollableTable';
 import TeamBadges from './TeamBadges';
+import { SortableStatHeaderCell, StatHeaderLabel } from './SortableStatHeaderCell';
+import { useStatColumnOrder, applyColumnOrder } from '../../hooks/useStatColumnOrder';
 import {
   BATTING_FIELD_LABELS,
   BATTING_FIELD_TOOLTIPS,
@@ -42,6 +60,7 @@ export interface ColumnConfig<T> {
   tooltip?: string;
   primary?: boolean;
   sortable?: boolean;
+  pinned?: boolean;
   formatter?: (value: unknown, row: T) => React.ReactNode;
   render?: (args: {
     value: unknown;
@@ -64,6 +83,8 @@ interface StatisticsTableBaseProps<T> {
   hideHeader?: boolean;
   maxHeight?: string | number;
   fullWidth?: boolean;
+  reorderable?: boolean;
+  onColumnReorder?: (newReorderableOrder: string[]) => void;
 }
 
 export const StatisticsTableBase = <T extends Record<string, unknown>>({
@@ -78,9 +99,36 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
   hideHeader = false,
   maxHeight,
   fullWidth = false,
+  reorderable = false,
+  onColumnReorder,
 }: StatisticsTableBaseProps<T>) => {
   const activeField = sortField !== undefined ? String(sortField) : undefined;
   const dataVersion = `${String(activeField)}-${sortOrder}-${data.length}`;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const reorderableFieldIds = columns
+    .filter((column) => !column.pinned)
+    .map((column) => column.field);
+  const reorderEnabled =
+    reorderable && !hideHeader && !!onColumnReorder && reorderableFieldIds.length > 1;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+    const oldIndex = reorderableFieldIds.indexOf(String(active.id));
+    const newIndex = reorderableFieldIds.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) {
+      return;
+    }
+    onColumnReorder?.(arrayMove(reorderableFieldIds, oldIndex, newIndex));
+  };
 
   if (loading) {
     return (
@@ -119,167 +167,139 @@ export const StatisticsTableBase = <T extends Record<string, unknown>>({
     return String(value);
   };
 
-  return (
-    <ScrollableTable preserveScrollOnUpdate dataVersion={dataVersion}>
-      <TableContainer
-        component={Paper}
+  const tableContent = (
+    <TableContainer
+      component={Paper}
+      sx={{
+        width: fullWidth ? '100%' : 'fit-content',
+        maxWidth: '100%',
+        ...(maxHeight
+          ? {
+              maxHeight,
+              overflowY: 'auto',
+            }
+          : {}),
+        '& .MuiTableHead-root': {
+          position: 'sticky',
+          top: 0,
+          zIndex: 2,
+          backgroundColor: 'background.paper',
+        },
+      }}
+    >
+      <Table
+        size="small"
+        stickyHeader={!hideHeader}
         sx={{
-          width: fullWidth ? '100%' : 'fit-content',
-          maxWidth: '100%',
-          ...(maxHeight
-            ? {
-                maxHeight,
-                overflowY: 'auto',
-              }
-            : {}),
-          '& .MuiTableHead-root': {
-            position: 'sticky',
-            top: 0,
-            zIndex: 2,
-            backgroundColor: 'background.paper',
+          width: fullWidth ? '100%' : 'auto',
+          tableLayout: 'auto',
+          '& .MuiTableCell-root': {
+            py: 0.75,
+            px: 1.25,
+            fontSize: '0.85rem',
+            whiteSpace: 'nowrap',
+          },
+          '& .MuiTableCell-head': {
+            fontSize: '0.75rem',
+            letterSpacing: 0.4,
           },
         }}
       >
-        <Table
-          size="small"
-          stickyHeader={!hideHeader}
-          sx={{
-            width: fullWidth ? '100%' : 'auto',
-            tableLayout: 'auto',
-            '& .MuiTableCell-root': {
-              py: 0.75,
-              px: 1.25,
-              fontSize: '0.85rem',
-              whiteSpace: 'nowrap',
-            },
-            '& .MuiTableCell-head': {
-              fontSize: '0.75rem',
-              letterSpacing: 0.4,
-            },
-          }}
-        >
-          {!hideHeader && (
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
+        {!hideHeader && (
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => {
+                const active = activeField === column.field;
+                if (reorderEnabled && !column.pinned) {
+                  return (
+                    <SortableStatHeaderCell
+                      key={column.field}
+                      column={column}
+                      activeField={activeField}
+                      sortOrder={sortOrder}
+                      onSort={onSort}
+                      active={active}
+                    />
+                  );
+                }
+                return (
                   <TableCell
                     key={column.field}
                     align={column.align}
                     sx={{
                       fontWeight: 'bold',
                       backgroundColor: 'background.paper',
-                      ...(sortField === column.field && {
+                      ...(active && {
                         backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.02),
                       }),
                     }}
                   >
-                    {(() => {
-                      const justifyContent =
-                        column.align === 'right'
-                          ? 'flex-end'
-                          : column.align === 'center'
-                            ? 'center'
-                            : 'flex-start';
-                      const sharedSx = {
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent,
-                        width: '100%',
-                        textAlign: column.align,
-                        gap: column.align === 'center' ? 0.5 : 0.25,
-                      } as const;
-                      const labelNode = (
-                        <Box component="span" sx={{ flexShrink: 0 }}>
-                          {column.label}
-                        </Box>
-                      );
-                      const centerFiller =
-                        column.align === 'center' ? (
-                          <Box
-                            component="span"
-                            sx={{ display: 'inline-block', width: '1.5em', flexShrink: 0 }}
-                            aria-hidden="true"
-                          />
-                        ) : null;
-
-                      if (column.sortable !== false && onSort) {
-                        return (
-                          <Tooltip title={column.tooltip || ''}>
-                            <TableSortLabel
-                              active={activeField === column.field}
-                              direction={activeField === column.field ? sortOrder : 'asc'}
-                              onClick={() => onSort(String(column.field))}
-                              sx={{
-                                ...sharedSx,
-                                '& .MuiTableSortLabel-icon': {
-                                  order: -1,
-                                  marginRight: column.align === 'center' ? 0.5 : 0.25,
-                                  marginLeft: 0,
-                                },
-                              }}
-                            >
-                              {labelNode}
-                              {centerFiller}
-                            </TableSortLabel>
-                          </Tooltip>
-                        );
-                      }
-
-                      return (
-                        <Tooltip title={column.tooltip || ''}>
-                          <Typography variant="inherit" component="span" sx={sharedSx}>
-                            {labelNode}
-                            {centerFiller}
-                          </Typography>
-                        </Tooltip>
-                      );
-                    })()}
+                    <StatHeaderLabel
+                      column={column}
+                      activeField={activeField}
+                      sortOrder={sortOrder}
+                      onSort={onSort}
+                    />
                   </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-          )}
-          <TableBody>
-            {data.map((row, index) => (
-              <TableRow
-                key={getRowKey(row, index)}
-                hover
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                {columns.map((column) => {
-                  const value = row[column.field];
-                  const formattedValue = column.formatter ? column.formatter(value, row) : value;
-                  const normalizedFormattedValue = normalizeToReactNode(formattedValue);
-                  const rendered = column.render
-                    ? column.render({
-                        value,
-                        formattedValue: normalizedFormattedValue,
-                        row,
-                        rowIndex: index,
-                        column,
-                      })
-                    : normalizedFormattedValue;
-                  const content = normalizeToReactNode(rendered);
+                );
+              })}
+            </TableRow>
+          </TableHead>
+        )}
+        <TableBody>
+          {data.map((row, index) => (
+            <TableRow
+              key={getRowKey(row, index)}
+              hover
+              sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+            >
+              {columns.map((column) => {
+                const value = row[column.field];
+                const formattedValue = column.formatter ? column.formatter(value, row) : value;
+                const normalizedFormattedValue = normalizeToReactNode(formattedValue);
+                const rendered = column.render
+                  ? column.render({
+                      value,
+                      formattedValue: normalizedFormattedValue,
+                      row,
+                      rowIndex: index,
+                      column,
+                    })
+                  : normalizedFormattedValue;
+                const content = normalizeToReactNode(rendered);
 
-                  return (
-                    <TableCell
-                      key={column.field}
-                      align={column.align}
-                      sx={{
-                        ...(activeField === column.field && {
-                          backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.04),
-                        }),
-                      }}
-                    >
-                      {content}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                return (
+                  <TableCell
+                    key={column.field}
+                    align={column.align}
+                    sx={{
+                      ...(activeField === column.field && {
+                        backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.04),
+                      }),
+                    }}
+                  >
+                    {content}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  return (
+    <ScrollableTable preserveScrollOnUpdate dataVersion={dataVersion}>
+      {reorderEnabled ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={reorderableFieldIds} strategy={horizontalListSortingStrategy}>
+            {tableContent}
+          </SortableContext>
+        </DndContext>
+      ) : (
+        tableContent
+      )}
     </ScrollableTable>
   );
 };
@@ -335,6 +355,7 @@ interface SharedStatisticsTableProps<T extends StatsRowBase> {
   omitFields?: string[];
   buildPlayerHref?: (row: T) => string | null;
   playerLinkLabel?: string;
+  disableColumnReorder?: boolean;
 }
 
 const BATTER_COMPACT_FIELDS: ReadonlyArray<string> = [
@@ -591,6 +612,10 @@ const buildColumns = <T extends StatsRowBase>(
       align,
     };
 
+    if (field === 'playerNumber' || field === 'playerName' || field === 'teamName') {
+      columnConfig.pinned = true;
+    }
+
     if (field === 'teamName') {
       columnConfig.sortable = false;
     }
@@ -647,7 +672,9 @@ const StatisticsTable = <T extends StatsRowBase>({
   omitFields,
   buildPlayerHref,
   playerLinkLabel,
+  disableColumnReorder,
 }: SharedStatisticsTableProps<T>) => {
+  const { order, isCustomized, applyReorder, reset } = useStatColumnOrder(variant);
   const params = useParams();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -709,37 +736,70 @@ const StatisticsTable = <T extends StatsRowBase>({
   const resolvedBuildPlayerHref = buildPlayerHref ?? defaultBuildPlayerHref;
 
   const omitSet = new Set(omitFields ?? []);
-  const columns = (() => {
-    const baseColumns = buildColumns<T>(
-      variant,
-      extendedStats,
-      data,
-      omitSet,
-      resolvedBuildPlayerHref,
-    );
-    if (!prependColumns || prependColumns.length === 0) {
-      return baseColumns;
-    }
-    return [...prependColumns, ...baseColumns];
-  })();
+  const baseColumns = buildColumns<T>(
+    variant,
+    extendedStats,
+    data,
+    omitSet,
+    resolvedBuildPlayerHref,
+  );
+  const preparedColumns =
+    !prependColumns || prependColumns.length === 0
+      ? baseColumns
+      : [...prependColumns.map((column) => ({ ...column, pinned: true })), ...baseColumns];
+
+  const pinnedColumns = preparedColumns.filter((column) => column.pinned);
+  const reorderableColumns = preparedColumns.filter((column) => !column.pinned);
+  const reorderableFields = reorderableColumns.map((column) => String(column.field));
+  const reorderableByField = new Map(
+    reorderableColumns.map((column) => [String(column.field), column]),
+  );
+  const reorderedColumns = applyColumnOrder(reorderableFields, order)
+    .map((field) => reorderableByField.get(field))
+    .filter((column): column is ColumnConfig<T> => Boolean(column));
+  const columns = [...pinnedColumns, ...reorderedColumns];
+
+  const reorderActive = !disableColumnReorder && !hideHeader;
+  const showReset = reorderActive && isCustomized;
 
   const handleInternalSort = (field: string) => {
     onSort?.(field);
   };
 
+  const handleColumnReorder = (newReorderableOrder: string[]) => {
+    applyReorder(reorderableFields, newReorderableOrder);
+  };
+
   return (
-    <StatisticsTableBase
-      data={data}
-      columns={columns}
-      loading={loading}
-      emptyMessage={emptyMessage}
-      getRowKey={getRowKey}
-      sortField={sortField}
-      sortOrder={sortOrder}
-      onSort={handleInternalSort}
-      hideHeader={hideHeader}
-      maxHeight={maxHeight}
-    />
+    <Box>
+      {showReset && (
+        <Box sx={{ mb: 0.5 }}>
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<RestartAltIcon fontSize="small" />}
+            onClick={reset}
+            sx={{ textTransform: 'none' }}
+          >
+            Reset columns
+          </Button>
+        </Box>
+      )}
+      <StatisticsTableBase
+        data={data}
+        columns={columns}
+        loading={loading}
+        emptyMessage={emptyMessage}
+        getRowKey={getRowKey}
+        sortField={sortField}
+        sortOrder={sortOrder}
+        onSort={handleInternalSort}
+        hideHeader={hideHeader}
+        maxHeight={maxHeight}
+        reorderable={reorderActive}
+        onColumnReorder={handleColumnReorder}
+      />
+    </Box>
   );
 };
 
