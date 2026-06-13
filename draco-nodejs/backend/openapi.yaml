@@ -9136,6 +9136,8 @@ components:
       properties:
         contactId:
           type: string
+          pattern: ^\d+$
+          example: "12345"
       required:
         - contactId
     GameBattingStatLine:

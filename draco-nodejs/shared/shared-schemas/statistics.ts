@@ -261,7 +261,7 @@ export const TeamStatsPlayerSummarySchema = z.object({
 });
 
 export const AddGuestPlayerSchema = z.object({
-  contactId: z.string(),
+  contactId: bigintToStringSchema,
 });
 
 export const GameBattingStatInputSchema = z.object({

@@ -12284,7 +12284,9 @@
         "type": "object",
         "properties": {
           "contactId": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
           }
         },
         "required": [

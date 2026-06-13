@@ -308,7 +308,6 @@ describe('RosterService.addSubstitutePlayer', () => {
       mockRosterPlayer.id,
       teamSeasonId,
     );
-    // Guests are active elsewhere by design — the one-team conflict check must not run.
     expect(rosterRepo.findRosterMemberInLeagueSeason).not.toHaveBeenCalled();
     expect(result).toMatchObject({
       rosterSeasonId: '200',
