@@ -12,10 +12,13 @@ import {
   MenuItem,
   SelectChangeEvent,
 } from '@mui/material';
+import { exportPitchingStatistics } from '@draco/shared-api-client';
 import StatisticsTable from '../../../../components/statistics/StatisticsTable';
 import type { PlayerPitchingStatsType } from '@draco/shared-schemas';
 import { useApiClient } from '../../../../hooks/useApiClient';
 import { fetchPitchingStatistics } from '../../../../services/statisticsService';
+import { unwrapApiResult } from '../../../../utils/apiResult';
+import { downloadBlob } from '../../../../utils/downloadUtils';
 
 type PitchingStatsRow = PlayerPitchingStatsType;
 
@@ -142,6 +145,28 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
     setPage(1); // Reset to first page when changing page size
   };
 
+  const handleExport = async () => {
+    const sortFieldMap: Record<string, string> = {
+      ipDecimal: 'ip',
+    };
+    const backendSortField = sortFieldMap[String(sortField)] || String(sortField);
+    const result = await exportPitchingStatistics({
+      client: apiClient,
+      path: { accountId, leagueId: filters.leagueId },
+      query: {
+        divisionId:
+          filters.divisionId && filters.divisionId !== '0' ? filters.divisionId : undefined,
+        isHistorical: filters.isHistorical,
+        sortField: backendSortField,
+        sortOrder,
+      },
+      parseAs: 'blob',
+      throwOnError: false,
+    });
+    const blob = unwrapApiResult(result, 'Failed to export pitching statistics') as Blob;
+    downloadBlob(blob, 'pitching-statistics.csv');
+  };
+
   if (!filters.leagueId) {
     return (
       <Box p={3}>
@@ -202,6 +227,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
         sortOrder={sortOrder}
         onSort={(field) => handleSort(field as SortField)}
         playerLinkLabel="Pitching Statistics"
+        onExport={handleExport}
       />
 
       <Box display="flex" justifyContent="center" mt={3}>

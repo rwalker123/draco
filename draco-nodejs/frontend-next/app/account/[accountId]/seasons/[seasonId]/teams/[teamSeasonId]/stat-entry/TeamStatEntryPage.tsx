@@ -21,7 +21,13 @@ import {
   type UpsertLineScoreType,
 } from '@draco/shared-schemas';
 
-import { getGameRecap } from '@draco/shared-api-client';
+import {
+  getGameRecap,
+  exportTeamBattingStatistics,
+  exportTeamPitchingStatistics,
+} from '@draco/shared-api-client';
+import { unwrapApiResult } from '../../../../../../../../utils/apiResult';
+import { downloadBlob } from '../../../../../../../../utils/downloadUtils';
 import { useAuth } from '../../../../../../../../context/AuthContext';
 import { useRole } from '../../../../../../../../context/RoleContext';
 import { useApiClient } from '../../../../../../../../hooks/useApiClient';
@@ -343,6 +349,28 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
   const [pendingAttendanceRosterId, setPendingAttendanceRosterId] = useState<string | null>(null);
   const cachedGameStatsRef = useRef<Map<string, CachedGameStats>>(new Map());
   const statsTabsCardRef = useRef<StatsTabsCardHandle | null>(null);
+
+  const handleExportSeasonBattingStats = async () => {
+    const result = await exportTeamBattingStatistics({
+      client: apiClient,
+      path: { accountId, seasonId, teamSeasonId },
+      parseAs: 'blob',
+      throwOnError: false,
+    });
+    const blob = unwrapApiResult(result, 'Failed to export batting statistics') as Blob;
+    downloadBlob(blob, 'season-batting-statistics.csv');
+  };
+
+  const handleExportSeasonPitchingStats = async () => {
+    const result = await exportTeamPitchingStatistics({
+      client: apiClient,
+      path: { accountId, seasonId, teamSeasonId },
+      parseAs: 'blob',
+      throwOnError: false,
+    });
+    const blob = unwrapApiResult(result, 'Failed to export pitching statistics') as Blob;
+    downloadBlob(blob, 'season-pitching-statistics.csv');
+  };
 
   useEffect(() => {
     cachedGameStatsRef.current.clear();
@@ -1541,6 +1569,8 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           seasonPitchingStats={seasonPitchingStats}
           seasonLoading={seasonStatsLoading}
           seasonError={seasonStatsError}
+          onExportSeasonBattingStats={handleExportSeasonBattingStats}
+          onExportSeasonPitchingStats={handleExportSeasonPitchingStats}
           gameOutcome={gameOutcome}
           onClearGameSelection={() => {
             setSelectedGameId(null);

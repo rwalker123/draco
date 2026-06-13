@@ -20,6 +20,36 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
     ValidationErrorSchemaRef,
   } = schemaRefs;
 
+  const numberPathParam = (name: string) => ({
+    name,
+    in: 'path' as const,
+    required: true,
+    schema: { type: 'string' as const, format: 'number' },
+  });
+
+  const csvResponse = {
+    200: {
+      description: 'CSV file export',
+      content: {
+        'text/csv': {
+          schema: { type: 'string' as const, format: 'binary' },
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+    },
+    404: {
+      description: 'Resource not found',
+      content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+    },
+  };
+
   // GET /api/accounts/{accountId}/statistics/leader-categories
   registry.registerPath({
     method: 'get',
@@ -926,6 +956,115 @@ export const registerStatisticsEndpoints = ({ registry, schemaRefs }: RegisterCo
         },
       },
     },
+  });
+
+  // GET /api/accounts/{accountId}/statistics/batting/{leagueId}/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/batting/{leagueId}/export',
+    operationId: 'exportBattingStatistics',
+    summary: 'Export batting statistics',
+    description: 'Export league batting statistics for all players to a CSV file.',
+    tags: ['Statistics'],
+    parameters: [numberPathParam('accountId'), numberPathParam('leagueId')],
+    request: {
+      query: BattingStatisticsFiltersSchemaRef,
+    },
+    responses: csvResponse,
+  });
+
+  // GET /api/accounts/{accountId}/statistics/pitching/{leagueId}/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/pitching/{leagueId}/export',
+    operationId: 'exportPitchingStatistics',
+    summary: 'Export pitching statistics',
+    description: 'Export league pitching statistics for all players to a CSV file.',
+    tags: ['Statistics'],
+    parameters: [numberPathParam('accountId'), numberPathParam('leagueId')],
+    request: {
+      query: PitchingStatisticsFiltersSchemaRef,
+    },
+    responses: csvResponse,
+  });
+
+  // GET /api/accounts/{accountId}/statistics/players/{playerId}/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/players/{playerId}/export',
+    operationId: 'exportPlayerStatistics',
+    summary: 'Export player career statistics',
+    description: "Export a player's career batting or pitching statistics to a CSV file.",
+    tags: ['Statistics'],
+    parameters: [
+      numberPathParam('accountId'),
+      numberPathParam('playerId'),
+      {
+        name: 'type',
+        in: 'query' as const,
+        required: false,
+        schema: { type: 'string' as const, enum: ['batting', 'pitching'] },
+      },
+    ],
+    responses: csvResponse,
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/batting-stats/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/batting-stats/export',
+    operationId: 'exportTeamBattingStatistics',
+    summary: 'Export team batting statistics',
+    description: 'Export batting statistics for all players on a team season to a CSV file.',
+    tags: ['Statistics'],
+    parameters: [
+      numberPathParam('accountId'),
+      numberPathParam('seasonId'),
+      numberPathParam('teamSeasonId'),
+    ],
+    responses: csvResponse,
+  });
+
+  // GET /api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/pitching-stats/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/pitching-stats/export',
+    operationId: 'exportTeamPitchingStatistics',
+    summary: 'Export team pitching statistics',
+    description: 'Export pitching statistics for all players on a team season to a CSV file.',
+    tags: ['Statistics'],
+    parameters: [
+      numberPathParam('accountId'),
+      numberPathParam('seasonId'),
+      numberPathParam('teamSeasonId'),
+    ],
+    responses: csvResponse,
+  });
+
+  // GET /api/accounts/{accountId}/statistics/all-time/teams/{teamId}/batting-stats/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/all-time/teams/{teamId}/batting-stats/export',
+    operationId: 'exportAllTimeTeamBattingStatistics',
+    summary: 'Export all-time team batting statistics',
+    description:
+      'Export accumulated batting statistics for a team across all seasons to a CSV file.',
+    tags: ['Statistics'],
+    parameters: [numberPathParam('accountId'), numberPathParam('teamId')],
+    responses: csvResponse,
+  });
+
+  // GET /api/accounts/{accountId}/statistics/all-time/teams/{teamId}/pitching-stats/export
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/statistics/all-time/teams/{teamId}/pitching-stats/export',
+    operationId: 'exportAllTimeTeamPitchingStatistics',
+    summary: 'Export all-time team pitching statistics',
+    description:
+      'Export accumulated pitching statistics for a team across all seasons to a CSV file.',
+    tags: ['Statistics'],
+    parameters: [numberPathParam('accountId'), numberPathParam('teamId')],
+    responses: csvResponse,
   });
 };
 

@@ -2,7 +2,9 @@ import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ValidationError } from '../utils/customErrors.js';
 import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { sendCsvDownload } from '../utils/csvResponse.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { MAX_EXPORT_ROWS } from '../services/csvExportService.js';
 import {
   BattingStatisticsFiltersSchema,
   LeaderCategoriesType,
@@ -12,6 +14,7 @@ import {
 
 const router = Router({ mergeParams: true });
 const statisticsService = ServiceFactory.getStatisticsService();
+const csvExportService = ServiceFactory.getCsvExportService();
 
 /**
  * GET /api/accounts/:accountId/statistics/leader-categories
@@ -47,6 +50,30 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/statistics/batting/:leagueId/export
+ * Export league batting statistics to CSV (public endpoint)
+ */
+router.get(
+  '/batting/:leagueId/export',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
+
+    const filters = BattingStatisticsFiltersSchema.parse(req.query);
+    filters.leagueId = leagueId;
+    filters.page = 1;
+    filters.pageSize = MAX_EXPORT_ROWS;
+
+    const battingStats = await statisticsService.getBattingStats(accountId, filters);
+    const result = await csvExportService.exportBattingStatistics(
+      battingStats,
+      'batting-statistics',
+    );
+
+    sendCsvDownload(res, result.fileName, result.buffer);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/statistics/pitching/:leagueId
  * Get pitching statistics for a league
  */
@@ -65,6 +92,30 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/statistics/pitching/:leagueId/export
+ * Export league pitching statistics to CSV (public endpoint)
+ */
+router.get(
+  '/pitching/:leagueId/export',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
+
+    const filters = PitchingStatisticsFiltersSchema.parse(req.query);
+    filters.leagueId = leagueId;
+    filters.page = 1;
+    filters.pageSize = MAX_EXPORT_ROWS;
+
+    const pitchingStats = await statisticsService.getPitchingStats(accountId, filters);
+    const result = await csvExportService.exportPitchingStatistics(
+      pitchingStats,
+      'pitching-statistics',
+    );
+
+    sendCsvDownload(res, result.fileName, result.buffer);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/statistics/players/:playerId
  * Retrieve career statistics for a single player
  */
@@ -76,6 +127,34 @@ router.get(
     const playerStats = await statisticsService.getPlayerCareerStatistics(accountId, playerId);
 
     res.json(playerStats);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/statistics/players/:playerId/export?type=batting|pitching
+ * Export a player's career statistics to CSV (public endpoint)
+ */
+router.get(
+  '/players/:playerId/export',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, playerId } = extractBigIntParams(req.params, 'accountId', 'playerId');
+
+    const type = req.query.type === 'pitching' ? 'pitching' : 'batting';
+
+    const playerStats = await statisticsService.getPlayerCareerStatistics(accountId, playerId);
+
+    const result =
+      type === 'pitching'
+        ? await csvExportService.exportCareerPitchingStatistics(
+            playerStats.pitching.rows,
+            'player-pitching-statistics',
+          )
+        : await csvExportService.exportCareerBattingStatistics(
+            playerStats.batting.rows,
+            'player-batting-statistics',
+          );
+
+    sendCsvDownload(res, result.fileName, result.buffer);
   }),
 );
 

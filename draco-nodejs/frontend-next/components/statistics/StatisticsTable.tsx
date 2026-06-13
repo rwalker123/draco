@@ -4,6 +4,7 @@ import React from 'react';
 import NextLink from 'next/link';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import {
+  Alert,
   Box,
   Button,
   Table,
@@ -19,6 +20,7 @@ import {
   Chip,
 } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   DndContext,
   closestCenter,
@@ -356,6 +358,7 @@ interface SharedStatisticsTableProps<T extends StatsRowBase> {
   buildPlayerHref?: (row: T) => string | null;
   playerLinkLabel?: string;
   disableColumnReorder?: boolean;
+  onExport?: () => Promise<void>;
 }
 
 const BATTER_COMPACT_FIELDS: ReadonlyArray<string> = [
@@ -673,8 +676,11 @@ const StatisticsTable = <T extends StatsRowBase>({
   buildPlayerHref,
   playerLinkLabel,
   disableColumnReorder,
+  onExport,
 }: SharedStatisticsTableProps<T>) => {
   const { order, isCustomized, applyReorder, reset } = useStatColumnOrder(variant);
+  const [exporting, setExporting] = React.useState(false);
+  const [exportError, setExportError] = React.useState<string | null>(null);
   const params = useParams();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -761,6 +767,8 @@ const StatisticsTable = <T extends StatsRowBase>({
 
   const reorderActive = !disableColumnReorder && !hideHeader;
   const showReset = reorderActive && isCustomized;
+  const showExport = !!onExport && !hideHeader && data.length > 0;
+  const showToolbar = showReset || showExport;
 
   const handleInternalSort = (field: string) => {
     onSort?.(field);
@@ -770,20 +778,70 @@ const StatisticsTable = <T extends StatsRowBase>({
     applyReorder(reorderableFields, newReorderableOrder);
   };
 
+  const handleExport = async () => {
+    if (!onExport) {
+      return;
+    }
+    setExportError(null);
+    setExporting(true);
+    try {
+      await onExport();
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Failed to export statistics');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <Box>
-      {showReset && (
-        <Box sx={{ mb: 0.5 }}>
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<RestartAltIcon fontSize="small" />}
-            onClick={reset}
-            sx={{ textTransform: 'none' }}
-          >
-            Reset columns
-          </Button>
+      {showToolbar && (
+        <Box
+          sx={{
+            mb: 0.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+          }}
+        >
+          {showReset ? (
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<RestartAltIcon fontSize="small" />}
+              onClick={reset}
+              sx={{ textTransform: 'none' }}
+            >
+              Reset columns
+            </Button>
+          ) : (
+            <Box />
+          )}
+          {showExport && (
+            <Button
+              size="small"
+              variant="text"
+              startIcon={
+                exporting ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <FileDownloadIcon fontSize="small" />
+                )
+              }
+              onClick={() => void handleExport()}
+              disabled={exporting}
+              sx={{ textTransform: 'none' }}
+            >
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </Button>
+          )}
         </Box>
+      )}
+      {exportError && (
+        <Alert severity="error" sx={{ mb: 1 }} onClose={() => setExportError(null)}>
+          {exportError}
+        </Alert>
       )}
       <StatisticsTableBase
         data={data}

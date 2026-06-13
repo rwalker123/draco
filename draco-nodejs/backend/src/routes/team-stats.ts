@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { optionalAuth } from '../middleware/authMiddleware.js';
 import { extractTeamParams, ParamsObject } from '../utils/paramExtraction.js';
+import { sendCsvDownload } from '../utils/csvResponse.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { PaginationHelper } from '../utils/pagination.js';
@@ -17,6 +18,7 @@ const teamService = ServiceFactory.getTeamService();
 const scheduleService = ServiceFactory.getScheduleService();
 const roleService = ServiceFactory.getRoleService();
 const seasonService = ServiceFactory.getSeasonService();
+const csvExportService = ServiceFactory.getCsvExportService();
 
 const parseTeamParams = (params: ParamsObject) => {
   try {
@@ -159,6 +161,27 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/batting-stats/export
+ * Export a team's batting statistics to CSV
+ */
+router.get(
+  '/:teamSeasonId/batting-stats/export',
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = parseTeamParams(req.params);
+
+    await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
+
+    const battingStats = await teamStatsService.getTeamBattingStats(teamSeasonId, accountId);
+    const result = await csvExportService.exportBattingStatistics(
+      battingStats,
+      'team-batting-statistics',
+    );
+
+    sendCsvDownload(res, result.fileName, result.buffer);
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/pitching-stats
  * Get pitching statistics for a specific team
  */
@@ -177,6 +200,31 @@ router.get(
     );
 
     res.json(pitchingStats);
+  }),
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/pitching-stats/export
+ * Export a team's pitching statistics to CSV
+ */
+router.get(
+  '/:teamSeasonId/pitching-stats/export',
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId } = parseTeamParams(req.params);
+
+    await teamService.validateTeamSeasonBasic(teamSeasonId, seasonId, accountId);
+
+    const pitchingStats = await teamStatsService.getTeamPitchingStats(
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+    const result = await csvExportService.exportPitchingStatistics(
+      pitchingStats,
+      'team-pitching-statistics',
+    );
+
+    sendCsvDownload(res, result.fileName, result.buffer);
   }),
 );
 
