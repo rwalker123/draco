@@ -1,12 +1,11 @@
 import React from 'react';
-import { Box, Typography, Paper, Button, SxProps, Theme } from '@mui/material';
+import { Box, Typography, Button, SxProps, Theme } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import NextLink from 'next/link';
 import TeamAvatar from './TeamAvatar';
 import WidgetShell from './ui/WidgetShell';
-import { useTheme } from '@mui/material/styles';
 import SubscribeToScheduleButton from './calendar/SubscribeToScheduleButton';
 import MyTeamNextGame from './MyTeamNextGame';
 import { DEFAULT_TIMEZONE } from '../utils/timezones';
@@ -44,14 +43,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({
   isGolf = false,
   timeZone = DEFAULT_TIMEZONE,
 }) => {
-  const theme = useTheme();
   const hasTeams = Boolean(userTeams && userTeams.length > 0);
-
-  const tileStyles = {
-    backgroundColor: theme.palette.background.paper,
-    border: theme.palette.widget.border,
-    shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
-  };
 
   const widgetTitle = (
     <Box display="flex" alignItems="center" gap={1}>
@@ -86,18 +78,11 @@ const MyTeams: React.FC<MyTeamsProps> = ({
           }}
         >
           {userTeams.map((team) => (
-            <Paper
+            <WidgetShell
               key={team.teamId || team.id}
-              variant="outlined"
+              accent="secondary"
               sx={{
-                position: 'relative',
-                borderRadius: 2,
                 p: { xs: 1.75, sm: 2.25 },
-                border: '1px solid',
-                borderColor: tileStyles.border,
-                boxShadow: tileStyles.shadow,
-                backgroundColor: tileStyles.backgroundColor,
-                overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1.5,
@@ -208,7 +193,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                   size="small"
                 />
               </Box>
-            </Paper>
+            </WidgetShell>
           ))}
         </Box>
       ) : (

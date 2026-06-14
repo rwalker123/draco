@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { listTeamSeasonGames } from '@draco/shared-api-client';
 import { useApiClient } from '../hooks/useApiClient';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -43,7 +42,6 @@ const MyTeamNextGame: React.FC<MyTeamNextGameProps> = ({
   timeZone,
 }) => {
   const apiClient = useApiClient();
-  const theme = useTheme();
   const [nextGame, setNextGame] = useState<NormalizedNextGame | null>(null);
 
   useEffect(() => {
@@ -114,11 +112,6 @@ const MyTeamNextGame: React.FC<MyTeamNextGameProps> = ({
 
   if (!nextGame) return null;
 
-  const detailBackdrop = alpha(
-    theme.palette.text.primary,
-    theme.palette.mode === 'dark' ? 0.18 : 0.06,
-  );
-
   return (
     <Box
       sx={{
@@ -128,8 +121,8 @@ const MyTeamNextGame: React.FC<MyTeamNextGameProps> = ({
         p: 2,
         borderRadius: 2,
         border: '1px solid',
-        borderColor: theme.palette.widget.border,
-        bgcolor: detailBackdrop,
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
       }}
     >
       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.75, color: 'primary.main' }}>
