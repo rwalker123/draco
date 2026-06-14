@@ -53,6 +53,7 @@ const GuestPlayerDialog: React.FC<GuestPlayerDialogProps> = ({
     setSearchInput('');
     setError(null);
     setSubmitting(false);
+    setSearching(false);
   }, [open]);
 
   useEffect(() => {
@@ -71,6 +72,7 @@ const GuestPlayerDialog: React.FC<GuestPlayerDialogProps> = ({
 
       if (!trimmed) {
         setContactOptions([]);
+        setSearching(false);
         return;
       }
 
