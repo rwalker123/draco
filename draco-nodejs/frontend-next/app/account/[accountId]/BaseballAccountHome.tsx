@@ -91,7 +91,7 @@ const BaseballAccountHome: React.FC = () => {
     divisionName: team.division?.name ?? undefined,
     teamId: team.team?.id,
     logoUrl: team.team?.logoUrl ?? undefined,
-    seasonId: team.season?.id ?? currentSeason?.id ?? undefined,
+    seasonId: team.season?.id,
   }));
 
   useEffect(() => {
