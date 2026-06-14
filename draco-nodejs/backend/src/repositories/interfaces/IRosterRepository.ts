@@ -50,6 +50,10 @@ export interface IRosterRepository {
     playerNumber: string,
     submittedWaiver: boolean,
   ): Promise<dbRosterMember>;
+  createSubstituteRosterSeasonEntry(
+    playerId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<dbRosterMember>;
   updateRosterSeasonEntry(
     rosterSeasonId: bigint,
     playerNumber?: string,

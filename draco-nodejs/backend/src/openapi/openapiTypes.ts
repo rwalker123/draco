@@ -102,6 +102,7 @@ import {
   PlayerSurveyCategorySchema,
   PlayerSurveyDetailSchema,
   TeamStatsPlayerSummarySchema,
+  AddGuestPlayerSchema,
   GameBattingStatLineSchema,
   GameBattingStatsSchema,
   GamePitchingStatLineSchema,
@@ -902,6 +903,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'TeamStatsPlayerSummary',
     TeamStatsPlayerSummarySchema,
   );
+  const AddGuestPlayerSchemaRef = registry.register('AddGuestPlayer', AddGuestPlayerSchema);
   const GameBattingStatLineSchemaRef = registry.register(
     'GameBattingStatLine',
     GameBattingStatLineSchema,
@@ -1945,6 +1947,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     PublicPlayerProfileSchemaRef,
     PublicPlayerTeamAffiliationSchemaRef,
     TeamStatsPlayerSummarySchemaRef,
+    AddGuestPlayerSchemaRef,
     GameBattingStatLineSchemaRef,
     GameBattingStatsSchemaRef,
     GamePitchingStatLineSchemaRef,

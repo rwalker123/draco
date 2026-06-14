@@ -26,6 +26,8 @@ interface PitchingStatsSectionProps {
   stats: GamePitchingStatsType | null;
   totals: GamePitchingStatsType['totals'] | null;
   availablePlayers: TeamStatsPlayerSummaryType[];
+  accountId: string;
+  onAddGuestPlayer: (contactId: string) => Promise<TeamStatsPlayerSummaryType>;
   onCreateStat?: (payload: CreateGamePitchingStatType) => Promise<void>;
   onUpdateStat?: (statId: string, payload: UpdateGamePitchingStatType) => Promise<void>;
   onDeleteStat?: (stat: GamePitchingStatLineType) => void;
@@ -43,6 +45,8 @@ const PitchingStatsSection: React.FC<PitchingStatsSectionProps> = ({
   stats,
   totals,
   availablePlayers,
+  accountId,
+  onAddGuestPlayer,
   onCreateStat,
   onUpdateStat,
   onDeleteStat,
@@ -69,6 +73,8 @@ const PitchingStatsSection: React.FC<PitchingStatsSectionProps> = ({
         stats={stats}
         totals={totals ?? null}
         availablePlayers={availablePlayers}
+        accountId={accountId}
+        onAddGuestPlayer={onAddGuestPlayer}
         onCreateStat={onCreateStat}
         onUpdateStat={onUpdateStat}
         onDeleteStat={onDeleteStat}

@@ -257,6 +257,11 @@ export const TeamStatsPlayerSummarySchema = z.object({
   playerName: nameSchema,
   playerNumber: z.string().nullable(),
   photoUrl: z.string().url().nullable().optional(),
+  isSubstitute: z.boolean().optional(),
+});
+
+export const AddGuestPlayerSchema = z.object({
+  contactId: bigintToStringSchema,
 });
 
 export const GameBattingStatInputSchema = z.object({
@@ -435,6 +440,7 @@ export const UpdateGameAttendanceSchema = z.object({
 });
 
 export type TeamStatsPlayerSummaryType = z.infer<typeof TeamStatsPlayerSummarySchema>;
+export type AddGuestPlayerType = z.infer<typeof AddGuestPlayerSchema>;
 export type GameBattingStatLineType = z.infer<typeof GameBattingStatLineSchema>;
 export type GameBattingTotalsType = z.infer<typeof GameBattingTotalsSchema>;
 export type GameBattingStatsType = z.infer<typeof GameBattingStatsSchema>;

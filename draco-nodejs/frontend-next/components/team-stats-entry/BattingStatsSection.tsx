@@ -21,6 +21,8 @@ interface BattingStatsSectionProps {
   stats: GameBattingStatsType | null;
   totals: GameBattingStatsType['totals'] | null;
   availablePlayers: TeamStatsPlayerSummaryType[];
+  accountId: string;
+  onAddGuestPlayer: (contactId: string) => Promise<TeamStatsPlayerSummaryType>;
   onCreateStat?: (payload: CreateGameBattingStatType) => Promise<void>;
   onUpdateStat?: (statId: string, payload: UpdateGameBattingStatType) => Promise<void>;
   onDeleteStat?: (stat: GameBattingStatLineType) => void;
@@ -37,6 +39,8 @@ const BattingStatsSection: React.FC<BattingStatsSectionProps> = ({
   stats,
   totals,
   availablePlayers,
+  accountId,
+  onAddGuestPlayer,
   onCreateStat,
   onUpdateStat,
   onDeleteStat,
@@ -62,6 +66,8 @@ const BattingStatsSection: React.FC<BattingStatsSectionProps> = ({
         stats={stats}
         totals={totals ?? null}
         availablePlayers={availablePlayers}
+        accountId={accountId}
+        onAddGuestPlayer={onAddGuestPlayer}
         onCreateStat={onCreateStat}
         onUpdateStat={onUpdateStat}
         onDeleteStat={onDeleteStat}

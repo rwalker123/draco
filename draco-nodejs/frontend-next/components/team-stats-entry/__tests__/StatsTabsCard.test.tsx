@@ -21,6 +21,15 @@ const noop = () => {};
 const asyncNoop = async () => {};
 
 const emptyPlayers: TeamStatsPlayerSummaryType[] = [];
+const addGuestNoop = async (): Promise<TeamStatsPlayerSummaryType> => ({
+  rosterSeasonId: 'guest-1',
+  playerId: 'player-guest',
+  contactId: 'contact-guest',
+  playerName: 'Guest Player',
+  playerNumber: null,
+  photoUrl: null,
+  isSubstitute: true,
+});
 
 const nullBatting = null as GameBattingStatsType | null;
 const nullPitching = null as GamePitchingStatsType | null;
@@ -215,6 +224,8 @@ describe('StatsTabsCard', () => {
         recapError={null}
         onRecapSave={asyncNoop}
         teamSeasonId="1"
+        accountId="1"
+        onAddGuestPlayer={addGuestNoop}
         canManageAllTeams={false}
         lineScoreData={null}
         lineScoreLoading={false}
@@ -266,6 +277,8 @@ describe('StatsTabsCard', () => {
         recapError={null}
         onRecapSave={asyncNoop}
         teamSeasonId="1"
+        accountId="1"
+        onAddGuestPlayer={addGuestNoop}
         canManageAllTeams={false}
         lineScoreData={null}
         lineScoreLoading={false}
@@ -319,6 +332,8 @@ describe('StatsTabsCard', () => {
         recapError={null}
         onRecapSave={asyncNoop}
         teamSeasonId="1"
+        accountId="1"
+        onAddGuestPlayer={addGuestNoop}
         canManageAllTeams={false}
         lineScoreData={null}
         lineScoreLoading={false}
@@ -373,6 +388,8 @@ describe('StatsTabsCard', () => {
         recapError={null}
         onRecapSave={asyncNoop}
         teamSeasonId="1"
+        accountId="1"
+        onAddGuestPlayer={addGuestNoop}
         canManageAllTeams={false}
         lineScoreData={null}
         lineScoreLoading={false}
@@ -427,6 +444,8 @@ describe('StatsTabsCard', () => {
         recapError={null}
         onRecapSave={asyncNoop}
         teamSeasonId="1"
+        accountId="1"
+        onAddGuestPlayer={addGuestNoop}
         canManageAllTeams={false}
         lineScoreData={null}
         lineScoreLoading={false}
@@ -481,6 +500,8 @@ describe('StatsTabsCard', () => {
         recapError={null}
         onRecapSave={asyncNoop}
         teamSeasonId="1"
+        accountId="1"
+        onAddGuestPlayer={addGuestNoop}
         canManageAllTeams={false}
         lineScoreData={null}
         lineScoreLoading={false}

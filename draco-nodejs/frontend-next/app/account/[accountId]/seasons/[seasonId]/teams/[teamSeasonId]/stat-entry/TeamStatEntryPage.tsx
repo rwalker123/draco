@@ -768,6 +768,42 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
     showSnackbar(error.message, 'error');
   };
 
+  const handleAddGuestPlayer = async (contactId: string): Promise<TeamStatsPlayerSummaryType> => {
+    const service = new TeamStatsEntryService(token, apiClient);
+    const summary = await service.addGuestPlayer(accountId, seasonId, teamSeasonId, contactId);
+
+    const appendPlayer = <T extends { availablePlayers: TeamStatsPlayerSummaryType[] }>(
+      stats: T | null,
+    ): T | null => {
+      if (!stats) {
+        return stats;
+      }
+      if (
+        stats.availablePlayers.some((player) => player.rosterSeasonId === summary.rosterSeasonId)
+      ) {
+        return stats;
+      }
+      return { ...stats, availablePlayers: [...stats.availablePlayers, summary] };
+    };
+
+    setBattingStats((previous) => appendPlayer(previous));
+    setPitchingStats((previous) => appendPlayer(previous));
+
+    if (selectedGameId) {
+      const cachedEntry = cachedGameStatsRef.current.get(selectedGameId);
+      if (cachedEntry) {
+        cachedGameStatsRef.current.set(selectedGameId, {
+          ...cachedEntry,
+          batting: appendPlayer(cachedEntry.batting) ?? cachedEntry.batting,
+          pitching: appendPlayer(cachedEntry.pitching) ?? cachedEntry.pitching,
+        });
+      }
+    }
+
+    showSnackbar(`${summary.playerName} added as a guest player.`);
+    return summary;
+  };
+
   const handleCreateBattingStat = async (payload: CreateGameBattingStatType) => {
     if (!selectedGameId || !battingStats) {
       throw new Error('Batting stats are not available for editing.');
@@ -1539,6 +1575,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           tab={tabValue}
           onTabChange={handleTabChange}
           canManageStats={canManageStats}
+          accountId={accountId}
           teamSeasonId={teamSeasonId}
           canManageAllTeams={canManageAllTeams}
           enableAttendanceTracking={trackGamesPlayedEnabled}
@@ -1551,6 +1588,7 @@ const TeamStatEntryPage: React.FC<TeamStatEntryPageProps> = ({
           pitchingTotals={pitchingTotals}
           availableBatters={availableBattingPlayers}
           availablePitchers={availablePitchingPlayers}
+          onAddGuestPlayer={handleAddGuestPlayer}
           onCreateBattingStat={handleCreateBattingStat}
           onUpdateBattingStat={handleUpdateBattingStat}
           onDeleteBattingStat={setDeleteBattingTarget}

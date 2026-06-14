@@ -166,6 +166,24 @@ export class PrismaRosterRepository implements IRosterRepository {
     });
   }
 
+  async createSubstituteRosterSeasonEntry(
+    playerId: bigint,
+    teamSeasonId: bigint,
+  ): Promise<dbRosterMember> {
+    return this.prisma.rosterseason.create({
+      data: {
+        playerid: playerId,
+        teamseasonid: teamSeasonId,
+        playernumber: '',
+        inactive: true,
+        substitute: true,
+        submittedwaiver: false,
+        dateadded: new Date(),
+      },
+      include: { roster: { include: { contacts: true } } },
+    });
+  }
+
   async updateRosterSeasonEntry(
     rosterSeasonId: bigint,
     playerNumber?: string,

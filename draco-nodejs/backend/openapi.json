@@ -12267,6 +12267,9 @@
             "type": "string",
             "nullable": true,
             "format": "uri"
+          },
+          "isSubstitute": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -12275,6 +12278,19 @@
           "contactId",
           "playerName",
           "playerNumber"
+        ]
+      },
+      "AddGuestPlayer": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "pattern": "^\\d+$",
+            "example": "12345"
+          }
+        },
+        "required": [
+          "contactId"
         ]
       },
       "GameBattingStatLine": {
@@ -12762,6 +12778,9 @@
                   "type": "string",
                   "nullable": true,
                   "format": "uri"
+                },
+                "isSubstitute": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -13297,6 +13316,9 @@
                   "type": "string",
                   "nullable": true,
                   "format": "uri"
+                },
+                "isSubstitute": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -77754,6 +77776,131 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/stat-entry/guests": {
+      "post": {
+        "summary": "Add a guest (substitute) player for stat entry",
+        "description": "Adds an existing account contact as a non-rostered guest player on the team so their stats can be recorded for a game. Does not affect the contact’s active roster membership elsewhere.",
+        "tags": [
+          "Team Stats Entry"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddGuestPlayer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Guest player added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamStatsPlayerSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Team manage permission required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Player is already on this team roster.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictError"
                 }
               }
             }
