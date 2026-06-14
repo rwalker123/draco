@@ -263,20 +263,30 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   })();
 
   const tileStyles = (() => {
-    const baseColor = theme.palette.primary.main;
     const surface = theme.palette.widget.surface;
-    const highlightStart = alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12);
-    const highlightMid = alpha(surface, theme.palette.mode === 'dark' ? 0.92 : 0.98);
-    const highlightEnd = alpha(surface, theme.palette.mode === 'dark' ? 0.85 : 0.94);
-    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.28 : 0.16)} 0%, ${alpha(baseColor, 0)} 55%),
-      radial-gradient(circle at 78% 28%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.22 : 0.12)} 0%, ${alpha(baseColor, 0)} 58%),
-      radial-gradient(circle at 48% 82%, ${alpha(baseColor, theme.palette.mode === 'dark' ? 0.18 : 0.1)} 0%, ${alpha(baseColor, 0)} 70%)`;
+
+    if (theme.palette.mode !== 'dark') {
+      return {
+        background: surface,
+        overlay: 'none',
+        border: theme.palette.widget.border,
+        shadow: theme.shadows[1],
+      };
+    }
+
+    const baseColor = theme.palette.primary.main;
+    const highlightStart = alpha(baseColor, 0.22);
+    const highlightMid = alpha(surface, 0.92);
+    const highlightEnd = alpha(surface, 0.85);
+    const overlay = `radial-gradient(circle at 18% 22%, ${alpha(baseColor, 0.28)} 0%, ${alpha(baseColor, 0)} 55%),
+      radial-gradient(circle at 78% 28%, ${alpha(baseColor, 0.22)} 0%, ${alpha(baseColor, 0)} 58%),
+      radial-gradient(circle at 48% 82%, ${alpha(baseColor, 0.18)} 0%, ${alpha(baseColor, 0)} 70%)`;
 
     return {
       background: `linear-gradient(135deg, ${highlightStart} 0%, ${highlightMid} 42%, ${highlightEnd} 100%)`,
       overlay,
       border: theme.palette.widget.border,
-      shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
+      shadow: theme.shadows[10],
     };
   })();
 

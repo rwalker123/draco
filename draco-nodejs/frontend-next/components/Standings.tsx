@@ -20,8 +20,10 @@ import type { SeasonStandingsResponse } from '@draco/shared-api-client';
 import { StandingsLeagueType, StandingsTeamType } from '@draco/shared-schemas';
 import { useApiClient } from '../hooks/useApiClient';
 import { useAccountSettings } from '../hooks/useAccountSettings';
+import { useAccountTimezone } from '../context/AccountContext';
 import { unwrapApiResult } from '../utils/apiResult';
 import WidgetShell from './ui/WidgetShell';
+import NextGameInline from './NextGameInline';
 
 interface StandingsProps {
   accountId: string;
@@ -74,17 +76,6 @@ export const formatExpectedRecord = (rs: number, ra: number, games: number): str
   return `${expectedWins}-${expectedLosses}`;
 };
 
-const nextGameDateFormatter = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-});
-
-const formatNextGameDate = (iso: string): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  return nextGameDateFormatter.format(date);
-};
-
 export default function Standings({
   accountId,
   seasonId,
@@ -92,6 +83,7 @@ export default function Standings({
   showHeader = true,
 }: StandingsProps) {
   const apiClient = useApiClient();
+  const timeZone = useAccountTimezone();
   const { settings: accountSettings } = useAccountSettings(accountId);
   const [groupedStandings, setGroupedStandings] = useState<StandingsLeagueType[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -317,38 +309,17 @@ export default function Standings({
               >
                 {formatExpectedRecord(team.rs, team.ra, team.w + team.l + team.t)}
               </TableCell>
-              <TableCell
-                sx={{
-                  whiteSpace: 'nowrap',
-                  color: 'text.secondary',
-                  '& a': {
-                    color: 'primary.main',
-                    textDecoration: 'none',
-                    '&:hover': { textDecoration: 'underline' },
-                  },
-                }}
-              >
+              <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
                 {team.nextGame ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <span>
-                      {formatNextGameDate(team.nextGame.gameDate)}
-                      {team.nextGame.isHome ? ' vs. ' : ' @ '}
-                    </span>
-                    <Link
-                      href={`/account/${accountId}/seasons/${seasonId}/teams/${team.nextGame.opponent.id}`}
-                      title={team.nextGame.opponent.name ?? undefined}
-                      style={{
-                        display: 'inline-block',
-                        maxWidth: '6rem',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        verticalAlign: 'bottom',
-                      }}
-                    >
-                      {team.nextGame.opponent.name ?? 'Unnamed Team'}
-                    </Link>
-                  </Box>
+                  <NextGameInline
+                    accountId={accountId}
+                    seasonId={seasonId}
+                    gameDate={team.nextGame.gameDate}
+                    isHome={team.nextGame.isHome}
+                    opponent={team.nextGame.opponent}
+                    timeZone={timeZone}
+                    opponentMaxWidth="6rem"
+                  />
                 ) : (
                   '-'
                 )}
