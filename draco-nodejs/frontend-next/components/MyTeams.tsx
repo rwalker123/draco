@@ -1,11 +1,14 @@
 import React from 'react';
-import { Box, Typography, Paper, Button, SxProps, Theme } from '@mui/material';
+import { Box, Typography, Button, SxProps, Theme } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import NextLink from 'next/link';
 import TeamAvatar from './TeamAvatar';
 import WidgetShell from './ui/WidgetShell';
-import { alpha, useTheme } from '@mui/material/styles';
 import SubscribeToScheduleButton from './calendar/SubscribeToScheduleButton';
+import MyTeamNextGame from './MyTeamNextGame';
+import { DEFAULT_TIMEZONE } from '../utils/timezones';
 
 export interface UserTeam {
   id: string;
@@ -14,11 +17,6 @@ export interface UserTeam {
   divisionName?: string;
   record?: string;
   standing?: number;
-  nextGame?: {
-    date: string;
-    opponent: string;
-    location: string;
-  };
   logoUrl?: string;
   teamId?: string;
   seasonId?: string;
@@ -26,28 +24,26 @@ export interface UserTeam {
 
 interface MyTeamsProps {
   userTeams: UserTeam[];
+  accountId: string;
   onViewTeam: (teamSeasonId: string) => void;
   sx?: SxProps<Theme>;
   title?: string;
   emptyStateMessage?: string;
+  isGolf?: boolean;
+  timeZone?: string;
 }
 
 const MyTeams: React.FC<MyTeamsProps> = ({
   userTeams,
+  accountId,
   onViewTeam,
   sx,
   title,
   emptyStateMessage,
+  isGolf = false,
+  timeZone = DEFAULT_TIMEZONE,
 }) => {
-  const theme = useTheme();
   const hasTeams = Boolean(userTeams && userTeams.length > 0);
-
-  const tileStyles = {
-    backgroundColor: theme.palette.background.paper,
-    border: theme.palette.widget.border,
-    shadow: theme.shadows[theme.palette.mode === 'dark' ? 10 : 3],
-    detailBackdrop: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.18 : 0.06),
-  };
 
   const widgetTitle = (
     <Box display="flex" alignItems="center" gap={1}>
@@ -82,18 +78,11 @@ const MyTeams: React.FC<MyTeamsProps> = ({
           }}
         >
           {userTeams.map((team) => (
-            <Paper
+            <WidgetShell
               key={team.teamId || team.id}
-              variant="outlined"
+              accent="secondary"
               sx={{
-                position: 'relative',
-                borderRadius: 2,
                 p: { xs: 1.75, sm: 2.25 },
-                border: '1px solid',
-                borderColor: tileStyles.border,
-                boxShadow: tileStyles.shadow,
-                backgroundColor: tileStyles.backgroundColor,
-                overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1.5,
@@ -148,37 +137,23 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                   <strong>Standing:</strong> {team.standing}
                 </Typography>
               )}
-              {team.nextGame && (
-                <Box
-                  sx={{
-                    position: 'relative',
-                    zIndex: 1,
-                    mt: 0.5,
-                    p: 2,
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: tileStyles.border,
-                    bgcolor: tileStyles.detailBackdrop,
-                  }}
-                >
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 600, mb: 0.75, color: 'primary.main' }}
-                  >
-                    Next Game
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    vs {team.nextGame.opponent}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(team.nextGame.date).toLocaleDateString()}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {team.nextGame.location}
-                  </Typography>
-                </Box>
+              {!isGolf && team.seasonId && (
+                <MyTeamNextGame
+                  accountId={accountId}
+                  seasonId={team.seasonId}
+                  teamSeasonId={team.id}
+                  timeZone={timeZone}
+                />
               )}
-              <Box sx={{ display: 'flex', gap: 1, position: 'relative', zIndex: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
                 <Button
                   size="small"
                   startIcon={<VisibilityIcon />}
@@ -194,13 +169,31 @@ const MyTeams: React.FC<MyTeamsProps> = ({
                 >
                   View Team
                 </Button>
+                {!isGolf && team.seasonId && (
+                  <Button
+                    size="small"
+                    component={NextLink}
+                    href={`/account/${accountId}/seasons/${team.seasonId}/teams/${team.id}/stat-entry`}
+                    startIcon={<BarChartIcon />}
+                    sx={{
+                      alignSelf: 'flex-start',
+                      color: 'primary.main',
+                      '&:hover': {
+                        bgcolor: 'transparent',
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Team Statistics
+                  </Button>
+                )}
                 <SubscribeToScheduleButton
                   teamSeasonId={team.id}
                   teamName={team.name}
                   size="small"
                 />
               </Box>
-            </Paper>
+            </WidgetShell>
           ))}
         </Box>
       ) : (

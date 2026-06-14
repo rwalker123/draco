@@ -4,6 +4,7 @@ import { Group as GroupIcon, LocationOn as LocationIcon } from '@mui/icons-mater
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import { useRole } from '../../../context/RoleContext';
+import { useAccountTimezone } from '../../../context/AccountContext';
 import TodayScoreboard from '../../../components/TodayScoreboard';
 import YesterdayScoreboard from '../../../components/YesterdayScoreboard';
 import GameRecapsWidget from '../../../components/GameRecapsWidget';
@@ -81,6 +82,7 @@ const BaseballAccountHome: React.FC = () => {
     error: membershipError,
   } = useAccountMembership(accountIdStr);
   const { currentSeasonScheduleVisible, fetchCurrentSeason } = useCurrentSeason(accountIdStr ?? '');
+  const accountTimeZone = useAccountTimezone();
   const { teams: rawUserTeams } = useUserTeams(accountIdStr);
   const userTeams: UserTeam[] = rawUserTeams.map((team) => ({
     id: team.id,
@@ -89,6 +91,7 @@ const BaseballAccountHome: React.FC = () => {
     divisionName: team.division?.name ?? undefined,
     teamId: team.team?.id,
     logoUrl: team.team?.logoUrl ?? undefined,
+    seasonId: team.season?.id,
   }));
 
   useEffect(() => {
@@ -923,6 +926,8 @@ const BaseballAccountHome: React.FC = () => {
               <Box sx={{ order: { xs: 1 }, minWidth: 0 }}>
                 <MyTeams
                   userTeams={userTeams}
+                  accountId={accountIdStr ?? ''}
+                  timeZone={accountTimeZone}
                   onViewTeam={handleViewTeam}
                   title="Your Teams"
                   sx={{ width: '100%' }}

@@ -35,6 +35,7 @@ import ChangeLoginEmailDialog from '@/components/profile/ChangeLoginEmailDialog'
 import AccountOptional from '@/components/account/AccountOptional';
 import DeleteIndividualGolfAccountDialog from '@/components/golf/dialogs/DeleteIndividualGolfAccountDialog';
 import { isGolfIndividualAccountType, isGolfLeagueAccountType } from '@/utils/accountTypeUtils';
+import { DEFAULT_TIMEZONE } from '@/utils/timezones';
 
 interface OrganizationTeamsState {
   teams: UserTeam[];
@@ -342,13 +343,13 @@ const ProfilePageClient: React.FC = () => {
           const isLoading = teamsEntry?.loading ?? false;
           const error = teamsEntry?.error;
           const teams = teamsEntry?.teams ?? [];
+          const isGolfLeague = isGolfLeagueAccountType(
+            organization.configuration?.accountType?.name,
+          );
 
           const handleViewTeam = (teamSeasonId: string) => {
             const team = teams.find((t) => t.id === teamSeasonId);
             if (team?.seasonId) {
-              const isGolfLeague = isGolfLeagueAccountType(
-                organization.configuration?.accountType?.name,
-              );
               const basePath = `/account/${organization.id}/seasons/${team.seasonId}`;
               const path = isGolfLeague
                 ? `${basePath}/golf/teams/${teamSeasonId}`
@@ -385,6 +386,9 @@ const ProfilePageClient: React.FC = () => {
             <MyTeams
               key={organization.id}
               userTeams={teams}
+              accountId={organization.id}
+              isGolf={isGolfLeague}
+              timeZone={organization.configuration?.timeZone ?? DEFAULT_TIMEZONE}
               onViewTeam={handleViewTeam}
               title={`Teams at ${organization.name}`}
               emptyStateMessage="No teams are associated with your profile for this organization yet."
