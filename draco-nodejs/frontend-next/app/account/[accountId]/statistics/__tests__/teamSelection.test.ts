@@ -77,14 +77,12 @@ describe('isMyTeam', () => {
   it('season mode matches on teamSeasonId, ignoring overallTeamId', () => {
     const team = makeTeam({ teamId: 'ts-5', overallTeamId: 'team-5' });
     expect(isMyTeam(team, seasonMatch(['ts-5']))).toBe(true);
-    // overall id present in nothing — proves season mode does not consult overallTeamIds
     expect(isMyTeam(team, seasonMatch(['ts-other']))).toBe(false);
     expect(isMyTeam(team, allTimeMatch(['team-5']))).toBe(true);
   });
 
   it('all-time mode matches on overallTeamId, ignoring teamSeasonId', () => {
     const team = makeTeam({ teamId: 'ts-5', overallTeamId: 'team-5' });
-    // teamSeasonId is in the season set, but all-time mode must ignore it
     expect(
       isMyTeam(team, {
         isAllTime: true,
@@ -133,8 +131,6 @@ describe('pickDefaultTeam', () => {
   });
 
   it('does not flag the fallback first team as the user team when none match', () => {
-    // Regression guard: historical season where the user was on no team — the
-    // first team must be selected but must NOT be treated as "mine".
     const match = seasonMatch(['ts-absent']);
     const target = pickDefaultTeam(teams, match);
     expect(target?.teamId).toBe('ts-1');
