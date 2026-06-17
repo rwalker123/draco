@@ -258,8 +258,9 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
           'Failed to load your teams',
         );
         setSeasonMyTeamIds(buildSeasonMembershipIdSet(memberships));
-      } catch {
+      } catch (err) {
         if (controller.signal.aborted) return;
+        console.error('Error loading your teams:', err);
         setSeasonMyTeamIds(new Set());
       } finally {
         if (!controller.signal.aborted) {
@@ -641,7 +642,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               disabled={loading.teams}
             >
               {myTeamsList.map((team) => renderTeamMenuItem(team, true))}
-              {myTeamsList.length > 0 && otherTeamsList.length > 0 && <Divider />}
+              {myTeamsList.length > 0 && otherTeamsList.length > 0 && <Divider component="li" />}
               {otherTeamsList.map((team) => renderTeamMenuItem(team, false))}
             </Select>
           </FormControl>
