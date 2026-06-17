@@ -370,6 +370,38 @@ export class LocalStorageService extends BaseStorageService {
       this.handleStorageError(error, 'delete handout from local storage');
     }
   }
+
+  async saveObject(key: string, buffer: Buffer): Promise<void> {
+    try {
+      const filePath = path.join(this.uploadsDir, key);
+      await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.promises.writeFile(filePath, buffer);
+    } catch (error) {
+      this.handleStorageError(error, 'save object to local storage');
+    }
+  }
+
+  async getObject(key: string): Promise<Buffer | null> {
+    try {
+      const filePath = path.join(this.uploadsDir, key);
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+      return await fs.promises.readFile(filePath);
+    } catch (error) {
+      console.error('Error reading object from local storage:', error);
+      return null;
+    }
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    try {
+      const filePath = path.join(this.uploadsDir, key);
+      await fs.promises.rm(filePath, { force: true });
+    } catch (error) {
+      this.handleStorageError(error, 'delete object from local storage');
+    }
+  }
 }
 
 interface S3Config {
@@ -995,6 +1027,54 @@ export class S3StorageService extends BaseStorageService {
     } catch (error) {
       console.error('Error deleting handout from S3:', error);
       throw new Error('Failed to delete handout from S3');
+    }
+  }
+
+  async saveObject(key: string, buffer: Buffer, contentType: string): Promise<void> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        CacheControl: 'public, max-age=31536000, immutable',
+      });
+      await this.s3Client.send(command);
+    } catch (error) {
+      console.error('Error saving object to S3:', error);
+      throw new Error('Failed to save object to S3');
+    }
+  }
+
+  async getObject(key: string): Promise<Buffer | null> {
+    try {
+      const command = new GetObjectCommand({ Bucket: this.bucketName, Key: key });
+      const response = await this.s3Client.send(command);
+
+      if (!response.Body) {
+        return null;
+      }
+
+      const chunks: Buffer[] = [];
+      const stream = response.Body as NodeJS.ReadableStream;
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+
+      return Buffer.concat(chunks);
+    } catch (error) {
+      console.error('Error retrieving object from S3:', error);
+      return null;
+    }
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    try {
+      const command = new DeleteObjectCommand({ Bucket: this.bucketName, Key: key });
+      await this.s3Client.send(command);
+    } catch (error) {
+      console.error('Error deleting object from S3:', error);
+      throw new Error('Failed to delete object from S3');
     }
   }
 }

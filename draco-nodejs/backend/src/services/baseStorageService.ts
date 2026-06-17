@@ -42,6 +42,9 @@ export interface StorageService {
     filename: string,
     teamId?: string,
   ): Promise<void>;
+  saveObject(key: string, buffer: Buffer, contentType: string): Promise<void>;
+  getObject(key: string): Promise<Buffer | null>;
+  deleteObject(key: string): Promise<void>;
 }
 
 export abstract class BaseStorageService implements StorageService {
@@ -152,4 +155,7 @@ export abstract class BaseStorageService implements StorageService {
     filename: string,
     teamId?: string,
   ): Promise<void>;
+  abstract saveObject(key: string, buffer: Buffer, contentType: string): Promise<void>;
+  abstract getObject(key: string): Promise<Buffer | null>;
+  abstract deleteObject(key: string): Promise<void>;
 }
