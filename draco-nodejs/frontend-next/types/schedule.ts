@@ -48,6 +48,7 @@ export interface Game {
 export interface Team {
   id: string;
   teamId?: string;
+  overallTeamId?: string;
   name: string;
   teamName?: string;
   logoUrl?: string;
