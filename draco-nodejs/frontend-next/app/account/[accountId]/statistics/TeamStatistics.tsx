@@ -28,6 +28,13 @@ import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useUserTeams } from '@/hooks/useUserTeams';
 import { useAuth } from '@/context/AuthContext';
+import {
+  buildOverallTeamIdSet,
+  buildSeasonMembershipIdSet,
+  partitionMyTeams,
+  pickDefaultTeam,
+  type MyTeamMatch,
+} from './teamSelection';
 import { unwrapApiResult } from '@/utils/apiResult';
 import {
   listSeasonTeams as apiListSeasonTeams,
@@ -115,14 +122,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
   const isAllTime = seasonId === '0';
 
-  const myOverallTeamIds = new Set(
-    userTeams.map((team) => team.team?.id).filter((id): id is string => Boolean(id)),
-  );
-
-  const isMyTeam = (team: Team): boolean =>
-    isAllTime
-      ? Boolean(team.overallTeamId && myOverallTeamIds.has(team.overallTeamId))
-      : Boolean(team.teamId && seasonMyTeamIds.has(team.teamId));
+  const myTeamMatch: MyTeamMatch = {
+    isAllTime,
+    overallTeamIds: buildOverallTeamIdSet(userTeams),
+    seasonTeamIds: seasonMyTeamIds,
+  };
 
   useEffect(() => {
     setSelectedTeamId('');
@@ -253,7 +257,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
           result,
           'Failed to load your teams',
         );
-        setSeasonMyTeamIds(new Set(memberships.map((membership) => membership.teamSeasonId)));
+        setSeasonMyTeamIds(buildSeasonMembershipIdSet(memberships));
       } catch {
         if (controller.signal.aborted) return;
         setSeasonMyTeamIds(new Set());
@@ -277,15 +281,11 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     const ready = isAllTime ? userTeamsInitialized : seasonMyTeamsInitialized;
     if (!ready) return;
 
-    const overallIds = new Set(
-      userTeams.map((team) => team.team?.id).filter((id): id is string => Boolean(id)),
-    );
-    const myTeam = teams.find((team) =>
-      isAllTime
-        ? Boolean(team.overallTeamId && overallIds.has(team.overallTeamId))
-        : Boolean(team.teamId && seasonMyTeamIds.has(team.teamId)),
-    );
-    const target = myTeam ?? teams[0];
+    const target = pickDefaultTeam(teams, {
+      isAllTime,
+      overallTeamIds: buildOverallTeamIdSet(userTeams),
+      seasonTeamIds: seasonMyTeamIds,
+    });
 
     if (target?.teamId) {
       setSelectedTeamId(target.teamId);
@@ -595,15 +595,17 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
   const showGameList = !isAllTime;
 
-  const myTeamsList = Array.isArray(teams) ? teams.filter(isMyTeam) : [];
-  const otherTeamsList = Array.isArray(teams) ? teams.filter((team) => !isMyTeam(team)) : [];
+  const { myTeams: myTeamsList, otherTeams: otherTeamsList } = partitionMyTeams(
+    Array.isArray(teams) ? teams : [],
+    myTeamMatch,
+  );
 
-  const renderTeamMenuItem = (team: Team) => (
+  const renderTeamMenuItem = (team: Team, mine: boolean) => (
     <MenuItem key={team.teamId} value={team.teamId}>
       {isAllTime
         ? `${team.leagueName} [${team.teamName}] [${team.divisionName}]`
         : `${team.teamName} (${team.leagueName} - ${team.divisionName})`}
-      {isMyTeam(team) && (
+      {mine && (
         <StarIcon
           fontSize="small"
           sx={{ ml: 0.5, color: 'warning.main', verticalAlign: 'text-bottom' }}
@@ -638,9 +640,9 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               onChange={handleTeamChange}
               disabled={loading.teams}
             >
-              {myTeamsList.map(renderTeamMenuItem)}
+              {myTeamsList.map((team) => renderTeamMenuItem(team, true))}
               {myTeamsList.length > 0 && otherTeamsList.length > 0 && <Divider />}
-              {otherTeamsList.map(renderTeamMenuItem)}
+              {otherTeamsList.map((team) => renderTeamMenuItem(team, false))}
             </Select>
           </FormControl>
 
