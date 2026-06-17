@@ -1,7 +1,6 @@
 import express, { type RequestHandler } from 'express';
 import { resolveUploadsRoot } from '../utils/uploadsPath.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
-import { contentTypeForKey } from '../utils/mimeTypes.js';
 
 export const createUploadsHandler = (): RequestHandler => {
   const provider = (process.env.STORAGE_PROVIDER || 'local').toLowerCase();
@@ -32,22 +31,22 @@ export const createUploadsHandler = (): RequestHandler => {
 
     ServiceFactory.getStorageService()
       .getObject(key)
-      .then((buffer) => {
-        if (!buffer) {
+      .then((stored) => {
+        if (!stored) {
           res.status(404).end();
           return;
         }
 
-        res.setHeader('Content-Type', contentTypeForKey(key));
+        res.setHeader('Content-Type', stored.contentType);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Content-Length', stored.buffer.length);
 
         if (req.method === 'HEAD') {
           res.end();
           return;
         }
 
-        res.end(buffer);
+        res.end(stored.buffer);
       })
       .catch(next);
   };

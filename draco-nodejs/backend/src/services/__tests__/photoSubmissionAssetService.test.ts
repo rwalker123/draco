@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import sharp from 'sharp';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { PhotoSubmissionAssetService } from '../photoSubmissionAssetService.js';
 import { InMemoryStorage } from './inMemoryStorage.js';
@@ -61,5 +62,52 @@ describe('PhotoSubmissionAssetService.promoteSubmissionAssets', () => {
     expect(storage.getObject).not.toHaveBeenCalledWith(submission.originalFilePath);
     expect(storage.getObject).toHaveBeenCalledTimes(2);
     expect(storage.saveObject).toHaveBeenCalledTimes(2);
+  });
+
+  it('preserves the stored content type when promoting a .bmp-keyed JPEG derivative', async () => {
+    const bmpSubmission: PhotoSubmissionRecordType = {
+      ...submission,
+      originalFilePath: '1/photo-submissions/key/original.bmp',
+      primaryImagePath: '1/photo-submissions/key/primary.bmp',
+      thumbnailImagePath: '1/photo-submissions/key/thumbnail.bmp',
+    };
+    storage.objects.set(bmpSubmission.primaryImagePath, {
+      buffer: Buffer.from('jpeg-bytes'),
+      contentType: 'image/jpeg',
+    });
+    storage.objects.set(bmpSubmission.thumbnailImagePath, {
+      buffer: Buffer.from('jpeg-thumb'),
+      contentType: 'image/jpeg',
+    });
+
+    await service.promoteSubmissionAssets(bmpSubmission, 25n);
+
+    const photo = storage.objects.get('1/photo-gallery/25/photo.bmp');
+    expect(photo?.contentType).toBe('image/jpeg');
+  });
+});
+
+describe('PhotoSubmissionAssetService.stageSubmissionAssets', () => {
+  const bmpSubmission: PhotoSubmissionRecordType = {
+    ...submission,
+    originalFilePath: '1/photo-submissions/key/original.bmp',
+    primaryImagePath: '1/photo-submissions/key/primary.bmp',
+    thumbnailImagePath: '1/photo-submissions/key/thumbnail.bmp',
+  };
+
+  it('stores the original as image/bmp and transcoded derivatives as image/jpeg', async () => {
+    const storage = new InMemoryStorage();
+    const service = new PhotoSubmissionAssetService(storage);
+    const source = await sharp({
+      create: { width: 1200, height: 800, channels: 3, background: { r: 5, g: 90, b: 180 } },
+    })
+      .png()
+      .toBuffer();
+
+    await service.stageSubmissionAssets(bmpSubmission, source);
+
+    expect(storage.objects.get(bmpSubmission.originalFilePath)?.contentType).toBe('image/bmp');
+    expect(storage.objects.get(bmpSubmission.primaryImagePath)?.contentType).toBe('image/jpeg');
+    expect(storage.objects.get(bmpSubmission.thumbnailImagePath)?.contentType).toBe('image/jpeg');
   });
 });

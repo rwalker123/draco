@@ -1,15 +1,15 @@
 import { vi } from 'vitest';
-import type { StorageService } from '../baseStorageService.js';
+import type { StorageService, StoredObject } from '../baseStorageService.js';
 
 export class InMemoryStorage implements StorageService {
-  readonly objects = new Map<string, { buffer: Buffer; contentType: string }>();
+  readonly objects = new Map<string, StoredObject>();
 
   readonly saveObject = vi.fn(async (key: string, buffer: Buffer, contentType: string) => {
     this.objects.set(key, { buffer, contentType });
   });
 
-  readonly getObject = vi.fn(async (key: string): Promise<Buffer | null> => {
-    return this.objects.get(key)?.buffer ?? null;
+  readonly getObject = vi.fn(async (key: string): Promise<StoredObject | null> => {
+    return this.objects.get(key) ?? null;
   });
 
   readonly deleteObject = vi.fn(async (key: string) => {

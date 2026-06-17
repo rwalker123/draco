@@ -2,7 +2,7 @@ import path from 'node:path';
 import sharp, { FormatEnum, type Metadata } from 'sharp';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
 import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
-import { contentTypeForKey } from '../utils/mimeTypes.js';
+import { contentTypeForKey, contentTypeForImageFormat } from '../utils/mimeTypes.js';
 import { ServiceFactory } from './serviceFactory.js';
 import type { StorageService } from './baseStorageService.js';
 
@@ -60,17 +60,16 @@ export class PhotoSubmissionAssetService {
   ): Promise<void> {
     const extension = getExtension(submission.originalFilePath);
     const format = getSharpFormat(extension);
+    const originalContentType = contentTypeForKey(submission.originalFilePath);
+    const encodedContentType = contentTypeForImageFormat(format);
 
     try {
-      await this.storage.saveObject(
-        submission.originalFilePath,
-        fileBuffer,
-        contentTypeForKey(submission.originalFilePath),
-      );
+      await this.storage.saveObject(submission.originalFilePath, fileBuffer, originalContentType);
 
       const metadata = await sharp(fileBuffer).metadata();
 
-      const primaryBuffer = matchesTargetDimensions(metadata, PRIMARY_DIMENSIONS)
+      const primaryMatches = matchesTargetDimensions(metadata, PRIMARY_DIMENSIONS);
+      const primaryBuffer = primaryMatches
         ? fileBuffer
         : await resizeToBuffer(fileBuffer, format, PRIMARY_DIMENSIONS, {
             withoutEnlargement: true,
@@ -78,16 +77,17 @@ export class PhotoSubmissionAssetService {
       await this.storage.saveObject(
         submission.primaryImagePath,
         primaryBuffer,
-        contentTypeForKey(submission.primaryImagePath),
+        primaryMatches ? originalContentType : encodedContentType,
       );
 
-      const thumbnailBuffer = matchesTargetDimensions(metadata, THUMBNAIL_DIMENSIONS)
+      const thumbnailMatches = matchesTargetDimensions(metadata, THUMBNAIL_DIMENSIONS);
+      const thumbnailBuffer = thumbnailMatches
         ? fileBuffer
         : await resizeToBuffer(fileBuffer, format, THUMBNAIL_DIMENSIONS);
       await this.storage.saveObject(
         submission.thumbnailImagePath,
         thumbnailBuffer,
-        contentTypeForKey(submission.thumbnailImagePath),
+        thumbnailMatches ? originalContentType : encodedContentType,
       );
     } catch (error) {
       await this.deleteSubmissionAssets(submission).catch(() => undefined);
@@ -126,11 +126,11 @@ export class PhotoSubmissionAssetService {
   }
 
   private async copyObject(sourceKey: string, destinationKey: string): Promise<void> {
-    const buffer = await this.storage.getObject(sourceKey);
-    if (!buffer) {
+    const stored = await this.storage.getObject(sourceKey);
+    if (!stored) {
       throw new Error(`Source asset not found: ${sourceKey}`);
     }
 
-    await this.storage.saveObject(destinationKey, buffer, contentTypeForKey(destinationKey));
+    await this.storage.saveObject(destinationKey, stored.buffer, stored.contentType);
   }
 }

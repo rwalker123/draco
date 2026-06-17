@@ -9,8 +9,9 @@ import {
   HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { BaseStorageService, StorageService } from './baseStorageService.js';
+import { BaseStorageService, StorageService, StoredObject } from './baseStorageService.js';
 import { resolveUploadsRoot } from '../utils/uploadsPath.js';
+import { contentTypeForKey } from '../utils/mimeTypes.js';
 
 // AWS Error interface for better type safety
 interface AWSError extends Error {
@@ -381,16 +382,16 @@ export class LocalStorageService extends BaseStorageService {
     }
   }
 
-  async getObject(key: string): Promise<Buffer | null> {
+  async getObject(key: string): Promise<StoredObject | null> {
     try {
       const filePath = path.join(this.uploadsDir, key);
-      if (!fs.existsSync(filePath)) {
+      const buffer = await fs.promises.readFile(filePath);
+      return { buffer, contentType: contentTypeForKey(key) };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return null;
       }
-      return await fs.promises.readFile(filePath);
-    } catch (error) {
-      console.error('Error reading object from local storage:', error);
-      return null;
+      this.handleStorageError(error, 'read object from local storage');
     }
   }
 
@@ -1046,7 +1047,7 @@ export class S3StorageService extends BaseStorageService {
     }
   }
 
-  async getObject(key: string): Promise<Buffer | null> {
+  async getObject(key: string): Promise<StoredObject | null> {
     try {
       const command = new GetObjectCommand({ Bucket: this.bucketName, Key: key });
       const response = await this.s3Client.send(command);
@@ -1061,10 +1062,17 @@ export class S3StorageService extends BaseStorageService {
         chunks.push(Buffer.from(chunk));
       }
 
-      return Buffer.concat(chunks);
-    } catch (error) {
+      return {
+        buffer: Buffer.concat(chunks),
+        contentType: response.ContentType || contentTypeForKey(key),
+      };
+    } catch (error: unknown) {
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchKey' || awsError.$metadata?.httpStatusCode === 404) {
+        return null;
+      }
       console.error('Error retrieving object from S3:', error);
-      return null;
+      throw new Error('Failed to get object from S3');
     }
   }
 
