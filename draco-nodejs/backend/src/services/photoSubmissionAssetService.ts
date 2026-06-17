@@ -109,7 +109,6 @@ export class PhotoSubmissionAssetService {
     const accountId = BigInt(submission.accountId);
     const galleryAssets = buildGalleryAssetPaths(accountId, approvedPhotoId, extension);
 
-    await this.copyObject(submission.originalFilePath, galleryAssets.originalFilePath);
     await this.copyObject(submission.primaryImagePath, galleryAssets.primaryImagePath);
     await this.copyObject(submission.thumbnailImagePath, galleryAssets.thumbnailImagePath);
   }

@@ -16,8 +16,16 @@ export const createUploadsHandler = (): RequestHandler => {
       return;
     }
 
-    const key = decodeURIComponent(req.path.replace(/^\/+/, ''));
-    if (!key || key.includes('..')) {
+    let key: string;
+    try {
+      key = decodeURIComponent(req.path.replace(/^\/+/, ''));
+    } catch {
+      res.status(400).end();
+      return;
+    }
+
+    const segments = key.split('/');
+    if (!key || segments.some((segment) => segment === '' || segment === '.' || segment === '..')) {
       res.status(400).end();
       return;
     }
@@ -32,6 +40,13 @@ export const createUploadsHandler = (): RequestHandler => {
 
         res.setHeader('Content-Type', contentTypeForKey(key));
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('Content-Length', buffer.length);
+
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
+
         res.end(buffer);
       })
       .catch(next);

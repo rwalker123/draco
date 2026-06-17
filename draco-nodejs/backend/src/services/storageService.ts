@@ -371,7 +371,7 @@ export class LocalStorageService extends BaseStorageService {
     }
   }
 
-  async saveObject(key: string, buffer: Buffer): Promise<void> {
+  async saveObject(key: string, buffer: Buffer, _contentType: string): Promise<void> {
     try {
       const filePath = path.join(this.uploadsDir, key);
       await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
