@@ -2,12 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
   InputLabel,
+  LinearProgress,
   ListSubheader,
   MenuItem,
   Select,
@@ -248,6 +250,7 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{dialogTitle}</DialogTitle>
+      {submitting ? <LinearProgress /> : null}
       <DialogContent dividers>
         <Box
           component="form"
@@ -388,8 +391,19 @@ export const PhotoGalleryAdminPhotoDialog: React.FC<PhotoGalleryAdminPhotoDialog
         <Button onClick={onClose} disabled={submitting}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
-          {mode === 'create' ? 'Add Photo' : 'Save Changes'}
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={submitting}
+          startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : undefined}
+        >
+          {submitting
+            ? mode === 'create'
+              ? 'Uploading…'
+              : 'Saving…'
+            : mode === 'create'
+              ? 'Add Photo'
+              : 'Save Changes'}
         </Button>
       </DialogActions>
       <ImageCropDialog

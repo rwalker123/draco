@@ -182,7 +182,7 @@ const PhotoGalleryHero: React.FC<PhotoGalleryHeroProps> = ({
                     position: 'absolute',
                     inset: 0,
                     background:
-                      'linear-gradient(190deg, rgba(15,23,42,0.05) 0%, rgba(15,23,42,0.65) 60%, rgba(15,23,42,0.9) 100%)',
+                      'linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0) 55%, rgba(15,23,42,0.55) 80%, rgba(15,23,42,0.85) 100%)',
                   }}
                 />
                 {isActive ? (

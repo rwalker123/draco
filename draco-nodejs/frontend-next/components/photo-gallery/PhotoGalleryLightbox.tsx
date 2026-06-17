@@ -87,16 +87,6 @@ const PhotoGalleryLightbox: React.FC<PhotoGalleryLightboxProps> = ({
           color: 'common.white',
         }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(180deg, rgba(10,16,37,0.9) 0%, rgba(10,16,37,0.45) 40%, rgba(10,16,37,0.9) 100%)',
-            pointerEvents: 'none',
-          }}
-        />
-
         <IconButton
           onClick={onClose}
           aria-label="Close gallery"
