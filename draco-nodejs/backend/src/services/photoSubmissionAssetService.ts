@@ -63,10 +63,10 @@ export class PhotoSubmissionAssetService {
     const originalContentType = contentTypeForKey(submission.originalFilePath);
     const encodedContentType = contentTypeForImageFormat(format);
 
+    const metadata = await sharp(fileBuffer).metadata();
+
     try {
       await this.storage.saveObject(submission.originalFilePath, fileBuffer, originalContentType);
-
-      const metadata = await sharp(fileBuffer).metadata();
 
       const primaryMatches = matchesTargetDimensions(metadata, PRIMARY_DIMENSIONS);
       const primaryBuffer = primaryMatches

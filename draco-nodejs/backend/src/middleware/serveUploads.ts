@@ -2,10 +2,12 @@ import express, { type RequestHandler } from 'express';
 import { resolveUploadsRoot } from '../utils/uploadsPath.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 
+const OBJECT_STORE_PROVIDERS = new Set(['r2', 's3']);
+
 export const createUploadsHandler = (): RequestHandler => {
   const provider = (process.env.STORAGE_PROVIDER || 'local').toLowerCase();
 
-  if (provider === 'local') {
+  if (!OBJECT_STORE_PROVIDERS.has(provider)) {
     return express.static(resolveUploadsRoot());
   }
 
