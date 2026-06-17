@@ -13,10 +13,3 @@ export const resolveUploadsRoot = (): string => {
 
   return path.join(process.cwd(), 'uploads');
 };
-
-/**
- * Builds an absolute path inside the uploads directory.
- */
-export const buildUploadsPath = (...segments: string[]): string => {
-  return path.join(resolveUploadsRoot(), ...segments);
-};

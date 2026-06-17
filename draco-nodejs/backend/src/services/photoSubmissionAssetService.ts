@@ -1,12 +1,10 @@
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import sharp, { FormatEnum, type Metadata } from 'sharp';
 import type { PhotoSubmissionRecordType } from '@draco/shared-schemas';
-import {
-  buildGalleryAssetPaths,
-  resolveGalleryAssetAbsolutePath,
-  resolveSubmissionAssetAbsolutePath,
-} from '../utils/photoSubmissionPaths.js';
+import { buildGalleryAssetPaths } from '../utils/photoSubmissionPaths.js';
+import { contentTypeForKey, contentTypeForImageFormat } from '../utils/mimeTypes.js';
+import { ServiceFactory } from './serviceFactory.js';
+import type { StorageService } from './baseStorageService.js';
 
 const PRIMARY_DIMENSIONS = { width: 800, height: 450 } as const;
 const THUMBNAIL_DIMENSIONS = { width: 160, height: 90 } as const;
@@ -17,10 +15,6 @@ const SUPPORTED_FORMATS: Record<string, keyof FormatEnum> = {
   '.png': 'png',
   '.gif': 'gif',
   '.bmp': 'jpeg',
-};
-
-const ensureDirectory = async (targetPath: string): Promise<void> => {
-  await fs.mkdir(targetPath, { recursive: true });
 };
 
 const getExtension = (filePath: string): string => path.extname(filePath).toLowerCase();
@@ -41,70 +35,70 @@ const matchesTargetDimensions = (
   return metadata.width === dimensions.width && metadata.height === dimensions.height;
 };
 
-const processImage = async (
+const resizeToBuffer = async (
   buffer: Buffer,
-  destination: string,
   format: keyof FormatEnum,
   dimensions: { width: number; height: number },
   options: { withoutEnlargement?: boolean } = {},
-): Promise<void> => {
-  await sharp(buffer)
+): Promise<Buffer> => {
+  return sharp(buffer)
     .resize(dimensions.width, dimensions.height, {
       fit: 'cover',
       position: 'centre',
       withoutEnlargement: options.withoutEnlargement ?? false,
     })
     .toFormat(format)
-    .toFile(destination);
-};
-
-const copyFile = async (source: string, destination: string): Promise<void> => {
-  await ensureDirectory(path.dirname(destination));
-  await fs.copyFile(source, destination);
+    .toBuffer();
 };
 
 export class PhotoSubmissionAssetService {
+  constructor(private readonly storage: StorageService = ServiceFactory.getStorageService()) {}
+
   async stageSubmissionAssets(
     submission: PhotoSubmissionRecordType,
     fileBuffer: Buffer,
   ): Promise<void> {
-    const originalPath = resolveSubmissionAssetAbsolutePath(submission.originalFilePath);
-    const primaryPath = resolveSubmissionAssetAbsolutePath(submission.primaryImagePath);
-    const thumbnailPath = resolveSubmissionAssetAbsolutePath(submission.thumbnailImagePath);
-    const directory = path.dirname(originalPath);
     const extension = getExtension(submission.originalFilePath);
     const format = getSharpFormat(extension);
+    const originalContentType = contentTypeForKey(submission.originalFilePath);
+    const encodedContentType = contentTypeForImageFormat(format);
+
+    const metadata = await sharp(fileBuffer).metadata();
 
     try {
-      await ensureDirectory(directory);
-      await fs.writeFile(originalPath, fileBuffer);
+      await this.storage.saveObject(submission.originalFilePath, fileBuffer, originalContentType);
 
-      const metadata = await sharp(fileBuffer).metadata();
+      const primaryMatches = matchesTargetDimensions(metadata, PRIMARY_DIMENSIONS);
+      const primaryBuffer = primaryMatches
+        ? fileBuffer
+        : await resizeToBuffer(fileBuffer, format, PRIMARY_DIMENSIONS, {
+            withoutEnlargement: true,
+          });
+      await this.storage.saveObject(
+        submission.primaryImagePath,
+        primaryBuffer,
+        primaryMatches ? originalContentType : encodedContentType,
+      );
 
-      await ensureDirectory(path.dirname(primaryPath));
-      if (matchesTargetDimensions(metadata, PRIMARY_DIMENSIONS)) {
-        await fs.writeFile(primaryPath, fileBuffer);
-      } else {
-        await processImage(fileBuffer, primaryPath, format, PRIMARY_DIMENSIONS, {
-          withoutEnlargement: true,
-        });
-      }
-
-      await ensureDirectory(path.dirname(thumbnailPath));
-      if (matchesTargetDimensions(metadata, THUMBNAIL_DIMENSIONS)) {
-        await fs.writeFile(thumbnailPath, fileBuffer);
-      } else {
-        await processImage(fileBuffer, thumbnailPath, format, THUMBNAIL_DIMENSIONS);
-      }
+      const thumbnailMatches = matchesTargetDimensions(metadata, THUMBNAIL_DIMENSIONS);
+      const thumbnailBuffer = thumbnailMatches
+        ? fileBuffer
+        : await resizeToBuffer(fileBuffer, format, THUMBNAIL_DIMENSIONS);
+      await this.storage.saveObject(
+        submission.thumbnailImagePath,
+        thumbnailBuffer,
+        thumbnailMatches ? originalContentType : encodedContentType,
+      );
     } catch (error) {
-      await fs.rm(directory, { recursive: true, force: true }).catch(() => undefined);
+      await this.deleteSubmissionAssets(submission).catch(() => undefined);
       throw error;
     }
   }
 
   async deleteSubmissionAssets(submission: PhotoSubmissionRecordType): Promise<void> {
-    const directory = path.dirname(resolveSubmissionAssetAbsolutePath(submission.originalFilePath));
-    await fs.rm(directory, { recursive: true, force: true });
+    await this.storage.deleteObject(submission.originalFilePath);
+    await this.storage.deleteObject(submission.primaryImagePath);
+    await this.storage.deleteObject(submission.thumbnailImagePath);
   }
 
   async promoteSubmissionAssets(
@@ -115,17 +109,8 @@ export class PhotoSubmissionAssetService {
     const accountId = BigInt(submission.accountId);
     const galleryAssets = buildGalleryAssetPaths(accountId, approvedPhotoId, extension);
 
-    const sourceOriginal = resolveSubmissionAssetAbsolutePath(submission.originalFilePath);
-    const sourcePrimary = resolveSubmissionAssetAbsolutePath(submission.primaryImagePath);
-    const sourceThumbnail = resolveSubmissionAssetAbsolutePath(submission.thumbnailImagePath);
-
-    const destinationOriginal = resolveGalleryAssetAbsolutePath(galleryAssets.originalFilePath);
-    const destinationPrimary = resolveGalleryAssetAbsolutePath(galleryAssets.primaryImagePath);
-    const destinationThumbnail = resolveGalleryAssetAbsolutePath(galleryAssets.thumbnailImagePath);
-
-    await copyFile(sourceOriginal, destinationOriginal);
-    await copyFile(sourcePrimary, destinationPrimary);
-    await copyFile(sourceThumbnail, destinationThumbnail);
+    await this.copyObject(submission.primaryImagePath, galleryAssets.primaryImagePath);
+    await this.copyObject(submission.thumbnailImagePath, galleryAssets.thumbnailImagePath);
   }
 
   async deleteGalleryAssets(
@@ -136,9 +121,16 @@ export class PhotoSubmissionAssetService {
     const accountId = BigInt(submission.accountId);
     const galleryAssets = buildGalleryAssetPaths(accountId, approvedPhotoId, extension);
 
-    const destinationOriginal = resolveGalleryAssetAbsolutePath(galleryAssets.originalFilePath);
-    const directory = path.dirname(destinationOriginal);
+    await this.storage.deleteObject(galleryAssets.primaryImagePath);
+    await this.storage.deleteObject(galleryAssets.thumbnailImagePath);
+  }
 
-    await fs.rm(directory, { recursive: true, force: true });
+  private async copyObject(sourceKey: string, destinationKey: string): Promise<void> {
+    const stored = await this.storage.getObject(sourceKey);
+    if (!stored) {
+      throw new Error(`Source asset not found: ${sourceKey}`);
+    }
+
+    await this.storage.saveObject(destinationKey, stored.buffer, stored.contentType);
   }
 }

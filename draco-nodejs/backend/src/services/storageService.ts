@@ -9,8 +9,9 @@ import {
   HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { BaseStorageService, StorageService } from './baseStorageService.js';
+import { BaseStorageService, StorageService, StoredObject } from './baseStorageService.js';
 import { resolveUploadsRoot } from '../utils/uploadsPath.js';
+import { contentTypeForKey } from '../utils/mimeTypes.js';
 
 // AWS Error interface for better type safety
 interface AWSError extends Error {
@@ -368,6 +369,38 @@ export class LocalStorageService extends BaseStorageService {
       }
     } catch (error) {
       this.handleStorageError(error, 'delete handout from local storage');
+    }
+  }
+
+  async saveObject(key: string, buffer: Buffer, _contentType: string): Promise<void> {
+    try {
+      const filePath = path.join(this.uploadsDir, key);
+      await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.promises.writeFile(filePath, buffer);
+    } catch (error) {
+      this.handleStorageError(error, 'save object to local storage');
+    }
+  }
+
+  async getObject(key: string): Promise<StoredObject | null> {
+    try {
+      const filePath = path.join(this.uploadsDir, key);
+      const buffer = await fs.promises.readFile(filePath);
+      return { buffer, contentType: contentTypeForKey(key) };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return null;
+      }
+      this.handleStorageError(error, 'read object from local storage');
+    }
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    try {
+      const filePath = path.join(this.uploadsDir, key);
+      await fs.promises.rm(filePath, { force: true });
+    } catch (error) {
+      this.handleStorageError(error, 'delete object from local storage');
     }
   }
 }
@@ -995,6 +1028,61 @@ export class S3StorageService extends BaseStorageService {
     } catch (error) {
       console.error('Error deleting handout from S3:', error);
       throw new Error('Failed to delete handout from S3');
+    }
+  }
+
+  async saveObject(key: string, buffer: Buffer, contentType: string): Promise<void> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        CacheControl: 'public, max-age=31536000, immutable',
+      });
+      await this.s3Client.send(command);
+    } catch (error) {
+      console.error('Error saving object to S3:', error);
+      throw new Error('Failed to save object to S3');
+    }
+  }
+
+  async getObject(key: string): Promise<StoredObject | null> {
+    try {
+      const command = new GetObjectCommand({ Bucket: this.bucketName, Key: key });
+      const response = await this.s3Client.send(command);
+
+      if (!response.Body) {
+        return null;
+      }
+
+      const chunks: Buffer[] = [];
+      const stream = response.Body as NodeJS.ReadableStream;
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+
+      return {
+        buffer: Buffer.concat(chunks),
+        contentType: response.ContentType || contentTypeForKey(key),
+      };
+    } catch (error: unknown) {
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchKey' || awsError.$metadata?.httpStatusCode === 404) {
+        return null;
+      }
+      console.error('Error retrieving object from S3:', error);
+      throw new Error('Failed to get object from S3');
+    }
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    try {
+      const command = new DeleteObjectCommand({ Bucket: this.bucketName, Key: key });
+      await this.s3Client.send(command);
+    } catch (error) {
+      console.error('Error deleting object from S3:', error);
+      throw new Error('Failed to delete object from S3');
     }
   }
 }

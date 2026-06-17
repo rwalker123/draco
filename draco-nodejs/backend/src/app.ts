@@ -74,7 +74,7 @@ import oauthRouter from './routes/oauth.js';
 import { ServiceFactory } from './services/serviceFactory.js';
 import { socialIngestionConfig } from './config/socialIngestion.js';
 import { assetsDir as stoplightAssetsDir } from '@draco/stoplight-assets';
-import { resolveUploadsRoot } from './utils/uploadsPath.js';
+import { createUploadsHandler } from './middleware/serveUploads.js';
 import { OriginAllowList } from './utils/originAllowList.js';
 import { createFrontendBaseUrlMiddleware } from './middleware/frontendBaseUrlMiddleware.js';
 
@@ -185,8 +185,8 @@ app.use(bigIntSerializer);
 app.use(queryLoggerMiddleware);
 app.use(databaseHealthCheck);
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(resolveUploadsRoot()));
+// Serve uploaded files from disk (local) or the configured object store (s3/r2)
+app.use('/uploads', createUploadsHandler());
 
 // Health check endpoint with enhanced monitoring
 app.get('/health', (req: express.Request, res: express.Response) => {

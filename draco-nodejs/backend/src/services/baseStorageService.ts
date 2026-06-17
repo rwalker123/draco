@@ -1,5 +1,10 @@
 import { ImageProcessor } from '../utils/imageProcessor.js';
 
+export interface StoredObject {
+  buffer: Buffer;
+  contentType: string;
+}
+
 export interface StorageService {
   saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void>;
   getLogo(accountId: string, teamId: string): Promise<Buffer | null>;
@@ -42,6 +47,9 @@ export interface StorageService {
     filename: string,
     teamId?: string,
   ): Promise<void>;
+  saveObject(key: string, buffer: Buffer, contentType: string): Promise<void>;
+  getObject(key: string): Promise<StoredObject | null>;
+  deleteObject(key: string): Promise<void>;
 }
 
 export abstract class BaseStorageService implements StorageService {
@@ -152,4 +160,7 @@ export abstract class BaseStorageService implements StorageService {
     filename: string,
     teamId?: string,
   ): Promise<void>;
+  abstract saveObject(key: string, buffer: Buffer, contentType: string): Promise<void>;
+  abstract getObject(key: string): Promise<StoredObject | null>;
+  abstract deleteObject(key: string): Promise<void>;
 }
