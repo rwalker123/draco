@@ -16,7 +16,9 @@ import {
   Tab,
   Paper,
   Alert,
+  Divider,
 } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
 import StatisticsTable from '../../../../components/statistics/StatisticsTable';
 import GameListCard, { type SortOrder } from '@/components/team-stats-entry/GameListCard';
 import BattingStatsViewTable from '@/components/team-stats-entry/BattingStatsViewTable';
@@ -24,9 +26,12 @@ import PitchingStatsViewTable from '@/components/team-stats-entry/PitchingStatsV
 import { TeamStatsEntryService } from '@/services/teamStatsEntryService';
 import { Team } from '@/types/schedule';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useUserTeams } from '@/hooks/useUserTeams';
+import { useAuth } from '@/context/AuthContext';
 import { unwrapApiResult } from '@/utils/apiResult';
 import {
   listSeasonTeams as apiListSeasonTeams,
+  listMyTeamSeasons as apiListMyTeamSeasons,
   listTeamSeasonBattingStats as apiListTeamSeasonBattingStats,
   listTeamSeasonPitchingStats as apiListTeamSeasonPitchingStats,
   listAllTimeTeams as apiListAllTimeTeams,
@@ -44,6 +49,7 @@ import type {
   GamePitchingStatsType,
   PlayerBattingStatsType,
   PlayerPitchingStatsType,
+  RosterSeasonMembershipListType,
   TeamCompletedGameType,
 } from '@draco/shared-schemas';
 
@@ -102,8 +108,21 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
   } | null>(null);
   const [gameStatsError, setGameStatsError] = useState<string | null>(null);
   const apiClient = useApiClient();
+  const { token } = useAuth();
+  const { teams: userTeams, initialized: userTeamsInitialized } = useUserTeams(accountId);
+  const [seasonMyTeamIds, setSeasonMyTeamIds] = useState<Set<string>>(new Set());
+  const [seasonMyTeamsInitialized, setSeasonMyTeamsInitialized] = useState(false);
 
   const isAllTime = seasonId === '0';
+
+  const myOverallTeamIds = new Set(
+    userTeams.map((team) => team.team?.id).filter((id): id is string => Boolean(id)),
+  );
+
+  const isMyTeam = (team: Team): boolean =>
+    isAllTime
+      ? Boolean(team.overallTeamId && myOverallTeamIds.has(team.overallTeamId))
+      : Boolean(team.teamId && seasonMyTeamIds.has(team.teamId));
 
   useEffect(() => {
     setSelectedTeamId('');
@@ -151,6 +170,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               return {
                 id: team.teamId,
                 teamId: team.teamId,
+                overallTeamId: team.teamId,
                 name: displayNames,
                 teamName: displayNames,
                 logoUrl: team.logoUrl ?? undefined,
@@ -179,6 +199,7 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
             return {
               id: teamSeason.id,
               teamId: teamSeason.id,
+              overallTeamId: teamSeason.team?.id,
               name: displayName,
               teamName: displayName,
               logoUrl: teamSeason.team?.logoUrl ?? undefined,
@@ -189,10 +210,6 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
         }
 
         setTeams(teamsData);
-
-        if (teamsData.length > 0 && teamsData[0].teamId) {
-          setSelectedTeamId(teamsData[0].teamId);
-        }
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Error loading teams:', err);
@@ -209,6 +226,79 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
       controller.abort();
     };
   }, [accountId, seasonId, isAllTime, apiClient]);
+
+  useEffect(() => {
+    setSeasonMyTeamIds(new Set());
+    setSeasonMyTeamsInitialized(false);
+
+    if (isAllTime || !seasonId || !token) {
+      setSeasonMyTeamsInitialized(true);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadMyTeams = async () => {
+      try {
+        const result = await apiListMyTeamSeasons({
+          client: apiClient,
+          path: { accountId, seasonId },
+          signal: controller.signal,
+          throwOnError: false,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const memberships = unwrapApiResult<RosterSeasonMembershipListType>(
+          result,
+          'Failed to load your teams',
+        );
+        setSeasonMyTeamIds(new Set(memberships.map((membership) => membership.teamSeasonId)));
+      } catch {
+        if (controller.signal.aborted) return;
+        setSeasonMyTeamIds(new Set());
+      } finally {
+        if (!controller.signal.aborted) {
+          setSeasonMyTeamsInitialized(true);
+        }
+      }
+    };
+
+    void loadMyTeams();
+
+    return () => {
+      controller.abort();
+    };
+  }, [accountId, seasonId, isAllTime, token, apiClient]);
+
+  useEffect(() => {
+    if (selectedTeamId || teams.length === 0) return;
+
+    const ready = isAllTime ? userTeamsInitialized : seasonMyTeamsInitialized;
+    if (!ready) return;
+
+    const overallIds = new Set(
+      userTeams.map((team) => team.team?.id).filter((id): id is string => Boolean(id)),
+    );
+    const myTeam = teams.find((team) =>
+      isAllTime
+        ? Boolean(team.overallTeamId && overallIds.has(team.overallTeamId))
+        : Boolean(team.teamId && seasonMyTeamIds.has(team.teamId)),
+    );
+    const target = myTeam ?? teams[0];
+
+    if (target?.teamId) {
+      setSelectedTeamId(target.teamId);
+    }
+  }, [
+    teams,
+    selectedTeamId,
+    isAllTime,
+    userTeamsInitialized,
+    seasonMyTeamsInitialized,
+    userTeams,
+    seasonMyTeamIds,
+  ]);
 
   useEffect(() => {
     if (!selectedTeamId || !seasonId) return;
@@ -505,6 +595,23 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
   const showGameList = !isAllTime;
 
+  const myTeamsList = Array.isArray(teams) ? teams.filter(isMyTeam) : [];
+  const otherTeamsList = Array.isArray(teams) ? teams.filter((team) => !isMyTeam(team)) : [];
+
+  const renderTeamMenuItem = (team: Team) => (
+    <MenuItem key={team.teamId} value={team.teamId}>
+      {isAllTime
+        ? `${team.leagueName} [${team.teamName}] [${team.divisionName}]`
+        : `${team.teamName} (${team.leagueName} - ${team.divisionName})`}
+      {isMyTeam(team) && (
+        <StarIcon
+          fontSize="small"
+          sx={{ ml: 0.5, color: 'warning.main', verticalAlign: 'text-bottom' }}
+        />
+      )}
+    </MenuItem>
+  );
+
   if (error) {
     return (
       <Box p={3}>
@@ -531,15 +638,9 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
               onChange={handleTeamChange}
               disabled={loading.teams}
             >
-              {Array.isArray(teams)
-                ? teams.map((team) => (
-                    <MenuItem key={team.teamId} value={team.teamId}>
-                      {isAllTime
-                        ? `${team.leagueName} [${team.teamName}] [${team.divisionName}]`
-                        : `${team.teamName} (${team.leagueName} - ${team.divisionName})`}
-                    </MenuItem>
-                  ))
-                : null}
+              {myTeamsList.map(renderTeamMenuItem)}
+              {myTeamsList.length > 0 && otherTeamsList.length > 0 && <Divider />}
+              {otherTeamsList.map(renderTeamMenuItem)}
             </Select>
           </FormControl>
 
