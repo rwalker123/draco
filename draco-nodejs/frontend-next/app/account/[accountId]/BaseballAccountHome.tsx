@@ -789,6 +789,7 @@ const BaseballAccountHome: React.FC = () => {
               flexDirection: 'column',
               gap: 4,
               minWidth: 0,
+              '& > *:empty': { display: 'none' },
             }}
           >
             {shouldShowJoinLeagueNearSponsors ? null : (
@@ -796,7 +797,7 @@ const BaseballAccountHome: React.FC = () => {
             )}
 
             {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 3 }, minWidth: 0, '&:empty': { display: 'none' } }}>
+              <Box sx={{ order: { xs: 3 }, minWidth: 0 }}>
                 <GameRecapsWidget accountId={accountIdStr} seasonId={currentSeason.id} />
               </Box>
             ) : null}
@@ -839,7 +840,7 @@ const BaseballAccountHome: React.FC = () => {
                 onAlbumChange={handleAlbumTabChange}
                 totalCountOverride={seasonFilteredPhotos.length}
                 teamAlbumHierarchy={teamAlbumHierarchy}
-                sx={{ height: '100%' }}
+                sx={{ height: '100%', mb: 0 }}
               />
             </Box>
 
@@ -869,7 +870,7 @@ const BaseballAccountHome: React.FC = () => {
             {shouldShowPendingPanel ? (
               <Box sx={{ order: { xs: 11 }, minWidth: 0 }}>
                 <PendingPhotoSubmissionsPanel
-                  containerSx={{ p: 3, mb: 2 }}
+                  containerSx={{ p: 3, mb: 0 }}
                   contextLabel={accountDisplayName}
                   submissions={pendingSubmissions}
                   loading={pendingLoading}
@@ -920,6 +921,7 @@ const BaseballAccountHome: React.FC = () => {
               flexDirection: 'column',
               gap: 3,
               minWidth: 0,
+              '& > *:empty': { display: 'none' },
             }}
           >
             {user && userTeams.length > 0 ? (
@@ -930,7 +932,7 @@ const BaseballAccountHome: React.FC = () => {
                   timeZone={accountTimeZone}
                   onViewTeam={handleViewTeam}
                   title="Your Teams"
-                  sx={{ width: '100%' }}
+                  sx={{ width: '100%', mb: 0 }}
                 />
               </Box>
             ) : null}
@@ -942,7 +944,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 2 }, minWidth: 0, '&:empty': { display: 'none' } }}>
+              <Box sx={{ order: { xs: 2 }, minWidth: 0 }}>
                 <TodayScoreboard
                   accountId={accountIdStr}
                   layout="vertical"
@@ -957,7 +959,7 @@ const BaseballAccountHome: React.FC = () => {
             ) : null}
 
             {currentSeason && !scheduleHidden ? (
-              <Box sx={{ order: { xs: 4 }, minWidth: 0, '&:empty': { display: 'none' } }}>
+              <Box sx={{ order: { xs: 4 }, minWidth: 0 }}>
                 <YesterdayScoreboard
                   accountId={accountIdStr}
                   layout="vertical"

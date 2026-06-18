@@ -297,9 +297,6 @@ const TeamAdminPanel: React.FC<TeamAdminPanelProps> = ({
       title="Team Management"
       subtitle="Manage the resources for your team."
       accent="info"
-      sx={{
-        mb: 4,
-      }}
     >
       {isHistoricalSeason ? (
         <Typography variant="body2" color="text.secondary">

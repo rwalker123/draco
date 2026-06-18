@@ -170,6 +170,10 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
     window.open(permalink, '_blank', 'noopener,noreferrer');
   };
 
+  if (!loading && !membershipLoading && !error && !channel) {
+    return null;
+  }
+
   return (
     <WidgetShell
       title={
@@ -180,11 +184,7 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
           </Typography>
         </Stack>
       }
-      subtitle={
-        channel
-          ? `Latest updates from the ${teamName ?? 'team'} Discord forum`
-          : 'Enable Discord team forums in account settings to surface conversations here.'
-      }
+      subtitle={channel ? `Latest updates from the ${teamName ?? 'team'} Discord forum` : undefined}
       accent="info"
     >
       {loading || membershipLoading ? (
@@ -193,12 +193,7 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
         </Box>
       ) : error ? (
         <Alert severity="error">{error}</Alert>
-      ) : !channel ? (
-        <Alert severity="info">
-          No Discord forum is active for this team yet. Ask your administrator to enable Discord
-          team forums in Account Settings.
-        </Alert>
-      ) : (
+      ) : !channel ? null : (
         <Stack spacing={2}>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}

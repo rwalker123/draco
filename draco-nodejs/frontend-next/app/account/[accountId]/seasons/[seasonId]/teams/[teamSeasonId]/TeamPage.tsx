@@ -658,6 +658,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               flexDirection: 'column',
               gap: 4,
               minWidth: 0,
+              '& > *:empty': { display: 'none' },
             }}
           >
             {(canManageTeamSponsors || canManageTeamPhotos || isAccountMember) && (
@@ -702,7 +703,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               </Box>
             )}
 
-            <Box sx={{ order: { xs: 5 }, minWidth: 0 }}>
+            <Box sx={{ order: { xs: 18 }, minWidth: 0 }}>
               <TeamManagersWidget
                 accountId={accountId}
                 seasonId={seasonId}
@@ -840,7 +841,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               </Box>
             ) : null}
 
-            <Box sx={{ order: { xs: 6 }, minWidth: 0 }}>
+            <Box sx={{ order: { xs: 19 }, minWidth: 0 }}>
               <TeamRosterWidget
                 accountId={accountId}
                 seasonId={seasonId}
@@ -849,16 +850,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 canEditPhotos={canEditPlayerPhotos}
               />
             </Box>
-
-            {shouldShowTeamSponsors ? (
-              <Box sx={{ order: { xs: 15 }, minWidth: 0 }}>
-                <SponsorCard
-                  sponsors={teamSponsors}
-                  title="Team Sponsors"
-                  emptyMessage={teamSponsorError ?? undefined}
-                />
-              </Box>
-            ) : null}
 
             {teamData?.teamId && teamData?.youtubeUserId ? (
               <Box sx={{ order: { xs: 16 }, minWidth: 0 }}>
@@ -882,6 +873,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
               flexDirection: 'column',
               gap: 3,
               minWidth: 0,
+              '& > *:empty': { display: 'none' },
             }}
           >
             {!loading ? (
@@ -952,6 +944,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 />
               </AccountOptional>
             </Box>
+
+            {shouldShowTeamSponsors ? (
+              <Box sx={{ order: { xs: 20 }, minWidth: 0 }}>
+                <SponsorCard
+                  sponsors={teamSponsors}
+                  title="Team Sponsors"
+                  emptyMessage={teamSponsorError ?? undefined}
+                />
+              </Box>
+            ) : null}
           </Box>
         </Box>
       </Container>

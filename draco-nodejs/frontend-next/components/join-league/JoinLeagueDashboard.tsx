@@ -38,7 +38,6 @@ const JoinLeagueDashboard: React.FC<JoinLeagueDashboardProps> = ({
       }
       accent="primary"
       sx={{
-        mb: 3,
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
