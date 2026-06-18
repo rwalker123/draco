@@ -91,7 +91,6 @@ const HofNominationWidget: React.FC<HofNominationWidgetProps> = ({ accountId }) 
         }
         accent="secondary"
         sx={{
-          mt: 3,
           width: { xs: '100%', md: 'fit-content' },
           maxWidth: 520,
         }}

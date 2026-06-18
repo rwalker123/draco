@@ -170,91 +170,98 @@ const TeamForumWidget: React.FC<TeamForumWidgetProps> = ({
     window.open(permalink, '_blank', 'noopener,noreferrer');
   };
 
-  return (
-    <WidgetShell
-      title={
-        <Stack direction="row" spacing={1} alignItems="center">
-          <ForumIcon fontSize="small" color="primary" />{' '}
-          <Typography component="span" variant="h6">
-            Team Forum
-          </Typography>
-        </Stack>
-      }
-      subtitle={
-        channel
-          ? `Latest updates from the ${teamName ?? 'team'} Discord forum`
-          : 'Enable Discord team forums in account settings to surface conversations here.'
-      }
-      accent="info"
-    >
-      {loading || membershipLoading ? (
+  const titleNode = (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <ForumIcon fontSize="small" color="primary" />{' '}
+      <Typography component="span" variant="h6">
+        Team Forum
+      </Typography>
+    </Stack>
+  );
+
+  if (loading || membershipLoading) {
+    return (
+      <WidgetShell title={titleNode} accent="info">
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress size={24} />
         </Box>
-      ) : error ? (
-        <Alert severity="error">{error}</Alert>
-      ) : !channel ? (
-        <Alert severity="info">
-          No Discord forum is active for this team yet. Ask your administrator to enable Discord
-          team forums in Account Settings.
-        </Alert>
-      ) : (
-        <Stack spacing={2}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-            justifyContent="space-between"
-          >
-            <Box>
-              <Typography variant="subtitle1">{channel.label ?? channel.name}</Typography>
-            </Box>
-          </Stack>
+      </WidgetShell>
+    );
+  }
 
-          {messages.length === 0 ? (
-            <Alert severity="info">No recent messages yet.</Alert>
-          ) : (
-            <Stack spacing={2}>
-              {messages.map((message) => (
-                <Box
-                  key={message.id}
-                  sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}
-                >
-                  <MessagePreview message={message} onOpen={handleOpenMessage} />
-                </Box>
-              ))}
-            </Stack>
-          )}
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
-            {channel.url ? (
-              <Button
-                size="small"
-                variant="text"
-                startIcon={<OpenInNewIcon fontSize="inherit" />}
-                onClick={handleOpenDiscord}
-                disabled={!isTeamMember}
+  if (error) {
+    return (
+      <WidgetShell title={titleNode} accent="info">
+        <Alert severity="error">{error}</Alert>
+      </WidgetShell>
+    );
+  }
+
+  if (!channel) {
+    return null;
+  }
+
+  return (
+    <WidgetShell
+      title={titleNode}
+      subtitle={`Latest updates from the ${teamName ?? 'team'} Discord forum`}
+      accent="info"
+    >
+      <Stack spacing={2}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          justifyContent="space-between"
+        >
+          <Box>
+            <Typography variant="subtitle1">{channel.label ?? channel.name}</Typography>
+          </Box>
+        </Stack>
+
+        {messages.length === 0 ? (
+          <Alert severity="info">No recent messages yet.</Alert>
+        ) : (
+          <Stack spacing={2}>
+            {messages.map((message) => (
+              <Box
+                key={message.id}
+                sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}
               >
-                Open Discord
-              </Button>
-            ) : null}
+                <MessagePreview message={message} onOpen={handleOpenMessage} />
+              </Box>
+            ))}
+          </Stack>
+        )}
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
+          {channel.url ? (
             <Button
               size="small"
               variant="text"
-              component={NextLink}
-              href={`/account/${accountId}/social-hub/community`}
-              startIcon={<ForumIcon fontSize="inherit" />}
+              startIcon={<OpenInNewIcon fontSize="inherit" />}
+              onClick={handleOpenDiscord}
+              disabled={!isTeamMember}
             >
-              View all messages
+              Open Discord
             </Button>
-          </Stack>
-          {!isTeamMember ? (
-            <Alert severity="info">
-              You need team access to participate in Discord discussions. Contact your coach or
-              admin if you should be added.
-            </Alert>
           ) : null}
+          <Button
+            size="small"
+            variant="text"
+            component={NextLink}
+            href={`/account/${accountId}/social-hub/community`}
+            startIcon={<ForumIcon fontSize="inherit" />}
+          >
+            View all messages
+          </Button>
         </Stack>
-      )}
+        {!isTeamMember ? (
+          <Alert severity="info">
+            You need team access to participate in Discord discussions. Contact your coach or admin
+            if you should be added.
+          </Alert>
+        ) : null}
+      </Stack>
     </WidgetShell>
   );
 };
