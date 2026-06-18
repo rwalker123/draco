@@ -787,7 +787,7 @@ const BaseballAccountHome: React.FC = () => {
             sx={{
               display: { xs: 'contents', lg: 'flex' },
               flexDirection: 'column',
-              gap: 4,
+              gap: 3,
               minWidth: 0,
               '& > *:empty': { display: 'none' },
             }}

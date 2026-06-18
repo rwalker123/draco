@@ -92,7 +92,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   } | null>(null);
   const [teamSponsors, setTeamSponsors] = React.useState<SponsorType[]>([]);
   const [teamSponsorError, setTeamSponsorError] = React.useState<string | null>(null);
-  const [informationWidgetVisible, setInformationWidgetVisible] = React.useState(true);
   const [playersWantedDialogOpen, setPlayersWantedDialogOpen] = React.useState(false);
   const [playersWantedInitialData, setPlayersWantedInitialData] = React.useState<
     UpsertPlayersWantedClassifiedType | undefined
@@ -656,7 +655,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             sx={{
               display: { xs: 'contents', lg: 'flex' },
               flexDirection: 'column',
-              gap: 4,
+              gap: 3,
               minWidth: 0,
               '& > *:empty': { display: 'none' },
             }}
@@ -751,18 +750,15 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
             {showInformationWidget ? (
               <Box sx={{ order: { xs: 10 }, minWidth: 0 }}>
-                <Box sx={{ display: informationWidgetVisible ? 'contents' : 'none' }}>
-                  <InformationWidget
-                    accountId={accountId}
-                    teamId={resolvedTeamId ?? undefined}
-                    teamSeasonId={teamSeasonId}
-                    showAccountMessages={false}
-                    showTeamMessages={Boolean(resolvedTeamId)}
-                    hideWhenEmpty
-                    onVisibilityChange={setInformationWidgetVisible}
-                    title="Information Center"
-                  />
-                </Box>
+                <InformationWidget
+                  accountId={accountId}
+                  teamId={resolvedTeamId ?? undefined}
+                  teamSeasonId={teamSeasonId}
+                  showAccountMessages={false}
+                  showTeamMessages={Boolean(resolvedTeamId)}
+                  hideWhenEmpty
+                  title="Information Center"
+                />
               </Box>
             ) : null}
 
@@ -796,7 +792,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                   emptyMessage="No team photos have been published yet."
                   accent="team"
                   totalCountOverride={teamGalleryPhotos.length}
-                  sx={{ height: '100%' }}
+                  sx={{ height: '100%', mb: 0 }}
                 />
               </Box>
             ) : null}

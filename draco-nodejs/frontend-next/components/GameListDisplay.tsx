@@ -113,7 +113,6 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
       accent={accent}
       disablePadding
       sx={{
-        mb: 2,
         minWidth: 0,
       }}
     >
