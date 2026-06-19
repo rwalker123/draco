@@ -1590,3 +1590,726 @@ describe('SchedulerEngineService — soft constraint scoring', () => {
     expect(result1.unscheduled).toEqual(result2.unscheduled);
   });
 });
+
+describe('SchedulerEngineService — constraint contrast tests', () => {
+  const service = new SchedulerEngineService();
+
+  const makeTwoTeamSeason = (): Pick<
+    SchedulerProblemSpec,
+    'season' | 'teams' | 'fields' | 'umpires'
+  > => ({
+    season: {
+      id: 'season-c',
+      name: 'Contrast Season',
+      startDate: '2026-05-01',
+      endDate: '2026-09-30',
+      gameDurations: { defaultMinutes: 60 },
+    },
+    teams: [
+      { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'lg-1', name: 'Open' } },
+      { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'lg-1', name: 'Open' } },
+    ],
+    fields: [{ id: 'field-1', name: 'Field 1' }],
+    umpires: [],
+  });
+
+  it('season exclusion — game lands on slot-1 without exclusion; forced to slot-2 when slot-1 is blacked out', () => {
+    const base: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T11:00:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T13:00:00Z',
+          endTime: '2026-05-10T15:00:00Z',
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const withoutExclusion = service.solve(base);
+    expect(withoutExclusion.status).toBe('completed');
+    expect(withoutExclusion.assignments[0]?.startTime).toBe('2026-05-10T09:00:00.000Z');
+
+    const withExclusion = service.solve({
+      ...base,
+      seasonExclusions: [
+        {
+          id: 'ex-1',
+          seasonId: 'season-c',
+          startTime: '2026-05-10T08:00:00Z',
+          endTime: '2026-05-10T12:00:00Z',
+          enabled: true,
+        },
+      ],
+    });
+    expect(withExclusion.status).toBe('completed');
+    expect(withExclusion.assignments[0]?.startTime).toBe('2026-05-10T13:00:00.000Z');
+  });
+
+  it('season exclusion — disabled exclusion does not block placement', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T11:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T11:00:00Z',
+        },
+      ],
+      seasonExclusions: [
+        {
+          id: 'ex-disabled',
+          seasonId: 'season-c',
+          startTime: '2026-05-10T08:00:00Z',
+          endTime: '2026-05-10T18:00:00Z',
+          enabled: false,
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments[0]?.startTime).toBe('2026-05-10T09:00:00.000Z');
+  });
+
+  it('team exclusion applies to visitor team — visitor exclusion blocks slot, game goes unscheduled', () => {
+    const base: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T11:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T11:00:00Z',
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const withoutExclusion = service.solve(base);
+    expect(withoutExclusion.status).toBe('completed');
+    expect(withoutExclusion.assignments[0]?.startTime).toBe('2026-05-10T09:00:00.000Z');
+
+    const withVisitorExclusion = service.solve({
+      ...base,
+      teamExclusions: [
+        {
+          id: 'tex-1',
+          seasonId: 'season-c',
+          teamSeasonId: 'ts-2',
+          startTime: '2026-05-10T08:00:00Z',
+          endTime: '2026-05-10T12:00:00Z',
+          enabled: true,
+        },
+      ],
+    });
+    expect(withVisitorExclusion.status).toBe('infeasible');
+    expect(withVisitorExclusion.unscheduled[0]?.gameId).toBe('game-1');
+    expect(withVisitorExclusion.unscheduled[0]?.reason).toBeTruthy();
+  });
+
+  it('team exclusion — disabled exclusion does not block visitor team', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T11:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T11:00:00Z',
+        },
+      ],
+      teamExclusions: [
+        {
+          id: 'tex-disabled',
+          seasonId: 'season-c',
+          teamSeasonId: 'ts-2',
+          startTime: '2026-05-10T08:00:00Z',
+          endTime: '2026-05-10T12:00:00Z',
+          enabled: false,
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments[0]?.startTime).toBe('2026-05-10T09:00:00.000Z');
+  });
+
+  it('umpire exclusion — all umpires excluded during slot causes game to be unscheduled', () => {
+    const base: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      umpires: [
+        { id: 'ump-1', name: 'Alice' },
+        { id: 'ump-2', name: 'Bob' },
+      ],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T11:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T11:00:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+        { umpireId: 'ump-2', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+      ],
+      constraints: { hard: { respectUmpireAvailability: true } },
+    };
+
+    const withoutExclusions = service.solve(base);
+    expect(withoutExclusions.status).toBe('completed');
+    expect(withoutExclusions.assignments[0]?.umpireIds).toHaveLength(1);
+
+    const withBothExcluded = service.solve({
+      ...base,
+      umpireExclusions: [
+        {
+          id: 'uex-1',
+          seasonId: 'season-c',
+          umpireId: 'ump-1',
+          startTime: '2026-05-10T08:30:00Z',
+          endTime: '2026-05-10T11:30:00Z',
+          enabled: true,
+        },
+        {
+          id: 'uex-2',
+          seasonId: 'season-c',
+          umpireId: 'ump-2',
+          startTime: '2026-05-10T08:30:00Z',
+          endTime: '2026-05-10T11:30:00Z',
+          enabled: true,
+        },
+      ],
+    });
+    expect(withBothExcluded.status).toBe('infeasible');
+    expect(withBothExcluded.unscheduled[0]?.gameId).toBe('game-1');
+    expect(withBothExcluded.unscheduled[0]?.reason).toBeTruthy();
+  });
+
+  it('umpire exclusion — one umpire excluded during slot; the other umpire is assigned instead', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      umpires: [
+        { id: 'ump-1', name: 'Alice' },
+        { id: 'ump-2', name: 'Bob' },
+      ],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T11:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T11:00:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+        { umpireId: 'ump-2', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+      ],
+      umpireExclusions: [
+        {
+          id: 'uex-1',
+          seasonId: 'season-c',
+          umpireId: 'ump-1',
+          startTime: '2026-05-10T08:30:00Z',
+          endTime: '2026-05-10T11:30:00Z',
+          enabled: true,
+        },
+      ],
+      constraints: { hard: { respectUmpireAvailability: true } },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments[0]?.umpireIds).toEqual(['ump-2']);
+  });
+
+  it('field closed date — field absent from slots on closed date causes unscheduled; adding the slot allows placement', () => {
+    const base: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-15T09:00:00Z',
+          latestEnd: '2026-05-15T18:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [],
+      constraints: { hard: {} },
+    };
+
+    const closedResult = service.solve({
+      ...base,
+      fieldSlots: [
+        {
+          id: 'slot-other-day',
+          fieldId: 'field-1',
+          startTime: '2026-05-16T09:00:00Z',
+          endTime: '2026-05-16T11:00:00Z',
+        },
+      ],
+    });
+    expect(closedResult.status).toBe('infeasible');
+    expect(closedResult.unscheduled[0]?.gameId).toBe('game-1');
+    expect(closedResult.unscheduled[0]?.reason).toBeTruthy();
+
+    const openResult = service.solve({
+      ...base,
+      fieldSlots: [
+        {
+          id: 'slot-correct-day',
+          fieldId: 'field-1',
+          startTime: '2026-05-15T09:00:00Z',
+          endTime: '2026-05-15T11:00:00Z',
+        },
+      ],
+    });
+    expect(openResult.status).toBe('completed');
+    expect(openResult.assignments[0]?.startTime).toBe('2026-05-15T09:00:00.000Z');
+  });
+
+  it('field availability rule — Saturday-only field rejects a Sunday game window (no valid slot on that day)', () => {
+    const sundayGame: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      games: [
+        {
+          id: 'game-sunday',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-17T09:00:00Z',
+          latestEnd: '2026-05-17T18:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-saturday',
+          fieldId: 'field-1',
+          startTime: '2026-05-16T09:00:00Z',
+          endTime: '2026-05-16T11:00:00Z',
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const rejectedResult = service.solve(sundayGame);
+    expect(rejectedResult.status).toBe('infeasible');
+    expect(rejectedResult.unscheduled[0]?.gameId).toBe('game-sunday');
+    expect(rejectedResult.unscheduled[0]?.reason).toBeTruthy();
+
+    const saturdayGame: SchedulerProblemSpec = {
+      ...sundayGame,
+      games: [
+        {
+          id: 'game-saturday',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-16T09:00:00Z',
+          latestEnd: '2026-05-16T18:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+    };
+
+    const placedResult = service.solve(saturdayGame);
+    expect(placedResult.status).toBe('completed');
+    expect(placedResult.assignments[0]?.startTime).toBe('2026-05-16T09:00:00.000Z');
+  });
+
+  it('max-games-per-umpire-per-day — umpire at cap is skipped; second game goes to other umpire', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-4', teamSeasonId: 'ts-4', league: { id: 'lg-1', name: 'Open' } },
+      ],
+      umpires: [
+        { id: 'ump-1', name: 'Alice' },
+        { id: 'ump-2', name: 'Bob' },
+      ],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          id: 'game-2',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-3',
+          visitorTeamSeasonId: 'ts-4',
+          earliestStart: '2026-05-10T11:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T10:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T11:30:00Z',
+          endTime: '2026-05-10T13:00:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+        { umpireId: 'ump-2', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+      ],
+      constraints: {
+        hard: {
+          respectUmpireAvailability: true,
+          maxGamesPerUmpirePerDay: 1,
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+
+    const game1Assignment = result.assignments.find((a) => a.gameId === 'game-1');
+    const game2Assignment = result.assignments.find((a) => a.gameId === 'game-2');
+    expect(game1Assignment?.umpireIds).toHaveLength(1);
+    expect(game2Assignment?.umpireIds).toHaveLength(1);
+    expect(game1Assignment?.umpireIds[0]).not.toBe(game2Assignment?.umpireIds[0]);
+  });
+
+  it('max-games-per-umpire-per-day — single umpire at cap causes third same-day game to be unscheduled', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-4', teamSeasonId: 'ts-4', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-5', teamSeasonId: 'ts-5', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-6', teamSeasonId: 'ts-6', league: { id: 'lg-1', name: 'Open' } },
+      ],
+      umpires: [{ id: 'ump-solo', name: 'Solo' }],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          id: 'game-2',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-3',
+          visitorTeamSeasonId: 'ts-4',
+          earliestStart: '2026-05-10T11:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          id: 'game-3',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-5',
+          visitorTeamSeasonId: 'ts-6',
+          earliestStart: '2026-05-10T13:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T10:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T11:30:00Z',
+          endTime: '2026-05-10T13:00:00Z',
+        },
+        {
+          id: 'slot-3',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T13:30:00Z',
+          endTime: '2026-05-10T15:00:00Z',
+        },
+      ],
+      umpireAvailability: [
+        {
+          umpireId: 'ump-solo',
+          startTime: '2026-05-10T08:00:00Z',
+          endTime: '2026-05-10T18:00:00Z',
+        },
+      ],
+      constraints: {
+        hard: {
+          respectUmpireAvailability: true,
+          maxGamesPerUmpirePerDay: 2,
+        },
+      },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('partial');
+    expect(result.assignments).toHaveLength(2);
+    expect(result.unscheduled).toHaveLength(1);
+    expect(result.unscheduled[0]?.gameId).toBe('game-3');
+    expect(result.unscheduled[0]?.reason).toBeTruthy();
+  });
+
+  it('over-constrained — unplaceable game is in unscheduled list with a reason; other placeable games are still scheduled', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-4', teamSeasonId: 'ts-4', league: { id: 'lg-1', name: 'Open' } },
+      ],
+      games: [
+        {
+          id: 'game-impossible',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T10:00:00Z',
+          durationMinutes: 90,
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-possible',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-3',
+          visitorTeamSeasonId: 'ts-4',
+          earliestStart: '2026-05-10T13:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T09:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T13:00:00Z',
+          endTime: '2026-05-10T15:00:00Z',
+        },
+      ],
+      constraints: { hard: {} },
+    };
+
+    const result = service.solve(spec);
+    expect(result.status).toBe('partial');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.gameId).toBe('game-possible');
+    expect(result.unscheduled).toHaveLength(1);
+    expect(result.unscheduled[0]?.gameId).toBe('game-impossible');
+    expect(result.unscheduled[0]?.reason).toBeTruthy();
+  });
+
+  it('determinism with all constraint types — identical constrained spec produces equal results on two calls', () => {
+    const spec: SchedulerProblemSpec = {
+      ...makeTwoTeamSeason(),
+      teams: [
+        { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'lg-1', name: 'Open' } },
+        { id: 'team-4', teamSeasonId: 'ts-4', league: { id: 'lg-1', name: 'Open' } },
+      ],
+      umpires: [
+        { id: 'ump-1', name: 'Alice' },
+        { id: 'ump-2', name: 'Bob' },
+      ],
+      games: [
+        {
+          id: 'game-1',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-2',
+          earliestStart: '2026-05-10T09:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+        {
+          id: 'game-2',
+          leagueSeasonId: 'ls-1',
+          homeTeamSeasonId: 'ts-3',
+          visitorTeamSeasonId: 'ts-4',
+          earliestStart: '2026-05-10T11:00:00Z',
+          latestEnd: '2026-05-10T18:00:00Z',
+          requiredUmpires: 1,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T09:00:00Z',
+          endTime: '2026-05-10T10:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T11:30:00Z',
+          endTime: '2026-05-10T13:00:00Z',
+        },
+        {
+          id: 'slot-3',
+          fieldId: 'field-1',
+          startTime: '2026-05-10T14:00:00Z',
+          endTime: '2026-05-10T15:30:00Z',
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+        { umpireId: 'ump-2', startTime: '2026-05-10T08:00:00Z', endTime: '2026-05-10T18:00:00Z' },
+      ],
+      seasonExclusions: [
+        {
+          id: 'ex-1',
+          seasonId: 'season-c',
+          startTime: '2026-05-10T14:00:00Z',
+          endTime: '2026-05-10T16:00:00Z',
+          enabled: true,
+        },
+      ],
+      teamExclusions: [
+        {
+          id: 'tex-1',
+          seasonId: 'season-c',
+          teamSeasonId: 'ts-1',
+          startTime: '2026-05-10T13:00:00Z',
+          endTime: '2026-05-10T18:00:00Z',
+          enabled: true,
+        },
+      ],
+      umpireExclusions: [
+        {
+          id: 'uex-1',
+          seasonId: 'season-c',
+          umpireId: 'ump-1',
+          startTime: '2026-05-10T11:00:00Z',
+          endTime: '2026-05-10T14:00:00Z',
+          enabled: true,
+        },
+      ],
+      constraints: {
+        hard: {
+          respectUmpireAvailability: true,
+          maxGamesPerUmpirePerDay: 2,
+        },
+      },
+      runId: 'det-constraint-test',
+    };
+
+    const run1 = service.solve(spec);
+    const run2 = service.solve(spec);
+
+    expect(run1.runId).toBe(run2.runId);
+    expect(run1.assignments).toEqual(run2.assignments);
+    expect(run1.unscheduled).toEqual(run2.unscheduled);
+    expect(run1.status).toBe(run2.status);
+  });
+});

@@ -45,6 +45,7 @@ model accounts {
   schedulerseasonexclusions schedulerseasonexclusions[]
   schedulerteamseasonexclusions schedulerteamseasonexclusions[]
   schedulerumpireexclusions schedulerumpireexclusions[]
+  schedulerapplyauditlog schedulerapplyauditlog[]
   contactroles              contactroles[]
   contacts                  contacts[]
   currentseason             currentseason?
@@ -497,6 +498,24 @@ model schedulerumpireexclusions {
   @@index([accountid], map: "idx_schedulerumpireexclusions_accountid")
   @@index([seasonid], map: "idx_schedulerumpireexclusions_seasonid")
   @@index([umpireid], map: "idx_schedulerumpireexclusions_umpireid")
+}
+
+model schedulerapplyauditlog {
+  id                BigInt   @id @default(autoincrement())
+  accountid         BigInt
+  seasonid          BigInt
+  runid             String   @db.VarChar(255)
+  mode              String   @db.VarChar(10)
+  appliedbyuserid   String   @db.VarChar(128)
+  appliedbyusername String   @db.VarChar(255)
+  appliedcount      Int
+  skippedcount      Int
+  createdat         DateTime @default(now()) @db.Timestamptz(6)
+
+  accounts accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_schedulerapplyauditlog_accounts")
+  season   season   @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_schedulerapplyauditlog_season")
+
+  @@index([accountid, seasonid], map: "idx_schedulerapplyauditlog_account_season")
 }
 
 model batstatsum {
@@ -1675,6 +1694,7 @@ model season {
   schedulerseasonexclusions schedulerseasonexclusions[]
   schedulerteamseasonexclusions schedulerteamseasonexclusions[]
   schedulerumpireexclusions schedulerumpireexclusions[]
+  schedulerapplyauditlog schedulerapplyauditlog[]
   accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_season_accounts")
 }
 

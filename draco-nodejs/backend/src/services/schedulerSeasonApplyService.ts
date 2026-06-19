@@ -4,12 +4,14 @@ import type {
   SchedulerSeasonSolveRequest,
 } from '@draco/shared-schemas';
 import { ServiceFactory } from './serviceFactory.js';
+import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 
 export class SchedulerSeasonApplyService {
   async applySeasonProposal(
     accountId: bigint,
     seasonId: bigint,
     request: SchedulerSeasonApplyRequest,
+    actingUser: { id: string; username: string },
   ): Promise<SchedulerApplyResult> {
     const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecService();
     const schedulerApplyService = ServiceFactory.getSchedulerApplyService();
@@ -27,7 +29,7 @@ export class SchedulerSeasonApplyService {
     );
     const constraints = spec.constraints;
 
-    return schedulerApplyService.applyProposal(
+    const result = await schedulerApplyService.applyProposal(
       accountId,
       {
         runId: request.runId,
@@ -38,5 +40,23 @@ export class SchedulerSeasonApplyService {
       },
       { seasonId, matchups: request.matchups, seasonTeams: spec.teams },
     );
+
+    try {
+      const auditRepo = RepositoryFactory.getSchedulerApplyAuditLogRepository();
+      await auditRepo.create({
+        accountid: accountId,
+        seasonid: seasonId,
+        runid: request.runId,
+        mode: request.mode,
+        appliedbyuserid: actingUser.id,
+        appliedbyusername: actingUser.username,
+        appliedcount: result.appliedGameIds.length,
+        skippedcount: result.skipped.length,
+      });
+    } catch (error) {
+      console.error('[SchedulerSeasonApplyService] Failed to write audit log:', error);
+    }
+
+    return result;
   }
 }
