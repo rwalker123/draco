@@ -1,14 +1,17 @@
 import { beforeEach, afterEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { SchedulerSeasonApplyService } from '../schedulerSeasonApplyService.js';
 import { ServiceFactory } from '../serviceFactory.js';
+import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 import { partialMock } from '../../test-utils/partialMock.js';
 import type { SchedulerProblemSpecService } from '../schedulerProblemSpecService.js';
 import type { SchedulerApplyService } from '../schedulerApplyService.js';
+import type { ISchedulerApplyAuditLogRepository } from '../../repositories/interfaces/ISchedulerApplyAuditLogRepository.js';
 import type { SchedulerSeasonApplyRequest, SchedulerApplyResult } from '@draco/shared-schemas';
 import type { SchedulerProblemSpec } from '@draco/shared-schemas';
 
 const accountId = 42n;
 const seasonId = 7n;
+const actingUser = { id: 'aspnet-user-99', username: 'tester@example.com' };
 
 const baseSpec: SchedulerProblemSpec = {
   season: {
@@ -61,6 +64,7 @@ const makeApplyResult = (overrides: Partial<SchedulerApplyResult> = {}): Schedul
 describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
   let problemSpecService: Mocked<SchedulerProblemSpecService>;
   let applyService: Mocked<SchedulerApplyService>;
+  let auditRepo: Mocked<ISchedulerApplyAuditLogRepository>;
   let service: SchedulerSeasonApplyService;
 
   const baseRequest: SchedulerSeasonApplyRequest = {
@@ -83,11 +87,25 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
       buildProblemSpec: vi.fn(),
     });
     applyService = partialMock<SchedulerApplyService>({ applyProposal: vi.fn() });
+    auditRepo = partialMock<ISchedulerApplyAuditLogRepository>({ create: vi.fn() });
 
     vi.spyOn(ServiceFactory, 'getSchedulerProblemSpecService').mockReturnValue(problemSpecService);
     vi.spyOn(ServiceFactory, 'getSchedulerApplyService').mockReturnValue(applyService);
+    vi.spyOn(RepositoryFactory, 'getSchedulerApplyAuditLogRepository').mockReturnValue(auditRepo);
 
     problemSpecService.buildProblemSpec.mockResolvedValue(baseSpec);
+    auditRepo.create.mockResolvedValue({
+      id: 1n,
+      accountid: accountId,
+      seasonid: seasonId,
+      runid: 'run-1',
+      mode: 'all',
+      appliedbyuserid: actingUser.id,
+      appliedbyusername: actingUser.username,
+      appliedcount: 1,
+      skippedcount: 0,
+      createdat: new Date(),
+    });
 
     service = new SchedulerSeasonApplyService();
   });
@@ -99,7 +117,7 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
   it('happy path: builds spec, delegates to apply, returns result', async () => {
     applyService.applyProposal.mockResolvedValue(makeApplyResult());
 
-    const result = await service.applySeasonProposal(accountId, seasonId, baseRequest);
+    const result = await service.applySeasonProposal(accountId, seasonId, baseRequest, actingUser);
 
     expect(problemSpecService.buildProblemSpec).toHaveBeenCalledOnce();
     expect(applyService.applyProposal).toHaveBeenCalledOnce();
@@ -111,7 +129,7 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
   it('passes seasonId and season teams through to applyProposal context', async () => {
     applyService.applyProposal.mockResolvedValue(makeApplyResult());
 
-    await service.applySeasonProposal(accountId, seasonId, baseRequest);
+    await service.applySeasonProposal(accountId, seasonId, baseRequest, actingUser);
 
     const [, , context] = applyService.applyProposal.mock.calls[0] ?? [];
     expect(context).toEqual({ seasonId, matchups: undefined, seasonTeams: baseSpec.teams });
@@ -125,7 +143,7 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
     });
     applyService.applyProposal.mockResolvedValue(partialResult);
 
-    const result = await service.applySeasonProposal(accountId, seasonId, baseRequest);
+    const result = await service.applySeasonProposal(accountId, seasonId, baseRequest, actingUser);
 
     expect(result.status).toBe('partial');
     expect(result.appliedGameIds).toHaveLength(0);
@@ -158,7 +176,12 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
     });
     applyService.applyProposal.mockResolvedValue(allRejectedResult);
 
-    const result = await service.applySeasonProposal(accountId, seasonId, twoGameRequest);
+    const result = await service.applySeasonProposal(
+      accountId,
+      seasonId,
+      twoGameRequest,
+      actingUser,
+    );
 
     expect(result.status).toBe('failed');
     expect(result.appliedGameIds).toHaveLength(0);
@@ -178,9 +201,64 @@ describe('SchedulerSeasonApplyService.applySeasonProposal', () => {
     problemSpecService.buildProblemSpec.mockResolvedValue(specWithConstraints);
     applyService.applyProposal.mockResolvedValue(makeApplyResult());
 
-    await service.applySeasonProposal(accountId, seasonId, baseRequest);
+    await service.applySeasonProposal(accountId, seasonId, baseRequest, actingUser);
 
     const [, applyRequest] = applyService.applyProposal.mock.calls[0] ?? [];
     expect(applyRequest?.constraints).toEqual(specWithConstraints.constraints);
+  });
+
+  it('writes exactly one audit row with correct payload values after a partial apply', async () => {
+    const mixedResult: SchedulerApplyResult = {
+      runId: 'run-audit',
+      status: 'partial',
+      appliedGameIds: ['game-1', 'game-2'],
+      skipped: [{ gameId: 'game-3', reason: 'Field is already booked for this date and time' }],
+    };
+    applyService.applyProposal.mockResolvedValue(mixedResult);
+
+    const auditRequest: SchedulerSeasonApplyRequest = {
+      ...baseRequest,
+      runId: 'run-audit',
+      mode: 'all',
+    };
+
+    await service.applySeasonProposal(accountId, seasonId, auditRequest, actingUser);
+
+    expect(auditRepo.create).toHaveBeenCalledOnce();
+    expect(auditRepo.create).toHaveBeenCalledWith({
+      accountid: 42n,
+      seasonid: 7n,
+      runid: 'run-audit',
+      mode: 'all',
+      appliedbyuserid: 'aspnet-user-99',
+      appliedbyusername: 'tester@example.com',
+      appliedcount: 2,
+      skippedcount: 1,
+    });
+  });
+
+  it('returns the apply result even when the audit repository throws', async () => {
+    const applyResult = makeApplyResult();
+    applyService.applyProposal.mockResolvedValue(applyResult);
+    auditRepo.create.mockRejectedValue(new Error('DB connection lost'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const result = await service.applySeasonProposal(accountId, seasonId, baseRequest, actingUser);
+
+    expect(result).toEqual(applyResult);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[SchedulerSeasonApplyService] Failed to write audit log:',
+      expect.any(Error),
+    );
+  });
+
+  it('does not write an audit row when applyProposal rejects', async () => {
+    applyService.applyProposal.mockRejectedValue(new Error('Unexpected apply failure'));
+
+    await expect(
+      service.applySeasonProposal(accountId, seasonId, baseRequest, actingUser),
+    ).rejects.toThrow('Unexpected apply failure');
+
+    expect(auditRepo.create).not.toHaveBeenCalled();
   });
 });

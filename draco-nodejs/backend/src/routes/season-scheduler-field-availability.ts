@@ -324,10 +324,15 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
     const request = SchedulerSeasonApplyRequestSchema.parse(req.body);
+    const actingUser = {
+      id: req.user!.id,
+      username: req.user!.username,
+    };
     const result = await schedulerSeasonApplyService.applySeasonProposal(
       accountId,
       seasonId,
       request,
+      actingUser,
     );
     res.json(result);
   }),

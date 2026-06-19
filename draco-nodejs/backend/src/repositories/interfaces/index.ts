@@ -70,3 +70,4 @@ export * from './IIndividualLiveScoringRepository.js';
 export * from './IBaseballLiveScoringRepository.js';
 export * from './IOauthRepository.js';
 export * from './ISchedulerMatchupRepository.js';
+export * from './ISchedulerApplyAuditLogRepository.js';
