@@ -2,38 +2,41 @@
 
 import React, { useState } from 'react';
 import { FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
-import type { SchedulerTeamExclusion, SchedulerTeamExclusionUpsert } from '@draco/shared-schemas';
-import { SchedulerTeamExclusionUpsertSchema } from '@draco/shared-schemas';
+import type {
+  SchedulerLeagueExclusion,
+  SchedulerLeagueExclusionUpsert,
+} from '@draco/shared-schemas';
+import { SchedulerLeagueExclusionUpsertSchema } from '@draco/shared-schemas';
 import { BaseSchedulerDialog } from './BaseSchedulerDialog';
 import { dateInputToIso, isoToDateInput } from '../../utils/schedulerBlackoutDate';
 
-type TeamOption = { id: string; name: string };
+type LeagueOption = { id: string; name: string };
 
-interface SchedulerTeamExclusionDialogProps {
+interface SchedulerLeagueExclusionDialogProps {
   open: boolean;
   mode: 'create' | 'edit';
   seasonId: string;
   timeZone: string;
-  teams: TeamOption[];
-  initialExclusion?: SchedulerTeamExclusion;
+  leagues: LeagueOption[];
+  initialExclusion?: SchedulerLeagueExclusion;
   onClose: () => void;
-  onSubmit: (input: SchedulerTeamExclusionUpsert) => Promise<void>;
+  onSubmit: (input: SchedulerLeagueExclusionUpsert) => Promise<void>;
   loading?: boolean;
 }
 
-export const SchedulerTeamExclusionDialog: React.FC<SchedulerTeamExclusionDialogProps> = ({
+export const SchedulerLeagueExclusionDialog: React.FC<SchedulerLeagueExclusionDialogProps> = ({
   open,
   mode,
   seasonId,
   timeZone,
-  teams,
+  leagues,
   initialExclusion,
   onClose,
   onSubmit,
   loading,
 }) => {
-  const [teamSeasonId, setTeamSeasonId] = useState(
-    initialExclusion?.teamSeasonId ?? teams[0]?.id ?? '',
+  const [leagueSeasonId, setLeagueSeasonId] = useState(
+    initialExclusion?.leagueSeasonId ?? leagues[0]?.id ?? '',
   );
   const [startDate, setStartDate] = useState(() =>
     isoToDateInput(initialExclusion?.startTime, timeZone),
@@ -42,13 +45,13 @@ export const SchedulerTeamExclusionDialog: React.FC<SchedulerTeamExclusionDialog
   const [note, setNote] = useState(initialExclusion?.note ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  const title = mode === 'create' ? 'Add Team Blackout Date' : 'Edit Team Blackout Date';
+  const title = mode === 'create' ? 'Add League Blackout Date' : 'Edit League Blackout Date';
 
   const handleSubmit = async () => {
     setError(null);
     try {
-      if (!teamSeasonId) {
-        setError('Select a team.');
+      if (!leagueSeasonId) {
+        setError('Select a league.');
         return;
       }
       if (!startDate) {
@@ -62,9 +65,9 @@ export const SchedulerTeamExclusionDialog: React.FC<SchedulerTeamExclusionDialog
       }
 
       const trimmedNote = note.trim();
-      const payload: SchedulerTeamExclusionUpsert = SchedulerTeamExclusionUpsertSchema.parse({
+      const payload: SchedulerLeagueExclusionUpsert = SchedulerLeagueExclusionUpsertSchema.parse({
         seasonId,
-        teamSeasonId,
+        leagueSeasonId,
         startTime: dateInputToIso(startDate, timeZone, 'start'),
         endTime: dateInputToIso(effectiveEnd, timeZone, 'end'),
         note: trimmedNote.length > 0 ? trimmedNote : undefined,
@@ -74,7 +77,7 @@ export const SchedulerTeamExclusionDialog: React.FC<SchedulerTeamExclusionDialog
       await onSubmit(payload);
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Invalid team blackout date';
+      const message = err instanceof Error ? err.message : 'Invalid league blackout date';
       setError(message);
     }
   };
@@ -90,16 +93,16 @@ export const SchedulerTeamExclusionDialog: React.FC<SchedulerTeamExclusionDialog
       apiError={error}
     >
       <FormControl fullWidth size="small">
-        <InputLabel id="scheduler-team-exclusion-team">Team</InputLabel>
+        <InputLabel id="scheduler-league-exclusion-league">League</InputLabel>
         <Select
-          labelId="scheduler-team-exclusion-team"
-          label="Team"
-          value={teamSeasonId}
-          onChange={(event) => setTeamSeasonId(String(event.target.value))}
+          labelId="scheduler-league-exclusion-league"
+          label="League"
+          value={leagueSeasonId}
+          onChange={(event) => setLeagueSeasonId(String(event.target.value))}
         >
-          {teams.map((team) => (
-            <MenuItem key={team.id} value={team.id}>
-              {team.name}
+          {leagues.map((league) => (
+            <MenuItem key={league.id} value={league.id}>
+              {league.name}
             </MenuItem>
           ))}
         </Select>

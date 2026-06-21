@@ -197,6 +197,49 @@ export const SchedulerTeamExclusionsSchema = z
   })
   .openapi({ title: 'SchedulerTeamExclusions' });
 
+const SchedulerLeagueExclusionBaseSchema = z.object({
+  id: schedulerIdSchema,
+  seasonId: schedulerIdSchema,
+  leagueSeasonId: schedulerIdSchema,
+  startTime: isoDateTimeSchema,
+  endTime: isoDateTimeSchema,
+  note: z.string().trim().min(1).max(255).optional(),
+  enabled: z.boolean(),
+});
+
+const leagueExclusionRefinement = (
+  data: { startTime: string; endTime: string },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.startTime >= data.endTime) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['startTime'],
+      message: 'startTime must be before endTime',
+    });
+  }
+};
+
+export const SchedulerLeagueExclusionSchema = SchedulerLeagueExclusionBaseSchema.superRefine(
+  leagueExclusionRefinement,
+).openapi({
+  title: 'SchedulerLeagueExclusion',
+  description:
+    'League-season exclusion window. When enabled, games in this league must not be scheduled within the excluded time range.',
+});
+
+export const SchedulerLeagueExclusionUpsertSchema = SchedulerLeagueExclusionBaseSchema.omit({
+  id: true,
+})
+  .superRefine(leagueExclusionRefinement)
+  .openapi({ title: 'SchedulerLeagueExclusionUpsert' });
+
+export const SchedulerLeagueExclusionsSchema = z
+  .object({
+    exclusions: SchedulerLeagueExclusionSchema.array(),
+  })
+  .openapi({ title: 'SchedulerLeagueExclusions' });
+
 const SchedulerUmpireExclusionBaseSchema = z.object({
   id: schedulerIdSchema,
   seasonId: schedulerIdSchema,
@@ -374,6 +417,20 @@ export const SchedulerObjectivesSchema = z
   .optional()
   .openapi({ title: 'SchedulerObjectives' });
 
+export const SchedulerFixedGameSchema = z
+  .object({
+    fieldId: schedulerIdSchema.optional(),
+    startTime: isoDateTimeSchema,
+    endTime: isoDateTimeSchema,
+    teamSeasonIds: schedulerIdSchema.array(),
+    umpireIds: schedulerIdSchema.array().optional(),
+  })
+  .openapi({
+    title: 'SchedulerFixedGame',
+    description:
+      'An already-scheduled game whose field-time, team, and umpire occupancy must be respected when placing new matchups. Used only in round-robin solve paths to prevent double-booking.',
+  });
+
 export const SchedulerProblemSpecSchema = z
   .object({
     season: SchedulerSeasonConfigSchema,
@@ -384,9 +441,11 @@ export const SchedulerProblemSpecSchema = z
     fieldSlots: SchedulerFieldSlotSchema.array().min(1),
     seasonExclusions: SchedulerSeasonExclusionSchema.array().optional(),
     teamExclusions: SchedulerTeamExclusionSchema.array().optional(),
+    leagueExclusions: SchedulerLeagueExclusionSchema.array().optional(),
     umpireExclusions: SchedulerUmpireExclusionSchema.array().optional(),
     umpireAvailability: SchedulerUmpireAvailabilitySchema.array().optional(),
     teamBlackouts: SchedulerTeamBlackoutSchema.array().optional(),
+    fixedGames: SchedulerFixedGameSchema.array().optional(),
     constraints: SchedulerConstraintsSchema,
     objectives: SchedulerObjectivesSchema,
     runId: z.string().trim().min(1).optional().openapi({ example: 'sched_account_42_ab12cd34' }),
@@ -679,6 +738,9 @@ export type SchedulerSeasonExclusions = z.infer<typeof SchedulerSeasonExclusions
 export type SchedulerTeamExclusion = z.infer<typeof SchedulerTeamExclusionSchema>;
 export type SchedulerTeamExclusionUpsert = z.infer<typeof SchedulerTeamExclusionUpsertSchema>;
 export type SchedulerTeamExclusions = z.infer<typeof SchedulerTeamExclusionsSchema>;
+export type SchedulerLeagueExclusion = z.infer<typeof SchedulerLeagueExclusionSchema>;
+export type SchedulerLeagueExclusionUpsert = z.infer<typeof SchedulerLeagueExclusionUpsertSchema>;
+export type SchedulerLeagueExclusions = z.infer<typeof SchedulerLeagueExclusionsSchema>;
 export type SchedulerUmpireExclusion = z.infer<typeof SchedulerUmpireExclusionSchema>;
 export type SchedulerUmpireExclusionUpsert = z.infer<typeof SchedulerUmpireExclusionUpsertSchema>;
 export type SchedulerUmpireExclusions = z.infer<typeof SchedulerUmpireExclusionsSchema>;
@@ -693,6 +755,7 @@ export type SchedulerConstraintsOverrideRequired = z.infer<
   typeof SchedulerConstraintsOverrideRequiredSchema
 >;
 export type SchedulerObjectives = z.infer<typeof SchedulerObjectivesSchema>;
+export type SchedulerFixedGame = z.infer<typeof SchedulerFixedGameSchema>;
 export type SchedulerProblemSpec = z.infer<typeof SchedulerProblemSpecSchema>;
 export type SchedulerAssignment = z.infer<typeof SchedulerAssignmentSchema>;
 export type SchedulerUnscheduledReason = z.infer<typeof SchedulerUnscheduledReasonSchema>;

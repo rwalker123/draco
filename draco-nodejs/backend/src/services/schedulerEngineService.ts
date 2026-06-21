@@ -2,8 +2,10 @@ import type {
   SchedulerAssignment,
   SchedulerConstraints,
   SchedulerFieldSlot,
+  SchedulerFixedGame,
   SchedulerGameRequest,
   SchedulerHardConstraints,
+  SchedulerLeagueExclusion,
   SchedulerProblemSpec,
   SchedulerSoftConstraints,
   SchedulerSolveResult,
@@ -120,6 +122,7 @@ export class SchedulerEngineService {
     );
     const seasonExclusions = this.groupSeasonExclusions(problemSpec.seasonExclusions);
     const teamExclusions = this.groupTeamExclusions(problemSpec.teamExclusions);
+    const leagueExclusions = this.groupLeagueExclusions(problemSpec.leagueExclusions);
     const umpireExclusions = this.groupUmpireExclusions(problemSpec.umpireExclusions);
     const umpireDailyLimitById = this.buildUmpireDailyLimitIndex(problemSpec.umpires);
     const fieldCapacityById = this.buildFieldCapacityIndex(problemSpec.fields);
@@ -131,6 +134,12 @@ export class SchedulerEngineService {
     const umpireSchedule: Map<string, Interval[]> = new Map();
     const teamDailyCounts: Map<string, Map<string, number>> = new Map();
     const umpireDailyCounts: Map<string, Map<string, number>> = new Map();
+
+    this.seedFixedOccupancy(
+      problemSpec.fixedGames,
+      { teamSchedule, fieldSchedule, umpireSchedule, teamDailyCounts, umpireDailyCounts },
+      timeZoneId,
+    );
 
     const sortedGames = [...problemSpec.games].sort((a, b) => {
       const aStart = a.earliestStart ? new Date(a.earliestStart).getTime() : 0;
@@ -161,6 +170,7 @@ export class SchedulerEngineService {
         seasonExclusions,
         teamBlackouts,
         teamExclusions,
+        leagueExclusions,
         umpireExclusions,
         umpireDailyLimitById,
         fieldCapacityById,
@@ -309,6 +319,16 @@ export class SchedulerEngineService {
       if (start >= end) {
         throw new ValidationError(
           `Team exclusion ${exclusion.teamSeasonId} startTime must be before endTime`,
+        );
+      }
+    }
+
+    for (const exclusion of problemSpec.leagueExclusions ?? []) {
+      const start = new Date(exclusion.startTime);
+      const end = new Date(exclusion.endTime);
+      if (start >= end) {
+        throw new ValidationError(
+          `League exclusion ${exclusion.leagueSeasonId} startTime must be before endTime`,
         );
       }
     }
@@ -550,6 +570,19 @@ export class SchedulerEngineService {
     return map;
   }
 
+  private groupLeagueExclusions(exclusions?: SchedulerLeagueExclusion[]): Map<string, Interval[]> {
+    const map = new Map<string, Interval[]>();
+    (exclusions ?? [])
+      .filter((exclusion) => exclusion.enabled)
+      .forEach((exclusion) => {
+        const parsed = this.toInterval(exclusion.startTime, exclusion.endTime);
+        const list = map.get(exclusion.leagueSeasonId) ?? [];
+        list.push(parsed);
+        map.set(exclusion.leagueSeasonId, list);
+      });
+    return map;
+  }
+
   private groupUmpireExclusions(exclusions?: SchedulerUmpireExclusion[]): Map<string, Interval[]> {
     const map = new Map<string, Interval[]>();
     (exclusions ?? [])
@@ -583,6 +616,7 @@ export class SchedulerEngineService {
     seasonExclusions: Interval[],
     teamBlackouts: Map<string, Interval[]>,
     teamExclusions: Map<string, Interval[]>,
+    leagueExclusions: Map<string, Interval[]>,
     umpireExclusions: Map<string, Interval[]>,
     umpireDailyLimitById: Map<string, number>,
     fieldCapacityById: Map<string, number>,
@@ -611,6 +645,10 @@ export class SchedulerEngineService {
     }
 
     if (this.intersectsTeamExclusion(candidate.game, start, durationEnd, teamExclusions)) {
+      return null;
+    }
+
+    if (this.intersectsLeagueExclusion(candidate.game, start, durationEnd, leagueExclusions)) {
       return null;
     }
 
@@ -745,6 +783,7 @@ export class SchedulerEngineService {
     seasonExclusions: Interval[],
     teamBlackouts: Map<string, Interval[]>,
     teamExclusions: Map<string, Interval[]>,
+    leagueExclusions: Map<string, Interval[]>,
     umpireExclusions: Map<string, Interval[]>,
     umpireDailyLimitById: Map<string, number>,
     fieldCapacityById: Map<string, number>,
@@ -783,6 +822,7 @@ export class SchedulerEngineService {
           seasonExclusions,
           teamBlackouts,
           teamExclusions,
+          leagueExclusions,
           umpireExclusions,
           umpireDailyLimitById,
           fieldCapacityById,
@@ -986,6 +1026,19 @@ export class SchedulerEngineService {
     return false;
   }
 
+  private intersectsLeagueExclusion(
+    game: SchedulerGameRequest,
+    start: Date,
+    end: Date,
+    leagueExclusions: Map<string, Interval[]>,
+  ): boolean {
+    if (!game.leagueSeasonId) {
+      return false;
+    }
+    const blocks = leagueExclusions.get(game.leagueSeasonId) ?? [];
+    return blocks.some((block) => this.overlaps(block, { start, end }));
+  }
+
   private selectUmpires(
     game: SchedulerGameRequest,
     start: Date,
@@ -1077,6 +1130,37 @@ export class SchedulerEngineService {
 
   private contains(container: Interval, target: Interval): boolean {
     return container.start <= target.start && container.end >= target.end;
+  }
+
+  private seedFixedOccupancy(
+    fixedGames: SchedulerFixedGame[] | undefined,
+    schedules: {
+      teamSchedule: Map<string, Interval[]>;
+      fieldSchedule: Map<string, Interval[]>;
+      umpireSchedule: Map<string, Interval[]>;
+      teamDailyCounts: Map<string, Map<string, number>>;
+      umpireDailyCounts: Map<string, Map<string, number>>;
+    },
+    timeZoneId: string,
+  ): void {
+    for (const fixed of fixedGames ?? []) {
+      const start = new Date(fixed.startTime);
+      const end = new Date(fixed.endTime);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        continue;
+      }
+      if (fixed.fieldId) {
+        this.addBooking(fixed.fieldId, start, end, schedules.fieldSchedule);
+      }
+      for (const teamId of fixed.teamSeasonIds) {
+        this.addBooking(teamId, start, end, schedules.teamSchedule);
+        this.incrementDailyCount(teamId, start, schedules.teamDailyCounts, timeZoneId);
+      }
+      for (const umpireId of fixed.umpireIds ?? []) {
+        this.addBooking(umpireId, start, end, schedules.umpireSchedule);
+        this.incrementDailyCount(umpireId, start, schedules.umpireDailyCounts, timeZoneId);
+      }
+    }
   }
 
   private addBooking(key: string, start: Date, end: Date, schedule: Map<string, Interval[]>): void {

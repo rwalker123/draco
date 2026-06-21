@@ -28,6 +28,7 @@ declare module '@mui/material/styles' {
 
 export const dracoThemeOptions: ThemeOptions = {
   palette: {
+    mode: 'light',
     primary: {
       main: '#1d4ed8', // Vibrant team blue
       light: '#60a5fa',
@@ -196,6 +197,7 @@ const addCssBaselineOverrides = (options: ThemeOptions) => {
   const mergedOverrides = deepmerge(existingStyleOverrides, {
     html: {
       backgroundColor: baseTheme.palette.background.paper,
+      colorScheme: baseTheme.palette.mode,
     },
     body: {
       backgroundColor: baseTheme.palette.background.paper,

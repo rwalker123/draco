@@ -8,6 +8,7 @@ import type { ISchedulerSeasonConfigRepository } from '../../repositories/interf
 import type { ISchedulerSeasonLeagueSelectionsRepository } from '../../repositories/interfaces/ISchedulerSeasonLeagueSelectionsRepository.js';
 import type { ISchedulerSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
 import type { ISchedulerTeamSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
+import type { ISchedulerLeagueSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerLeagueSeasonExclusionsRepository.js';
 import type { ISchedulerUmpireExclusionsRepository } from '../../repositories/interfaces/ISchedulerUmpireExclusionsRepository.js';
 import type { dbSeason } from '../../repositories/types/dbTypes.js';
 import type {
@@ -17,6 +18,7 @@ import type {
   schedulerseasonconfig,
   schedulerseasonexclusions,
   schedulerteamseasonexclusions,
+  schedulerleagueseasonexclusions,
   schedulerumpireexclusions,
   teamsseason,
   fieldopenhours,
@@ -84,6 +86,14 @@ class SchedulerTeamSeasonExclusionsRepositoryStub implements ISchedulerTeamSeaso
   create = vi.fn<ISchedulerTeamSeasonExclusionsRepository['create']>();
   update = vi.fn<ISchedulerTeamSeasonExclusionsRepository['update']>();
   delete = vi.fn<ISchedulerTeamSeasonExclusionsRepository['delete']>();
+}
+
+class SchedulerLeagueSeasonExclusionsRepositoryStub implements ISchedulerLeagueSeasonExclusionsRepository {
+  findForAccount = vi.fn<ISchedulerLeagueSeasonExclusionsRepository['findForAccount']>();
+  listForSeason = vi.fn<ISchedulerLeagueSeasonExclusionsRepository['listForSeason']>();
+  create = vi.fn<ISchedulerLeagueSeasonExclusionsRepository['create']>();
+  update = vi.fn<ISchedulerLeagueSeasonExclusionsRepository['update']>();
+  delete = vi.fn<ISchedulerLeagueSeasonExclusionsRepository['delete']>();
 }
 
 class SchedulerUmpireExclusionsRepositoryStub implements ISchedulerUmpireExclusionsRepository {
@@ -244,6 +254,7 @@ vi.mock('../../repositories/repositoryFactory.js', () => ({
     getSchedulerSeasonLeagueSelectionsRepository: vi.fn(),
     getSchedulerSeasonExclusionsRepository: vi.fn(),
     getSchedulerTeamSeasonExclusionsRepository: vi.fn(),
+    getSchedulerLeagueSeasonExclusionsRepository: vi.fn(),
     getSchedulerUmpireExclusionsRepository: vi.fn(),
   },
 }));
@@ -256,6 +267,7 @@ describe('SchedulerProblemSpecService', () => {
   let seasonLeagueSelectionsRepo: SchedulerSeasonLeagueSelectionsRepositoryStub;
   let seasonExclusionsRepo: SchedulerSeasonExclusionsRepositoryStub;
   let teamExclusionsRepo: SchedulerTeamSeasonExclusionsRepositoryStub;
+  let leagueExclusionsRepo: SchedulerLeagueSeasonExclusionsRepositoryStub;
   let umpireExclusionsRepo: SchedulerUmpireExclusionsRepositoryStub;
   let service: SchedulerProblemSpecService;
 
@@ -267,6 +279,7 @@ describe('SchedulerProblemSpecService', () => {
     seasonLeagueSelectionsRepo = new SchedulerSeasonLeagueSelectionsRepositoryStub();
     seasonExclusionsRepo = new SchedulerSeasonExclusionsRepositoryStub();
     teamExclusionsRepo = new SchedulerTeamSeasonExclusionsRepositoryStub();
+    leagueExclusionsRepo = new SchedulerLeagueSeasonExclusionsRepositoryStub();
     umpireExclusionsRepo = new SchedulerUmpireExclusionsRepositoryStub();
 
     vi.mocked(RepositoryFactory.getSchedulerProblemSpecRepository).mockReturnValue(schedulerRepo);
@@ -286,6 +299,9 @@ describe('SchedulerProblemSpecService', () => {
     vi.mocked(RepositoryFactory.getSchedulerTeamSeasonExclusionsRepository).mockReturnValue(
       teamExclusionsRepo,
     );
+    vi.mocked(RepositoryFactory.getSchedulerLeagueSeasonExclusionsRepository).mockReturnValue(
+      leagueExclusionsRepo,
+    );
     vi.mocked(RepositoryFactory.getSchedulerUmpireExclusionsRepository).mockReturnValue(
       umpireExclusionsRepo,
     );
@@ -300,6 +316,7 @@ describe('SchedulerProblemSpecService', () => {
     seasonLeagueSelectionsRepo.listForSeason.mockResolvedValue([]);
     seasonExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerseasonexclusions[]);
     teamExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerteamseasonexclusions[]);
+    leagueExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerleagueseasonexclusions[]);
     umpireExclusionsRepo.listForSeason.mockResolvedValue([] as schedulerumpireexclusions[]);
 
     schedulerRepo.listSeasonTeams.mockResolvedValue([
@@ -611,6 +628,95 @@ describe('SchedulerProblemSpecService', () => {
       const starts = spec.fieldSlots.map((s) => s.startTime);
       expect(starts.every((t) => !t.startsWith('2026-04-06'))).toBe(true);
       expect(starts.some((t) => t.startsWith('2026-04-07'))).toBe(true);
+    });
+  });
+
+  describe('buildProblemSpec — fixedGames population', () => {
+    it('populates fixedGames when matchups are provided', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+      schedulerRepo.listSeasonGames.mockResolvedValue([
+        {
+          ...makeGame(999n, 55n, 11n, 12n),
+          gamedate: new Date('2026-04-06T13:00:00.000Z'),
+          fieldid: 100n,
+          umpire1: 5n,
+          umpire2: null,
+          umpire3: null,
+          umpire4: null,
+        } as ReturnType<typeof makeGame>,
+      ]);
+
+      const matchup = {
+        id: 'rr-1',
+        leagueSeasonId: '55',
+        homeTeamSeasonId: '11',
+        visitorTeamSeasonId: '12',
+        requiredUmpires: 2,
+      };
+
+      const request: SchedulerSeasonSolveRequest = {
+        matchups: [matchup],
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      expect(spec.fixedGames).toBeDefined();
+      expect(spec.fixedGames).toHaveLength(1);
+
+      const fg = spec.fixedGames![0]!;
+      expect(fg.startTime).toBe('2026-04-06T13:00:00.000Z');
+      expect(fg.endTime).toBe('2026-04-06T14:00:00.000Z');
+      expect(fg.fieldId).toBe('100');
+      expect(fg.teamSeasonIds).toEqual(['11', '12']);
+      expect(fg.umpireIds).toEqual(['5']);
+    });
+
+    it('omits fixedGames when no matchups are provided', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+      schedulerRepo.listSeasonGames.mockResolvedValue([makeGame(999n, 55n, 11n, 12n)]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      expect(spec.fixedGames).toBeUndefined();
+    });
+
+    it('omits fieldId from fixedGame when game has no field assigned', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+      schedulerRepo.listSeasonGames.mockResolvedValue([
+        {
+          ...makeGame(999n, 55n, 11n, 12n),
+          gamedate: new Date('2026-04-06T13:00:00.000Z'),
+          fieldid: null,
+          umpire1: null,
+          umpire2: null,
+          umpire3: null,
+          umpire4: null,
+        } as ReturnType<typeof makeGame>,
+      ]);
+
+      const matchup = {
+        id: 'rr-1',
+        leagueSeasonId: '55',
+        homeTeamSeasonId: '11',
+        visitorTeamSeasonId: '12',
+        requiredUmpires: 2,
+      };
+
+      const request: SchedulerSeasonSolveRequest = {
+        matchups: [matchup],
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      expect(spec.fixedGames).toBeDefined();
+      expect(spec.fixedGames![0]!.fieldId).toBeUndefined();
+      expect(spec.fixedGames![0]!.umpireIds).toBeUndefined();
     });
   });
 

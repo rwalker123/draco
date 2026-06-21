@@ -2,6 +2,8 @@
 
 import { useRef, useState, useEffect } from 'react';
 import type {
+  SchedulerLeagueExclusion,
+  SchedulerLeagueExclusionUpsert,
   SchedulerSeasonExclusion,
   SchedulerSeasonExclusionUpsert,
   SchedulerTeamExclusion,
@@ -31,6 +33,15 @@ interface ConstraintOps {
     input: SchedulerTeamExclusionUpsert,
   ) => Promise<SchedulerTeamExclusion>;
   deleteTeamExclusion: (id: string) => Promise<void>;
+  listLeagueExclusions: SignalFn<SchedulerLeagueExclusion[]>;
+  createLeagueExclusion: (
+    input: SchedulerLeagueExclusionUpsert,
+  ) => Promise<SchedulerLeagueExclusion>;
+  updateLeagueExclusion: (
+    id: string,
+    input: SchedulerLeagueExclusionUpsert,
+  ) => Promise<SchedulerLeagueExclusion>;
+  deleteLeagueExclusion: (id: string) => Promise<void>;
   listUmpireExclusions: SignalFn<SchedulerUmpireExclusion[]>;
   createUmpireExclusion: (
     input: SchedulerUmpireExclusionUpsert,
@@ -55,6 +66,10 @@ export const useSeasonSchedulerConstraintHandlers = ({
   createTeamExclusion,
   updateTeamExclusion,
   deleteTeamExclusion,
+  listLeagueExclusions,
+  createLeagueExclusion,
+  updateLeagueExclusion,
+  deleteLeagueExclusion,
   listUmpireExclusions,
   createUmpireExclusion,
   updateUmpireExclusion,
@@ -64,16 +79,19 @@ export const useSeasonSchedulerConstraintHandlers = ({
 }: ConstraintOps) => {
   const listSeasonExclusionsRef = useRef(listSeasonExclusions);
   const listTeamExclusionsRef = useRef(listTeamExclusions);
+  const listLeagueExclusionsRef = useRef(listLeagueExclusions);
   const listUmpireExclusionsRef = useRef(listUmpireExclusions);
 
   useEffect(() => {
     listSeasonExclusionsRef.current = listSeasonExclusions;
     listTeamExclusionsRef.current = listTeamExclusions;
+    listLeagueExclusionsRef.current = listLeagueExclusions;
     listUmpireExclusionsRef.current = listUmpireExclusions;
-  }, [listSeasonExclusions, listTeamExclusions, listUmpireExclusions]);
+  }, [listSeasonExclusions, listTeamExclusions, listLeagueExclusions, listUmpireExclusions]);
 
   const [seasonExclusions, setSeasonExclusions] = useState<SchedulerSeasonExclusion[]>([]);
   const [teamExclusions, setTeamExclusions] = useState<SchedulerTeamExclusion[]>([]);
+  const [leagueExclusions, setLeagueExclusions] = useState<SchedulerLeagueExclusion[]>([]);
   const [umpireExclusions, setUmpireExclusions] = useState<SchedulerUmpireExclusion[]>([]);
 
   useEffect(() => {
@@ -82,15 +100,17 @@ export const useSeasonSchedulerConstraintHandlers = ({
     const controller = new AbortController();
 
     const doLoad = async () => {
-      const [nextSeasonExcl, nextTeamExcl, nextUmpireExcl] = await Promise.all([
+      const [nextSeasonExcl, nextTeamExcl, nextLeagueExcl, nextUmpireExcl] = await Promise.all([
         listSeasonExclusionsRef.current(controller.signal),
         listTeamExclusionsRef.current(controller.signal),
+        listLeagueExclusionsRef.current(controller.signal),
         listUmpireExclusionsRef.current(controller.signal),
       ]);
 
       if (controller.signal.aborted) return;
       setSeasonExclusions(nextSeasonExcl);
       setTeamExclusions(nextTeamExcl);
+      setLeagueExclusions(nextLeagueExcl);
       setUmpireExclusions(nextUmpireExcl);
     };
 
@@ -112,6 +132,11 @@ export const useSeasonSchedulerConstraintHandlers = ({
   const reloadTeamExclusions = async () => {
     if (!seasonId) return;
     setTeamExclusions(await listTeamExclusionsRef.current());
+  };
+
+  const reloadLeagueExclusions = async () => {
+    if (!seasonId) return;
+    setLeagueExclusions(await listLeagueExclusionsRef.current());
   };
 
   const reloadUmpireExclusions = async () => {
@@ -193,6 +218,43 @@ export const useSeasonSchedulerConstraintHandlers = ({
     }
   };
 
+  const handleCreateLeagueExclusion = async (input: SchedulerLeagueExclusionUpsert) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await createLeagueExclusion(input);
+      setSuccess('League exclusion created');
+      await reloadLeagueExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save league exclusion');
+      throw err;
+    }
+  };
+
+  const handleEditLeagueExclusion = async (
+    exclusionId: string,
+    input: SchedulerLeagueExclusionUpsert,
+  ) => {
+    try {
+      if (!seasonId) throw new Error('Missing current season');
+      await updateLeagueExclusion(exclusionId, input);
+      setSuccess('League exclusion updated');
+      await reloadLeagueExclusions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save league exclusion');
+      throw err;
+    }
+  };
+
+  const handleDeleteLeagueExclusion = async (exclusion: SchedulerLeagueExclusion) => {
+    try {
+      await deleteLeagueExclusion(exclusion.id);
+      await reloadLeagueExclusions();
+      setSuccess('League exclusion deleted');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete league exclusion');
+    }
+  };
+
   const handleCreateUmpireExclusion = async (input: SchedulerUmpireExclusionUpsert) => {
     try {
       if (!seasonId) throw new Error('Missing current season');
@@ -233,6 +295,7 @@ export const useSeasonSchedulerConstraintHandlers = ({
   return {
     seasonExclusions,
     teamExclusions,
+    leagueExclusions,
     umpireExclusions,
     handleCreateSeasonExclusion,
     handleEditSeasonExclusion,
@@ -240,6 +303,9 @@ export const useSeasonSchedulerConstraintHandlers = ({
     handleCreateTeamExclusion,
     handleEditTeamExclusion,
     handleDeleteTeamExclusion,
+    handleCreateLeagueExclusion,
+    handleEditLeagueExclusion,
+    handleDeleteLeagueExclusion,
     handleCreateUmpireExclusion,
     handleEditUmpireExclusion,
     handleDeleteUmpireExclusion,

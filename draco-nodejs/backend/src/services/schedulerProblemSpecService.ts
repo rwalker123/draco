@@ -5,6 +5,7 @@ import type {
   SchedulerSeasonWindowConfig,
   SchedulerSeasonExclusion,
   SchedulerTeamExclusion,
+  SchedulerLeagueExclusion,
   SchedulerUmpireExclusion,
   SchedulerTeam,
   SchedulerField,
@@ -13,6 +14,7 @@ import type {
   SchedulerFieldSlot,
   SchedulerSeasonSolveRequest,
   SchedulerConstraints,
+  SchedulerFixedGame,
 } from '@draco/shared-schemas';
 import type { availablefields, fieldopenhours, fieldcloseddates } from '#prisma/client';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
@@ -23,12 +25,14 @@ import type { ISchedulerSeasonConfigRepository } from '../repositories/interface
 import type { ISchedulerSeasonLeagueSelectionsRepository } from '../repositories/interfaces/ISchedulerSeasonLeagueSelectionsRepository.js';
 import type { ISchedulerSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerSeasonExclusionsRepository.js';
 import type { ISchedulerTeamSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerTeamSeasonExclusionsRepository.js';
+import type { ISchedulerLeagueSeasonExclusionsRepository } from '../repositories/interfaces/ISchedulerLeagueSeasonExclusionsRepository.js';
 import type { ISchedulerUmpireExclusionsRepository } from '../repositories/interfaces/ISchedulerUmpireExclusionsRepository.js';
 import { NotFoundError, ValidationError } from '../utils/customErrors.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { SchedulerSeasonWindowConfigResponseFormatter } from '../responseFormatters/schedulerSeasonWindowConfigResponseFormatter.js';
 import { SchedulerSeasonExclusionResponseFormatter } from '../responseFormatters/schedulerSeasonExclusionResponseFormatter.js';
 import { SchedulerTeamExclusionResponseFormatter } from '../responseFormatters/schedulerTeamExclusionResponseFormatter.js';
+import { SchedulerLeagueExclusionResponseFormatter } from '../responseFormatters/schedulerLeagueExclusionResponseFormatter.js';
 import { SchedulerUmpireExclusionResponseFormatter } from '../responseFormatters/schedulerUmpireExclusionResponseFormatter.js';
 import { DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES } from '../constants/fieldConstants.js';
 
@@ -71,6 +75,7 @@ export class SchedulerProblemSpecService {
     private readonly schedulerSeasonLeagueSelectionsRepository: ISchedulerSeasonLeagueSelectionsRepository = RepositoryFactory.getSchedulerSeasonLeagueSelectionsRepository(),
     private readonly schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository = RepositoryFactory.getSchedulerSeasonExclusionsRepository(),
     private readonly schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository = RepositoryFactory.getSchedulerTeamSeasonExclusionsRepository(),
+    private readonly schedulerLeagueSeasonExclusionsRepository: ISchedulerLeagueSeasonExclusionsRepository = RepositoryFactory.getSchedulerLeagueSeasonExclusionsRepository(),
     private readonly schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository = RepositoryFactory.getSchedulerUmpireExclusionsRepository(),
   ) {}
 
@@ -166,9 +171,11 @@ export class SchedulerProblemSpecService {
         fieldSlots: base.fieldSlots,
         seasonExclusions: base.seasonExclusions,
         teamExclusions: base.teamExclusions,
+        leagueExclusions: base.leagueExclusions,
         umpireExclusions: base.umpireExclusions,
         umpireAvailability: undefined,
         teamBlackouts: undefined,
+        fixedGames: request.matchups && request.matchups.length > 0 ? base.fixedGames : undefined,
         constraints: constraintsWithDefaults,
         objectives: request.objectives,
         runId: undefined,
@@ -210,7 +217,9 @@ export class SchedulerProblemSpecService {
       seasonWindowConfig: SchedulerSeasonWindowConfig;
       seasonExclusions: SchedulerSeasonExclusion[];
       teamExclusions: SchedulerTeamExclusion[];
+      leagueExclusions: SchedulerLeagueExclusion[];
       umpireExclusions: SchedulerUmpireExclusion[];
+      fixedGames: SchedulerFixedGame[];
     }
   > {
     const account = await this.schedulerRepo.findAccount(accountId);
@@ -239,6 +248,7 @@ export class SchedulerProblemSpecService {
       leagueSelectionRecords,
       seasonExclusionRecords,
       teamExclusionRecords,
+      leagueExclusionRecords,
       umpireExclusionRecords,
     ] = await Promise.all([
       this.schedulerRepo.listSeasonTeams(seasonId),
@@ -251,6 +261,7 @@ export class SchedulerProblemSpecService {
       this.schedulerSeasonLeagueSelectionsRepository.listForSeason(accountId, seasonId),
       this.schedulerSeasonExclusionsRepository.listForSeason(accountId, seasonId),
       this.schedulerTeamSeasonExclusionsRepository.listForSeason(accountId, seasonId),
+      this.schedulerLeagueSeasonExclusionsRepository.listForSeason(accountId, seasonId),
       this.schedulerUmpireExclusionsRepository.listForSeason(accountId, seasonId),
     ]);
 
@@ -335,6 +346,8 @@ export class SchedulerProblemSpecService {
       SchedulerSeasonExclusionResponseFormatter.formatExclusions(seasonExclusionRecords).exclusions;
     const teamExclusions =
       SchedulerTeamExclusionResponseFormatter.formatExclusions(teamExclusionRecords).exclusions;
+    const leagueExclusions =
+      SchedulerLeagueExclusionResponseFormatter.formatExclusions(leagueExclusionRecords).exclusions;
     const umpireExclusions =
       SchedulerUmpireExclusionResponseFormatter.formatExclusions(umpireExclusionRecords).exclusions;
 
@@ -342,6 +355,23 @@ export class SchedulerProblemSpecService {
       fieldSlots,
       seasonExclusions,
     );
+
+    const fixedGameDurationMinutes = seasonConfig.gameDurations?.defaultMinutes ?? 60;
+    const fixedGames: SchedulerFixedGame[] = games.map((game) => {
+      const start = game.gamedate;
+      const end = new Date(start.getTime() + fixedGameDurationMinutes * 60000);
+      const umpireIds = [game.umpire1, game.umpire2, game.umpire3, game.umpire4]
+        .filter((u): u is bigint => u !== null && u !== undefined)
+        .map((u) => u.toString());
+      return {
+        fieldId:
+          game.fieldid !== null && game.fieldid !== undefined ? game.fieldid.toString() : undefined,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        teamSeasonIds: [game.hteamid.toString(), game.vteamid.toString()],
+        umpireIds: umpireIds.length > 0 ? umpireIds : undefined,
+      };
+    });
 
     return {
       season: seasonConfig,
@@ -353,8 +383,10 @@ export class SchedulerProblemSpecService {
       seasonWindowConfig,
       seasonExclusions,
       teamExclusions,
+      leagueExclusions,
       umpireExclusions,
       timeZoneId,
+      fixedGames,
     };
   }
 

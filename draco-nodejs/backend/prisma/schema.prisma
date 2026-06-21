@@ -44,6 +44,7 @@ model accounts {
   schedulerseasonleagueselections schedulerseasonleagueselections[]
   schedulerseasonexclusions schedulerseasonexclusions[]
   schedulerteamseasonexclusions schedulerteamseasonexclusions[]
+  schedulerleagueseasonexclusions schedulerleagueseasonexclusions[]
   schedulerumpireexclusions schedulerumpireexclusions[]
   schedulerapplyauditlog schedulerapplyauditlog[]
   contactroles              contactroles[]
@@ -477,6 +478,27 @@ model schedulerteamseasonexclusions {
   @@index([accountid], map: "idx_schedulerteamseasonexclusions_accountid")
   @@index([seasonid], map: "idx_schedulerteamseasonexclusions_seasonid")
   @@index([teamseasonid], map: "idx_schedulerteamseasonexclusions_teamseasonid")
+}
+
+model schedulerleagueseasonexclusions {
+  id             BigInt   @id @default(autoincrement())
+  accountid      BigInt
+  seasonid       BigInt
+  leagueseasonid BigInt
+  starttime      DateTime @db.Timestamptz(6)
+  endtime        DateTime @db.Timestamptz(6)
+  note           String?  @db.VarChar(255)
+  enabled        Boolean  @default(true)
+  createdat      DateTime @default(now()) @db.Timestamptz(6)
+  updatedat      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  accounts     accounts     @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_schedulerleagueseasonexclusions_accounts")
+  season       season       @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_schedulerleagueseasonexclusions_season")
+  leagueSeason leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_schedulerleagueseasonexclusions_leagueseason")
+
+  @@index([accountid], map: "idx_schedulerleagueseasonexclusions_accountid")
+  @@index([seasonid], map: "idx_schedulerleagueseasonexclusions_seasonid")
+  @@index([leagueseasonid], map: "idx_schedulerleagueseasonexclusions_leagueseasonid")
 }
 
 model schedulerumpireexclusions {
@@ -1376,6 +1398,7 @@ model leagueseason {
   playoffsetup   playoffsetup[]
   teamsseason    teamsseason[]
   schedulerseasonleagueselections schedulerseasonleagueselections[]
+  schedulerleagueseasonexclusions schedulerleagueseasonexclusions[]
 
   @@unique([leagueid, seasonid], map: "league_season")
 }
@@ -1693,6 +1716,7 @@ model season {
   schedulerseasonleagueselections schedulerseasonleagueselections[]
   schedulerseasonexclusions schedulerseasonexclusions[]
   schedulerteamseasonexclusions schedulerteamseasonexclusions[]
+  schedulerleagueseasonexclusions schedulerleagueseasonexclusions[]
   schedulerumpireexclusions schedulerumpireexclusions[]
   schedulerapplyauditlog schedulerapplyauditlog[]
   accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_season_accounts")

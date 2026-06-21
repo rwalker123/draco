@@ -152,15 +152,9 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
 
   return (
     <>
-      <Box>
-        <Typography variant="subtitle2">Proposal</Typography>
-        {!proposal && (
-          <Typography variant="body2" color="text.secondary">
-            Generate a proposal to see suggested assignments.
-          </Typography>
-        )}
-
-        {proposal && (
+      {proposal && (
+        <Box>
+          <Typography variant="subtitle2">Proposal</Typography>
           <Box sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary">
               Status: {proposal.status}. Scheduled {proposal.metrics.scheduledGames}/
@@ -279,8 +273,8 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
               </Box>
             )}
           </Box>
-        )}
-      </Box>
+        </Box>
+      )}
 
       {loading && (
         <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>

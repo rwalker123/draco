@@ -46,6 +46,7 @@ import { SchedulerSeasonApplyService } from './schedulerSeasonApplyService.js';
 import { SchedulerSeasonWindowConfigService } from './schedulerSeasonWindowConfigService.js';
 import { SchedulerSeasonExclusionsService } from './schedulerSeasonExclusionsService.js';
 import { SchedulerTeamSeasonExclusionsService } from './schedulerTeamSeasonExclusionsService.js';
+import { SchedulerLeagueSeasonExclusionsService } from './schedulerLeagueSeasonExclusionsService.js';
 import { SchedulerUmpireExclusionsService } from './schedulerUmpireExclusionsService.js';
 import { SchedulerMatchupGenerationService } from './schedulerMatchupGenerationService.js';
 import { SchedulerMatchupGeneratorService } from './schedulerMatchupGeneratorService.js';
@@ -161,6 +162,7 @@ export class ServiceFactory {
   private static schedulerSeasonWindowConfigService: SchedulerSeasonWindowConfigService;
   private static schedulerSeasonExclusionsService: SchedulerSeasonExclusionsService;
   private static schedulerTeamSeasonExclusionsService: SchedulerTeamSeasonExclusionsService;
+  private static schedulerLeagueSeasonExclusionsService: SchedulerLeagueSeasonExclusionsService;
   private static schedulerUmpireExclusionsService: SchedulerUmpireExclusionsService;
   private static schedulerMatchupGenerationService: SchedulerMatchupGenerationService;
   private static schedulerMatchupGeneratorService: SchedulerMatchupGeneratorService;
@@ -540,6 +542,14 @@ export class ServiceFactory {
     }
 
     return this.schedulerTeamSeasonExclusionsService;
+  }
+
+  static getSchedulerLeagueSeasonExclusionsService(): SchedulerLeagueSeasonExclusionsService {
+    if (!this.schedulerLeagueSeasonExclusionsService) {
+      this.schedulerLeagueSeasonExclusionsService = new SchedulerLeagueSeasonExclusionsService();
+    }
+
+    return this.schedulerLeagueSeasonExclusionsService;
   }
 
   static getSchedulerUmpireExclusionsService(): SchedulerUmpireExclusionsService {

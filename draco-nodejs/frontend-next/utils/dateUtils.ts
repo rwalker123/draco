@@ -435,6 +435,45 @@ export const formatDateOfBirth = (dateString: string | null): string => {
   }
 };
 
+const ordinalSuffix = (day: number): string => {
+  const mod100 = day % 100;
+  if (mod100 >= 11 && mod100 <= 13) {
+    return 'th';
+  }
+  switch (day % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+};
+
+/**
+ * Format a date-only string (YYYY-MM-DD) as a long date with an ordinal day,
+ * e.g. "May 5th, 2026". Parses in UTC to avoid timezone-driven off-by-one shifts.
+ */
+export const formatDateLongWithOrdinal = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateString);
+  if (!match) return dateString;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  const monthName = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    timeZone: 'UTC',
+  }).format(utcDate);
+
+  return `${monthName} ${day}${ordinalSuffix(day)}, ${year}`;
+};
+
 /**
  * Calculate age from birth date
  */
