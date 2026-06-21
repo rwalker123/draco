@@ -187,8 +187,10 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     seasonEndDate !== (seasonWindowConfig?.endDate ?? '');
 
   const savedLeagueSeasonIds = seasonWindowConfig?.leagueSeasonIds ?? [];
+  const dirtyLeagueBaseline =
+    savedLeagueSeasonIds.length > 0 ? savedLeagueSeasonIds : allLeagueSeasonIds;
   const leagueSelectionDirty =
-    savedLeagueSeasonIds.length > 0 && !sameIdSet(selectedLeagueSeasonIds, savedLeagueSeasonIds);
+    allLeagueSeasonIds.length > 0 && !sameIdSet(selectedLeagueSeasonIds, dirtyLeagueBaseline);
 
   const assignments = proposal?.assignments ?? [];
   const selectedMode: SchedulerSeasonApplyRequest['mode'] =

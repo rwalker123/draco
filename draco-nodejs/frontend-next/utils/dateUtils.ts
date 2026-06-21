@@ -382,6 +382,34 @@ export function endOfDayInTimezone(date: Date, timeZone: string): Date {
   return new Date(lastSecond.getTime() + 999);
 }
 
+export function dateKeyToInstantInTimezone(
+  dateKey: string,
+  timeZone: string,
+  boundary: 'start' | 'end',
+): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) {
+    return new Date(NaN);
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (boundary === 'start') {
+    return convertZonedPartsToUTCDate(
+      { year, month, day, hour: 0, minute: 0, second: 0 },
+      timeZone,
+    );
+  }
+
+  const lastSecond = convertZonedPartsToUTCDate(
+    { year, month, day, hour: 23, minute: 59, second: 59 },
+    timeZone,
+  );
+  return new Date(lastSecond.getTime() + 999);
+}
+
 /**
  * Checks if a date value is valid
  * @param dateValue - Date value to validate
