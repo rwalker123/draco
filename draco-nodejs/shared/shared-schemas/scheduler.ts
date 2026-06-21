@@ -422,9 +422,10 @@ export const SchedulerFixedGameSchema = z
     fieldId: schedulerIdSchema.optional(),
     startTime: isoDateTimeSchema,
     endTime: isoDateTimeSchema,
-    teamSeasonIds: schedulerIdSchema.array(),
+    teamSeasonIds: schedulerIdSchema.array().length(2),
     umpireIds: schedulerIdSchema.array().optional(),
   })
+  .superRefine(leagueExclusionRefinement)
   .openapi({
     title: 'SchedulerFixedGame',
     description:
