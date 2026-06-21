@@ -632,8 +632,10 @@ describe('SchedulerProblemSpecService', () => {
   });
 
   describe('buildProblemSpec — fixedGames population', () => {
-    it('populates fixedGames when matchups are provided', async () => {
-      schedulerRepo.listAccountFields.mockResolvedValue([makeField(100n)]);
+    it('populates fixedGames using the assigned field game length when matchups are provided', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([
+        makeField(100n, { gamelengthminutes: 90 }),
+      ]);
       schedulerRepo.listSeasonGames.mockResolvedValue([
         {
           ...makeGame(999n, 55n, 11n, 12n),
@@ -666,10 +668,46 @@ describe('SchedulerProblemSpecService', () => {
 
       const fg = spec.fixedGames![0]!;
       expect(fg.startTime).toBe('2026-04-06T13:00:00.000Z');
-      expect(fg.endTime).toBe('2026-04-06T14:00:00.000Z');
+      expect(fg.endTime).toBe('2026-04-06T14:30:00.000Z');
       expect(fg.fieldId).toBe('100');
       expect(fg.teamSeasonIds).toEqual(['11', '12']);
       expect(fg.umpireIds).toEqual(['5']);
+    });
+
+    it('falls back to the default scheduler game length when the field has no configured length', async () => {
+      schedulerRepo.listAccountFields.mockResolvedValue([
+        makeField(100n, { gamelengthminutes: null }),
+      ]);
+      schedulerRepo.listSeasonGames.mockResolvedValue([
+        {
+          ...makeGame(999n, 55n, 11n, 12n),
+          gamedate: new Date('2026-04-06T13:00:00.000Z'),
+          fieldid: 100n,
+          umpire1: null,
+          umpire2: null,
+          umpire3: null,
+          umpire4: null,
+        } as ReturnType<typeof makeGame>,
+      ]);
+
+      const request: SchedulerSeasonSolveRequest = {
+        matchups: [
+          {
+            id: 'rr-1',
+            leagueSeasonId: '55',
+            homeTeamSeasonId: '11',
+            visitorTeamSeasonId: '12',
+            requiredUmpires: 0,
+          },
+        ],
+        objectives: { primary: 'maximize_scheduled_games' },
+      };
+
+      const spec = await service.buildProblemSpec(accountId, seasonId, request);
+
+      const fg = spec.fixedGames![0]!;
+      expect(fg.startTime).toBe('2026-04-06T13:00:00.000Z');
+      expect(fg.endTime).toBe('2026-04-06T15:45:00.000Z');
     });
 
     it('omits fixedGames when no matchups are provided', async () => {

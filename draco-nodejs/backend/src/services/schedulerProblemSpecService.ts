@@ -358,19 +358,28 @@ export class SchedulerProblemSpecService {
       seasonExclusions,
     );
 
-    const fixedGameDurationMinutes = seasonConfig.gameDurations?.defaultMinutes ?? 60;
+    const fieldGameLengthById = new Map(
+      fields.map((field) => [
+        field.id.toString(),
+        this.computeFieldGameLengthMinutes(field, seasonConfig),
+      ]),
+    );
     const fixedGames: SchedulerFixedGame[] = includeFixedGames
       ? games.map((game) => {
+          const fieldId =
+            game.fieldid !== null && game.fieldid !== undefined
+              ? game.fieldid.toString()
+              : undefined;
+          const durationMinutes =
+            (fieldId !== undefined ? fieldGameLengthById.get(fieldId) : undefined) ??
+            DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES;
           const start = game.gamedate;
-          const end = new Date(start.getTime() + fixedGameDurationMinutes * 60000);
+          const end = new Date(start.getTime() + durationMinutes * 60000);
           const umpireIds = [game.umpire1, game.umpire2, game.umpire3, game.umpire4]
             .filter((u): u is bigint => u !== null && u !== undefined)
             .map((u) => u.toString());
           return {
-            fieldId:
-              game.fieldid !== null && game.fieldid !== undefined
-                ? game.fieldid.toString()
-                : undefined,
+            fieldId,
             startTime: start.toISOString(),
             endTime: end.toISOString(),
             teamSeasonIds: [game.hteamid.toString(), game.vteamid.toString()],
@@ -441,6 +450,22 @@ export class SchedulerProblemSpecService {
     return map;
   }
 
+  private computeFieldGameLengthMinutes(
+    field: availablefields,
+    seasonConfig: SchedulerSeasonConfig,
+  ): number {
+    const durationCandidates: number[] = [];
+    if (seasonConfig.gameDurations?.defaultMinutes !== undefined) {
+      durationCandidates.push(seasonConfig.gameDurations.defaultMinutes);
+    }
+    if (field.gamelengthminutes !== null && field.gamelengthminutes !== undefined) {
+      durationCandidates.push(field.gamelengthminutes);
+    }
+    return durationCandidates.length > 0
+      ? Math.min(...durationCandidates)
+      : DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES;
+  }
+
   private generateFieldSlots(
     fields: availablefields[],
     openHoursByFieldId: Map<
@@ -467,17 +492,7 @@ export class SchedulerProblemSpecService {
 
       const openHoursByDayOfWeek = new Map(fieldOpenHours.map((entry) => [entry.dayOfWeek, entry]));
 
-      const durationCandidates: number[] = [];
-      if (seasonConfig.gameDurations?.defaultMinutes !== undefined) {
-        durationCandidates.push(seasonConfig.gameDurations.defaultMinutes);
-      }
-      if (field.gamelengthminutes !== null && field.gamelengthminutes !== undefined) {
-        durationCandidates.push(field.gamelengthminutes);
-      }
-      const gameLength =
-        durationCandidates.length > 0
-          ? Math.min(...durationCandidates)
-          : DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES;
+      const gameLength = this.computeFieldGameLengthMinutes(field, seasonConfig);
 
       const bufferMinutes = field.bufferminutes ?? 0;
       const spacing = Math.max(1, Math.floor(gameLength + bufferMinutes));
