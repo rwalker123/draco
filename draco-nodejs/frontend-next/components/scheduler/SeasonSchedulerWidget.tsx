@@ -1,18 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Alert,
-  Box,
-  Button,
-  Divider,
-  Typography,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import WidgetShell from '../ui/WidgetShell';
+import { Alert, Box, Button, Divider, Typography } from '@mui/material';
 import type {
   SchedulerGameRequest,
   SchedulerGenerateMatchupsRequest,
@@ -470,182 +459,149 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const filterLabel = filterLabelParts.length ? `Filter: ${filterLabelParts.join(', ')}` : null;
 
   return (
-    <WidgetShell accent="primary" disablePadding sx={{ mb: 3 }}>
-      <Accordion
-        disableGutters
-        elevation={0}
-        square
-        sx={{ backgroundColor: 'transparent', '&:before': { display: 'none' } }}
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 1,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
       >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="scheduler-content"
-          id="scheduler-header"
-          sx={{
-            px: 3,
-            py: 1.5,
-            '& .MuiAccordionSummary-content': {
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 1,
-              my: 0,
-            },
-          }}
+        <Button
+          variant="text"
+          size="small"
+          onClick={handlePreviewProblemSpec}
+          disabled={
+            !seasonId ||
+            !seasonWindowConfig ||
+            (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+          }
         >
-          <Typography variant="h6" fontWeight={700}>
-            Schedule Generator
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Generate a round-robin schedule around your existing games, then review and apply.
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 1,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}
-          >
-            <Button
-              variant="text"
-              size="small"
-              onClick={handlePreviewProblemSpec}
-              disabled={
-                !seasonId ||
-                !seasonWindowConfig ||
-                (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
-              }
-            >
-              Inspect Inputs
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleGenerateMatchups}
-              disabled={
-                !seasonId ||
-                !seasonWindowConfig ||
-                (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
-              }
-            >
-              Generate Schedule
-            </Button>
-          </Box>
+          Inspect Inputs
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleGenerateMatchups}
+          disabled={
+            !seasonId ||
+            !seasonWindowConfig ||
+            (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+          }
+        >
+          Generate Schedule
+        </Button>
+      </Box>
 
-          {filterLabel && (
-            <Typography variant="caption" color="text.secondary">
-              {filterLabel}
-            </Typography>
-          )}
+      {filterLabel && (
+        <Typography variant="caption" color="text.secondary">
+          {filterLabel}
+        </Typography>
+      )}
 
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }} onClose={clearError}>
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }} onClose={clearError}>
+          {error}
+        </Alert>
+      )}
 
-          <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2 }} />
 
-          <SeasonSchedulerConfigPanel
-            accountId={accountId}
-            seasonId={seasonId}
-            timeZone={timeZone}
-            seasonWindowConfig={seasonWindowConfig}
-            seasonStartDate={seasonStartDate}
-            seasonEndDate={seasonEndDate}
-            seasonExclusions={constraints.seasonExclusions}
-            teams={teams}
-            teamNameById={teamNameById}
-            teamExclusions={constraints.teamExclusions}
-            leagueExclusions={constraints.leagueExclusions}
-            leagues={leagues}
-            selectedLeagueSeasonIds={selectedLeagueSeasonIds}
-            leagueSeasonIdFilter={leagueSeasonIdFilter}
-            leagueSeasonSelection={leagueSeasonSelection}
-            leagueNameById={leagueNameById}
-            roundRobinCounts={roundRobinCounts}
-            dirty={seasonDatesDirty}
-            leaguesDirty={leagueSelectionDirty}
-            saving={loading}
-            onSeasonStartDateChange={setSeasonStartDate}
-            onSeasonEndDateChange={setSeasonEndDate}
-            onLeagueSelectionChange={setLeagueSeasonSelection}
-            onRoundRobinCountsChange={setRoundRobinCounts}
-            onCancel={handleCancelSeasonDatesEdits}
-            onLeaguesCancel={handleCancelLeagueEdits}
-            onSave={() => {
-              handleSaveSeasonWindow()
-                .then(() => setSuccess('Scheduler settings saved'))
-                .catch((err) =>
-                  setError(err instanceof Error ? err.message : 'Failed to save season window'),
-                );
-            }}
-            onCreateSeasonExclusion={constraints.handleCreateSeasonExclusion}
-            onEditSeasonExclusion={constraints.handleEditSeasonExclusion}
-            onDeleteSeasonExclusion={constraints.handleDeleteSeasonExclusion}
-            onCreateTeamExclusion={constraints.handleCreateTeamExclusion}
-            onEditTeamExclusion={constraints.handleEditTeamExclusion}
-            onDeleteTeamExclusion={constraints.handleDeleteTeamExclusion}
-            onCreateLeagueExclusion={constraints.handleCreateLeagueExclusion}
-            onEditLeagueExclusion={constraints.handleEditLeagueExclusion}
-            onDeleteLeagueExclusion={constraints.handleDeleteLeagueExclusion}
-          />
+      <SeasonSchedulerConfigPanel
+        accountId={accountId}
+        seasonId={seasonId}
+        timeZone={timeZone}
+        seasonWindowConfig={seasonWindowConfig}
+        seasonStartDate={seasonStartDate}
+        seasonEndDate={seasonEndDate}
+        seasonExclusions={constraints.seasonExclusions}
+        teams={teams}
+        teamNameById={teamNameById}
+        teamExclusions={constraints.teamExclusions}
+        leagueExclusions={constraints.leagueExclusions}
+        leagues={leagues}
+        selectedLeagueSeasonIds={selectedLeagueSeasonIds}
+        leagueSeasonIdFilter={leagueSeasonIdFilter}
+        leagueSeasonSelection={leagueSeasonSelection}
+        leagueNameById={leagueNameById}
+        roundRobinCounts={roundRobinCounts}
+        dirty={seasonDatesDirty}
+        leaguesDirty={leagueSelectionDirty}
+        saving={loading}
+        onSeasonStartDateChange={setSeasonStartDate}
+        onSeasonEndDateChange={setSeasonEndDate}
+        onLeagueSelectionChange={setLeagueSeasonSelection}
+        onRoundRobinCountsChange={setRoundRobinCounts}
+        onCancel={handleCancelSeasonDatesEdits}
+        onLeaguesCancel={handleCancelLeagueEdits}
+        onSave={() => {
+          handleSaveSeasonWindow()
+            .then(() => setSuccess('Scheduler settings saved'))
+            .catch((err) =>
+              setError(err instanceof Error ? err.message : 'Failed to save season window'),
+            );
+        }}
+        onCreateSeasonExclusion={constraints.handleCreateSeasonExclusion}
+        onEditSeasonExclusion={constraints.handleEditSeasonExclusion}
+        onDeleteSeasonExclusion={constraints.handleDeleteSeasonExclusion}
+        onCreateTeamExclusion={constraints.handleCreateTeamExclusion}
+        onEditTeamExclusion={constraints.handleEditTeamExclusion}
+        onDeleteTeamExclusion={constraints.handleDeleteTeamExclusion}
+        onCreateLeagueExclusion={constraints.handleCreateLeagueExclusion}
+        onEditLeagueExclusion={constraints.handleEditLeagueExclusion}
+        onDeleteLeagueExclusion={constraints.handleDeleteLeagueExclusion}
+      />
 
-          <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2 }} />
 
-          <SchedulerFieldsConfig
-            accountId={accountId}
-            fields={fields}
-            setSuccess={setSuccess}
-            setError={setError}
-          />
+      <SchedulerFieldsConfig
+        accountId={accountId}
+        fields={fields}
+        setSuccess={setSuccess}
+        setError={setError}
+      />
 
-          <SchedulerUmpiresConfig
-            seasonId={seasonId}
-            timeZone={timeZone}
-            scheduleUmpires={scheduleUmpires}
-            umpiresPerGame={umpiresPerGame}
-            maxGamesPerUmpirePerDayInput={maxGamesPerUmpirePerDayInput}
-            umpires={umpires}
-            umpireNameById={umpireNameById}
-            umpireExclusions={constraints.umpireExclusions}
-            loading={loading}
-            onScheduleUmpiresChange={handleScheduleUmpiresChange}
-            onUmpiresPerGameChange={setUmpiresPerGame}
-            onMaxGamesPerUmpirePerDayChange={setMaxGamesPerUmpirePerDayInput}
-            onCreateUmpireExclusion={constraints.handleCreateUmpireExclusion}
-            onEditUmpireExclusion={constraints.handleEditUmpireExclusion}
-            onDeleteUmpireExclusion={constraints.handleDeleteUmpireExclusion}
-          />
+      <SchedulerUmpiresConfig
+        seasonId={seasonId}
+        timeZone={timeZone}
+        scheduleUmpires={scheduleUmpires}
+        umpiresPerGame={umpiresPerGame}
+        maxGamesPerUmpirePerDayInput={maxGamesPerUmpirePerDayInput}
+        umpires={umpires}
+        umpireNameById={umpireNameById}
+        umpireExclusions={constraints.umpireExclusions}
+        loading={loading}
+        onScheduleUmpiresChange={handleScheduleUmpiresChange}
+        onUmpiresPerGameChange={setUmpiresPerGame}
+        onMaxGamesPerUmpirePerDayChange={setMaxGamesPerUmpirePerDayInput}
+        onCreateUmpireExclusion={constraints.handleCreateUmpireExclusion}
+        onEditUmpireExclusion={constraints.handleEditUmpireExclusion}
+        onDeleteUmpireExclusion={constraints.handleDeleteUmpireExclusion}
+      />
 
-          <SeasonSchedulerProposalReview
-            proposal={proposal}
-            specPreview={specPreview}
-            specPreviewOpen={specPreviewOpen}
-            loading={loading}
-            timeZone={timeZone}
-            selectedGameIds={selectedGameIds}
-            fields={fields}
-            umpires={umpires}
-            maxUmpires={umpiresPerGame}
-            fieldNameById={fieldNameById}
-            teamNameById={teamNameById}
-            umpireNameById={umpireNameById}
-            leagueNameById={leagueNameById}
-            generatedMatchups={generatedMatchups}
-            getGameSummaryLabel={getGameSummaryLabel}
-            onToggleSelection={handleToggleSelection}
-            onToggleAll={handleToggleAll}
-            onApply={handleApply}
-            onAssignmentChange={handleAssignmentChange}
-            onCloseSpecPreview={() => setSpecPreviewOpen(false)}
-          />
-        </AccordionDetails>
-      </Accordion>
-    </WidgetShell>
+      <SeasonSchedulerProposalReview
+        proposal={proposal}
+        specPreview={specPreview}
+        specPreviewOpen={specPreviewOpen}
+        loading={loading}
+        timeZone={timeZone}
+        selectedGameIds={selectedGameIds}
+        fields={fields}
+        umpires={umpires}
+        maxUmpires={umpiresPerGame}
+        fieldNameById={fieldNameById}
+        teamNameById={teamNameById}
+        umpireNameById={umpireNameById}
+        leagueNameById={leagueNameById}
+        generatedMatchups={generatedMatchups}
+        getGameSummaryLabel={getGameSummaryLabel}
+        onToggleSelection={handleToggleSelection}
+        onToggleAll={handleToggleAll}
+        onApply={handleApply}
+        onAssignmentChange={handleAssignmentChange}
+        onCloseSpecPreview={() => setSpecPreviewOpen(false)}
+      />
+    </>
   );
 };
