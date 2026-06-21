@@ -119,7 +119,11 @@ export const SeasonSchedulerAdapter: React.FC<SeasonSchedulerAdapterProps> = ({
             Generate a round-robin schedule around your existing games, then review and apply.
           </Typography>
         </AccordionSummary>
-        <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>
+        <AccordionDetails
+          id="scheduler-content"
+          aria-labelledby="scheduler-header"
+          sx={{ px: 3, pt: 0, pb: 3 }}
+        >
           {hasOpened ? (
             <SeasonSchedulerWidget
               key={`${accountId}:${seasonId ?? 'none'}`}
