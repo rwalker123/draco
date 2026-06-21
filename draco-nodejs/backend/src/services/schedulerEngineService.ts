@@ -1149,6 +1149,9 @@ export class SchedulerEngineService {
       if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
         continue;
       }
+      if (start.getTime() >= end.getTime()) {
+        continue;
+      }
       if (fixed.fieldId) {
         this.addBooking(fixed.fieldId, start, end, schedules.fieldSchedule);
       }

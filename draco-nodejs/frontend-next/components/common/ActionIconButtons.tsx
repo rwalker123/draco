@@ -14,7 +14,7 @@ export const EditIconButton: React.FC<BaseActionIconButtonProps> = ({
   ...props
 }) => {
   const button = (
-    <IconButton color="primary" size={size} {...props}>
+    <IconButton color="primary" size={size} aria-label={tooltipTitle} {...props}>
       <EditIcon fontSize="small" />
     </IconButton>
   );
@@ -36,7 +36,7 @@ export const DeleteIconButton: React.FC<DeleteIconButtonProps> = ({
   ...props
 }) => {
   const button = (
-    <IconButton color="error" size={size} {...props}>
+    <IconButton color="error" size={size} aria-label={tooltipTitle} {...props}>
       <DeleteIcon fontSize="small" />
     </IconButton>
   );

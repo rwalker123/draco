@@ -113,7 +113,8 @@ export class SchedulerProblemSpecService {
     seasonId: bigint,
     request: SchedulerSeasonSolveRequest,
   ): Promise<{ problemSpec: SchedulerProblemSpec; timeZoneId: string }> {
-    const base = await this.loadBaseSpecData(accountId, seasonId);
+    const hasMatchups = Boolean(request.matchups && request.matchups.length > 0);
+    const base = await this.loadBaseSpecData(accountId, seasonId, hasMatchups);
 
     const sourceGames: SchedulerGameRequest[] =
       request.matchups && request.matchups.length > 0
@@ -175,7 +176,7 @@ export class SchedulerProblemSpecService {
         umpireExclusions: base.umpireExclusions,
         umpireAvailability: undefined,
         teamBlackouts: undefined,
-        fixedGames: request.matchups && request.matchups.length > 0 ? base.fixedGames : undefined,
+        fixedGames: hasMatchups ? base.fixedGames : undefined,
         constraints: constraintsWithDefaults,
         objectives: request.objectives,
         runId: undefined,
@@ -211,6 +212,7 @@ export class SchedulerProblemSpecService {
   private async loadBaseSpecData(
     accountId: bigint,
     seasonId: bigint,
+    includeFixedGames = false,
   ): Promise<
     SchedulerProblemSpecPreview & {
       timeZoneId: string;
@@ -357,21 +359,25 @@ export class SchedulerProblemSpecService {
     );
 
     const fixedGameDurationMinutes = seasonConfig.gameDurations?.defaultMinutes ?? 60;
-    const fixedGames: SchedulerFixedGame[] = games.map((game) => {
-      const start = game.gamedate;
-      const end = new Date(start.getTime() + fixedGameDurationMinutes * 60000);
-      const umpireIds = [game.umpire1, game.umpire2, game.umpire3, game.umpire4]
-        .filter((u): u is bigint => u !== null && u !== undefined)
-        .map((u) => u.toString());
-      return {
-        fieldId:
-          game.fieldid !== null && game.fieldid !== undefined ? game.fieldid.toString() : undefined,
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
-        teamSeasonIds: [game.hteamid.toString(), game.vteamid.toString()],
-        umpireIds: umpireIds.length > 0 ? umpireIds : undefined,
-      };
-    });
+    const fixedGames: SchedulerFixedGame[] = includeFixedGames
+      ? games.map((game) => {
+          const start = game.gamedate;
+          const end = new Date(start.getTime() + fixedGameDurationMinutes * 60000);
+          const umpireIds = [game.umpire1, game.umpire2, game.umpire3, game.umpire4]
+            .filter((u): u is bigint => u !== null && u !== undefined)
+            .map((u) => u.toString());
+          return {
+            fieldId:
+              game.fieldid !== null && game.fieldid !== undefined
+                ? game.fieldid.toString()
+                : undefined,
+            startTime: start.toISOString(),
+            endTime: end.toISOString(),
+            teamSeasonIds: [game.hteamid.toString(), game.vteamid.toString()],
+            umpireIds: umpireIds.length > 0 ? umpireIds : undefined,
+          };
+        })
+      : [];
 
     return {
       season: seasonConfig,
