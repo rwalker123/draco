@@ -328,7 +328,7 @@ export class SchedulerEngineService {
       const end = new Date(exclusion.endTime);
       if (start >= end) {
         throw new ValidationError(
-          `League exclusion ${exclusion.leagueSeasonId} startTime must be before endTime`,
+          `League exclusion ${exclusion.id} (leagueSeason ${exclusion.leagueSeasonId}) startTime must be before endTime`,
         );
       }
     }

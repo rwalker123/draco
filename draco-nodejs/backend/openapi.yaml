@@ -18763,12 +18763,12 @@ components:
             generation). gameIds is ignored when matchups is provided.
         umpiresPerGame:
           type: integer
-          minimum: 1
+          minimum: 0
           maximum: 4
           example: 2
           description: Optional override for required umpire count per game. When
             provided, all games in the solve request require exactly this many
-            umpires.
+            umpires. Use 0 to skip umpire scheduling entirely.
       title: SchedulerSeasonSolveRequest
       description: DB-sourced solve request. The backend assembles
         teams/games/fields/umpires/fieldSlots from the database; the caller may

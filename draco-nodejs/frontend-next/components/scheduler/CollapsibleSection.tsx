@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Box, Collapse, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -19,6 +19,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   children,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const contentId = useId();
 
   return (
     <Box>
@@ -26,6 +27,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         component="button"
         type="button"
         onClick={() => setOpen((prev) => !prev)}
+        aria-controls={contentId}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -48,7 +50,9 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       </Box>
 
       <Collapse in={open} unmountOnExit>
-        <Box sx={{ pt: 1 }}>{children}</Box>
+        <Box id={contentId} sx={{ pt: 1 }}>
+          {children}
+        </Box>
       </Collapse>
     </Box>
   );

@@ -351,7 +351,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       const solveRequest: SchedulerSeasonSolveRequest = {
         matchups,
         objectives: { primary: 'maximize_scheduled_games' },
-        umpiresPerGame,
+        umpiresPerGame: scheduleUmpires ? umpiresPerGame : 0,
         constraints:
           maxGamesPerUmpirePerDay !== undefined
             ? { hard: { maxGamesPerUmpirePerDay: Math.floor(maxGamesPerUmpirePerDay) } }
@@ -589,7 +589,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         selectedGameIds={selectedGameIds}
         fields={fields}
         umpires={umpires}
-        maxUmpires={umpiresPerGame}
+        maxUmpires={scheduleUmpires ? umpiresPerGame : 0}
         fieldNameById={fieldNameById}
         teamNameById={teamNameById}
         umpireNameById={umpireNameById}

@@ -125,7 +125,7 @@ const seasonExclusionRefinement = (
   data: { startTime: string; endTime: string },
   ctx: z.RefinementCtx,
 ) => {
-  if (data.startTime >= data.endTime) {
+  if (new Date(data.startTime).getTime() >= new Date(data.endTime).getTime()) {
     ctx.addIssue({
       code: 'custom',
       path: ['startTime'],
@@ -168,7 +168,7 @@ const teamExclusionRefinement = (
   data: { startTime: string; endTime: string },
   ctx: z.RefinementCtx,
 ) => {
-  if (data.startTime >= data.endTime) {
+  if (new Date(data.startTime).getTime() >= new Date(data.endTime).getTime()) {
     ctx.addIssue({
       code: 'custom',
       path: ['startTime'],
@@ -211,7 +211,7 @@ const leagueExclusionRefinement = (
   data: { startTime: string; endTime: string },
   ctx: z.RefinementCtx,
 ) => {
-  if (data.startTime >= data.endTime) {
+  if (new Date(data.startTime).getTime() >= new Date(data.endTime).getTime()) {
     ctx.addIssue({
       code: 'custom',
       path: ['startTime'],
@@ -254,7 +254,7 @@ const umpireExclusionRefinement = (
   data: { startTime: string; endTime: string },
   ctx: z.RefinementCtx,
 ) => {
-  if (data.startTime >= data.endTime) {
+  if (new Date(data.startTime).getTime() >= new Date(data.endTime).getTime()) {
     ctx.addIssue({
       code: 'custom',
       path: ['startTime'],
@@ -509,10 +509,10 @@ export const SchedulerSeasonSolveRequestSchema = z
       description:
         'Optional caller-provided matchups to place instead of DB-sourced games. When present, the backend skips loading existing games and schedules exactly these matchups (used by round-robin matchup generation). gameIds is ignored when matchups is provided.',
     }),
-    umpiresPerGame: z.number().int().min(1).max(4).optional().openapi({
+    umpiresPerGame: z.number().int().min(0).max(4).optional().openapi({
       example: 2,
       description:
-        'Optional override for required umpire count per game. When provided, all games in the solve request require exactly this many umpires.',
+        'Optional override for required umpire count per game. When provided, all games in the solve request require exactly this many umpires. Use 0 to skip umpire scheduling entirely.',
     }),
   })
   .openapi({
