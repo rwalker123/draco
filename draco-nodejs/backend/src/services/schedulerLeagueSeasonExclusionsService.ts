@@ -8,11 +8,11 @@ import type { ISchedulerLeagueSeasonExclusionsRepository } from '../repositories
 import { SchedulerLeagueExclusionResponseFormatter } from '../responseFormatters/schedulerLeagueExclusionResponseFormatter.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { SchedulerValidationUtils } from '../utils/schedulerValidationUtils.js';
-import prisma from '../lib/prisma.js';
 
 export class SchedulerLeagueSeasonExclusionsService {
   private readonly exclusionsRepository: ISchedulerLeagueSeasonExclusionsRepository;
   private readonly seasonsRepository = RepositoryFactory.getSeasonsRepository();
+  private readonly leagueRepository = RepositoryFactory.getLeagueRepository();
 
   constructor() {
     this.exclusionsRepository = RepositoryFactory.getSchedulerLeagueSeasonExclusionsRepository();
@@ -126,13 +126,7 @@ export class SchedulerLeagueSeasonExclusionsService {
     leagueSeasonId: string,
   ): Promise<void> {
     const parsed = SchedulerValidationUtils.parseBigInt(leagueSeasonId, 'leagueSeasonId');
-    const leagueSeason = await prisma.leagueseason.findFirst({
-      where: {
-        id: parsed,
-        seasonid: seasonId,
-        league: { accountid: accountId },
-      },
-    });
+    const leagueSeason = await this.leagueRepository.findLeagueSeason(parsed, seasonId, accountId);
     if (!leagueSeason) {
       throw new NotFoundError('League not found in this season');
     }

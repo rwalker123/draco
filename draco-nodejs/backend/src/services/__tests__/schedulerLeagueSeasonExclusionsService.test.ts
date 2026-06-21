@@ -3,6 +3,7 @@ import { SchedulerLeagueSeasonExclusionsService } from '../schedulerLeagueSeason
 import { RepositoryFactory } from '../../repositories/repositoryFactory.js';
 import type { ISchedulerLeagueSeasonExclusionsRepository } from '../../repositories/interfaces/ISchedulerLeagueSeasonExclusionsRepository.js';
 import type { ISeasonsRepository } from '../../repositories/interfaces/ISeasonsRepository.js';
+import type { ILeagueRepository } from '../../repositories/interfaces/ILeagueRepository.js';
 import { NotFoundError } from '../../utils/customErrors.js';
 import type { schedulerleagueseasonexclusions } from '#prisma/client';
 import type { dbSeason } from '../../repositories/types/dbTypes.js';
@@ -10,14 +11,6 @@ import type { dbSeason } from '../../repositories/types/dbTypes.js';
 const accountId = 10n;
 const seasonId = 5n;
 const leagueSeasonId = 20n;
-
-vi.mock('../../lib/prisma.js', () => ({
-  default: {
-    leagueseason: {
-      findFirst: vi.fn(),
-    },
-  },
-}));
 
 const makeSeason = (): dbSeason => ({
   id: seasonId,
@@ -46,13 +39,10 @@ const makeExclusion = (
 describe('SchedulerLeagueSeasonExclusionsService', () => {
   let exclusionsRepo: Mocked<ISchedulerLeagueSeasonExclusionsRepository>;
   let seasonsRepo: Mocked<ISeasonsRepository>;
+  let leagueRepo: { findLeagueSeason: ReturnType<typeof vi.fn> };
   let service: SchedulerLeagueSeasonExclusionsService;
-  let mockPrisma: { leagueseason: { findFirst: ReturnType<typeof vi.fn> } };
 
-  beforeEach(async () => {
-    const prismaModule = await import('../../lib/prisma.js');
-    mockPrisma = prismaModule.default as unknown as typeof mockPrisma;
-
+  beforeEach(() => {
     exclusionsRepo = {
       findForAccount: vi.fn(),
       listForSeason: vi.fn(),
@@ -79,13 +69,20 @@ describe('SchedulerLeagueSeasonExclusionsService', () => {
       updateScheduleVisibility: vi.fn(),
     } as Mocked<ISeasonsRepository>;
 
+    leagueRepo = {
+      findLeagueSeason: vi.fn(),
+    };
+
     vi.spyOn(RepositoryFactory, 'getSchedulerLeagueSeasonExclusionsRepository').mockReturnValue(
       exclusionsRepo,
     );
     vi.spyOn(RepositoryFactory, 'getSeasonsRepository').mockReturnValue(seasonsRepo);
+    vi.spyOn(RepositoryFactory, 'getLeagueRepository').mockReturnValue(
+      leagueRepo as Pick<ILeagueRepository, 'findLeagueSeason'> as ILeagueRepository,
+    );
 
     seasonsRepo.findSeasonById.mockResolvedValue(makeSeason());
-    mockPrisma.leagueseason.findFirst.mockResolvedValue({
+    leagueRepo.findLeagueSeason.mockResolvedValue({
       id: leagueSeasonId,
       seasonid: seasonId,
       leagueid: 1n,
@@ -111,13 +108,14 @@ describe('SchedulerLeagueSeasonExclusionsService', () => {
         enabled: true,
       });
 
+      expect(leagueRepo.findLeagueSeason).toHaveBeenCalledWith(leagueSeasonId, seasonId, accountId);
       expect(exclusionsRepo.create).toHaveBeenCalledOnce();
       expect(result.id).toBe('8');
       expect(result.leagueSeasonId).toBe(leagueSeasonId.toString());
     });
 
     it('throws NotFoundError when leagueSeason does not belong to this account/season', async () => {
-      mockPrisma.leagueseason.findFirst.mockResolvedValue(null);
+      leagueRepo.findLeagueSeason.mockResolvedValue(null);
 
       await expect(
         service.createExclusion(accountId, seasonId, {

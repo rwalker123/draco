@@ -70,7 +70,7 @@ const saveScheduleUmpires = (accountId: string, seasonId: string, value: boolean
   try {
     window.localStorage.setItem(buildScheduleUmpiresKey(accountId, seasonId), String(value));
   } catch {
-    // ignore storage write failures
+    return;
   }
 };
 
