@@ -396,6 +396,15 @@ export function dateKeyToInstantInTimezone(
   const month = Number(match[2]);
   const day = Number(match[3]);
 
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() !== month - 1 ||
+    probe.getUTCDate() !== day
+  ) {
+    return new Date(NaN);
+  }
+
   if (boundary === 'start') {
     return convertZonedPartsToUTCDate(
       { year, month, day, hour: 0, minute: 0, second: 0 },

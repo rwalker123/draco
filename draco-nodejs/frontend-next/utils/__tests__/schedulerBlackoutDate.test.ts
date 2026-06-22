@@ -29,4 +29,9 @@ describe('dateInputToIso', () => {
   it('throws on an unparseable key (invalid instant)', () => {
     expect(() => dateInputToIso('not-a-date', 'UTC', 'start')).toThrow();
   });
+
+  it('throws on a non-existent calendar date instead of normalizing it', () => {
+    expect(() => dateInputToIso('2026-02-31', 'UTC', 'start')).toThrow();
+    expect(() => dateInputToIso('2026-13-01', 'UTC', 'start')).toThrow();
+  });
 });
