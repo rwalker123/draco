@@ -11,6 +11,8 @@ import type {
   SchedulerRunProgressUpdate,
 } from '../../repositories/interfaces/ISchedulerRunRepository.js';
 import { SchedulerRunService } from '../schedulerRunService.js';
+import type { SchedulerEngineService } from '../schedulerEngineService.js';
+import type { SchedulerProblemSpecService } from '../schedulerProblemSpecService.js';
 import { ServiceFactory } from '../serviceFactory.js';
 
 class FakeRunRepository implements ISchedulerRunRepository {
@@ -93,12 +95,20 @@ const stubServices = (problemSpec: SchedulerProblemSpec, solveResult: SchedulerS
     options?.onProgress?.(problemSpec.games.length, problemSpec.games.length);
     return solveResult;
   });
-  vi.spyOn(ServiceFactory, 'getSchedulerProblemSpecService').mockReturnValue({
-    buildProblemSpecForSolve: vi.fn(async () => ({ problemSpec, timeZoneId: 'UTC' })),
-  } as unknown as ReturnType<typeof ServiceFactory.getSchedulerProblemSpecService>);
-  vi.spyOn(ServiceFactory, 'getSchedulerEngineService').mockReturnValue({
-    solveAsync,
-  } as unknown as ReturnType<typeof ServiceFactory.getSchedulerEngineService>);
+  const problemSpecService: Pick<SchedulerProblemSpecService, 'buildProblemSpecForSolve'> = {
+    buildProblemSpecForSolve: vi.fn(async () => ({
+      problemSpec,
+      timeZoneId: 'UTC',
+      fieldGameLengthById: {},
+    })),
+  };
+  const engineService: Pick<SchedulerEngineService, 'solveAsync'> = { solveAsync };
+  vi.spyOn(ServiceFactory, 'getSchedulerProblemSpecService').mockReturnValue(
+    problemSpecService as SchedulerProblemSpecService,
+  );
+  vi.spyOn(ServiceFactory, 'getSchedulerEngineService').mockReturnValue(
+    engineService as SchedulerEngineService,
+  );
   return { solveAsync };
 };
 
@@ -176,6 +186,36 @@ describe('SchedulerRunService', () => {
     expect(solveAsync).toHaveBeenCalledTimes(2);
   });
 
+  it('returns the existing run when create races on the idempotency key (P2002)', async () => {
+    const repo = new FakeRunRepository();
+    const problemSpec = buildProblemSpec(2);
+    const { solveAsync } = stubServices(problemSpec, buildResult());
+
+    repo.create = async (data: SchedulerRunCreateData): Promise<schedulerrun> => {
+      const winner: schedulerrun = {
+        runid: data.runid,
+        accountid: data.accountid,
+        seasonid: data.seasonid,
+        status: 'queued',
+        processed: 0,
+        total: data.total,
+        result: null,
+        error: null,
+        createdat: new Date('2026-06-21T00:00:00Z'),
+        updatedat: new Date('2026-06-21T00:00:00Z'),
+      };
+      repo.rows.set(data.runid, winner);
+      throw Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+    };
+
+    const service = new SchedulerRunService(repo);
+    const result = await service.enqueue(1n, 5n, request, 'key-race');
+
+    expect(result.status).toBe('queued');
+    await waitFor(() => repo.rows.get(result.runId)?.status === 'completed');
+    expect(solveAsync).toHaveBeenCalledTimes(1);
+  });
+
   it('starts a fresh run for each generate when no idempotency key is supplied', async () => {
     const repo = new FakeRunRepository();
     const problemSpec = buildProblemSpec(2);
@@ -197,11 +237,14 @@ describe('SchedulerRunService', () => {
     const repo = new FakeRunRepository();
     const problemSpec = buildProblemSpec(2);
     stubServices(problemSpec, buildResult());
-    vi.spyOn(ServiceFactory, 'getSchedulerEngineService').mockReturnValue({
+    const failingEngine: Pick<SchedulerEngineService, 'solveAsync'> = {
       solveAsync: vi.fn(async () => {
         throw new Error('boom');
       }),
-    } as unknown as ReturnType<typeof ServiceFactory.getSchedulerEngineService>);
+    };
+    vi.spyOn(ServiceFactory, 'getSchedulerEngineService').mockReturnValue(
+      failingEngine as SchedulerEngineService,
+    );
     const service = new SchedulerRunService(repo);
 
     const enqueued = await service.enqueue(1n, 5n, request);

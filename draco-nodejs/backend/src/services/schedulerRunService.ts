@@ -3,6 +3,7 @@ import type {
   SchedulerRunState,
   SchedulerSeasonSolveRequest,
 } from '@draco/shared-schemas';
+import type { schedulerrun } from '#prisma/client';
 import crypto from 'node:crypto';
 import { RepositoryFactory } from '../repositories/repositoryFactory.js';
 import type { ISchedulerRunRepository } from '../repositories/interfaces/ISchedulerRunRepository.js';
@@ -32,35 +33,50 @@ export class SchedulerRunService {
       ? buildDeterministicRunId({ accountId, idempotencyKey, problemSpec })
       : `sched_account_${accountId.toString()}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
 
+    const total = problemSpec.games.length;
+    const specForRun: SchedulerProblemSpec = { ...problemSpec, runId };
+
+    const resumeExisting = (existing: schedulerrun): SchedulerRunState => {
+      if (existing.status === 'queued') {
+        this.startRun(
+          accountId,
+          runId,
+          specForRun,
+          timeZoneId,
+          idempotencyKey,
+          total,
+          fieldGameLengthById,
+        );
+      }
+      return SchedulerRunResponseFormatter.format(existing);
+    };
+
     if (idempotencyKey) {
       const existing = await this.runRepository.findByRunId(accountId, seasonId, runId);
       if (existing) {
-        if (existing.status === 'queued') {
-          const specForExisting: SchedulerProblemSpec = { ...problemSpec, runId };
-          this.startRun(
-            accountId,
-            runId,
-            specForExisting,
-            timeZoneId,
-            idempotencyKey,
-            problemSpec.games.length,
-            fieldGameLengthById,
-          );
-        }
-        return SchedulerRunResponseFormatter.format(existing);
+        return resumeExisting(existing);
       }
     }
 
-    const total = problemSpec.games.length;
-    const created = await this.runRepository.create({
-      runid: runId,
-      accountid: accountId,
-      seasonid: seasonId,
-      status: 'queued',
-      total,
-    });
+    let created: schedulerrun;
+    try {
+      created = await this.runRepository.create({
+        runid: runId,
+        accountid: accountId,
+        seasonid: seasonId,
+        status: 'queued',
+        total,
+      });
+    } catch (err) {
+      if (idempotencyKey && err instanceof Error && 'code' in err && err.code === 'P2002') {
+        const existing = await this.runRepository.findByRunId(accountId, seasonId, runId);
+        if (existing) {
+          return resumeExisting(existing);
+        }
+      }
+      throw err;
+    }
 
-    const specForRun: SchedulerProblemSpec = { ...problemSpec, runId };
     this.startRun(
       accountId,
       runId,

@@ -393,6 +393,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       };
 
       const enqueued = await enqueueSeasonRun(solveRequest);
+      if (controller.signal.aborted) return;
       setRunProgress(enqueued.progress);
 
       while (!controller.signal.aborted) {
