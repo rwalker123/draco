@@ -47,14 +47,23 @@ const normalizeSoftOrder = (order: unknown): SchedulerSoftConstraintKey[] => {
 const buildConstraintStorageKey = (accountId: string, seasonId: string): string =>
   `scheduler:constraintConfig:${accountId}:${seasonId}`;
 
+const cloneDefaultConfig = (): SchedulerConstraintConfig => ({
+  softOrder: [...DEFAULT_CONSTRAINT_CONFIG.softOrder],
+  avoidBackToBackGames: { ...DEFAULT_CONSTRAINT_CONFIG.avoidBackToBackGames },
+  spreadGamesAcrossDays: { ...DEFAULT_CONSTRAINT_CONFIG.spreadGamesAcrossDays },
+  balanceEarlyVsLate: { ...DEFAULT_CONSTRAINT_CONFIG.balanceEarlyVsLate },
+  maxGamesPerTeamPerDay: { ...DEFAULT_CONSTRAINT_CONFIG.maxGamesPerTeamPerDay },
+  requireLightsAfter: { ...DEFAULT_CONSTRAINT_CONFIG.requireLightsAfter },
+});
+
 export const loadConstraintConfig = (
   accountId: string,
   seasonId: string,
 ): SchedulerConstraintConfig => {
-  if (typeof window === 'undefined') return { ...DEFAULT_CONSTRAINT_CONFIG };
+  if (typeof window === 'undefined') return cloneDefaultConfig();
   try {
     const raw = window.localStorage.getItem(buildConstraintStorageKey(accountId, seasonId));
-    if (!raw) return { ...DEFAULT_CONSTRAINT_CONFIG };
+    if (!raw) return cloneDefaultConfig();
     const parsed = JSON.parse(raw) as Partial<SchedulerConstraintConfig>;
     return {
       softOrder: normalizeSoftOrder(parsed.softOrder),
@@ -86,7 +95,7 @@ export const loadConstraintConfig = (
       },
     };
   } catch {
-    return { ...DEFAULT_CONSTRAINT_CONFIG };
+    return cloneDefaultConfig();
   }
 };
 

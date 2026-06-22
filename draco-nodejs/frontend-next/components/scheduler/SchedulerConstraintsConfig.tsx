@@ -98,8 +98,8 @@ const SortableSoftRow: React.FC<SortableSoftRowProps> = ({
       }}
     >
       <Box
-        {...attributes}
-        {...listeners}
+        {...(disabled ? {} : attributes)}
+        {...(disabled ? {} : listeners)}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -168,6 +168,7 @@ export const SchedulerConstraintsConfig: React.FC<SchedulerConstraintsConfigProp
     (config.requireLightsAfter.enabled ? 1 : 0);
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (disabled) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIndex = config.softOrder.indexOf(active.id as SchedulerSoftConstraintKey);
