@@ -311,6 +311,9 @@ import {
   SchedulerTeamExclusionSchema,
   SchedulerTeamExclusionUpsertSchema,
   SchedulerTeamExclusionsSchema,
+  SchedulerLeagueExclusionSchema,
+  SchedulerLeagueExclusionUpsertSchema,
+  SchedulerLeagueExclusionsSchema,
   SchedulerUmpireExclusionSchema,
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerUmpireExclusionsSchema,
@@ -1375,6 +1378,18 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerTeamExclusions',
     SchedulerTeamExclusionsSchema,
   );
+  const SchedulerLeagueExclusionSchemaRef = registry.register(
+    'SchedulerLeagueExclusion',
+    SchedulerLeagueExclusionSchema,
+  );
+  const SchedulerLeagueExclusionUpsertSchemaRef = registry.register(
+    'SchedulerLeagueExclusionUpsert',
+    SchedulerLeagueExclusionUpsertSchema,
+  );
+  const SchedulerLeagueExclusionsSchemaRef = registry.register(
+    'SchedulerLeagueExclusions',
+    SchedulerLeagueExclusionsSchema,
+  );
   const SchedulerUmpireExclusionSchemaRef = registry.register(
     'SchedulerUmpireExclusion',
     SchedulerUmpireExclusionSchema,
@@ -1990,6 +2005,9 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerTeamExclusionSchemaRef,
     SchedulerTeamExclusionUpsertSchemaRef,
     SchedulerTeamExclusionsSchemaRef,
+    SchedulerLeagueExclusionSchemaRef,
+    SchedulerLeagueExclusionUpsertSchemaRef,
+    SchedulerLeagueExclusionsSchemaRef,
     SchedulerUmpireExclusionSchemaRef,
     SchedulerUmpireExclusionUpsertSchemaRef,
     SchedulerUmpireExclusionsSchemaRef,

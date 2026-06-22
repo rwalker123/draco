@@ -7,6 +7,7 @@ import {
   SchedulerSeasonWindowConfigUpsertSchema,
   SchedulerSeasonExclusionUpsertSchema,
   SchedulerTeamExclusionUpsertSchema,
+  SchedulerLeagueExclusionUpsertSchema,
   SchedulerUmpireExclusionUpsertSchema,
   SchedulerSeasonSolveRequestSchema,
   SchedulerSeasonApplyRequestSchema,
@@ -19,6 +20,8 @@ const schedulerSeasonWindowConfigService = ServiceFactory.getSchedulerSeasonWind
 const schedulerSeasonExclusionsService = ServiceFactory.getSchedulerSeasonExclusionsService();
 const schedulerTeamSeasonExclusionsService =
   ServiceFactory.getSchedulerTeamSeasonExclusionsService();
+const schedulerLeagueSeasonExclusionsService =
+  ServiceFactory.getSchedulerLeagueSeasonExclusionsService();
 const schedulerUmpireExclusionsService = ServiceFactory.getSchedulerUmpireExclusionsService();
 const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecService();
 const schedulerEngineService = ServiceFactory.getSchedulerEngineService();
@@ -195,6 +198,82 @@ router.delete(
       'exclusionId',
     );
     const deleted = await schedulerTeamSeasonExclusionsService.deleteExclusion(
+      accountId,
+      seasonId,
+      exclusionId,
+    );
+    res.json(deleted);
+  }),
+);
+
+router.get(
+  '/league-exclusions',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const exclusions = await schedulerLeagueSeasonExclusionsService.listExclusions(
+      accountId,
+      seasonId,
+    );
+    res.json(exclusions);
+  }),
+);
+
+router.post(
+  '/league-exclusions',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const input = SchedulerLeagueExclusionUpsertSchema.parse(req.body);
+    const created = await schedulerLeagueSeasonExclusionsService.createExclusion(
+      accountId,
+      seasonId,
+      input,
+    );
+    res.status(201).json(created);
+  }),
+);
+
+router.put(
+  '/league-exclusions/:exclusionId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, exclusionId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'exclusionId',
+    );
+    const input = SchedulerLeagueExclusionUpsertSchema.parse(req.body);
+    const updated = await schedulerLeagueSeasonExclusionsService.updateExclusion(
+      accountId,
+      seasonId,
+      exclusionId,
+      input,
+    );
+    res.json(updated);
+  }),
+);
+
+router.delete(
+  '/league-exclusions/:exclusionId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId, exclusionId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'exclusionId',
+    );
+    const deleted = await schedulerLeagueSeasonExclusionsService.deleteExclusion(
       accountId,
       seasonId,
       exclusionId,

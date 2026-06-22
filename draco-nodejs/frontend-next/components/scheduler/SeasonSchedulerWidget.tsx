@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Divider, Typography } from '@mui/material';
-import WidgetShell from '../ui/WidgetShell';
 import type {
   SchedulerGameRequest,
   SchedulerGenerateMatchupsRequest,
@@ -17,9 +16,9 @@ import { useSeasonSchedulerOperations } from '../../hooks/useSeasonSchedulerOper
 import { useSeasonSchedulerConstraintHandlers } from '../../hooks/useSeasonSchedulerConstraintHandlers';
 import { useEntityNameMaps } from '../../hooks/useEntityNameMaps';
 import { SeasonSchedulerConfigPanel } from './SeasonSchedulerConfigPanel';
-import { SeasonSchedulerConstraintLists } from './SeasonSchedulerConstraintLists';
 import { SeasonSchedulerProposalReview } from './SeasonSchedulerProposalReview';
 import { SchedulerFieldsConfig } from './SchedulerFieldsConfig';
+import { SchedulerUmpiresConfig } from './SchedulerUmpiresConfig';
 import { loadRoundRobinCounts, type LeagueRoundRobinCount } from './SchedulerRoundRobinConfig';
 import {
   clearPersistedProposal,
@@ -36,6 +35,33 @@ const parseUmpiresPerGame = (value: number | null | undefined): UmpiresPerGame =
 
 const parseMaxGamesInput = (value: number | null | undefined): string =>
   typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+
+const sameIdSet = (a: string[], b: string[]): boolean => {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every((id) => setB.has(id));
+};
+
+const buildScheduleUmpiresKey = (accountId: string, seasonId: string) =>
+  `scheduler:scheduleUmpires:${accountId}:${seasonId}`;
+
+const loadScheduleUmpires = (accountId: string, seasonId: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(buildScheduleUmpiresKey(accountId, seasonId)) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const saveScheduleUmpires = (accountId: string, seasonId: string, value: boolean): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(buildScheduleUmpiresKey(accountId, seasonId), String(value));
+  } catch {
+    return;
+  }
+};
 
 interface SeasonSchedulerWidgetProps {
   accountId: string;
@@ -121,6 +147,9 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [roundRobinCounts, setRoundRobinCounts] = useState<Map<string, LeagueRoundRobinCount>>(
     () => (seasonId ? loadRoundRobinCounts(accountId, seasonId) : new Map()),
   );
+  const [scheduleUmpires, setScheduleUmpires] = useState(() =>
+    seasonId ? loadScheduleUmpires(accountId, seasonId) : false,
+  );
 
   useEffect(() => {
     if (!seasonId) return;
@@ -152,6 +181,16 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       : leagueSeasonIdFilter
         ? [leagueSeasonIdFilter]
         : allLeagueSeasonIds;
+
+  const seasonDatesDirty =
+    seasonStartDate !== (seasonWindowConfig?.startDate ?? '') ||
+    seasonEndDate !== (seasonWindowConfig?.endDate ?? '');
+
+  const savedLeagueSeasonIds = seasonWindowConfig?.leagueSeasonIds ?? [];
+  const dirtyLeagueBaseline =
+    savedLeagueSeasonIds.length > 0 ? savedLeagueSeasonIds : allLeagueSeasonIds;
+  const leagueSelectionDirty =
+    allLeagueSeasonIds.length > 0 && !sameIdSet(selectedLeagueSeasonIds, dirtyLeagueBaseline);
 
   const assignments = proposal?.assignments ?? [];
   const selectedMode: SchedulerSeasonApplyRequest['mode'] =
@@ -191,7 +230,15 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   useEffect(() => {
     if (!seasonId) return;
     setRoundRobinCounts(loadRoundRobinCounts(accountId, seasonId));
+    setScheduleUmpires(loadScheduleUmpires(accountId, seasonId));
   }, [accountId, seasonId]);
+
+  const handleScheduleUmpiresChange = (value: boolean) => {
+    setScheduleUmpires(value);
+    if (seasonId) {
+      saveScheduleUmpires(accountId, seasonId, value);
+    }
+  };
 
   const handleSaveSeasonWindow = async () => {
     if (!seasonId) return;
@@ -224,20 +271,17 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     }
   };
 
-  const filterProblemSpecGames = (preview: SchedulerProblemSpecPreview): string[] => {
-    let filtered = preview.games;
-    if (leagues.length > 0 && selectedLeagueSeasonIds.length !== leagues.length) {
-      const leagueSet = new Set(selectedLeagueSeasonIds);
-      filtered = filtered.filter((game) => leagueSet.has(game.leagueSeasonId));
-    }
-    if (teamSeasonIdFilter) {
-      filtered = filtered.filter(
-        (game) =>
-          game.homeTeamSeasonId === teamSeasonIdFilter ||
-          game.visitorTeamSeasonId === teamSeasonIdFilter,
-      );
-    }
-    return filtered.map((game) => game.id);
+  const handleCancelSeasonDatesEdits = () => {
+    setSeasonStartDate(seasonWindowConfig?.startDate ?? '');
+    setSeasonEndDate(seasonWindowConfig?.endDate ?? '');
+  };
+
+  const handleCancelLeagueEdits = () => {
+    setLeagueSeasonSelection(
+      seasonWindowConfig?.leagueSeasonIds && seasonWindowConfig.leagueSeasonIds.length > 0
+        ? seasonWindowConfig.leagueSeasonIds
+        : null,
+    );
   };
 
   const handlePreviewProblemSpec = async () => {
@@ -256,62 +300,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       setError(
         err instanceof Error ? err.message : 'Failed to load scheduler problem spec preview',
       );
-    }
-  };
-
-  const handleSolve = async () => {
-    try {
-      setError(null);
-      clearError();
-      setProposal(null);
-      setProposalFromGenerated(false);
-      setGeneratedMatchups(null);
-      if (!seasonWindowConfig)
-        throw new Error('Season dates are required before generating a proposal');
-      if (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
-        throw new Error('Select at least one league to schedule');
-
-      let gameIds: SchedulerSeasonSolveRequest['gameIds'];
-      const shouldFilterByLeagueSelection =
-        leagues.length > 0 &&
-        selectedLeagueSeasonIds.length > 0 &&
-        selectedLeagueSeasonIds.length !== leagues.length;
-
-      const preview = await getProblemSpecPreview();
-      setSpecPreview(preview);
-
-      if (teamSeasonIdFilter || shouldFilterByLeagueSelection) {
-        const filteredIds = filterProblemSpecGames(preview);
-        if (filteredIds.length === 0) throw new Error('No games match the current schedule filter');
-        gameIds = filteredIds;
-      }
-
-      const trimmedMaxGames = maxGamesPerUmpirePerDayInput.trim();
-      const maxGamesPerUmpirePerDay =
-        trimmedMaxGames.length > 0 ? Number(trimmedMaxGames) : undefined;
-      if (maxGamesPerUmpirePerDay !== undefined) {
-        if (!Number.isFinite(maxGamesPerUmpirePerDay) || maxGamesPerUmpirePerDay <= 0)
-          throw new Error('Max games/day for umpires must be a positive number');
-      }
-
-      const request: SchedulerSeasonSolveRequest = {
-        objectives: { primary: 'maximize_scheduled_games' },
-        gameIds,
-        umpiresPerGame,
-        constraints:
-          maxGamesPerUmpirePerDay !== undefined
-            ? { hard: { maxGamesPerUmpirePerDay: Math.floor(maxGamesPerUmpirePerDay) } }
-            : undefined,
-      };
-
-      const result = await solveSeason(request);
-      setProposal(result);
-      setSelectedGameIds(new Set(result.assignments.map((a) => a.gameId)));
-      setSuccess(
-        `Proposal generated (${result.metrics.scheduledGames}/${result.metrics.totalGames} scheduled)`,
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate proposal');
     }
   };
 
@@ -365,7 +353,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       const solveRequest: SchedulerSeasonSolveRequest = {
         matchups,
         objectives: { primary: 'maximize_scheduled_games' },
-        umpiresPerGame,
+        umpiresPerGame: scheduleUmpires ? umpiresPerGame : 0,
         constraints:
           maxGamesPerUmpirePerDay !== undefined
             ? { hard: { maxGamesPerUmpirePerDay: Math.floor(maxGamesPerUmpirePerDay) } }
@@ -473,55 +461,46 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const filterLabel = filterLabelParts.length ? `Filter: ${filterLabelParts.join(', ')}` : null;
 
   return (
-    <WidgetShell accent="primary" sx={{ mb: 3, px: 3, py: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Box>
-          <Typography variant="h6">Scheduler</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Generate a proposal and then apply all or selected games (no optimistic updates).
-          </Typography>
-          {filterLabel && (
-            <Typography variant="caption" color="text.secondary">
-              {filterLabel}
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button
-            variant="outlined"
-            onClick={handlePreviewProblemSpec}
-            disabled={
-              !seasonId ||
-              !seasonWindowConfig ||
-              (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
-            }
-          >
-            Preview Problem Spec
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleGenerateMatchups}
-            disabled={
-              !seasonId ||
-              !seasonWindowConfig ||
-              (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
-            }
-          >
-            Generate Matchups
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSolve}
-            disabled={
-              !seasonId ||
-              !seasonWindowConfig ||
-              (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
-            }
-          >
-            Generate Proposal
-          </Button>
-        </Box>
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 1,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
+        <Button
+          variant="text"
+          size="small"
+          onClick={handlePreviewProblemSpec}
+          disabled={
+            !seasonId ||
+            !seasonWindowConfig ||
+            (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+          }
+        >
+          Inspect Inputs
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleGenerateMatchups}
+          disabled={
+            !seasonId ||
+            !seasonWindowConfig ||
+            (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
+          }
+        >
+          Generate Schedule
+        </Button>
       </Box>
+
+      {filterLabel && (
+        <Typography variant="caption" color="text.secondary">
+          {filterLabel}
+        </Typography>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mt: 2 }} onClose={clearError}>
@@ -534,24 +513,30 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       <SeasonSchedulerConfigPanel
         accountId={accountId}
         seasonId={seasonId}
+        timeZone={timeZone}
         seasonWindowConfig={seasonWindowConfig}
         seasonStartDate={seasonStartDate}
         seasonEndDate={seasonEndDate}
-        umpiresPerGame={umpiresPerGame}
-        maxGamesPerUmpirePerDayInput={maxGamesPerUmpirePerDayInput}
+        seasonExclusions={constraints.seasonExclusions}
+        teams={teams}
+        teamNameById={teamNameById}
+        teamExclusions={constraints.teamExclusions}
+        leagueExclusions={constraints.leagueExclusions}
         leagues={leagues}
-        umpires={umpires}
         selectedLeagueSeasonIds={selectedLeagueSeasonIds}
         leagueSeasonIdFilter={leagueSeasonIdFilter}
         leagueSeasonSelection={leagueSeasonSelection}
         leagueNameById={leagueNameById}
         roundRobinCounts={roundRobinCounts}
+        dirty={seasonDatesDirty}
+        leaguesDirty={leagueSelectionDirty}
+        saving={loading}
         onSeasonStartDateChange={setSeasonStartDate}
         onSeasonEndDateChange={setSeasonEndDate}
-        onUmpiresPerGameChange={setUmpiresPerGame}
-        onMaxGamesPerUmpirePerDayChange={setMaxGamesPerUmpirePerDayInput}
         onLeagueSelectionChange={setLeagueSeasonSelection}
         onRoundRobinCountsChange={setRoundRobinCounts}
+        onCancel={handleCancelSeasonDatesEdits}
+        onLeaguesCancel={handleCancelLeagueEdits}
         onSave={() => {
           handleSaveSeasonWindow()
             .then(() => setSuccess('Scheduler settings saved'))
@@ -559,6 +544,15 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
               setError(err instanceof Error ? err.message : 'Failed to save season window'),
             );
         }}
+        onCreateSeasonExclusion={constraints.handleCreateSeasonExclusion}
+        onEditSeasonExclusion={constraints.handleEditSeasonExclusion}
+        onDeleteSeasonExclusion={constraints.handleDeleteSeasonExclusion}
+        onCreateTeamExclusion={constraints.handleCreateTeamExclusion}
+        onEditTeamExclusion={constraints.handleEditTeamExclusion}
+        onDeleteTeamExclusion={constraints.handleDeleteTeamExclusion}
+        onCreateLeagueExclusion={constraints.handleCreateLeagueExclusion}
+        onEditLeagueExclusion={constraints.handleEditLeagueExclusion}
+        onDeleteLeagueExclusion={constraints.handleDeleteLeagueExclusion}
       />
 
       <Divider sx={{ my: 2 }} />
@@ -570,31 +564,23 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         setError={setError}
       />
 
-      <Divider sx={{ my: 2 }} />
-
-      <SeasonSchedulerConstraintLists
+      <SchedulerUmpiresConfig
         seasonId={seasonId}
         timeZone={timeZone}
-        teams={teams}
+        scheduleUmpires={scheduleUmpires}
+        umpiresPerGame={umpiresPerGame}
+        maxGamesPerUmpirePerDayInput={maxGamesPerUmpirePerDayInput}
         umpires={umpires}
-        seasonExclusions={constraints.seasonExclusions}
-        teamExclusions={constraints.teamExclusions}
-        umpireExclusions={constraints.umpireExclusions}
-        teamNameById={teamNameById}
         umpireNameById={umpireNameById}
+        umpireExclusions={constraints.umpireExclusions}
         loading={loading}
-        onCreateSeasonExclusion={constraints.handleCreateSeasonExclusion}
-        onEditSeasonExclusion={constraints.handleEditSeasonExclusion}
-        onDeleteSeasonExclusion={constraints.handleDeleteSeasonExclusion}
-        onCreateTeamExclusion={constraints.handleCreateTeamExclusion}
-        onEditTeamExclusion={constraints.handleEditTeamExclusion}
-        onDeleteTeamExclusion={constraints.handleDeleteTeamExclusion}
+        onScheduleUmpiresChange={handleScheduleUmpiresChange}
+        onUmpiresPerGameChange={setUmpiresPerGame}
+        onMaxGamesPerUmpirePerDayChange={setMaxGamesPerUmpirePerDayInput}
         onCreateUmpireExclusion={constraints.handleCreateUmpireExclusion}
         onEditUmpireExclusion={constraints.handleEditUmpireExclusion}
         onDeleteUmpireExclusion={constraints.handleDeleteUmpireExclusion}
       />
-
-      <Divider sx={{ my: 2 }} />
 
       <SeasonSchedulerProposalReview
         proposal={proposal}
@@ -605,7 +591,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         selectedGameIds={selectedGameIds}
         fields={fields}
         umpires={umpires}
-        maxUmpires={umpiresPerGame}
+        maxUmpires={scheduleUmpires ? umpiresPerGame : 0}
         fieldNameById={fieldNameById}
         teamNameById={teamNameById}
         umpireNameById={umpireNameById}
@@ -618,6 +604,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         onAssignmentChange={handleAssignmentChange}
         onCloseSpecPreview={() => setSpecPreviewOpen(false)}
       />
-    </WidgetShell>
+    </>
   );
 };

@@ -2,6 +2,9 @@ import type {
   SchedulerApplyResult,
   SchedulerGenerateMatchupsRequest,
   SchedulerGenerateMatchupsResult,
+  SchedulerLeagueExclusion,
+  SchedulerLeagueExclusionUpsert,
+  SchedulerLeagueExclusions,
   SchedulerProblemSpecPreview,
   SchedulerSeasonExclusion,
   SchedulerSeasonExclusionUpsert,
@@ -20,20 +23,24 @@ import type {
 } from '@draco/shared-schemas';
 import {
   applySeasonSchedule,
+  createSchedulerLeagueExclusion,
   createSchedulerSeasonExclusion,
   createSchedulerTeamExclusion,
   createSchedulerUmpireExclusion,
+  deleteSchedulerLeagueExclusion,
   deleteSchedulerSeasonExclusion,
   deleteSchedulerTeamExclusion,
   deleteSchedulerUmpireExclusion,
   generateSeasonMatchups,
   getSchedulerProblemSpecPreview,
   getSchedulerSeasonWindowConfig,
+  listSchedulerLeagueExclusions,
   listSchedulerSeasonExclusions,
   listSchedulerTeamExclusions,
   listSchedulerUmpireExclusions,
   solveSeasonSchedule,
   upsertSchedulerSeasonWindowConfig,
+  updateSchedulerLeagueExclusion,
   updateSchedulerSeasonExclusion,
   updateSchedulerTeamExclusion,
   updateSchedulerUmpireExclusion,
@@ -275,6 +282,70 @@ export class SchedulerService {
     });
 
     unwrapApiResult(result, 'Failed to delete team exclusion');
+  }
+
+  async listLeagueExclusions(
+    accountId: string,
+    seasonId: string,
+    signal?: AbortSignal,
+  ): Promise<SchedulerLeagueExclusion[]> {
+    const result = await listSchedulerLeagueExclusions({
+      client: this.client,
+      path: { accountId, seasonId },
+      signal,
+      throwOnError: false,
+    });
+
+    const payload: SchedulerLeagueExclusions = unwrapApiResult(
+      result,
+      'Failed to load league exclusions',
+    );
+    return payload.exclusions;
+  }
+
+  async createLeagueExclusion(
+    accountId: string,
+    seasonId: string,
+    input: SchedulerLeagueExclusionUpsert,
+  ): Promise<SchedulerLeagueExclusion> {
+    const result = await createSchedulerLeagueExclusion({
+      client: this.client,
+      path: { accountId, seasonId },
+      body: input,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to create league exclusion');
+  }
+
+  async updateLeagueExclusion(
+    accountId: string,
+    seasonId: string,
+    exclusionId: string,
+    input: SchedulerLeagueExclusionUpsert,
+  ): Promise<SchedulerLeagueExclusion> {
+    const result = await updateSchedulerLeagueExclusion({
+      client: this.client,
+      path: { accountId, seasonId, exclusionId },
+      body: input,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to update league exclusion');
+  }
+
+  async deleteLeagueExclusion(
+    accountId: string,
+    seasonId: string,
+    exclusionId: string,
+  ): Promise<void> {
+    const result = await deleteSchedulerLeagueExclusion({
+      client: this.client,
+      path: { accountId, seasonId, exclusionId },
+      throwOnError: false,
+    });
+
+    unwrapApiResult(result, 'Failed to delete league exclusion');
   }
 
   async listUmpireExclusions(

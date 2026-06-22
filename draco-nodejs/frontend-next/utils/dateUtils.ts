@@ -382,6 +382,43 @@ export function endOfDayInTimezone(date: Date, timeZone: string): Date {
   return new Date(lastSecond.getTime() + 999);
 }
 
+export function dateKeyToInstantInTimezone(
+  dateKey: string,
+  timeZone: string,
+  boundary: 'start' | 'end',
+): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) {
+    return new Date(NaN);
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() !== month - 1 ||
+    probe.getUTCDate() !== day
+  ) {
+    return new Date(NaN);
+  }
+
+  if (boundary === 'start') {
+    return convertZonedPartsToUTCDate(
+      { year, month, day, hour: 0, minute: 0, second: 0 },
+      timeZone,
+    );
+  }
+
+  const lastSecond = convertZonedPartsToUTCDate(
+    { year, month, day, hour: 23, minute: 59, second: 59 },
+    timeZone,
+  );
+  return new Date(lastSecond.getTime() + 999);
+}
+
 /**
  * Checks if a date value is valid
  * @param dateValue - Date value to validate
@@ -433,6 +470,45 @@ export const formatDateOfBirth = (dateString: string | null): string => {
   } catch {
     return dateString;
   }
+};
+
+const ordinalSuffix = (day: number): string => {
+  const mod100 = day % 100;
+  if (mod100 >= 11 && mod100 <= 13) {
+    return 'th';
+  }
+  switch (day % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+};
+
+/**
+ * Format a date-only string (YYYY-MM-DD) as a long date with an ordinal day,
+ * e.g. "May 5th, 2026". Parses in UTC to avoid timezone-driven off-by-one shifts.
+ */
+export const formatDateLongWithOrdinal = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateString);
+  if (!match) return dateString;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  const monthName = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    timeZone: 'UTC',
+  }).format(utcDate);
+
+  return `${monthName} ${day}${ordinalSuffix(day)}, ${year}`;
 };
 
 /**

@@ -24,6 +24,9 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     SchedulerTeamExclusionSchemaRef,
     SchedulerTeamExclusionUpsertSchemaRef,
     SchedulerTeamExclusionsSchemaRef,
+    SchedulerLeagueExclusionSchemaRef,
+    SchedulerLeagueExclusionUpsertSchemaRef,
+    SchedulerLeagueExclusionsSchemaRef,
     SchedulerUmpireExclusionSchemaRef,
     SchedulerUmpireExclusionUpsertSchemaRef,
     SchedulerUmpireExclusionsSchemaRef,
@@ -645,6 +648,210 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
       200: {
         description: 'Deleted team exclusion',
         content: { 'application/json': { schema: SchedulerTeamExclusionSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/league-exclusions',
+    operationId: 'listSchedulerLeagueExclusions',
+    summary: 'List scheduler league exclusions',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'League exclusions list',
+        content: { 'application/json': { schema: SchedulerLeagueExclusionsSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/league-exclusions',
+    operationId: 'createSchedulerLeagueExclusion',
+    summary: 'Create scheduler league exclusion',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: SchedulerLeagueExclusionUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Created league exclusion',
+        content: { 'application/json': { schema: SchedulerLeagueExclusionSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/league-exclusions/{exclusionId}',
+    operationId: 'updateSchedulerLeagueExclusion',
+    summary: 'Update scheduler league exclusion',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'exclusionId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: SchedulerLeagueExclusionUpsertSchemaRef } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Updated league exclusion',
+        content: { 'application/json': { schema: SchedulerLeagueExclusionSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/league-exclusions/{exclusionId}',
+    operationId: 'deleteSchedulerLeagueExclusion',
+    summary: 'Delete scheduler league exclusion',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'exclusionId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Deleted league exclusion',
+        content: { 'application/json': { schema: SchedulerLeagueExclusionSchemaRef } },
       },
       400: {
         description: 'Validation error',

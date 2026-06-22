@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import type {
   SchedulerGenerateMatchupsRequest,
+  SchedulerLeagueExclusionUpsert,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonExclusionUpsert,
   SchedulerSeasonSolveRequest,
@@ -112,6 +113,17 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
       ),
       deleteTeamExclusion: mutate((s, a, i, exclusionId: string) =>
         s.deleteTeamExclusion(a, i, exclusionId),
+      ),
+      listLeagueExclusions: list((s, a, i, signal) => s.listLeagueExclusions(a, i, signal)),
+      createLeagueExclusion: mutate((s, a, i, input: SchedulerLeagueExclusionUpsert) =>
+        s.createLeagueExclusion(a, i, input),
+      ),
+      updateLeagueExclusion: mutate(
+        (s, a, i, exclusionId: string, input: SchedulerLeagueExclusionUpsert) =>
+          s.updateLeagueExclusion(a, i, exclusionId, input),
+      ),
+      deleteLeagueExclusion: mutate((s, a, i, exclusionId: string) =>
+        s.deleteLeagueExclusion(a, i, exclusionId),
       ),
       listUmpireExclusions: list((s, a, i, signal) => s.listUmpireExclusions(a, i, signal)),
       createUmpireExclusion: mutate((s, a, i, input: SchedulerUmpireExclusionUpsert) =>

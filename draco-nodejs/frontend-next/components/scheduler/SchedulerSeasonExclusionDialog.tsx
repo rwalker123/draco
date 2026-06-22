@@ -1,18 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Checkbox, FormControlLabel, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
 import type {
   SchedulerSeasonExclusion,
   SchedulerSeasonExclusionUpsert,
 } from '@draco/shared-schemas';
 import { SchedulerSeasonExclusionUpsertSchema } from '@draco/shared-schemas';
 import { BaseSchedulerDialog } from './BaseSchedulerDialog';
+import { dateInputToIso, isoToDateInput } from '../../utils/schedulerBlackoutDate';
 
 interface SchedulerSeasonExclusionDialogProps {
   open: boolean;
   mode: 'create' | 'edit';
   seasonId: string;
+  timeZone: string;
   initialExclusion?: SchedulerSeasonExclusion;
   onClose: () => void;
   onSubmit: (input: SchedulerSeasonExclusionUpsert) => Promise<void>;
@@ -23,35 +25,47 @@ export const SchedulerSeasonExclusionDialog: React.FC<SchedulerSeasonExclusionDi
   open,
   mode,
   seasonId,
+  timeZone,
   initialExclusion,
   onClose,
   onSubmit,
   loading,
 }) => {
-  const [startTime, setStartTime] = useState(initialExclusion?.startTime ?? '');
-  const [endTime, setEndTime] = useState(initialExclusion?.endTime ?? '');
+  const [startDate, setStartDate] = useState(() =>
+    isoToDateInput(initialExclusion?.startTime, timeZone),
+  );
+  const [endDate, setEndDate] = useState(() => isoToDateInput(initialExclusion?.endTime, timeZone));
   const [note, setNote] = useState(initialExclusion?.note ?? '');
-  const [enabled, setEnabled] = useState(initialExclusion?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
 
-  const title = mode === 'create' ? 'Add Season Exclusion' : 'Edit Season Exclusion';
+  const title = mode === 'create' ? 'Add Blackout Date' : 'Edit Blackout Date';
 
   const handleSubmit = async () => {
     setError(null);
     try {
+      if (!startDate) {
+        setError('Select a start date.');
+        return;
+      }
+      const effectiveEnd = endDate || startDate;
+      if (effectiveEnd < startDate) {
+        setError('End date must be on or after the start date.');
+        return;
+      }
+
       const trimmedNote = note.trim();
       const payload: SchedulerSeasonExclusionUpsert = SchedulerSeasonExclusionUpsertSchema.parse({
         seasonId,
-        startTime: startTime.trim(),
-        endTime: endTime.trim(),
+        startTime: dateInputToIso(startDate, timeZone, 'start'),
+        endTime: dateInputToIso(effectiveEnd, timeZone, 'end'),
         note: trimmedNote.length > 0 ? trimmedNote : undefined,
-        enabled,
+        enabled: true,
       });
 
       await onSubmit(payload);
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Invalid season exclusion';
+      const message = err instanceof Error ? err.message : 'Invalid blackout date';
       setError(message);
     }
   };
@@ -67,20 +81,21 @@ export const SchedulerSeasonExclusionDialog: React.FC<SchedulerSeasonExclusionDi
       apiError={error}
     >
       <TextField
-        label="Start (UTC ISO)"
+        label="Start date"
+        type="date"
         size="small"
-        value={startTime}
-        onChange={(event) => setStartTime(event.target.value)}
-        placeholder="2026-04-05T13:00:00Z"
-        helperText="Use ISO datetime (UTC)."
+        value={startDate}
+        onChange={(event) => setStartDate(event.target.value)}
+        InputLabelProps={{ shrink: true }}
       />
       <TextField
-        label="End (UTC ISO)"
+        label="End date"
+        type="date"
         size="small"
-        value={endTime}
-        onChange={(event) => setEndTime(event.target.value)}
-        placeholder="2026-04-05T15:00:00Z"
-        helperText="Use ISO datetime (UTC)."
+        value={endDate}
+        onChange={(event) => setEndDate(event.target.value)}
+        InputLabelProps={{ shrink: true }}
+        helperText="Leave blank for a single day."
       />
       <TextField
         label="Note (optional)"
@@ -88,12 +103,6 @@ export const SchedulerSeasonExclusionDialog: React.FC<SchedulerSeasonExclusionDi
         value={note}
         onChange={(event) => setNote(event.target.value)}
         inputProps={{ maxLength: 255 }}
-      />
-      <FormControlLabel
-        control={
-          <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-        }
-        label="Enabled"
       />
     </BaseSchedulerDialog>
   );

@@ -2312,4 +2312,311 @@ describe('SchedulerEngineService — constraint contrast tests', () => {
     expect(run1.unscheduled).toEqual(run2.unscheduled);
     expect(run1.status).toBe(run2.status);
   });
+
+  describe('league exclusions', () => {
+    const leagueAId = 'leagueSeason-A';
+    const leagueBId = 'leagueSeason-B';
+
+    const makeLeagueExclusionSpec = (): SchedulerProblemSpec => ({
+      season: {
+        id: 'spring-2026',
+        name: 'Spring 2026',
+        startDate: '2026-04-01',
+        endDate: '2026-08-31',
+        gameDurations: { defaultMinutes: 75 },
+      },
+      teams: [
+        { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: leagueAId } },
+        { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: leagueAId } },
+        { id: 'team-3', teamSeasonId: 'teamSeason-3', league: { id: leagueBId } },
+        { id: 'team-4', teamSeasonId: 'teamSeason-4', league: { id: leagueBId } },
+      ],
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      umpires: [],
+      games: [
+        {
+          id: 'game-league-A',
+          leagueSeasonId: leagueAId,
+          homeTeamSeasonId: 'teamSeason-1',
+          visitorTeamSeasonId: 'teamSeason-2',
+          requiredUmpires: 0,
+        },
+        {
+          id: 'game-league-B',
+          leagueSeasonId: leagueBId,
+          homeTeamSeasonId: 'teamSeason-3',
+          visitorTeamSeasonId: 'teamSeason-4',
+          requiredUmpires: 0,
+        },
+      ],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T11:30:00Z',
+          endTime: '2026-04-05T13:00:00Z',
+        },
+      ],
+      constraints: { hard: { respectFieldSlots: true } },
+    });
+
+    it('with/without contrast: league exclusion covering all slots makes league A game unscheduled', () => {
+      const service = new SchedulerEngineService();
+      const spec = makeLeagueExclusionSpec();
+
+      const withoutExclusion = service.solve(spec);
+      const gameAWithout = withoutExclusion.assignments.find((a) => a.gameId === 'game-league-A');
+      expect(gameAWithout).toBeDefined();
+
+      const withExclusion = service.solve({
+        ...spec,
+        leagueExclusions: [
+          {
+            id: 'lex-1',
+            seasonId: 'spring-2026',
+            leagueSeasonId: leagueAId,
+            startTime: '2026-04-05T09:00:00Z',
+            endTime: '2026-04-05T13:00:00Z',
+            enabled: true,
+          },
+        ],
+      });
+
+      const gameAWith = withExclusion.assignments.find((a) => a.gameId === 'game-league-A');
+      expect(gameAWith).toBeUndefined();
+      expect(withExclusion.unscheduled.some((u) => u.gameId === 'game-league-A')).toBe(true);
+    });
+
+    it('league A exclusion does not block a game in league B from the same slots', () => {
+      const service = new SchedulerEngineService();
+      const result = service.solve({
+        ...makeLeagueExclusionSpec(),
+        leagueExclusions: [
+          {
+            id: 'lex-1',
+            seasonId: 'spring-2026',
+            leagueSeasonId: leagueAId,
+            startTime: '2026-04-05T09:00:00Z',
+            endTime: '2026-04-05T13:00:00Z',
+            enabled: true,
+          },
+        ],
+      });
+
+      const gameBAssignment = result.assignments.find((a) => a.gameId === 'game-league-B');
+      expect(gameBAssignment).toBeDefined();
+    });
+
+    it('disabled league exclusions have no effect on scheduling', () => {
+      const service = new SchedulerEngineService();
+      const result = service.solve({
+        ...makeLeagueExclusionSpec(),
+        leagueExclusions: [
+          {
+            id: 'lex-disabled',
+            seasonId: 'spring-2026',
+            leagueSeasonId: leagueAId,
+            startTime: '2026-04-05T09:00:00Z',
+            endTime: '2026-04-05T13:00:00Z',
+            enabled: false,
+          },
+        ],
+      });
+
+      const gameAAssignment = result.assignments.find((a) => a.gameId === 'game-league-A');
+      expect(gameAAssignment).toBeDefined();
+    });
+  });
+});
+
+describe('SchedulerEngineService — fixedGames occupancy seeding', () => {
+  const makeFixedGameSpec = (): SchedulerProblemSpec => ({
+    season: {
+      id: 'season-fixed',
+      name: 'Fixed Test Season',
+      startDate: '2026-04-01',
+      endDate: '2026-08-31',
+      gameDurations: { defaultMinutes: 60 },
+    },
+    teams: [
+      { id: 'team-1', teamSeasonId: 'ts-1', league: { id: 'league-1' } },
+      { id: 'team-2', teamSeasonId: 'ts-2', league: { id: 'league-1' } },
+      { id: 'team-3', teamSeasonId: 'ts-3', league: { id: 'league-1' } },
+      { id: 'team-4', teamSeasonId: 'ts-4', league: { id: 'league-1' } },
+    ],
+    fields: [
+      { id: 'field-1', name: 'Field 1' },
+      { id: 'field-2', name: 'Field 2' },
+    ],
+    umpires: [{ id: 'ump-1', name: 'Alice' }],
+    games: [
+      {
+        id: 'candidate-game',
+        leagueSeasonId: 'league-1',
+        homeTeamSeasonId: 'ts-3',
+        visitorTeamSeasonId: 'ts-4',
+        requiredUmpires: 0,
+      },
+    ],
+    fieldSlots: [
+      {
+        id: 'slot-1',
+        fieldId: 'field-1',
+        startTime: '2026-04-05T09:00:00Z',
+        endTime: '2026-04-05T10:30:00Z',
+      },
+      {
+        id: 'slot-2',
+        fieldId: 'field-1',
+        startTime: '2026-04-05T11:00:00Z',
+        endTime: '2026-04-05T12:30:00Z',
+      },
+      {
+        id: 'slot-field2',
+        fieldId: 'field-2',
+        startTime: '2026-04-05T09:00:00Z',
+        endTime: '2026-04-05T10:30:00Z',
+      },
+    ],
+    constraints: { hard: {} },
+  });
+
+  it('no fixedGames: candidate game is placed in slot-1', () => {
+    const service = new SchedulerEngineService();
+    const result = service.solve(makeFixedGameSpec());
+
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.startTime).toBe('2026-04-05T09:00:00.000Z');
+    expect(result.assignments[0]?.fieldId).toBe('field-1');
+  });
+
+  it('fixedGame occupying field-1 at slot-1 forces candidate to the next available slot on that field', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...makeFixedGameSpec(),
+      fields: [{ id: 'field-1', name: 'Field 1' }],
+      fieldSlots: [
+        {
+          id: 'slot-1',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:30:00Z',
+        },
+        {
+          id: 'slot-2',
+          fieldId: 'field-1',
+          startTime: '2026-04-05T11:00:00Z',
+          endTime: '2026-04-05T12:30:00Z',
+        },
+      ],
+      fixedGames: [
+        {
+          fieldId: 'field-1',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:00:00Z',
+          teamSeasonIds: ['ts-1', 'ts-2'],
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.startTime).toBe('2026-04-05T11:00:00.000Z');
+    expect(result.assignments[0]?.fieldId).toBe('field-1');
+  });
+
+  it('fixedGame making a team busy at slot-1 forces candidate to a different slot', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...makeFixedGameSpec(),
+      games: [
+        {
+          id: 'candidate-game',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-1',
+          visitorTeamSeasonId: 'ts-3',
+          requiredUmpires: 0,
+        },
+      ],
+      fixedGames: [
+        {
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:00:00Z',
+          teamSeasonIds: ['ts-1', 'ts-2'],
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.startTime).not.toBe('2026-04-05T09:00:00.000Z');
+  });
+
+  it('fixedGame on an unrelated field and team does NOT block the candidate from slot-1', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...makeFixedGameSpec(),
+      fixedGames: [
+        {
+          fieldId: 'field-2',
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:00:00Z',
+          teamSeasonIds: ['ts-1', 'ts-2'],
+        },
+      ],
+    };
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.startTime).toBe('2026-04-05T09:00:00.000Z');
+    expect(result.assignments[0]?.fieldId).toBe('field-1');
+  });
+
+  it('fixedGame with umpire blocks that umpire for the same time slot', () => {
+    const service = new SchedulerEngineService();
+    const spec: SchedulerProblemSpec = {
+      ...makeFixedGameSpec(),
+      games: [
+        {
+          id: 'candidate-game',
+          leagueSeasonId: 'league-1',
+          homeTeamSeasonId: 'ts-3',
+          visitorTeamSeasonId: 'ts-4',
+          requiredUmpires: 1,
+        },
+      ],
+      umpireAvailability: [
+        { umpireId: 'ump-1', startTime: '2026-04-05T08:00:00Z', endTime: '2026-04-05T18:00:00Z' },
+      ],
+      fixedGames: [
+        {
+          startTime: '2026-04-05T09:00:00Z',
+          endTime: '2026-04-05T10:00:00Z',
+          teamSeasonIds: ['ts-1', 'ts-2'],
+          umpireIds: ['ump-1'],
+        },
+      ],
+      constraints: { hard: { respectUmpireAvailability: true } },
+    };
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]?.startTime).not.toBe('2026-04-05T09:00:00.000Z');
+    expect(result.assignments[0]?.umpireIds).toEqual(['ump-1']);
+  });
 });

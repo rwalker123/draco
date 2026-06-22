@@ -222,7 +222,7 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                     <TableCell>Open Hours</TableCell>
                     <TableCell align="center">Game Length</TableCell>
                     <TableCell align="center">Buffer</TableCell>
-                    <TableCell align="center">Closed Dates</TableCell>
+                    <TableCell align="center">Blackout Dates</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -298,7 +298,7 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                               color={closedCount > 0 ? 'primary' : 'inherit'}
                               disabled={saving}
                               onClick={(e) => openPopover(e, field.id, 'closed')}
-                              aria-label={`Closed dates for ${field.name}`}
+                              aria-label={`Blackout dates for ${field.name}`}
                               sx={{ textTransform: 'none' }}
                             >
                               {closedCount > 0 ? `${closedCount}` : 'None'}

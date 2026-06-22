@@ -68,7 +68,7 @@ export const SchedulerFieldClosedDatesPopover: React.FC<SchedulerFieldClosedDate
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 2, width: 480 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="subtitle2">Closed Dates</Typography>
+          <Typography variant="subtitle2">Blackout Dates</Typography>
           <Button size="small" startIcon={<AddIcon />} onClick={handleAdd}>
             Add Date
           </Button>
@@ -76,7 +76,7 @@ export const SchedulerFieldClosedDatesPopover: React.FC<SchedulerFieldClosedDate
 
         {draft.length === 0 && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            No closed dates configured.
+            No blackout dates configured.
           </Typography>
         )}
 

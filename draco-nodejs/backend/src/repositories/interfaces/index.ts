@@ -44,6 +44,7 @@ export * from './ISchedulerSeasonConfigRepository.js';
 export * from './ISchedulerSeasonLeagueSelectionsRepository.js';
 export * from './ISchedulerSeasonExclusionsRepository.js';
 export * from './ISchedulerTeamSeasonExclusionsRepository.js';
+export * from './ISchedulerLeagueSeasonExclusionsRepository.js';
 export * from './ISchedulerUmpireExclusionsRepository.js';
 export * from './IAccountSettingsRepository.js';
 export * from './ISocialContentRepository.js';

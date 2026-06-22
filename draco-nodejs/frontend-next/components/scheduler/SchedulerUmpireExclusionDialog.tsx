@@ -1,21 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Checkbox,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-} from '@mui/material';
+import { FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import type {
   SchedulerUmpireExclusion,
   SchedulerUmpireExclusionUpsert,
 } from '@draco/shared-schemas';
 import { SchedulerUmpireExclusionUpsertSchema } from '@draco/shared-schemas';
 import { BaseSchedulerDialog } from './BaseSchedulerDialog';
+import { dateInputToIso, isoToDateInput } from '../../utils/schedulerBlackoutDate';
 
 type UmpireOption = { id: string; name: string };
 
@@ -23,6 +16,7 @@ interface SchedulerUmpireExclusionDialogProps {
   open: boolean;
   mode: 'create' | 'edit';
   seasonId: string;
+  timeZone: string;
   umpires: UmpireOption[];
   initialExclusion?: SchedulerUmpireExclusion;
   onClose: () => void;
@@ -34,6 +28,7 @@ export const SchedulerUmpireExclusionDialog: React.FC<SchedulerUmpireExclusionDi
   open,
   mode,
   seasonId,
+  timeZone,
   umpires,
   initialExclusion,
   onClose,
@@ -41,31 +36,46 @@ export const SchedulerUmpireExclusionDialog: React.FC<SchedulerUmpireExclusionDi
   loading,
 }) => {
   const [umpireId, setUmpireId] = useState(initialExclusion?.umpireId ?? umpires[0]?.id ?? '');
-  const [startTime, setStartTime] = useState(initialExclusion?.startTime ?? '');
-  const [endTime, setEndTime] = useState(initialExclusion?.endTime ?? '');
+  const [startDate, setStartDate] = useState(() =>
+    isoToDateInput(initialExclusion?.startTime, timeZone),
+  );
+  const [endDate, setEndDate] = useState(() => isoToDateInput(initialExclusion?.endTime, timeZone));
   const [note, setNote] = useState(initialExclusion?.note ?? '');
-  const [enabled, setEnabled] = useState(initialExclusion?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
 
-  const title = mode === 'create' ? 'Add Umpire Exclusion' : 'Edit Umpire Exclusion';
+  const title = mode === 'create' ? 'Add Umpire Blackout Date' : 'Edit Umpire Blackout Date';
 
   const handleSubmit = async () => {
     setError(null);
     try {
+      if (!umpireId) {
+        setError('Select an umpire.');
+        return;
+      }
+      if (!startDate) {
+        setError('Select a start date.');
+        return;
+      }
+      const effectiveEnd = endDate || startDate;
+      if (effectiveEnd < startDate) {
+        setError('End date must be on or after the start date.');
+        return;
+      }
+
       const trimmedNote = note.trim();
       const payload: SchedulerUmpireExclusionUpsert = SchedulerUmpireExclusionUpsertSchema.parse({
         seasonId,
         umpireId,
-        startTime: startTime.trim(),
-        endTime: endTime.trim(),
+        startTime: dateInputToIso(startDate, timeZone, 'start'),
+        endTime: dateInputToIso(effectiveEnd, timeZone, 'end'),
         note: trimmedNote.length > 0 ? trimmedNote : undefined,
-        enabled,
+        enabled: true,
       });
 
       await onSubmit(payload);
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Invalid umpire exclusion';
+      const message = err instanceof Error ? err.message : 'Invalid umpire blackout date';
       setError(message);
     }
   };
@@ -96,20 +106,21 @@ export const SchedulerUmpireExclusionDialog: React.FC<SchedulerUmpireExclusionDi
         </Select>
       </FormControl>
       <TextField
-        label="Start (UTC ISO)"
+        label="Start date"
+        type="date"
         size="small"
-        value={startTime}
-        onChange={(event) => setStartTime(event.target.value)}
-        placeholder="2026-04-05T13:00:00Z"
-        helperText="Use ISO datetime (UTC)."
+        value={startDate}
+        onChange={(event) => setStartDate(event.target.value)}
+        InputLabelProps={{ shrink: true }}
       />
       <TextField
-        label="End (UTC ISO)"
+        label="End date"
+        type="date"
         size="small"
-        value={endTime}
-        onChange={(event) => setEndTime(event.target.value)}
-        placeholder="2026-04-05T15:00:00Z"
-        helperText="Use ISO datetime (UTC)."
+        value={endDate}
+        onChange={(event) => setEndDate(event.target.value)}
+        InputLabelProps={{ shrink: true }}
+        helperText="Leave blank for a single day."
       />
       <TextField
         label="Note (optional)"
@@ -117,12 +128,6 @@ export const SchedulerUmpireExclusionDialog: React.FC<SchedulerUmpireExclusionDi
         value={note}
         onChange={(event) => setNote(event.target.value)}
         inputProps={{ maxLength: 255 }}
-      />
-      <FormControlLabel
-        control={
-          <Checkbox checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
-        }
-        label="Enabled"
       />
     </BaseSchedulerDialog>
   );

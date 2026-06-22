@@ -44,6 +44,7 @@ export * from './PrismaSchedulerSeasonConfigRepository.js';
 export * from './PrismaSchedulerSeasonLeagueSelectionsRepository.js';
 export * from './PrismaSchedulerSeasonExclusionsRepository.js';
 export * from './PrismaSchedulerTeamSeasonExclusionsRepository.js';
+export * from './PrismaSchedulerLeagueSeasonExclusionsRepository.js';
 export * from './PrismaSchedulerUmpireExclusionsRepository.js';
 export * from './PrismaSocialContentRepository.js';
 export * from './PrismaLiveEventRepository.js';

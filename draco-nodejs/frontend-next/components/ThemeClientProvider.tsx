@@ -66,6 +66,7 @@ const applyThemeToDocument = (name: ThemeName) => {
   const root = document.documentElement;
   root.classList.toggle('dark', name === 'dark');
   root.setAttribute('data-theme', name);
+  root.style.colorScheme = name;
   const body = document.body;
   body.style.backgroundColor = name === 'dark' ? '#1e1e1e' : '#ffffff';
   body.style.color = name === 'dark' ? '#e0e0e0' : '#0f172a';

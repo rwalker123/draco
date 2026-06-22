@@ -57,6 +57,7 @@ import {
   ISchedulerSeasonLeagueSelectionsRepository,
   ISchedulerSeasonExclusionsRepository,
   ISchedulerTeamSeasonExclusionsRepository,
+  ISchedulerLeagueSeasonExclusionsRepository,
   ISchedulerUmpireExclusionsRepository,
   ISchedulerApplyAuditLogRepository,
   IGolfCourseRepository,
@@ -131,6 +132,7 @@ import {
   PrismaSchedulerSeasonLeagueSelectionsRepository,
   PrismaSchedulerSeasonExclusionsRepository,
   PrismaSchedulerTeamSeasonExclusionsRepository,
+  PrismaSchedulerLeagueSeasonExclusionsRepository,
   PrismaSchedulerUmpireExclusionsRepository,
   PrismaSchedulerApplyAuditLogRepository,
   PrismaGolfCourseRepository,
@@ -212,6 +214,7 @@ export class RepositoryFactory {
   private static schedulerSeasonLeagueSelectionsRepository: ISchedulerSeasonLeagueSelectionsRepository;
   private static schedulerSeasonExclusionsRepository: ISchedulerSeasonExclusionsRepository;
   private static schedulerTeamSeasonExclusionsRepository: ISchedulerTeamSeasonExclusionsRepository;
+  private static schedulerLeagueSeasonExclusionsRepository: ISchedulerLeagueSeasonExclusionsRepository;
   private static schedulerUmpireExclusionsRepository: ISchedulerUmpireExclusionsRepository;
   private static schedulerApplyAuditLogRepository: ISchedulerApplyAuditLogRepository;
   private static golfCourseRepository: IGolfCourseRepository;
@@ -533,6 +536,14 @@ export class RepositoryFactory {
         new PrismaSchedulerTeamSeasonExclusionsRepository(prisma);
     }
     return this.schedulerTeamSeasonExclusionsRepository;
+  }
+
+  static getSchedulerLeagueSeasonExclusionsRepository(): ISchedulerLeagueSeasonExclusionsRepository {
+    if (!this.schedulerLeagueSeasonExclusionsRepository) {
+      this.schedulerLeagueSeasonExclusionsRepository =
+        new PrismaSchedulerLeagueSeasonExclusionsRepository(prisma);
+    }
+    return this.schedulerLeagueSeasonExclusionsRepository;
   }
 
   static getSchedulerUmpireExclusionsRepository(): ISchedulerUmpireExclusionsRepository {
