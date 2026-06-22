@@ -25469,6 +25469,206 @@
           "unscheduled": []
         }
       },
+      "SchedulerRunState": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "SchedulerRunLifecycleStatus",
+            "description": "Lifecycle state of an asynchronous schedule-generation run."
+          },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "processed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "processed",
+              "total"
+            ],
+            "title": "SchedulerRunProgress"
+          },
+          "result": {
+            "type": "object",
+            "properties": {
+              "runId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "partial",
+                  "infeasible",
+                  "failed"
+                ],
+                "title": "SchedulerRunStatus"
+              },
+              "metrics": {
+                "type": "object",
+                "properties": {
+                  "totalGames": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "scheduledGames": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unscheduledGames": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "objectiveValue": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "totalGames",
+                  "scheduledGames",
+                  "unscheduledGames"
+                ],
+                "title": "SchedulerMetrics"
+              },
+              "assignments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "gameId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "123"
+                    },
+                    "fieldId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "123"
+                    },
+                    "startTime": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-03-01T18:30:00Z",
+                      "description": "ISO 8601 timestamp string with timezone offset."
+                    },
+                    "endTime": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-03-01T18:30:00Z",
+                      "description": "ISO 8601 timestamp string with timezone offset."
+                    },
+                    "umpireIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "example": "123"
+                      }
+                    }
+                  },
+                  "required": [
+                    "gameId",
+                    "fieldId",
+                    "startTime",
+                    "endTime",
+                    "umpireIds"
+                  ],
+                  "title": "SchedulerAssignment"
+                }
+              },
+              "unscheduled": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "gameId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "example": "123"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "gameId",
+                    "reason"
+                  ],
+                  "title": "SchedulerUnscheduledReason"
+                }
+              }
+            },
+            "required": [
+              "runId",
+              "status",
+              "metrics",
+              "assignments",
+              "unscheduled"
+            ],
+            "title": "SchedulerSolveResult",
+            "description": "Proposal-only solve output. Persisting assignments is handled by a follow-up apply endpoint.",
+            "example": {
+              "runId": "sched_account_42_ab12cd34ef56gh78",
+              "status": "completed",
+              "metrics": {
+                "totalGames": 1,
+                "scheduledGames": 1,
+                "unscheduledGames": 0,
+                "objectiveValue": 1
+              },
+              "assignments": [
+                {
+                  "gameId": "game-1",
+                  "fieldId": "field-1",
+                  "startTime": "2026-04-05T09:00:00Z",
+                  "endTime": "2026-04-05T10:30:00Z",
+                  "umpireIds": [
+                    "ump-1"
+                  ]
+                }
+              ],
+              "unscheduled": []
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "runId",
+          "status",
+          "progress"
+        ],
+        "title": "SchedulerRunState",
+        "description": "Status of an asynchronous schedule-generation run, including progress and the final result when completed.",
+        "example": {
+          "runId": "sched_account_42_ab12cd34ef56gh78",
+          "status": "running",
+          "progress": {
+            "processed": 120,
+            "total": 480
+          }
+        }
+      },
       "SchedulerApplyRequest": {
         "type": "object",
         "properties": {
@@ -71155,6 +71355,209 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/runs": {
+      "post": {
+        "operationId": "enqueueSeasonScheduleRun",
+        "summary": "Queue an asynchronous schedule-generation run",
+        "description": "Builds the problem spec from database state and queues an asynchronous solve. Returns immediately with a run id; poll GET .../scheduler/runs/{runId} for progress and the final result. Provide an Idempotency-Key header to reuse an existing run.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Optional client-provided key used to derive a stable runId so callers can safely retry without enqueuing duplicate runs."
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerSeasonSolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Run accepted and queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerRunState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to generate schedules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/scheduler/runs/{runId}": {
+      "get": {
+        "operationId": "getSeasonScheduleRun",
+        "summary": "Get the status of an asynchronous schedule-generation run",
+        "description": "Returns the lifecycle status and progress of a queued run, including the solve result once completed.",
+        "tags": [
+          "Scheduler"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Run status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerRunState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to view schedule runs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
                 }
               }
             }

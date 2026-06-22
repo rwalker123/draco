@@ -3,6 +3,7 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { extractBigIntParams } from '../utils/paramExtraction.js';
+import { NotFoundError } from '../utils/customErrors.js';
 import {
   SchedulerSeasonWindowConfigUpsertSchema,
   SchedulerSeasonExclusionUpsertSchema,
@@ -27,6 +28,7 @@ const schedulerProblemSpecService = ServiceFactory.getSchedulerProblemSpecServic
 const schedulerEngineService = ServiceFactory.getSchedulerEngineService();
 const schedulerSeasonApplyService = ServiceFactory.getSchedulerSeasonApplyService();
 const schedulerMatchupGenerationService = ServiceFactory.getSchedulerMatchupGenerationService();
+const schedulerRunService = ServiceFactory.getSchedulerRunService();
 
 router.get(
   '/season-window-config',
@@ -381,17 +383,63 @@ router.post(
         ? rawIdempotencyKey.trim()
         : undefined;
 
-    const { problemSpec, timeZoneId } = await schedulerProblemSpecService.buildProblemSpecForSolve(
-      accountId,
-      seasonId,
-      request,
-    );
+    const logPrefix = `[scheduler:solve account=${accountId.toString()} season=${seasonId.toString()}]`;
+    const buildStart = Date.now();
+    const { problemSpec, timeZoneId, fieldGameLengthById } =
+      await schedulerProblemSpecService.buildProblemSpecForSolve(accountId, seasonId, request);
+    console.log(`${logPrefix} build complete in ${Date.now() - buildStart}ms`);
+
+    const solveStart = Date.now();
     const result = schedulerEngineService.solve(problemSpec, {
       accountId,
       idempotencyKey,
       timeZoneId,
+      fieldGameLengthById,
     });
+    console.log(
+      `${logPrefix} solve complete in ${Date.now() - solveStart}ms status=${result.status} ` +
+        `scheduled=${result.metrics.scheduledGames}/${result.metrics.totalGames}`,
+    );
     res.json(result);
+  }),
+);
+
+router.post(
+  '/runs',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const request = SchedulerSeasonSolveRequestSchema.parse(req.body ?? {});
+    const rawIdempotencyKey = req.header('Idempotency-Key') ?? req.header('X-Idempotency-Key');
+    const idempotencyKey =
+      typeof rawIdempotencyKey === 'string' && rawIdempotencyKey.trim().length > 0
+        ? rawIdempotencyKey.trim()
+        : undefined;
+
+    const run = await schedulerRunService.enqueue(accountId, seasonId, request, idempotencyKey);
+    res.status(202).json(run);
+  }),
+);
+
+router.get(
+  '/runs/:runId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.games.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, seasonId } = extractBigIntParams(req.params, 'accountId', 'seasonId');
+    const rawRunId = req.params.runId;
+    const runId = Array.isArray(rawRunId) ? rawRunId[0] : rawRunId;
+    if (!runId) {
+      throw new NotFoundError('Scheduler run not found');
+    }
+    const run = await schedulerRunService.getRun(accountId, seasonId, runId);
+    if (!run) {
+      throw new NotFoundError('Scheduler run not found');
+    }
+    res.json(run);
   }),
 );
 

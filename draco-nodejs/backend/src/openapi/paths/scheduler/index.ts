@@ -14,6 +14,7 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
     SchedulerGenerateMatchupsRequestSchemaRef,
     SchedulerGenerateMatchupsResultSchemaRef,
     SchedulerSolveResultSchemaRef,
+    SchedulerRunStateSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
     SchedulerSeasonWindowConfigSchemaRef,
@@ -1194,6 +1195,124 @@ export const registerSchedulerEndpoints = ({ registry, schemaRefs }: RegisterCon
       403: {
         description: 'Insufficient permissions to generate schedules',
         content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/runs',
+    operationId: 'enqueueSeasonScheduleRun',
+    summary: 'Queue an asynchronous schedule-generation run',
+    description:
+      'Builds the problem spec from database state and queues an asynchronous solve. Returns immediately with a run id; poll GET .../scheduler/runs/{runId} for progress and the final result. Provide an Idempotency-Key header to reuse an existing run.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'Idempotency-Key',
+        in: 'header',
+        required: false,
+        schema: { type: 'string', minLength: 1 },
+        description:
+          'Optional client-provided key used to derive a stable runId so callers can safely retry without enqueuing duplicate runs.',
+      },
+    ],
+    request: {
+      body: {
+        required: false,
+        content: {
+          'application/json': {
+            schema: SchedulerSeasonSolveRequestSchemaRef,
+          },
+        },
+      },
+    },
+    responses: {
+      202: {
+        description: 'Run accepted and queued',
+        content: { 'application/json': { schema: SchedulerRunStateSchemaRef } },
+      },
+      400: {
+        description: 'Validation error',
+        content: { 'application/json': { schema: ValidationErrorSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions to generate schedules',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      500: {
+        description: 'Internal server error',
+        content: { 'application/json': { schema: InternalServerErrorSchemaRef } },
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/accounts/{accountId}/seasons/{seasonId}/scheduler/runs/{runId}',
+    operationId: 'getSeasonScheduleRun',
+    summary: 'Get the status of an asynchronous schedule-generation run',
+    description:
+      'Returns the lifecycle status and progress of a queued run, including the solve result once completed.',
+    tags: ['Scheduler'],
+    security: [{ bearerAuth: [] }],
+    parameters: [
+      {
+        name: 'accountId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'seasonId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'number' },
+      },
+      {
+        name: 'runId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', minLength: 1 },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Run status',
+        content: { 'application/json': { schema: SchedulerRunStateSchemaRef } },
+      },
+      401: {
+        description: 'Authentication required',
+        content: { 'application/json': { schema: AuthenticationErrorSchemaRef } },
+      },
+      403: {
+        description: 'Insufficient permissions to view schedule runs',
+        content: { 'application/json': { schema: AuthorizationErrorSchemaRef } },
+      },
+      404: {
+        description: 'Run not found',
+        content: { 'application/json': { schema: NotFoundErrorSchemaRef } },
       },
       500: {
         description: 'Internal server error',

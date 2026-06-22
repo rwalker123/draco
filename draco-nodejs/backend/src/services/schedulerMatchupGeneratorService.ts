@@ -18,16 +18,61 @@ export interface GeneratorLeagueInput {
 
 export class SchedulerMatchupGeneratorService {
   generate(leagues: GeneratorLeagueInput[]): SchedulerGenerateMatchupsResult {
-    const allMatchups: SchedulerGameRequest[] = [];
     const summaries: SchedulerMatchupGenerationSummary[] = [];
+    const leagueMatchups: SchedulerGameRequest[][] = [];
 
     for (const league of leagues) {
       const { matchups, summary } = this.generateLeagueMatchups(league);
-      allMatchups.push(...matchups);
+      leagueMatchups.push(this.packIntoRounds(matchups));
       summaries.push(summary);
     }
 
-    return { matchups: allMatchups, summary: summaries };
+    return { matchups: this.interleaveByIndex(leagueMatchups), summary: summaries };
+  }
+
+  /**
+   * Greedily orders a league's matchups into round-robin rounds where each team appears at
+   * most once per round. A team's second game cannot land in the same round as its first, so
+   * every team gets a game before any team gets a second one — to the extent the matchup set
+   * allows. Relative order is otherwise preserved for determinism.
+   */
+  private packIntoRounds(matchups: SchedulerGameRequest[]): SchedulerGameRequest[] {
+    const ordered: SchedulerGameRequest[] = [];
+    let remaining = matchups;
+    while (remaining.length > 0) {
+      const usedTeams = new Set<string>();
+      const leftover: SchedulerGameRequest[] = [];
+      for (const matchup of remaining) {
+        if (usedTeams.has(matchup.homeTeamSeasonId) || usedTeams.has(matchup.visitorTeamSeasonId)) {
+          leftover.push(matchup);
+        } else {
+          ordered.push(matchup);
+          usedTeams.add(matchup.homeTeamSeasonId);
+          usedTeams.add(matchup.visitorTeamSeasonId);
+        }
+      }
+      remaining = leftover;
+    }
+    return ordered;
+  }
+
+  /**
+   * Round-robin merge the per-league lists by position. Each league list is already
+   * round-major, so taking index 0 from every league, then index 1, and so on keeps each
+   * league's repeats spread out while preventing any single league from claiming the
+   * earliest slots ahead of the others.
+   */
+  private interleaveByIndex(lists: SchedulerGameRequest[][]): SchedulerGameRequest[] {
+    const merged: SchedulerGameRequest[] = [];
+    const maxLength = lists.reduce((max, list) => Math.max(max, list.length), 0);
+    for (let index = 0; index < maxLength; index += 1) {
+      for (const list of lists) {
+        if (index < list.length) {
+          merged.push(list[index]);
+        }
+      }
+    }
+    return merged;
   }
 
   private generateLeagueMatchups(league: GeneratorLeagueInput): {

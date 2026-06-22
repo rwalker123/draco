@@ -51,14 +51,17 @@ export class SchedulerMatchupGenerationService {
 
     const teamsByLeague = new Map<
       string,
-      Array<{ teamSeasonId: string; divisionSeasonId: string | null }>
+      Array<{ teamSeasonId: string; divisionSeasonId: string }>
     >();
     for (const row of teamRows) {
+      if (row.divisionseasonid === null || row.divisionseasonid === undefined) {
+        continue;
+      }
       const key = row.leagueseasonid.toString();
       const list = teamsByLeague.get(key) ?? [];
       list.push({
         teamSeasonId: row.teamseasonid.toString(),
-        divisionSeasonId: row.divisionseasonid?.toString() ?? null,
+        divisionSeasonId: row.divisionseasonid.toString(),
       });
       teamsByLeague.set(key, list);
     }
@@ -67,7 +70,7 @@ export class SchedulerMatchupGenerationService {
       const teams = teamsByLeague.get(lc.leagueSeasonId) ?? [];
       if (teams.length === 0) {
         throw new ValidationError(
-          `League season ${lc.leagueSeasonId} has no teams enrolled for this season`,
+          `League season ${lc.leagueSeasonId} has no teams assigned to a division for this season`,
         );
       }
       return {

@@ -34,6 +34,7 @@ interface SeasonSummaryWidgetProps {
   ready: boolean;
   games?: Game[];
   timeZone?: string;
+  title?: string;
 }
 
 const MAX_FIELD_NAME_LENGTH = 40;
@@ -419,6 +420,7 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
   ready,
   games = [],
   timeZone = 'UTC',
+  title = 'Season Summary',
 }) => {
   const theme = useTheme();
   const [selectedField, setSelectedField] = useState<SelectedField | null>(null);
@@ -465,7 +467,7 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
             }}
           >
             <Typography variant="h6" fontWeight={700} color={theme.palette.widget.headerText}>
-              Season Summary
+              {title}
             </Typography>
             <Typography variant="body2" color={theme.palette.widget.supportingText}>
               {subtitle}

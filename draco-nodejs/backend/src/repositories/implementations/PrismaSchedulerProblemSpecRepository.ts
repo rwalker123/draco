@@ -55,6 +55,7 @@ export class PrismaSchedulerProblemSpecRepository implements ISchedulerProblemSp
   async listSeasonGames(seasonId: bigint): Promise<leagueschedule[]> {
     return this.prisma.leagueschedule.findMany({
       where: { leagueseason: { seasonid: seasonId } },
+      orderBy: [{ gamedate: 'asc' }, { id: 'asc' }],
     });
   }
 }

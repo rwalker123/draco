@@ -87,9 +87,11 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
     `Field: ${fieldNameById.get(assignment.fieldId) ?? `Field ${assignment.fieldId}`}`,
   );
   secondaryParts.push(formatLocalTimeRange(assignment.startTime, assignment.endTime, timeZone));
-  if (umpireNames.length === 1) secondaryParts.push(`Umpire: ${umpireNames[0]}`);
-  else if (umpireNames.length > 1) secondaryParts.push(`Umpires: ${umpireNames.join(', ')}`);
-  else secondaryParts.push('Umpire: Unassigned');
+  if (maxUmpires > 0) {
+    if (umpireNames.length === 1) secondaryParts.push(`Umpire: ${umpireNames[0]}`);
+    else if (umpireNames.length > 1) secondaryParts.push(`Umpires: ${umpireNames.join(', ')}`);
+    else secondaryParts.push('Umpire: Unassigned');
+  }
 
   const detailsId = `proposal-assignment-details-${assignment.gameId}`;
 
@@ -168,42 +170,44 @@ export const ProposalAssignmentRow: React.FC<ProposalAssignmentRowProps> = ({
               </Select>
             </FormControl>
 
-            <FormControl size="small" fullWidth>
-              <InputLabel id={`${detailsId}-umpires-label`}>Umpires</InputLabel>
-              <Select
-                labelId={`${detailsId}-umpires-label`}
-                label="Umpires"
-                multiple
-                value={assignment.umpireIds}
-                onChange={handleUmpiresChange}
-                renderValue={(selectedIds) =>
-                  selectedIds.length === 0
-                    ? 'Unassigned'
-                    : selectedIds
-                        .map(
-                          (id) =>
-                            schedulerUmpireNameById.get(id) ??
-                            umpireNameById.get(id) ??
-                            `Umpire ${id}`,
-                        )
-                        .join(', ')
-                }
-              >
-                {umpires.map((umpire) => (
-                  <MenuItem
-                    key={umpire.id}
-                    value={umpire.id}
-                    disabled={
-                      assignment.umpireIds.length >= maxUmpires &&
-                      !assignment.umpireIds.includes(umpire.id)
-                    }
-                  >
-                    <Checkbox checked={assignment.umpireIds.includes(umpire.id)} />
-                    <ListItemText primary={umpire.name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {maxUmpires > 0 && (
+              <FormControl size="small" fullWidth>
+                <InputLabel id={`${detailsId}-umpires-label`}>Umpires</InputLabel>
+                <Select
+                  labelId={`${detailsId}-umpires-label`}
+                  label="Umpires"
+                  multiple
+                  value={assignment.umpireIds}
+                  onChange={handleUmpiresChange}
+                  renderValue={(selectedIds) =>
+                    selectedIds.length === 0
+                      ? 'Unassigned'
+                      : selectedIds
+                          .map(
+                            (id) =>
+                              schedulerUmpireNameById.get(id) ??
+                              umpireNameById.get(id) ??
+                              `Umpire ${id}`,
+                          )
+                          .join(', ')
+                  }
+                >
+                  {umpires.map((umpire) => (
+                    <MenuItem
+                      key={umpire.id}
+                      value={umpire.id}
+                      disabled={
+                        assignment.umpireIds.length >= maxUmpires &&
+                        !assignment.umpireIds.includes(umpire.id)
+                      }
+                    >
+                      <Checkbox checked={assignment.umpireIds.includes(umpire.id)} />
+                      <ListItemText primary={umpire.name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <TextField
               label="Start"

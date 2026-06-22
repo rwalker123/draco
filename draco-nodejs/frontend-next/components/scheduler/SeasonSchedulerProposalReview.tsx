@@ -19,6 +19,7 @@ import type {
 import { formatDateInTimezone, getDateKeyInTimezone } from '../../utils/dateUtils';
 import { findSelectedFieldClashes } from '../../utils/schedulerAssignmentChecks';
 import { ProposalAssignmentRow } from './ProposalAssignmentRow';
+import { ScheduleProposalSummary } from './ScheduleProposalSummary';
 import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
 
 type Option = { id: string; name: string };
@@ -134,6 +135,18 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
     [...(specPreview?.games ?? []), ...(generatedMatchups ?? [])].map((game) => [game.id, game]),
   );
 
+  const getMatchupLabel = (gameId: string): string => {
+    const game = gameRequestById.get(gameId);
+    if (!game) {
+      return getGameSummaryLabel(gameId);
+    }
+    const home = teamNameById.get(game.homeTeamSeasonId) ?? 'Unknown Home';
+    const visitor = teamNameById.get(game.visitorTeamSeasonId) ?? 'Unknown Visitor';
+    const league = game.leagueSeasonId ? leagueNameById.get(game.leagueSeasonId) : undefined;
+    const matchup = `${home} vs ${visitor}`;
+    return league ? `[${league}] ${matchup}` : matchup;
+  };
+
   const selectedMode = !proposal || selectedGameIds.size === assignments.length ? 'all' : 'subset';
 
   const toggleExpanded = (gameId: string) => {
@@ -160,6 +173,17 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
               Status: {proposal.status}. Scheduled {proposal.metrics.scheduledGames}/
               {proposal.metrics.totalGames}.
             </Typography>
+
+            {proposal.assignments.length > 0 && (
+              <ScheduleProposalSummary
+                assignments={proposal.assignments}
+                gameRequestById={gameRequestById}
+                fieldNameById={fieldNameById}
+                teamNameById={teamNameById}
+                leagueNameById={leagueNameById}
+                timeZone={timeZone}
+              />
+            )}
 
             {proposal.assignments.length === 0 ? (
               <Alert severity="warning" sx={{ mt: 2 }}>
@@ -262,7 +286,7 @@ export const SeasonSchedulerProposalReview: React.FC<SeasonSchedulerProposalRevi
                       }}
                     >
                       <Typography variant="body2" noWrap>
-                        {getGameSummaryLabel(item.gameId)}
+                        {getMatchupLabel(item.gameId)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {item.reason}

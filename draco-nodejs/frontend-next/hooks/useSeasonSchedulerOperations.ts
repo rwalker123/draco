@@ -143,6 +143,14 @@ export const useSeasonSchedulerOperations = (accountId: string, seasonId: string
         (s, a, i, request: SchedulerSeasonSolveRequest, options?: { idempotencyKey?: string }) =>
           s.solveSeason(a, i, request, options),
       ),
+      enqueueSeasonRun: mutate(
+        (s, a, i, request: SchedulerSeasonSolveRequest, options?: { idempotencyKey?: string }) =>
+          s.enqueueSeasonRun(a, i, request, options),
+      ),
+      getSeasonRun: (runId: string, signal?: AbortSignal) => {
+        const { service, accountId, seasonId } = getContext();
+        return service.getSeasonRun(accountId, seasonId, runId, signal);
+      },
       applySeason: mutate((s, a, i, request: SchedulerSeasonApplyRequest) =>
         s.applySeason(a, i, request),
       ),

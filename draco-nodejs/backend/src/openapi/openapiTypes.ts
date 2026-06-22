@@ -301,6 +301,7 @@ import {
   SchedulerGenerateMatchupsRequestSchema,
   SchedulerGenerateMatchupsResultSchema,
   SchedulerSolveResultSchema,
+  SchedulerRunStateSchema,
   SchedulerApplyRequestSchema,
   SchedulerApplyResultSchema,
   SchedulerSeasonWindowConfigSchema,
@@ -1338,6 +1339,10 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     'SchedulerSolveResult',
     SchedulerSolveResultSchema,
   );
+  const SchedulerRunStateSchemaRef = registry.register(
+    'SchedulerRunState',
+    SchedulerRunStateSchema,
+  );
   const SchedulerApplyRequestSchemaRef = registry.register(
     'SchedulerApplyRequest',
     SchedulerApplyRequestSchema,
@@ -1995,6 +2000,7 @@ export const registerSchemaRefs = (registry: OpenAPIRegistry) => {
     SchedulerGenerateMatchupsRequestSchemaRef,
     SchedulerGenerateMatchupsResultSchemaRef,
     SchedulerSolveResultSchemaRef,
+    SchedulerRunStateSchemaRef,
     SchedulerApplyRequestSchemaRef,
     SchedulerApplyResultSchemaRef,
     SchedulerSeasonWindowConfigSchemaRef,

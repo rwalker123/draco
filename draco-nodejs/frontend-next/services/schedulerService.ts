@@ -13,6 +13,7 @@ import type {
   SchedulerSeasonWindowConfigUpsert,
   SchedulerSeasonApplyRequest,
   SchedulerSeasonSolveRequest,
+  SchedulerRunState,
   SchedulerSolveResult,
   SchedulerTeamExclusion,
   SchedulerTeamExclusionUpsert,
@@ -31,7 +32,9 @@ import {
   deleteSchedulerSeasonExclusion,
   deleteSchedulerTeamExclusion,
   deleteSchedulerUmpireExclusion,
+  enqueueSeasonScheduleRun,
   generateSeasonMatchups,
+  getSeasonScheduleRun,
   getSchedulerProblemSpecPreview,
   getSchedulerSeasonWindowConfig,
   listSchedulerLeagueExclusions,
@@ -124,6 +127,39 @@ export class SchedulerService {
     });
 
     return unwrapApiResult(result, 'Failed to generate schedule proposal');
+  }
+
+  async enqueueSeasonRun(
+    accountId: string,
+    seasonId: string,
+    request: SchedulerSeasonSolveRequest,
+    options?: { idempotencyKey?: string },
+  ): Promise<SchedulerRunState> {
+    const result = await enqueueSeasonScheduleRun({
+      client: this.client,
+      path: { accountId, seasonId },
+      body: request,
+      headers: options?.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : undefined,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to queue schedule generation');
+  }
+
+  async getSeasonRun(
+    accountId: string,
+    seasonId: string,
+    runId: string,
+    signal?: AbortSignal,
+  ): Promise<SchedulerRunState> {
+    const result = await getSeasonScheduleRun({
+      client: this.client,
+      path: { accountId, seasonId, runId },
+      signal,
+      throwOnError: false,
+    });
+
+    return unwrapApiResult(result, 'Failed to load schedule run status');
   }
 
   async generateSeasonMatchups(

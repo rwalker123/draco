@@ -86,6 +86,8 @@ vi.mock('../repositories/repositoryFactory.js', () => ({
     getSchedulerLeagueSeasonExclusionsRepository: vi.fn(),
     getSchedulerUmpireExclusionsRepository: vi.fn(),
     getSchedulerMatchupRepository: vi.fn(),
+    getSchedulerApplyAuditLogRepository: vi.fn(),
+    getSchedulerRunRepository: vi.fn(),
     getGolfCourseRepository: vi.fn(),
     getGolferRepository: vi.fn(),
     getGolfScoreRepository: vi.fn(),

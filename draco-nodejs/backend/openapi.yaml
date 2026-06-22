@@ -18446,7 +18446,7 @@ components:
               minItems: 1
               description: League-season IDs selected for scheduling. When omitted, the
                 frontend should treat this as "all leagues".
-              example: &a1
+              example: &a2
                 - "55"
                 - "56"
             umpiresPerGame:
@@ -19197,7 +19197,7 @@ components:
       title: SchedulerSolveResult
       description: Proposal-only solve output. Persisting assignments is handled by a
         follow-up apply endpoint.
-      example:
+      example: &a1
         runId: sched_account_42_ab12cd34ef56gh78
         status: completed
         metrics:
@@ -19213,6 +19213,144 @@ components:
             umpireIds:
               - ump-1
         unscheduled: []
+    SchedulerRunState:
+      type: object
+      properties:
+        runId:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+            - queued
+            - running
+            - completed
+            - failed
+          title: SchedulerRunLifecycleStatus
+          description: Lifecycle state of an asynchronous schedule-generation run.
+        progress:
+          type: object
+          properties:
+            processed:
+              type: integer
+              minimum: 0
+            total:
+              type: integer
+              minimum: 0
+          required:
+            - processed
+            - total
+          title: SchedulerRunProgress
+        result:
+          type: object
+          properties:
+            runId:
+              type: string
+              minLength: 1
+            status:
+              type: string
+              enum:
+                - completed
+                - partial
+                - infeasible
+                - failed
+              title: SchedulerRunStatus
+            metrics:
+              type: object
+              properties:
+                totalGames:
+                  type: integer
+                  minimum: 0
+                scheduledGames:
+                  type: integer
+                  minimum: 0
+                unscheduledGames:
+                  type: integer
+                  minimum: 0
+                objectiveValue:
+                  type: number
+              required:
+                - totalGames
+                - scheduledGames
+                - unscheduledGames
+              title: SchedulerMetrics
+            assignments:
+              type: array
+              items:
+                type: object
+                properties:
+                  gameId:
+                    type: string
+                    minLength: 1
+                    example: "123"
+                  fieldId:
+                    type: string
+                    minLength: 1
+                    example: "123"
+                  startTime:
+                    type: string
+                    format: date-time
+                    example: 2024-03-01T18:30:00Z
+                    description: ISO 8601 timestamp string with timezone offset.
+                  endTime:
+                    type: string
+                    format: date-time
+                    example: 2024-03-01T18:30:00Z
+                    description: ISO 8601 timestamp string with timezone offset.
+                  umpireIds:
+                    type: array
+                    items:
+                      type: string
+                      minLength: 1
+                      example: "123"
+                required:
+                  - gameId
+                  - fieldId
+                  - startTime
+                  - endTime
+                  - umpireIds
+                title: SchedulerAssignment
+            unscheduled:
+              type: array
+              items:
+                type: object
+                properties:
+                  gameId:
+                    type: string
+                    minLength: 1
+                    example: "123"
+                  reason:
+                    type: string
+                    minLength: 1
+                required:
+                  - gameId
+                  - reason
+                title: SchedulerUnscheduledReason
+          required:
+            - runId
+            - status
+            - metrics
+            - assignments
+            - unscheduled
+          title: SchedulerSolveResult
+          description: Proposal-only solve output. Persisting assignments is handled by a
+            follow-up apply endpoint.
+          example: *a1
+        error:
+          type: string
+      required:
+        - runId
+        - status
+        - progress
+      title: SchedulerRunState
+      description: Status of an asynchronous schedule-generation run, including
+        progress and the final result when completed.
+      example:
+        runId: sched_account_42_ab12cd34ef56gh78
+        status: running
+        progress:
+          processed: 120
+          total: 480
     SchedulerApplyRequest:
       type: object
       properties:
@@ -19444,7 +19582,7 @@ components:
           minItems: 1
           description: League-season IDs selected for scheduling. When omitted, the
             frontend should treat this as "all leagues".
-          example: *a1
+          example: *a2
         umpiresPerGame:
           type: integer
           minimum: 1
@@ -19491,7 +19629,7 @@ components:
           minItems: 1
           description: League-season IDs selected for scheduling. When omitted, the
             frontend should treat this as "all leagues".
-          example: *a1
+          example: *a2
         umpiresPerGame:
           type: integer
           minimum: 1
@@ -26640,14 +26778,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a2
+        - &a3
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a3
+        - &a4
           name: teamId
           in: path
           required: true
@@ -26694,9 +26832,9 @@ paths:
         - Photo Gallery
       security:
         - bearerAuth: []
-      parameters: &a4
-        - *a2
+      parameters: &a5
         - *a3
+        - *a4
       requestBody:
         content:
           multipart/form-data:
@@ -26740,8 +26878,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
         - *a3
+        - *a4
         - name: photoId
           in: path
           required: true
@@ -26788,8 +26926,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
         - *a3
+        - *a4
         - name: photoId
           in: path
           required: true
@@ -26821,7 +26959,7 @@ paths:
         - Photo Gallery
       security:
         - bearerAuth: []
-      parameters: *a4
+      parameters: *a5
       responses:
         "200":
           description: Team gallery albums available for administrative management.
@@ -26848,7 +26986,7 @@ paths:
         - Photo Gallery
       security:
         - bearerAuth: []
-      parameters: *a4
+      parameters: *a5
       requestBody:
         content:
           application/json:
@@ -26906,8 +27044,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
         - *a3
+        - *a4
         - name: albumId
           in: path
           required: true
@@ -26969,8 +27107,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a2
         - *a3
+        - *a4
         - name: albumId
           in: path
           required: true
@@ -30760,7 +30898,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: &a5
+            enum: &a6
               - announcements
               - gameResults
               - workouts
@@ -30801,7 +30939,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: *a5
+            enum: *a6
       requestBody:
         required: true
         content:
@@ -31661,7 +31799,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a6
+        - &a7
           name: alertId
           in: path
           required: true
@@ -31708,7 +31846,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
+        - *a7
       requestBody:
         content:
           application/json:
@@ -31760,7 +31898,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a6
+        - *a7
       responses:
         "204":
           description: Alert deleted successfully.
@@ -31797,14 +31935,14 @@ paths:
       tags:
         - Announcements
       parameters:
-        - &a7
+        - &a8
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a9
+        - &a10
           name: limit
           in: query
           required: false
@@ -31813,7 +31951,7 @@ paths:
             minimum: 1
             maximum: 25
           description: Maximum number of announcement summaries to return (default 10).
-        - &a10
+        - &a11
           name: includeSpecialOnly
           in: query
           required: false
@@ -31841,7 +31979,7 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a7
+        - *a8
       responses:
         "200":
           description: Announcements published for the account.
@@ -31865,7 +32003,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
+        - *a8
       requestBody:
         content:
           application/json:
@@ -31910,8 +32048,8 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a7
-        - &a8
+        - *a8
+        - &a9
           name: announcementId
           in: path
           required: true
@@ -31946,8 +32084,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
         - *a8
+        - *a9
       requestBody:
         content:
           application/json:
@@ -31999,8 +32137,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
         - *a8
+        - *a9
       responses:
         "204":
           description: Announcement deleted.
@@ -32037,16 +32175,16 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a7
-        - &a11
+        - *a8
+        - &a12
           name: teamId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - *a9
         - *a10
+        - *a11
       responses:
         "200":
           description: Team announcement summaries for the specified account.
@@ -32075,8 +32213,8 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a7
-        - *a11
+        - *a8
+        - *a12
       responses:
         "200":
           description: Team announcements for the specified account.
@@ -32105,8 +32243,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
-        - *a11
+        - *a8
+        - *a12
       requestBody:
         content:
           application/json:
@@ -32157,9 +32295,9 @@ paths:
       tags:
         - Announcements
       parameters:
-        - *a7
-        - *a11
         - *a8
+        - *a12
+        - *a9
       responses:
         "200":
           description: Team announcement.
@@ -32188,9 +32326,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
-        - *a11
         - *a8
+        - *a12
+        - *a9
       requestBody:
         content:
           application/json:
@@ -32242,9 +32380,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a7
-        - *a11
         - *a8
+        - *a12
+        - *a9
       responses:
         "204":
           description: Team announcement deleted.
@@ -32608,14 +32746,14 @@ paths:
         - Baseball Live Scoring
       security: []
       parameters:
-        - &a12
+        - &a13
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a13
+        - &a14
           name: gameId
           in: path
           required: true
@@ -32645,8 +32783,8 @@ paths:
         - Baseball Live Scoring
       security: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       responses:
         "200":
           description: Current baseball live scoring state
@@ -32676,8 +32814,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       requestBody:
         content:
           application/json:
@@ -32718,8 +32856,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       requestBody:
         content:
           application/json:
@@ -32772,8 +32910,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       requestBody:
         content:
           application/json:
@@ -32826,8 +32964,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       requestBody:
         content:
           application/json:
@@ -32890,8 +33028,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       requestBody:
         content:
           application/json:
@@ -32947,8 +33085,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a12
         - *a13
+        - *a14
       requestBody:
         content:
           application/json:
@@ -33004,7 +33142,7 @@ paths:
         - Baseball Live Scoring
       security: []
       parameters:
-        - *a12
+        - *a13
       responses:
         "200":
           description: List of active sessions
@@ -35451,14 +35589,14 @@ paths:
       tags:
         - Exports
       parameters:
-        - &a14
+        - &a15
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a15
+        - &a16
           name: seasonId
           in: path
           required: true
@@ -35475,7 +35613,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: &a16
+            text/csv: &a17
               schema:
                 type: string
                 format: binary
@@ -35514,8 +35652,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: leagueSeasonId
           in: path
           required: true
@@ -35526,7 +35664,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35561,8 +35699,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: teamSeasonId
           in: path
           required: true
@@ -35573,7 +35711,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35609,8 +35747,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: leagueSeasonId
           in: path
           required: true
@@ -35621,7 +35759,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35656,8 +35794,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: teamSeasonId
           in: path
           required: true
@@ -35668,7 +35806,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35703,8 +35841,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: leagueSeasonId
           in: path
           required: true
@@ -35715,7 +35853,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35750,8 +35888,8 @@ paths:
       tags:
         - Exports
       parameters:
-        - *a14
         - *a15
+        - *a16
         - name: leagueSeasonId
           in: path
           required: true
@@ -35762,7 +35900,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35796,14 +35934,14 @@ paths:
         - bearerAuth: []
       tags:
         - Exports
-      parameters: &a17
-        - *a14
+      parameters: &a18
         - *a15
+        - *a16
       responses:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35837,12 +35975,12 @@ paths:
         - bearerAuth: []
       tags:
         - Exports
-      parameters: *a17
+      parameters: *a18
       responses:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -35945,7 +36083,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a16
+            text/csv: *a17
         "401":
           description: Authentication required
           content:
@@ -41825,7 +41963,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a18
+        - &a19
           name: accountId
           in: path
           required: true
@@ -41861,7 +41999,7 @@ paths:
         - Individual Live Scoring
       security: []
       parameters:
-        - *a18
+        - *a19
       responses:
         "200":
           description: Current individual live scoring state
@@ -41891,7 +42029,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a19
       responses:
         "201":
           description: SSE connection ticket
@@ -41927,7 +42065,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -41980,7 +42118,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -42033,7 +42171,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a19
       requestBody:
         content:
           application/json:
@@ -42082,7 +42220,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a19
       responses:
         "204":
           description: Session finalized successfully
@@ -42120,7 +42258,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a18
+        - *a19
       responses:
         "204":
           description: Session stopped successfully
@@ -42157,7 +42295,7 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - &a19
+        - &a20
           name: accountId
           in: path
           required: true
@@ -42186,7 +42324,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
+        - *a20
       requestBody:
         content:
           application/json:
@@ -42232,8 +42370,8 @@ paths:
       tags:
         - League FAQ
       parameters:
-        - *a19
-        - &a20
+        - *a20
+        - &a21
           name: faqId
           in: path
           required: true
@@ -42268,8 +42406,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
+        - *a21
       requestBody:
         content:
           application/json:
@@ -42321,8 +42459,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a19
         - *a20
+        - *a21
       responses:
         "204":
           description: League FAQ entry deleted
@@ -43640,14 +43778,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a21
+        - &a22
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a22
+        - &a23
           name: matchId
           in: path
           required: true
@@ -43683,8 +43821,8 @@ paths:
         - Live Scoring
       security: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       responses:
         "200":
           description: Current live scoring state
@@ -43714,8 +43852,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -43756,8 +43894,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -43810,8 +43948,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -43864,8 +44002,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -43927,8 +44065,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -43984,8 +44122,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a21
         - *a22
+        - *a23
       requestBody:
         content:
           application/json:
@@ -44041,7 +44179,7 @@ paths:
         - Live Scoring
       security: []
       parameters:
-        - *a21
+        - *a22
       responses:
         "200":
           description: List of active sessions
@@ -44334,7 +44472,7 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - &a23
+        - &a24
           name: accountId
           in: path
           required: true
@@ -44385,7 +44523,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
+        - *a24
       requestBody:
         content:
           application/json:
@@ -44442,8 +44580,8 @@ paths:
       tags:
         - Member Businesses
       parameters:
-        - *a23
-        - &a24
+        - *a24
+        - &a25
           name: memberBusinessId
           in: path
           required: true
@@ -44478,8 +44616,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
         - *a24
+        - *a25
       requestBody:
         content:
           application/json:
@@ -44537,8 +44675,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a23
         - *a24
+        - *a25
       responses:
         "204":
           description: Member business entry deleted
@@ -45533,7 +45671,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a25
+        - &a26
           name: accountId
           in: path
           required: true
@@ -45577,7 +45715,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
+        - *a26
       requestBody:
         content:
           application/json:
@@ -45624,8 +45762,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - &a26
+        - *a26
+        - &a27
           name: categoryId
           in: path
           required: true
@@ -45684,8 +45822,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
         - *a26
+        - *a27
       responses:
         "204":
           description: Survey category deleted successfully.
@@ -45724,8 +45862,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
         - *a26
+        - *a27
       requestBody:
         content:
           application/json:
@@ -45778,8 +45916,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - &a27
+        - *a26
+        - &a28
           name: questionId
           in: path
           required: true
@@ -45837,8 +45975,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
-        - *a27
+        - *a26
+        - *a28
       responses:
         "204":
           description: Survey question deleted successfully.
@@ -45875,7 +46013,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a25
+        - *a26
         - schema:
             type: integer
             minimum: 1
@@ -45926,8 +46064,8 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a25
-        - &a28
+        - *a26
+        - &a29
           name: playerId
           in: path
           required: true
@@ -45965,9 +46103,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
+        - *a26
+        - *a29
         - *a28
-        - *a27
       requestBody:
         content:
           application/json:
@@ -46020,9 +46158,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a25
+        - *a26
+        - *a29
         - *a28
-        - *a27
       responses:
         "204":
           description: Survey answer deleted successfully.
@@ -46059,7 +46197,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a25
+        - *a26
       responses:
         "200":
           description: Player survey spotlight result.
@@ -46088,7 +46226,7 @@ paths:
       tags:
         - Player Surveys
       parameters:
-        - *a25
+        - *a26
         - name: teamSeasonId
           in: path
           required: true
@@ -48371,6 +48509,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/scheduler/runs:
+    post:
+      operationId: enqueueSeasonScheduleRun
+      summary: Queue an asynchronous schedule-generation run
+      description: Builds the problem spec from database state and queues an
+        asynchronous solve. Returns immediately with a run id; poll GET
+        .../scheduler/runs/{runId} for progress and the final result. Provide an
+        Idempotency-Key header to reuse an existing run.
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+          description: Optional client-provided key used to derive a stable runId so
+            callers can safely retry without enqueuing duplicate runs.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerSeasonSolveRequest"
+      responses:
+        "202":
+          description: Run accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerRunState"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to generate schedules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /api/accounts/{accountId}/seasons/{seasonId}/scheduler/runs/{runId}:
+    get:
+      operationId: getSeasonScheduleRun
+      summary: Get the status of an asynchronous schedule-generation run
+      description: Returns the lifecycle status and progress of a queued run,
+        including the solve result once completed.
+      tags:
+        - Scheduler
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: seasonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: number
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Run status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerRunState"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationError"
+        "403":
+          description: Insufficient permissions to view schedule runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+        "404":
+          description: Run not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
   /api/accounts/{accountId}/seasons/{seasonId}/scheduler/apply:
     post:
       operationId: applySeasonSchedule
@@ -49360,21 +49628,21 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a29
+        - &a30
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a30
+        - &a31
           name: seasonId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a31
+        - &a32
           name: leagueSeasonId
           in: path
           required: true
@@ -49419,9 +49687,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a29
         - *a30
         - *a31
+        - *a32
       requestBody:
         content:
           application/json:
@@ -49474,9 +49742,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a29
         - *a30
         - *a31
+        - *a32
       requestBody:
         content:
           application/json:
@@ -49529,10 +49797,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a29
         - *a30
         - *a31
-        - &a32
+        - *a32
+        - &a33
           name: subId
           in: path
           required: true
@@ -49578,10 +49846,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a29
         - *a30
         - *a31
         - *a32
+        - *a33
       responses:
         "204":
           description: Substitute deleted
@@ -49864,14 +50132,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a33
+        - &a34
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a34
+        - &a35
           name: seasonId
           in: path
           required: true
@@ -49977,8 +50245,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
         - name: feedItemId
           in: path
           required: true
@@ -50021,8 +50289,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
         - name: feedItemId
           in: path
           required: true
@@ -50065,8 +50333,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
         - schema:
             type: string
             pattern: ^\d+$
@@ -50133,8 +50401,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
         - schema:
             type: string
             pattern: ^\d+$
@@ -50200,8 +50468,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
         - schema:
             type: string
             nullable: true
@@ -50245,8 +50513,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
         - schema:
             type: string
             pattern: ^\d+$
@@ -50313,8 +50581,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
+        - *a35
       requestBody:
         content:
           application/json:
@@ -50367,9 +50635,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
-        - &a35
+        - *a35
+        - &a36
           name: liveEventId
           in: path
           required: true
@@ -50416,9 +50684,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
         - *a35
+        - *a36
       requestBody:
         content:
           application/json:
@@ -50470,9 +50738,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a33
         - *a34
         - *a35
+        - *a36
       responses:
         "204":
           description: Live event deleted.
@@ -52016,7 +52284,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: &a36
+            text/csv: &a37
               schema:
                 type: string
                 format: binary
@@ -52125,7 +52393,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a36
+            text/csv: *a37
         "400":
           description: Validation error
           content:
@@ -52176,7 +52444,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a36
+            text/csv: *a37
         "400":
           description: Validation error
           content:
@@ -52225,7 +52493,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a36
+            text/csv: *a37
         "400":
           description: Validation error
           content:
@@ -52275,7 +52543,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a36
+            text/csv: *a37
         "400":
           description: Validation error
           content:
@@ -52319,7 +52587,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a36
+            text/csv: *a37
         "400":
           description: Validation error
           content:
@@ -52363,7 +52631,7 @@ paths:
         "200":
           description: CSV file export
           content:
-            text/csv: *a36
+            text/csv: *a37
         "400":
           description: Validation error
           content:
@@ -52392,22 +52660,22 @@ paths:
         - Team Emails
       security:
         - bearerAuth: []
-      parameters: &a37
-        - &a38
+      parameters: &a38
+        - &a39
           name: accountId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a39
+        - &a40
           name: seasonId
           in: path
           required: true
           schema:
             type: string
             format: number
-        - &a40
+        - &a41
           name: teamSeasonId
           in: path
           required: true
@@ -52476,7 +52744,7 @@ paths:
         - Team Emails
       security:
         - bearerAuth: []
-      parameters: *a37
+      parameters: *a38
       responses:
         "200":
           description: List of roster contacts
@@ -52548,9 +52816,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a38
         - *a39
         - *a40
+        - *a41
         - name: page
           in: query
           required: false
@@ -52626,9 +52894,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a38
         - *a39
         - *a40
+        - *a41
         - name: emailId
           in: path
           required: true
@@ -52681,23 +52949,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - &a42
+        - &a43
           name: accountId
           in: path
           required: true
-          schema: &a41
+          schema: &a42
             type: string
             format: number
-        - &a43
+        - &a44
           name: seasonId
           in: path
           required: true
-          schema: *a41
-        - &a44
+          schema: *a42
+        - &a45
           name: teamSeasonId
           in: path
           required: true
-          schema: *a41
+          schema: *a42
       responses:
         "200":
           description: Completed games retrieved.
@@ -52746,9 +53014,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
+        - *a45
       requestBody:
         required: true
         content:
@@ -52806,14 +53074,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
-        - &a45
+        - *a45
+        - &a46
           name: gameId
           in: path
           required: true
-          schema: *a41
+          schema: *a42
       responses:
         "200":
           description: Batting stats retrieved.
@@ -52858,10 +53126,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
+        - *a46
       requestBody:
         required: true
         content:
@@ -52919,15 +53187,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
-        - &a46
+        - *a46
+        - &a47
           name: statId
           in: path
           required: true
-          schema: *a41
+          schema: *a42
       requestBody:
         required: true
         content:
@@ -52978,11 +53246,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
         - *a46
+        - *a47
       responses:
         "204":
           description: Batting stat deleted.
@@ -53024,10 +53292,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
+        - *a46
       responses:
         "200":
           description: Pitching stats retrieved.
@@ -53072,10 +53340,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
+        - *a46
       requestBody:
         required: true
         content:
@@ -53133,11 +53401,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
         - *a46
+        - *a47
       requestBody:
         required: true
         content:
@@ -53188,11 +53456,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
         - *a46
+        - *a47
       responses:
         "204":
           description: Pitching stat deleted.
@@ -53234,10 +53502,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
+        - *a46
       responses:
         "200":
           description: Attendance retrieved.
@@ -53282,10 +53550,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a42
         - *a43
         - *a44
         - *a45
+        - *a46
       requestBody:
         required: true
         content:
@@ -54635,7 +54903,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        - &a47
+        - &a48
           name: accountId
           in: path
           required: true
@@ -54660,7 +54928,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a47
+        - *a48
       requestBody:
         content:
           application/json:
@@ -54699,8 +54967,8 @@ paths:
       tags:
         - Accounts
       parameters:
-        - *a47
-        - &a48
+        - *a48
+        - &a49
           name: messageId
           in: path
           required: true
@@ -54729,8 +54997,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a47
         - *a48
+        - *a49
       requestBody:
         content:
           application/json:
@@ -54776,8 +55044,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a47
         - *a48
+        - *a49
       responses:
         "204":
           description: Welcome message deleted successfully.
@@ -54808,8 +55076,8 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a47
-        - &a49
+        - *a48
+        - &a50
           name: teamSeasonId
           in: path
           required: true
@@ -54838,8 +55106,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a47
-        - *a49
+        - *a48
+        - *a50
       requestBody:
         content:
           application/json:
@@ -54884,9 +55152,9 @@ paths:
       tags:
         - Teams
       parameters:
-        - *a47
-        - *a49
         - *a48
+        - *a50
+        - *a49
       responses:
         "200":
           description: Team welcome message retrieved successfully.
@@ -54909,9 +55177,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a47
-        - *a49
         - *a48
+        - *a50
+        - *a49
       requestBody:
         content:
           application/json:
@@ -54957,9 +55225,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - *a47
-        - *a49
         - *a48
+        - *a50
+        - *a49
       responses:
         "204":
           description: Team welcome message deleted successfully.

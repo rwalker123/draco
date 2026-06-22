@@ -42,6 +42,7 @@ import { SchedulerEngineService } from './schedulerEngineService.js';
 import { SchedulerApplyService } from './schedulerApplyService.js';
 import { FieldScheduleConfigService } from './fieldScheduleConfigService.js';
 import { SchedulerProblemSpecService } from './schedulerProblemSpecService.js';
+import { SchedulerRunService } from './schedulerRunService.js';
 import { SchedulerSeasonApplyService } from './schedulerSeasonApplyService.js';
 import { SchedulerSeasonWindowConfigService } from './schedulerSeasonWindowConfigService.js';
 import { SchedulerSeasonExclusionsService } from './schedulerSeasonExclusionsService.js';
@@ -158,6 +159,7 @@ export class ServiceFactory {
   private static schedulerApplyService: SchedulerApplyService;
   private static fieldScheduleConfigService: FieldScheduleConfigService;
   private static schedulerProblemSpecService: SchedulerProblemSpecService;
+  private static schedulerRunService: SchedulerRunService;
   private static schedulerSeasonApplyService: SchedulerSeasonApplyService;
   private static schedulerSeasonWindowConfigService: SchedulerSeasonWindowConfigService;
   private static schedulerSeasonExclusionsService: SchedulerSeasonExclusionsService;
@@ -502,6 +504,14 @@ export class ServiceFactory {
     }
 
     return this.fieldScheduleConfigService;
+  }
+
+  static getSchedulerRunService(): SchedulerRunService {
+    if (!this.schedulerRunService) {
+      this.schedulerRunService = new SchedulerRunService();
+    }
+
+    return this.schedulerRunService;
   }
 
   static getSchedulerProblemSpecService(): SchedulerProblemSpecService {
