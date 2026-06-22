@@ -95,6 +95,19 @@ describe('proposalSummary', () => {
     expect(summary.byField.map((f) => f.fieldName)).toEqual(['Berkley']);
   });
 
+  it('labels a present-but-unnamed field as "Field {id}" rather than no-field', () => {
+    const games = buildProposalSummaryGames(
+      [assignment('g1', 'f9', '2026-05-03T13:00:00.000Z')],
+      gameRequestById,
+      fieldNameById,
+      { leagueFilter: '', teamFilter: '' },
+    );
+    expect(games[0].field?.name).toBe('Field f9');
+
+    const summary = buildScheduleSummary(games, { timeZone: 'America/New_York' });
+    expect(summary.byField.map((f) => f.fieldName)).toEqual(['Field f9']);
+  });
+
   it('filters by team and exposes home/away when a team is selected', () => {
     const games = buildProposalSummaryGames(assignments, gameRequestById, fieldNameById, {
       leagueFilter: 'L1',

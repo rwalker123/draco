@@ -75,7 +75,9 @@ export const buildProposalSummaryGames = (
       fieldId: assignment.fieldId,
       field: {
         id: assignment.fieldId,
-        name: fieldNameById.get(assignment.fieldId) ?? '',
+        name: assignment.fieldId
+          ? fieldNameById.get(assignment.fieldId) || `Field ${assignment.fieldId}`
+          : '',
         shortName: '',
       },
       homeTeamId: matchup?.homeTeamSeasonId,
