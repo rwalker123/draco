@@ -154,6 +154,28 @@ describe('SchedulerRunService', () => {
     expect(solveAsync).toHaveBeenCalledTimes(1);
   });
 
+  it('restarts processing when an idempotent retry finds a still-queued run', async () => {
+    const repo = new FakeRunRepository();
+    const problemSpec = buildProblemSpec(2);
+    const { solveAsync } = stubServices(problemSpec, buildResult());
+    const service = new SchedulerRunService(repo);
+
+    const first = await service.enqueue(1n, 5n, request, 'key-1');
+    await waitFor(() => repo.rows.get(first.runId)?.status === 'completed');
+    expect(solveAsync).toHaveBeenCalledTimes(1);
+
+    const stuck = repo.rows.get(first.runId);
+    if (!stuck) throw new Error('expected run row to exist');
+    stuck.status = 'queued';
+
+    const second = await service.enqueue(1n, 5n, request, 'key-1');
+    expect(second.runId).toBe(first.runId);
+    expect(repo.createCalls).toBe(1);
+
+    await waitFor(() => repo.rows.get(first.runId)?.status === 'completed');
+    expect(solveAsync).toHaveBeenCalledTimes(2);
+  });
+
   it('starts a fresh run for each generate when no idempotency key is supplied', async () => {
     const repo = new FakeRunRepository();
     const problemSpec = buildProblemSpec(2);

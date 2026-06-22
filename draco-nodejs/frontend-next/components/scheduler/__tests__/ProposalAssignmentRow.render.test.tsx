@@ -34,7 +34,6 @@ const renderRow = (maxUmpires: number) =>
         onToggleExpanded={vi.fn()}
         onAssignmentChange={vi.fn()}
       />
-      ,
     </ThemeProvider>,
   );
 

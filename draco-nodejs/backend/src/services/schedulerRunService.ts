@@ -35,6 +35,18 @@ export class SchedulerRunService {
     if (idempotencyKey) {
       const existing = await this.runRepository.findByRunId(accountId, seasonId, runId);
       if (existing) {
+        if (existing.status === 'queued') {
+          const specForExisting: SchedulerProblemSpec = { ...problemSpec, runId };
+          this.startRun(
+            accountId,
+            runId,
+            specForExisting,
+            timeZoneId,
+            idempotencyKey,
+            problemSpec.games.length,
+            fieldGameLengthById,
+          );
+        }
         return SchedulerRunResponseFormatter.format(existing);
       }
     }
