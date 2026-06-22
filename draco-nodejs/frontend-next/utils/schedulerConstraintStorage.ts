@@ -47,6 +47,11 @@ const normalizeSoftOrder = (order: unknown): SchedulerSoftConstraintKey[] => {
 const buildConstraintStorageKey = (accountId: string, seasonId: string): string =>
   `scheduler:constraintConfig:${accountId}:${seasonId}`;
 
+const clampInt = (value: number, min: number, max?: number): number => {
+  const floored = Math.max(min, Math.floor(value));
+  return max === undefined ? floored : Math.min(max, floored);
+};
+
 const cloneDefaultConfig = (): SchedulerConstraintConfig => ({
   softOrder: [...DEFAULT_CONSTRAINT_CONFIG.softOrder],
   avoidBackToBackGames: { ...DEFAULT_CONSTRAINT_CONFIG.avoidBackToBackGames },
@@ -72,7 +77,7 @@ export const loadConstraintConfig = (
         minRestMinutes:
           typeof parsed.avoidBackToBackGames?.minRestMinutes === 'number' &&
           Number.isFinite(parsed.avoidBackToBackGames.minRestMinutes)
-            ? parsed.avoidBackToBackGames.minRestMinutes
+            ? clampInt(parsed.avoidBackToBackGames.minRestMinutes, 0)
             : DEFAULT_CONSTRAINT_CONFIG.avoidBackToBackGames.minRestMinutes,
       },
       spreadGamesAcrossDays: { enabled: parsed.spreadGamesAcrossDays?.enabled === true },
@@ -82,7 +87,7 @@ export const loadConstraintConfig = (
         value:
           typeof parsed.maxGamesPerTeamPerDay?.value === 'number' &&
           Number.isFinite(parsed.maxGamesPerTeamPerDay.value)
-            ? parsed.maxGamesPerTeamPerDay.value
+            ? clampInt(parsed.maxGamesPerTeamPerDay.value, 1)
             : DEFAULT_CONSTRAINT_CONFIG.maxGamesPerTeamPerDay.value,
       },
       requireLightsAfter: {
@@ -90,7 +95,7 @@ export const loadConstraintConfig = (
         startHourLocal:
           typeof parsed.requireLightsAfter?.startHourLocal === 'number' &&
           Number.isFinite(parsed.requireLightsAfter.startHourLocal)
-            ? parsed.requireLightsAfter.startHourLocal
+            ? clampInt(parsed.requireLightsAfter.startHourLocal, 0, 23)
             : DEFAULT_CONSTRAINT_CONFIG.requireLightsAfter.startHourLocal,
       },
     };

@@ -22,6 +22,14 @@ export class PrismaSchedulerRunRepository implements ISchedulerRunRepository {
     });
   }
 
+  async claimQueued(runid: string, total: number): Promise<boolean> {
+    const result = await this.prisma.schedulerrun.updateMany({
+      where: { runid, status: 'queued' },
+      data: { status: 'running', processed: 0, total },
+    });
+    return result.count === 1;
+  }
+
   async update(runid: string, data: SchedulerRunProgressUpdate): Promise<schedulerrun> {
     return this.prisma.schedulerrun.update({
       where: { runid },

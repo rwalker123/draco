@@ -46,6 +46,15 @@ class FakeRunRepository implements ISchedulerRunRepository {
     return row && row.accountid === accountid && row.seasonid === seasonid ? row : null;
   }
 
+  async claimQueued(runid: string, total: number): Promise<boolean> {
+    const row = this.rows.get(runid);
+    if (!row || row.status !== 'queued') return false;
+    row.status = 'running';
+    row.processed = 0;
+    row.total = total;
+    return true;
+  }
+
   async update(runid: string, data: SchedulerRunProgressUpdate): Promise<schedulerrun> {
     const row = this.rows.get(runid);
     if (!row) throw new Error(`run ${runid} not found`);
@@ -181,6 +190,29 @@ describe('SchedulerRunService', () => {
     const second = await service.enqueue(1n, 5n, request, 'key-1');
     expect(second.runId).toBe(first.runId);
     expect(repo.createCalls).toBe(1);
+
+    await waitFor(() => repo.rows.get(first.runId)?.status === 'completed');
+    expect(solveAsync).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not double-process when concurrent retries resume a queued run', async () => {
+    const repo = new FakeRunRepository();
+    const problemSpec = buildProblemSpec(2);
+    const { solveAsync } = stubServices(problemSpec, buildResult());
+    const service = new SchedulerRunService(repo);
+
+    const first = await service.enqueue(1n, 5n, request, 'key-1');
+    await waitFor(() => repo.rows.get(first.runId)?.status === 'completed');
+    expect(solveAsync).toHaveBeenCalledTimes(1);
+
+    const stuck = repo.rows.get(first.runId);
+    if (!stuck) throw new Error('expected run row to exist');
+    stuck.status = 'queued';
+
+    await Promise.all([
+      service.enqueue(1n, 5n, request, 'key-1'),
+      service.enqueue(1n, 5n, request, 'key-1'),
+    ]);
 
     await waitFor(() => repo.rows.get(first.runId)?.status === 'completed');
     expect(solveAsync).toHaveBeenCalledTimes(2);

@@ -20,4 +20,5 @@ export interface ISchedulerRunRepository {
   create(data: SchedulerRunCreateData): Promise<schedulerrun>;
   findByRunId(accountid: bigint, seasonid: bigint, runid: string): Promise<schedulerrun | null>;
   update(runid: string, data: SchedulerRunProgressUpdate): Promise<schedulerrun>;
+  claimQueued(runid: string, total: number): Promise<boolean>;
 }

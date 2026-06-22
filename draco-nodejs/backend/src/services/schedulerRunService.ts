@@ -134,7 +134,11 @@ export class SchedulerRunService {
     const logPrefix = `[scheduler:run account=${accountId.toString()} run=${runId}]`;
 
     try {
-      await this.runRepository.update(runId, { status: 'running', processed: 0, total });
+      const claimed = await this.runRepository.claimQueued(runId, total);
+      if (!claimed) {
+        console.log(`${logPrefix} run already claimed by another worker; skipping`);
+        return;
+      }
 
       const result = await engine.solveAsync(
         problemSpec,
