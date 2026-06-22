@@ -52,7 +52,7 @@ const clampInt = (value: number, min: number, max?: number): number => {
   return max === undefined ? floored : Math.min(max, floored);
 };
 
-const cloneDefaultConfig = (): SchedulerConstraintConfig => ({
+export const cloneDefaultConfig = (): SchedulerConstraintConfig => ({
   softOrder: [...DEFAULT_CONSTRAINT_CONFIG.softOrder],
   avoidBackToBackGames: { ...DEFAULT_CONSTRAINT_CONFIG.avoidBackToBackGames },
   spreadGamesAcrossDays: { ...DEFAULT_CONSTRAINT_CONFIG.spreadGamesAcrossDays },

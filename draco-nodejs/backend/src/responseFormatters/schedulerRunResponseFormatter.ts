@@ -16,7 +16,7 @@ const LIFECYCLE_STATUSES: SchedulerRunLifecycleStatus[] = [
 const toLifecycleStatus = (value: string): SchedulerRunLifecycleStatus =>
   LIFECYCLE_STATUSES.includes(value as SchedulerRunLifecycleStatus)
     ? (value as SchedulerRunLifecycleStatus)
-    : 'queued';
+    : 'failed';
 
 export class SchedulerRunResponseFormatter {
   static format(run: schedulerrun): SchedulerRunState {

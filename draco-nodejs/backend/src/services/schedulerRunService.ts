@@ -140,13 +140,14 @@ export class SchedulerRunService {
         return;
       }
 
+      const progressStep = Math.min(PROGRESS_PERSIST_INTERVAL, Math.max(1, Math.ceil(total / 20)));
       const result = await engine.solveAsync(
         problemSpec,
         { accountId, idempotencyKey, timeZoneId, fieldGameLengthById },
         {
           yieldEveryN: SOLVE_YIELD_EVERY_N,
           onProgress: (processed, progressTotal) => {
-            if (processed % PROGRESS_PERSIST_INTERVAL === 0 && processed !== progressTotal) {
+            if (processed % progressStep === 0 && processed !== progressTotal) {
               void this.runRepository
                 .update(runId, { processed, total: progressTotal })
                 .catch((err) => {

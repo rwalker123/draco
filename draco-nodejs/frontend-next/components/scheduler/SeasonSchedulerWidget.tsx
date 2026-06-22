@@ -28,7 +28,7 @@ import {
 } from '../../utils/schedulerProposalStorage';
 import {
   buildSolveConstraints,
-  DEFAULT_CONSTRAINT_CONFIG,
+  cloneDefaultConfig,
   loadConstraintConfig,
   saveConstraintConfig,
   type SchedulerConstraintConfig,
@@ -160,7 +160,7 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     seasonId ? loadScheduleUmpires(accountId, seasonId) : false,
   );
   const [constraintConfig, setConstraintConfig] = useState<SchedulerConstraintConfig>(() =>
-    seasonId ? loadConstraintConfig(accountId, seasonId) : { ...DEFAULT_CONSTRAINT_CONFIG },
+    seasonId ? loadConstraintConfig(accountId, seasonId) : cloneDefaultConfig(),
   );
   const [running, setRunning] = useState(false);
   const [runProgress, setRunProgress] = useState<{ processed: number; total: number } | null>(null);
