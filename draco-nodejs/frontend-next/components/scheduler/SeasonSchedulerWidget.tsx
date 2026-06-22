@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Box, Button, Divider, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, LinearProgress, Typography } from '@mui/material';
 import type {
   SchedulerGameRequest,
   SchedulerGenerateMatchupsRequest,
@@ -19,12 +19,20 @@ import { SeasonSchedulerConfigPanel } from './SeasonSchedulerConfigPanel';
 import { SeasonSchedulerProposalReview } from './SeasonSchedulerProposalReview';
 import { SchedulerFieldsConfig } from './SchedulerFieldsConfig';
 import { SchedulerUmpiresConfig } from './SchedulerUmpiresConfig';
+import { SchedulerConstraintsConfig } from './SchedulerConstraintsConfig';
 import { loadRoundRobinCounts, type LeagueRoundRobinCount } from './SchedulerRoundRobinConfig';
 import {
   clearPersistedProposal,
   loadPersistedProposal,
   savePersistedProposal,
 } from '../../utils/schedulerProposalStorage';
+import {
+  buildSolveConstraints,
+  DEFAULT_CONSTRAINT_CONFIG,
+  loadConstraintConfig,
+  saveConstraintConfig,
+  type SchedulerConstraintConfig,
+} from '../../utils/schedulerConstraintStorage';
 
 type FieldOption = { id: string; name: string };
 type EntityOption = { id: string; name: string };
@@ -102,7 +110,8 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     upsertSeasonWindowConfig,
     getProblemSpecPreview,
     generateMatchups,
-    solveSeason,
+    enqueueSeasonRun,
+    getSeasonRun,
     applySeason,
     loading,
     error,
@@ -150,6 +159,19 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [scheduleUmpires, setScheduleUmpires] = useState(() =>
     seasonId ? loadScheduleUmpires(accountId, seasonId) : false,
   );
+  const [constraintConfig, setConstraintConfig] = useState<SchedulerConstraintConfig>(() =>
+    seasonId ? loadConstraintConfig(accountId, seasonId) : { ...DEFAULT_CONSTRAINT_CONFIG },
+  );
+  const [running, setRunning] = useState(false);
+  const [runProgress, setRunProgress] = useState<{ processed: number; total: number } | null>(null);
+  const pollControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const controllerRef = pollControllerRef;
+    return () => {
+      controllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!seasonId) return;
@@ -231,12 +253,20 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     if (!seasonId) return;
     setRoundRobinCounts(loadRoundRobinCounts(accountId, seasonId));
     setScheduleUmpires(loadScheduleUmpires(accountId, seasonId));
+    setConstraintConfig(loadConstraintConfig(accountId, seasonId));
   }, [accountId, seasonId]);
 
   const handleScheduleUmpiresChange = (value: boolean) => {
     setScheduleUmpires(value);
     if (seasonId) {
       saveScheduleUmpires(accountId, seasonId, value);
+    }
+  };
+
+  const handleConstraintConfigChange = (next: SchedulerConstraintConfig) => {
+    setConstraintConfig(next);
+    if (seasonId) {
+      saveConstraintConfig(accountId, seasonId, next);
     }
   };
 
@@ -304,6 +334,11 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   };
 
   const handleGenerateMatchups = async () => {
+    pollControllerRef.current?.abort();
+    const controller = new AbortController();
+    pollControllerRef.current = controller;
+    setRunning(true);
+    setRunProgress(null);
     try {
       setError(null);
       clearError();
@@ -354,22 +389,44 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         matchups,
         objectives: { primary: 'maximize_scheduled_games' },
         umpiresPerGame: scheduleUmpires ? umpiresPerGame : 0,
-        constraints:
-          maxGamesPerUmpirePerDay !== undefined
-            ? { hard: { maxGamesPerUmpirePerDay: Math.floor(maxGamesPerUmpirePerDay) } }
-            : undefined,
+        constraints: buildSolveConstraints(constraintConfig, maxGamesPerUmpirePerDay),
       };
 
-      const result = await solveSeason(solveRequest);
-      setProposal(result);
-      setProposalFromGenerated(true);
-      setGeneratedMatchups(matchups);
-      setSelectedGameIds(new Set(result.assignments.map((a) => a.gameId)));
-      setSuccess(
-        `Generated matchups placed (${result.metrics.scheduledGames}/${result.metrics.totalGames} scheduled)`,
-      );
+      const enqueued = await enqueueSeasonRun(solveRequest);
+      setRunProgress(enqueued.progress);
+
+      while (!controller.signal.aborted) {
+        const state = await getSeasonRun(enqueued.runId, controller.signal);
+        if (controller.signal.aborted) return;
+        setRunProgress(state.progress);
+
+        if (state.status === 'completed') {
+          if (!state.result) throw new Error('Schedule run completed without a result');
+          const result = state.result;
+          setProposal(result);
+          setProposalFromGenerated(true);
+          setGeneratedMatchups(matchups);
+          setSelectedGameIds(new Set(result.assignments.map((a) => a.gameId)));
+          setSuccess(
+            `Generated matchups placed (${result.metrics.scheduledGames}/${result.metrics.totalGames} scheduled)`,
+          );
+          return;
+        }
+
+        if (state.status === 'failed') {
+          throw new Error(state.error ?? 'Schedule generation failed');
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
     } catch (err) {
+      if (controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : 'Failed to generate matchups');
+    } finally {
+      if (!controller.signal.aborted) {
+        setRunning(false);
+        setRunProgress(null);
+      }
     }
   };
 
@@ -487,14 +544,38 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           variant="contained"
           onClick={handleGenerateMatchups}
           disabled={
+            running ||
             !seasonId ||
             !seasonWindowConfig ||
             (leagues.length > 0 && selectedLeagueSeasonIds.length === 0)
           }
         >
-          Generate Schedule
+          {running ? 'Generating…' : 'Generate Schedule'}
         </Button>
       </Box>
+
+      {running && (
+        <Box sx={{ mt: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography variant="caption" color="text.secondary">
+              Generating schedule…
+            </Typography>
+            {runProgress && runProgress.total > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                {runProgress.processed}/{runProgress.total} games
+              </Typography>
+            )}
+          </Box>
+          <LinearProgress
+            variant={runProgress && runProgress.total > 0 ? 'determinate' : 'indeterminate'}
+            value={
+              runProgress && runProgress.total > 0
+                ? Math.min(100, Math.round((runProgress.processed / runProgress.total) * 100))
+                : undefined
+            }
+          />
+        </Box>
+      )}
 
       {filterLabel && (
         <Typography variant="caption" color="text.secondary">
@@ -580,6 +661,12 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         onCreateUmpireExclusion={constraints.handleCreateUmpireExclusion}
         onEditUmpireExclusion={constraints.handleEditUmpireExclusion}
         onDeleteUmpireExclusion={constraints.handleDeleteUmpireExclusion}
+      />
+
+      <SchedulerConstraintsConfig
+        seasonId={seasonId}
+        config={constraintConfig}
+        onChange={handleConstraintConfigChange}
       />
 
       <SeasonSchedulerProposalReview

@@ -44,8 +44,16 @@ describe('SchedulerMatchupGenerationService', () => {
 
     repo.listLeagueSeasonIdsBySeasonAndAccount.mockResolvedValue([BigInt(LEAGUE_SEASON_ID)]);
     repo.listLeagueTeamsWithDivision.mockResolvedValue([
-      { leagueseasonid: BigInt(LEAGUE_SEASON_ID), teamseasonid: BigInt(1), divisionseasonid: null },
-      { leagueseasonid: BigInt(LEAGUE_SEASON_ID), teamseasonid: BigInt(2), divisionseasonid: null },
+      {
+        leagueseasonid: BigInt(LEAGUE_SEASON_ID),
+        teamseasonid: BigInt(1),
+        divisionseasonid: BigInt(50),
+      },
+      {
+        leagueseasonid: BigInt(LEAGUE_SEASON_ID),
+        teamseasonid: BigInt(2),
+        divisionseasonid: BigInt(50),
+      },
     ]);
 
     service = new SchedulerMatchupGenerationService(repo, makeGeneratorStub(makeEmptyResult()));
@@ -76,13 +84,56 @@ describe('SchedulerMatchupGenerationService', () => {
       {
         leagueSeasonId: LEAGUE_SEASON_ID,
         teams: [
-          { teamSeasonId: '1', divisionSeasonId: null },
-          { teamSeasonId: '2', divisionSeasonId: null },
+          { teamSeasonId: '1', divisionSeasonId: '50' },
+          { teamSeasonId: '2', divisionSeasonId: '50' },
         ],
         inDivisionGameCount: 2,
         crossDivisionGameCount: 1,
       },
     ]);
+  });
+
+  it('excludes teams not assigned to a division (inactive teams)', async () => {
+    repo.listLeagueTeamsWithDivision.mockResolvedValue([
+      {
+        leagueseasonid: BigInt(LEAGUE_SEASON_ID),
+        teamseasonid: BigInt(1),
+        divisionseasonid: BigInt(50),
+      },
+      {
+        leagueseasonid: BigInt(LEAGUE_SEASON_ID),
+        teamseasonid: BigInt(2),
+        divisionseasonid: BigInt(50),
+      },
+      {
+        leagueseasonid: BigInt(LEAGUE_SEASON_ID),
+        teamseasonid: BigInt(3),
+        divisionseasonid: null,
+      },
+    ]);
+    const generatorStub = makeGeneratorStub(makeEmptyResult());
+    service = new SchedulerMatchupGenerationService(repo, generatorStub);
+
+    await service.generateForSeason(ACCOUNT_ID, SEASON_ID, makeRequest());
+
+    expect(generatorStub.generate).toHaveBeenCalledWith([
+      expect.objectContaining({
+        teams: [
+          { teamSeasonId: '1', divisionSeasonId: '50' },
+          { teamSeasonId: '2', divisionSeasonId: '50' },
+        ],
+      }),
+    ]);
+  });
+
+  it('throws ValidationError when a league has only teams without a division', async () => {
+    repo.listLeagueTeamsWithDivision.mockResolvedValue([
+      { leagueseasonid: BigInt(LEAGUE_SEASON_ID), teamseasonid: BigInt(1), divisionseasonid: null },
+    ]);
+
+    await expect(service.generateForSeason(ACCOUNT_ID, SEASON_ID, makeRequest())).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it('throws NotFoundError when a requested leagueSeasonId does not belong to the account/season', async () => {

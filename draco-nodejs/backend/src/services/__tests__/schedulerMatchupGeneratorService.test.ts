@@ -270,5 +270,64 @@ describe('SchedulerMatchupGeneratorService', () => {
         expect(['B1', 'B2']).toContain(m.visitorTeamSeasonId);
       }
     });
+
+    it('packs each league into rounds so a team is not scheduled twice before others play', () => {
+      const league = makeLeague({
+        leagueSeasonId: 'ls-rr',
+        teams: [
+          { teamSeasonId: 'T1', divisionSeasonId: null },
+          { teamSeasonId: 'T2', divisionSeasonId: null },
+          { teamSeasonId: 'T3', divisionSeasonId: null },
+          { teamSeasonId: 'T4', divisionSeasonId: null },
+        ],
+        inDivisionGameCount: 1,
+        crossDivisionGameCount: 0,
+      });
+
+      const result = service.generate([league]);
+
+      // 4 teams → a round is 2 games; the first round must cover all 4 distinct teams,
+      // i.e. no team appears twice before every team has played once.
+      const firstRound = result.matchups.slice(0, 2);
+      const teamsInFirstRound = new Set(
+        firstRound.flatMap((m) => [m.homeTeamSeasonId, m.visitorTeamSeasonId]),
+      );
+      expect(teamsInFirstRound.size).toBe(4);
+    });
+
+    it('interleaves leagues round-robin so no league claims the earliest slots', () => {
+      const leagueA = makeLeague({
+        leagueSeasonId: 'ls-A',
+        teams: [
+          { teamSeasonId: 'A1', divisionSeasonId: null },
+          { teamSeasonId: 'A2', divisionSeasonId: null },
+        ],
+        inDivisionGameCount: 3,
+        crossDivisionGameCount: 0,
+      });
+
+      const leagueB = makeLeague({
+        leagueSeasonId: 'ls-B',
+        teams: [
+          { teamSeasonId: 'B1', divisionSeasonId: null },
+          { teamSeasonId: 'B2', divisionSeasonId: null },
+        ],
+        inDivisionGameCount: 3,
+        crossDivisionGameCount: 0,
+      });
+
+      const result = service.generate([leagueA, leagueB]);
+
+      // Each league has one pairing repeated 3 times; merged by index the league ids
+      // must alternate rather than emitting all of ls-A before ls-B.
+      expect(result.matchups.map((m) => m.leagueSeasonId)).toEqual([
+        'ls-A',
+        'ls-B',
+        'ls-A',
+        'ls-B',
+        'ls-A',
+        'ls-B',
+      ]);
+    });
   });
 });

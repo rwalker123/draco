@@ -66,6 +66,12 @@ const formatMinutesToHhmm = (totalMinutes: number): string => {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
+interface SkippedField {
+  id: string;
+  name: string;
+  reason: 'not schedule-enabled' | 'no open hours';
+}
+
 export class SchedulerProblemSpecService {
   constructor(
     private readonly schedulerRepo: ISchedulerProblemSpecRepository = RepositoryFactory.getSchedulerProblemSpecRepository(),
@@ -112,7 +118,11 @@ export class SchedulerProblemSpecService {
     accountId: bigint,
     seasonId: bigint,
     request: SchedulerSeasonSolveRequest,
-  ): Promise<{ problemSpec: SchedulerProblemSpec; timeZoneId: string }> {
+  ): Promise<{
+    problemSpec: SchedulerProblemSpec;
+    timeZoneId: string;
+    fieldGameLengthById: Record<string, number>;
+  }> {
     const hasMatchups = Boolean(request.matchups && request.matchups.length > 0);
     const base = await this.loadBaseSpecData(accountId, seasonId, hasMatchups);
 
@@ -148,40 +158,66 @@ export class SchedulerProblemSpecService {
                 maxGamesPerUmpirePerDayDefault,
             },
           };
-    const defaultSoft: NonNullable<SchedulerConstraints>['soft'] = {
-      avoidBackToBackGames: { enabled: true, minRestMinutes: 2880, weight: 3 },
-      spreadGamesAcrossDays: { enabled: true, weight: 2 },
-      balanceEarlyVsLate: { enabled: true, weight: 1 },
+    const problemSpec: SchedulerProblemSpec = {
+      season: base.season,
+      teams: base.teams,
+      fields: base.fields,
+      umpires: base.umpires,
+      games: normalizedGames,
+      fieldSlots: base.fieldSlots,
+      seasonExclusions: base.seasonExclusions,
+      teamExclusions: base.teamExclusions,
+      leagueExclusions: base.leagueExclusions,
+      umpireExclusions: base.umpireExclusions,
+      umpireAvailability: undefined,
+      teamBlackouts: undefined,
+      fixedGames: hasMatchups ? base.fixedGames : undefined,
+      constraints: constraintsWithHardDefaults,
+      objectives: request.objectives,
+      runId: undefined,
     };
-    const constraintsWithDefaults =
-      constraintsWithHardDefaults?.soft !== undefined
-        ? constraintsWithHardDefaults
-        : {
-            ...(constraintsWithHardDefaults ?? {}),
-            soft: defaultSoft,
-          };
+
+    this.logProblemSpecSummary(accountId, seasonId, base, problemSpec);
 
     return {
       timeZoneId: base.timeZoneId,
-      problemSpec: {
-        season: base.season,
-        teams: base.teams,
-        fields: base.fields,
-        umpires: base.umpires,
-        games: normalizedGames,
-        fieldSlots: base.fieldSlots,
-        seasonExclusions: base.seasonExclusions,
-        teamExclusions: base.teamExclusions,
-        leagueExclusions: base.leagueExclusions,
-        umpireExclusions: base.umpireExclusions,
-        umpireAvailability: undefined,
-        teamBlackouts: undefined,
-        fixedGames: hasMatchups ? base.fixedGames : undefined,
-        constraints: constraintsWithDefaults,
-        objectives: request.objectives,
-        runId: undefined,
-      },
+      problemSpec,
+      fieldGameLengthById: base.fieldGameLengthById,
     };
+  }
+
+  private logProblemSpecSummary(
+    accountId: bigint,
+    seasonId: bigint,
+    base: { fieldSlots: SchedulerFieldSlot[]; skippedFields: SkippedField[]; timeZoneId: string },
+    problemSpec: SchedulerProblemSpec,
+  ): void {
+    const prefix = `[scheduler:build account=${accountId.toString()} season=${seasonId.toString()}]`;
+    const fieldsWithSlots = new Set(problemSpec.fieldSlots.map((slot) => slot.fieldId)).size;
+    const soft = problemSpec.constraints?.soft;
+    const softActive = Boolean(
+      soft?.avoidBackToBackGames?.enabled ||
+      soft?.balanceEarlyVsLate?.enabled ||
+      soft?.spreadGamesAcrossDays?.enabled,
+    );
+    console.log(
+      `${prefix} games=${problemSpec.games.length} fields=${problemSpec.fields.length} fieldsWithSlots=${fieldsWithSlots} slots=${problemSpec.fieldSlots.length} teams=${problemSpec.teams.length} umpires=${problemSpec.umpires.length} ` +
+        `seasonExclusions=${problemSpec.seasonExclusions?.length ?? 0} teamExclusions=${problemSpec.teamExclusions?.length ?? 0} ` +
+        `leagueExclusions=${problemSpec.leagueExclusions?.length ?? 0} umpireExclusions=${problemSpec.umpireExclusions?.length ?? 0} ` +
+        `window=${problemSpec.season.startDate}..${problemSpec.season.endDate} timeZone=${base.timeZoneId} softActive=${softActive}`,
+    );
+
+    for (const skipped of base.skippedFields) {
+      console.warn(
+        `${prefix} field skipped (no slots): id=${skipped.id} name="${skipped.name}" reason=${skipped.reason}`,
+      );
+    }
+
+    if (problemSpec.fieldSlots.length === 0) {
+      console.warn(
+        `${prefix} produced 0 field slots — no games can be scheduled. Check field open hours and schedule-enabled flags.`,
+      );
+    }
   }
 
   private normalizeConstraints(
@@ -222,6 +258,8 @@ export class SchedulerProblemSpecService {
       leagueExclusions: SchedulerLeagueExclusion[];
       umpireExclusions: SchedulerUmpireExclusion[];
       fixedGames: SchedulerFixedGame[];
+      skippedFields: SkippedField[];
+      fieldGameLengthById: Record<string, number>;
     }
   > {
     const account = await this.schedulerRepo.findAccount(accountId);
@@ -335,7 +373,7 @@ export class SchedulerProblemSpecService {
     const openHoursByFieldId = this.groupOpenHoursByFieldId(openHoursRecords);
     const closedDatesByFieldId = this.groupClosedDatesByFieldId(closedDateRecords);
 
-    const fieldSlots = this.generateFieldSlots(
+    const { slots: fieldSlots, skippedFields } = this.generateFieldSlots(
       fields,
       openHoursByFieldId,
       closedDatesByFieldId,
@@ -402,6 +440,8 @@ export class SchedulerProblemSpecService {
       umpireExclusions,
       timeZoneId,
       fixedGames,
+      skippedFields,
+      fieldGameLengthById: Object.fromEntries(fieldGameLengthById),
     };
   }
 
@@ -476,17 +516,28 @@ export class SchedulerProblemSpecService {
     seasonConfig: SchedulerSeasonConfig,
     timeZoneId: string,
     window: { startDate: string; endDate: string },
-  ): SchedulerFieldSlot[] {
+  ): { slots: SchedulerFieldSlot[]; skippedFields: SkippedField[] } {
     const slots: SchedulerFieldSlot[] = [];
+    const skippedFields: SkippedField[] = [];
 
     for (const field of fields) {
       if (field.scheduleenabled !== true) {
+        skippedFields.push({
+          id: field.id.toString(),
+          name: field.name,
+          reason: 'not schedule-enabled',
+        });
         continue;
       }
 
       const fieldId = field.id.toString();
       const fieldOpenHours = openHoursByFieldId.get(fieldId) ?? [];
       if (fieldOpenHours.length === 0) {
+        skippedFields.push({
+          id: fieldId,
+          name: field.name,
+          reason: 'no open hours',
+        });
         continue;
       }
 
@@ -579,7 +630,7 @@ export class SchedulerProblemSpecService {
       }
     }
 
-    return slots;
+    return { slots, skippedFields };
   }
 
   private filterSlotsBySeasonExclusionStarts(

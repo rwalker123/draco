@@ -2620,3 +2620,214 @@ describe('SchedulerEngineService — fixedGames occupancy seeding', () => {
     expect(result.assignments[0]?.umpireIds).toEqual(['ump-1']);
   });
 });
+
+describe('SchedulerEngineService — saturation early-out', () => {
+  const NO_CAPACITY_REASON = 'No field capacity remaining';
+
+  const makeGame = (
+    id: string,
+    homeTeamSeasonId: string,
+    visitorTeamSeasonId: string,
+  ): SchedulerProblemSpec['games'][number] => ({
+    id,
+    leagueSeasonId: 'leagueSeason-1',
+    homeTeamSeasonId,
+    visitorTeamSeasonId,
+    earliestStart: '2026-04-05T09:00:00Z',
+    latestEnd: '2026-04-05T23:00:00Z',
+    durationMinutes: 60,
+    requiredUmpires: 0,
+  });
+
+  const makeSlot = (
+    id: string,
+    startTime: string,
+    endTime: string,
+  ): SchedulerProblemSpec['fieldSlots'][number] => ({
+    id,
+    fieldId: 'field-1',
+    startTime,
+    endTime,
+  });
+
+  const buildSpec = (
+    overrides: Partial<SchedulerProblemSpec> & {
+      games: SchedulerProblemSpec['games'];
+      fieldSlots: SchedulerProblemSpec['fieldSlots'];
+    },
+  ): SchedulerProblemSpec => ({
+    season: {
+      id: 'spring-2026',
+      name: 'Spring 2026',
+      startDate: '2026-04-01',
+      endDate: '2026-08-31',
+    },
+    teams: [
+      { id: 'team-1', teamSeasonId: 'teamSeason-1', league: { id: 'league-1', name: 'Open' } },
+      { id: 'team-2', teamSeasonId: 'teamSeason-2', league: { id: 'league-1', name: 'Open' } },
+      { id: 'team-3', teamSeasonId: 'teamSeason-3', league: { id: 'league-1', name: 'Open' } },
+      { id: 'team-4', teamSeasonId: 'teamSeason-4', league: { id: 'league-1', name: 'Open' } },
+    ],
+    fields: [{ id: 'field-1', name: 'Field 1' }],
+    umpires: [],
+    teamBlackouts: [],
+    constraints: { hard: { respectFieldSlots: true } },
+    ...overrides,
+  });
+
+  it('stops scanning once all slot capacity is consumed and flags the remainder', () => {
+    const service = new SchedulerEngineService();
+    const spec = buildSpec({
+      games: [
+        makeGame('game-1', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-2', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-3', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-4', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-5', 'teamSeason-1', 'teamSeason-2'),
+      ],
+      fieldSlots: [
+        makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T10:30:00Z'),
+        makeSlot('slot-2', '2026-04-05T11:00:00Z', '2026-04-05T12:30:00Z'),
+        makeSlot('slot-3', '2026-04-05T13:00:00Z', '2026-04-05T14:30:00Z'),
+      ],
+    });
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('partial');
+    expect(result.assignments).toHaveLength(3);
+    expect(result.unscheduled).toHaveLength(2);
+    expect(result.unscheduled.every((u) => u.reason === NO_CAPACITY_REASON)).toBe(true);
+    expect(result.unscheduled.map((u) => u.gameId)).toEqual(['game-4', 'game-5']);
+  });
+
+  it('counts maxParallelGames toward placement capacity', () => {
+    const service = new SchedulerEngineService();
+    const spec = buildSpec({
+      fields: [{ id: 'field-1', name: 'Field 1', properties: { maxParallelGames: 2 } }],
+      games: [
+        makeGame('game-1', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-2', 'teamSeason-3', 'teamSeason-4'),
+        makeGame('game-3', 'teamSeason-1', 'teamSeason-3'),
+        makeGame('game-4', 'teamSeason-2', 'teamSeason-4'),
+      ],
+      fieldSlots: [makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T11:00:00Z')],
+    });
+
+    const result = service.solve(spec);
+
+    expect(result.assignments).toHaveLength(2);
+    expect(result.unscheduled).toHaveLength(2);
+    expect(result.unscheduled.every((u) => u.reason === NO_CAPACITY_REASON)).toBe(true);
+  });
+
+  it('uses the field game length from context for the assigned duration', () => {
+    const service = new SchedulerEngineService();
+    const spec = buildSpec({
+      games: [makeGame('game-1', 'teamSeason-1', 'teamSeason-2')],
+      fieldSlots: [makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T11:00:00Z')],
+    });
+
+    const withField = service.solve(spec, { fieldGameLengthById: { 'field-1': 90 } });
+    expect(withField.assignments[0]?.startTime).toBe('2026-04-05T09:00:00.000Z');
+    expect(withField.assignments[0]?.endTime).toBe('2026-04-05T10:30:00.000Z');
+
+    const withoutField = service.solve(spec);
+    expect(withoutField.assignments[0]?.endTime).toBe('2026-04-05T10:00:00.000Z');
+  });
+
+  it('preserves caller (round-major) order instead of regrouping repeats by id', () => {
+    const service = new SchedulerEngineService();
+    // Caller supplies round-major order: pairing A round 0, pairing B round 0,
+    // pairing A round 1, pairing B round 1. The ids would group A's together if
+    // the engine sorted by id; a stable sort must keep them interleaved.
+    const spec = buildSpec({
+      games: [
+        makeGame('m-a-0', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('m-b-0', 'teamSeason-3', 'teamSeason-4'),
+        makeGame('m-a-1', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('m-b-1', 'teamSeason-3', 'teamSeason-4'),
+      ],
+      fieldSlots: [
+        makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T10:30:00Z'),
+        makeSlot('slot-2', '2026-04-05T11:00:00Z', '2026-04-05T12:30:00Z'),
+        makeSlot('slot-3', '2026-04-05T13:00:00Z', '2026-04-05T14:30:00Z'),
+        makeSlot('slot-4', '2026-04-05T15:00:00Z', '2026-04-05T16:30:00Z'),
+      ],
+    });
+
+    const result = service.solve(spec);
+
+    expect(result.assignments.map((a) => a.gameId)).toEqual(['m-a-0', 'm-b-0', 'm-a-1', 'm-b-1']);
+  });
+
+  it('does not trigger when every game fits', () => {
+    const service = new SchedulerEngineService();
+    const spec = buildSpec({
+      games: [
+        makeGame('game-1', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-2', 'teamSeason-1', 'teamSeason-2'),
+      ],
+      fieldSlots: [
+        makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T10:30:00Z'),
+        makeSlot('slot-2', '2026-04-05T11:00:00Z', '2026-04-05T12:30:00Z'),
+        makeSlot('slot-3', '2026-04-05T13:00:00Z', '2026-04-05T14:30:00Z'),
+      ],
+    });
+
+    const result = service.solve(spec);
+
+    expect(result.status).toBe('completed');
+    expect(result.assignments).toHaveLength(2);
+    expect(result.unscheduled).toHaveLength(0);
+  });
+
+  it('solveAsync produces the same result as solve and reports progress', async () => {
+    const service = new SchedulerEngineService();
+    const spec = buildSpec({
+      games: [
+        makeGame('game-1', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-2', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-3', 'teamSeason-1', 'teamSeason-2'),
+      ],
+      fieldSlots: [
+        makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T10:30:00Z'),
+        makeSlot('slot-2', '2026-04-05T11:00:00Z', '2026-04-05T12:30:00Z'),
+      ],
+    });
+
+    const sync = service.solve(spec);
+    const progress: Array<{ processed: number; total: number }> = [];
+    const async = await service.solveAsync(spec, undefined, {
+      yieldEveryN: 1,
+      onProgress: (processed, total) => progress.push({ processed, total }),
+    });
+
+    expect(async.status).toBe(sync.status);
+    expect(async.assignments).toEqual(sync.assignments);
+    expect(async.unscheduled).toEqual(sync.unscheduled);
+    expect(progress.length).toBeGreaterThan(0);
+    expect(progress[progress.length - 1]).toEqual({ processed: 3, total: 3 });
+  });
+
+  it('solveAsync reports full progress when the early-out fires', async () => {
+    const service = new SchedulerEngineService();
+    const spec = buildSpec({
+      games: [
+        makeGame('game-1', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-2', 'teamSeason-1', 'teamSeason-2'),
+        makeGame('game-3', 'teamSeason-1', 'teamSeason-2'),
+      ],
+      fieldSlots: [makeSlot('slot-1', '2026-04-05T09:00:00Z', '2026-04-05T10:30:00Z')],
+    });
+
+    const progress: Array<{ processed: number; total: number }> = [];
+    const result = await service.solveAsync(spec, undefined, {
+      onProgress: (processed, total) => progress.push({ processed, total }),
+    });
+
+    expect(result.assignments).toHaveLength(1);
+    expect(result.unscheduled).toHaveLength(2);
+    expect(progress[progress.length - 1]).toEqual({ processed: 3, total: 3 });
+  });
+});

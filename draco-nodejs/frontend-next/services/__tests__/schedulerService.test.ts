@@ -4,6 +4,8 @@ import {
   getSchedulerSeasonWindowConfig as apiGetWindowConfig,
   upsertSchedulerSeasonWindowConfig as apiUpsertWindowConfig,
   solveSeasonSchedule as apiSolveSeason,
+  enqueueSeasonScheduleRun as apiEnqueueRun,
+  getSeasonScheduleRun as apiGetRun,
   applySeasonSchedule as apiApplySeason,
   listSchedulerSeasonExclusions as apiListSeasonExclusions,
   createSchedulerSeasonExclusion as apiCreateSeasonExclusion,
@@ -27,6 +29,8 @@ vi.mock('@draco/shared-api-client', () => ({
   getSchedulerSeasonWindowConfig: vi.fn(),
   upsertSchedulerSeasonWindowConfig: vi.fn(),
   solveSeasonSchedule: vi.fn(),
+  enqueueSeasonScheduleRun: vi.fn(),
+  getSeasonScheduleRun: vi.fn(),
   applySeasonSchedule: vi.fn(),
   listSchedulerSeasonExclusions: vi.fn(),
   createSchedulerSeasonExclusion: vi.fn(),
@@ -169,6 +173,49 @@ describe('SchedulerService', () => {
       await service.solveSeason(ACCOUNT_ID, SEASON_ID, {} as never);
 
       expect(apiSolveSeason).toHaveBeenCalledWith(expect.objectContaining({ headers: undefined }));
+    });
+  });
+
+  describe('enqueueSeasonRun', () => {
+    it('queues a run and forwards the idempotency key', async () => {
+      const runState = { runId: 'run-1', status: 'queued', progress: { processed: 0, total: 10 } };
+      vi.mocked(apiEnqueueRun).mockResolvedValue(makeOk(runState));
+
+      const request = { objectives: { primary: 'maximize_scheduled_games' } } as never;
+      const result = await service.enqueueSeasonRun(ACCOUNT_ID, SEASON_ID, request, {
+        idempotencyKey: 'idem-9',
+      });
+
+      expect(apiEnqueueRun).toHaveBeenCalledWith({
+        client,
+        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID },
+        body: request,
+        headers: { 'Idempotency-Key': 'idem-9' },
+        throwOnError: false,
+      });
+      expect((result as Record<string, unknown>).runId).toBe('run-1');
+    });
+  });
+
+  describe('getSeasonRun', () => {
+    it('fetches run status by id and threads the abort signal', async () => {
+      const runState = {
+        runId: 'run-1',
+        status: 'completed',
+        progress: { processed: 10, total: 10 },
+      };
+      vi.mocked(apiGetRun).mockResolvedValue(makeOk(runState));
+      const controller = new AbortController();
+
+      const result = await service.getSeasonRun(ACCOUNT_ID, SEASON_ID, 'run-1', controller.signal);
+
+      expect(apiGetRun).toHaveBeenCalledWith({
+        client,
+        path: { accountId: ACCOUNT_ID, seasonId: SEASON_ID, runId: 'run-1' },
+        signal: controller.signal,
+        throwOnError: false,
+      });
+      expect((result as Record<string, unknown>).status).toBe('completed');
     });
   });
 

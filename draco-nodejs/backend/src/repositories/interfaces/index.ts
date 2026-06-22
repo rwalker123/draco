@@ -72,3 +72,4 @@ export * from './IBaseballLiveScoringRepository.js';
 export * from './IOauthRepository.js';
 export * from './ISchedulerMatchupRepository.js';
 export * from './ISchedulerApplyAuditLogRepository.js';
+export * from './ISchedulerRunRepository.js';

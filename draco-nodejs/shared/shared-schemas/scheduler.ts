@@ -627,6 +627,39 @@ export const SchedulerSolveResultSchema = z
     },
   });
 
+export const SchedulerRunLifecycleStatusSchema = z
+  .enum(['queued', 'running', 'completed', 'failed'])
+  .openapi({
+    title: 'SchedulerRunLifecycleStatus',
+    description: 'Lifecycle state of an asynchronous schedule-generation run.',
+  });
+
+export const SchedulerRunProgressSchema = z
+  .object({
+    processed: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+  })
+  .openapi({ title: 'SchedulerRunProgress' });
+
+export const SchedulerRunStateSchema = z
+  .object({
+    runId: z.string().trim().min(1),
+    status: SchedulerRunLifecycleStatusSchema,
+    progress: SchedulerRunProgressSchema,
+    result: SchedulerSolveResultSchema.optional(),
+    error: z.string().optional(),
+  })
+  .openapi({
+    title: 'SchedulerRunState',
+    description:
+      'Status of an asynchronous schedule-generation run, including progress and the final result when completed.',
+    example: {
+      runId: 'sched_account_42_ab12cd34ef56gh78',
+      status: 'running',
+      progress: { processed: 120, total: 480 },
+    },
+  });
+
 export const SchedulerApplyModeSchema = z.enum(['all', 'subset']).openapi({
   title: 'SchedulerApplyMode',
   description: 'Whether to apply all assignments or only a subset.',
@@ -763,6 +796,9 @@ export type SchedulerUnscheduledReason = z.infer<typeof SchedulerUnscheduledReas
 export type SchedulerMetrics = z.infer<typeof SchedulerMetricsSchema>;
 export type SchedulerRunStatus = z.infer<typeof SchedulerRunStatusSchema>;
 export type SchedulerSolveResult = z.infer<typeof SchedulerSolveResultSchema>;
+export type SchedulerRunLifecycleStatus = z.infer<typeof SchedulerRunLifecycleStatusSchema>;
+export type SchedulerRunProgress = z.infer<typeof SchedulerRunProgressSchema>;
+export type SchedulerRunState = z.infer<typeof SchedulerRunStateSchema>;
 export type SchedulerApplyMode = z.infer<typeof SchedulerApplyModeSchema>;
 export type SchedulerApplyRequest = z.infer<typeof SchedulerApplyRequestSchema>;
 export type SchedulerApplySkipped = z.infer<typeof SchedulerApplySkippedSchema>;

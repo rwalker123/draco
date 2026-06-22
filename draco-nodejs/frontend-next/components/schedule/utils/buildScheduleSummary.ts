@@ -1,4 +1,4 @@
-import { Game, GameStatus } from '@/types/schedule';
+import { GameStatus } from '@/types/schedule';
 import { convertUTCToZonedDate } from '../../../utils/dateUtils';
 import type {
   SeasonSummary,
@@ -66,8 +66,17 @@ export interface BuildScheduleSummaryOptions {
   teamSeasonId?: string;
 }
 
+export interface ScheduleSummaryGame {
+  gameStatus: number;
+  gameDate: string;
+  fieldId?: string;
+  field?: { id: string; name: string; shortName: string };
+  homeTeamId?: string;
+  visitorTeamId?: string;
+}
+
 export const buildScheduleSummary = (
-  games: Game[],
+  games: ScheduleSummaryGame[],
   options: BuildScheduleSummaryOptions,
 ): SeasonSummary => {
   const { timeZone, teamSeasonId } = options;

@@ -42,6 +42,53 @@ interface SlotCandidate {
   umpireIds: string[];
 }
 
+interface SolveSchedules {
+  teamSchedule: Map<string, Interval[]>;
+  fieldSchedule: Map<string, Interval[]>;
+  umpireSchedule: Map<string, Interval[]>;
+  teamDailyCounts: Map<string, Map<string, number>>;
+  umpireDailyCounts: Map<string, Map<string, number>>;
+}
+
+interface SolveContext {
+  problemSpec: SchedulerProblemSpec;
+  runId: string;
+  timeZoneId: string;
+  accountLabel: string;
+  solveStart: number;
+  sortedGames: SchedulerGameRequest[];
+  sortedSlots: SchedulerFieldSlot[];
+  maxPlaceable: number;
+  hard: SchedulerHardConstraints;
+  soft?: SchedulerSoftConstraints;
+  availability: Map<string, Interval[]>;
+  seasonExclusions: Interval[];
+  teamBlackouts: Map<string, Interval[]>;
+  teamExclusions: Map<string, Interval[]>;
+  leagueExclusions: Map<string, Interval[]>;
+  umpireExclusions: Map<string, Interval[]>;
+  umpireDailyLimitById: Map<string, number>;
+  fieldCapacityById: Map<string, number>;
+  fieldLightsById: Map<string, boolean>;
+  fieldGameLengthById: Map<string, number>;
+  schedules: SolveSchedules;
+  assignments: SchedulerAssignment[];
+  unscheduled: SchedulerUnscheduledReason[];
+  earlyOutTriggered: boolean;
+}
+
+export interface SolveContextInput {
+  accountId?: bigint;
+  idempotencyKey?: string;
+  timeZoneId?: string;
+  fieldGameLengthById?: Record<string, number>;
+}
+
+export interface SolveProgressOptions {
+  onProgress?: (processed: number, total: number) => void;
+  yieldEveryN?: number;
+}
+
 const normalizeSchedulerId = (value: string | number): string => {
   return String(value).trim();
 };
@@ -65,7 +112,7 @@ const stableStringify = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-const buildDeterministicRunId = ({
+export const buildDeterministicRunId = ({
   accountId,
   idempotencyKey,
   problemSpec,
@@ -92,10 +139,45 @@ const buildDeterministicRunId = ({
 };
 
 export class SchedulerEngineService {
-  solve(
+  solve(problemSpec: SchedulerProblemSpec, context?: SolveContextInput): SchedulerSolveResult {
+    const ctx = this.prepareSolve(problemSpec, context);
+    for (let gameIndex = 0; gameIndex < ctx.sortedGames.length; gameIndex += 1) {
+      if (this.placeGameAt(ctx, gameIndex)) {
+        break;
+      }
+    }
+    return this.finalizeSolve(ctx);
+  }
+
+  async solveAsync(
     problemSpec: SchedulerProblemSpec,
-    context?: { accountId?: bigint; idempotencyKey?: string; timeZoneId?: string },
-  ): SchedulerSolveResult {
+    context?: SolveContextInput,
+    options?: SolveProgressOptions,
+  ): Promise<SchedulerSolveResult> {
+    const ctx = this.prepareSolve(problemSpec, context);
+    const total = ctx.sortedGames.length;
+    const yieldEveryN = options?.yieldEveryN && options.yieldEveryN > 0 ? options.yieldEveryN : 50;
+
+    for (let gameIndex = 0; gameIndex < total; gameIndex += 1) {
+      const earlyOut = this.placeGameAt(ctx, gameIndex);
+      if (earlyOut) {
+        options?.onProgress?.(total, total);
+        break;
+      }
+      options?.onProgress?.(gameIndex + 1, total);
+      if ((gameIndex + 1) % yieldEveryN === 0) {
+        await new Promise<void>((resolve) => setImmediate(resolve));
+      }
+    }
+
+    return this.finalizeSolve(ctx);
+  }
+
+  private prepareSolve(
+    problemSpec: SchedulerProblemSpec,
+    context?: SolveContextInput,
+  ): SolveContext {
+    const solveStart = Date.now();
     this.validateProblemSpec(problemSpec);
 
     const timeZoneId =
@@ -110,45 +192,29 @@ export class SchedulerEngineService {
         idempotencyKey: context?.idempotencyKey,
         problemSpec,
       });
-    const assignments: SchedulerAssignment[] = [];
-    const unscheduled: SchedulerUnscheduledReason[] = [];
 
-    const hard = this.withDefaultHardConstraints(problemSpec.constraints);
     const soft = problemSpec.constraints?.soft;
-    const availability = this.groupUmpireAvailability(
-      problemSpec.umpireAvailability,
-      problemSpec.umpires,
-      problemSpec.season,
-    );
-    const seasonExclusions = this.groupSeasonExclusions(problemSpec.seasonExclusions);
-    const teamExclusions = this.groupTeamExclusions(problemSpec.teamExclusions);
-    const leagueExclusions = this.groupLeagueExclusions(problemSpec.leagueExclusions);
-    const umpireExclusions = this.groupUmpireExclusions(problemSpec.umpireExclusions);
-    const umpireDailyLimitById = this.buildUmpireDailyLimitIndex(problemSpec.umpires);
-    const fieldCapacityById = this.buildFieldCapacityIndex(problemSpec.fields);
-    const fieldLightsById = this.buildFieldLightsIndex(problemSpec.fields);
-    const teamBlackouts = this.groupTeamBlackouts(problemSpec.teamBlackouts);
+    const schedules: SolveSchedules = {
+      teamSchedule: new Map(),
+      fieldSchedule: new Map(),
+      umpireSchedule: new Map(),
+      teamDailyCounts: new Map(),
+      umpireDailyCounts: new Map(),
+    };
 
-    const teamSchedule: Map<string, Interval[]> = new Map();
-    const fieldSchedule: Map<string, Interval[]> = new Map();
-    const umpireSchedule: Map<string, Interval[]> = new Map();
-    const teamDailyCounts: Map<string, Map<string, number>> = new Map();
-    const umpireDailyCounts: Map<string, Map<string, number>> = new Map();
+    this.seedFixedOccupancy(problemSpec.fixedGames, schedules, timeZoneId);
 
-    this.seedFixedOccupancy(
-      problemSpec.fixedGames,
-      { teamSchedule, fieldSchedule, umpireSchedule, teamDailyCounts, umpireDailyCounts },
-      timeZoneId,
-    );
-
-    const sortedGames = [...problemSpec.games].sort((a, b) => {
-      const aStart = a.earliestStart ? new Date(a.earliestStart).getTime() : 0;
-      const bStart = b.earliestStart ? new Date(b.earliestStart).getTime() : 0;
-      if (aStart === bStart) {
-        return String(a.id).localeCompare(String(b.id));
-      }
-      return aStart - bStart;
-    });
+    const sortedGames = problemSpec.games
+      .map((game, index) => ({ game, index }))
+      .sort((a, b) => {
+        const aStart = a.game.earliestStart ? new Date(a.game.earliestStart).getTime() : 0;
+        const bStart = b.game.earliestStart ? new Date(b.game.earliestStart).getTime() : 0;
+        if (aStart !== bStart) {
+          return aStart - bStart;
+        }
+        return a.index - b.index;
+      })
+      .map((entry) => entry.game);
 
     const sortedSlots = [...problemSpec.fieldSlots].sort((a, b) => {
       const aStart = new Date(a.startTime).getTime();
@@ -159,48 +225,100 @@ export class SchedulerEngineService {
       return aStart - bStart;
     });
 
-    for (const game of sortedGames) {
-      const durationMinutes = this.resolveGameDuration(game, problemSpec.season);
-      const candidate: GameCandidateContext = { game, durationMinutes };
-      const assignment = this.findAssignment(
-        candidate,
-        sortedSlots,
-        hard,
-        availability,
-        seasonExclusions,
-        teamBlackouts,
-        teamExclusions,
-        leagueExclusions,
-        umpireExclusions,
-        umpireDailyLimitById,
-        fieldCapacityById,
-        fieldLightsById,
-        {
-          teamSchedule,
-          fieldSchedule,
-          umpireSchedule,
-          teamDailyCounts,
-          umpireDailyCounts,
-        },
-        timeZoneId,
-        soft,
-      );
+    const fieldCapacityById = this.buildFieldCapacityIndex(problemSpec.fields);
+    const maxPlaceable = sortedSlots.reduce(
+      (total, slot) => total + (fieldCapacityById.get(slot.fieldId) ?? 1),
+      0,
+    );
+    const accountLabel = context?.accountId ? context.accountId.toString() : 'n/a';
 
-      if (assignment) {
-        assignments.push(assignment);
-      } else {
-        unscheduled.push({
-          gameId: game.id,
-          reason: 'No valid slot found given hard constraints',
+    console.log(
+      `[scheduler:solve account=${accountLabel} run=${runId}] start: games=${problemSpec.games.length} slots=${problemSpec.fieldSlots.length} maxPlaceable=${maxPlaceable} softActive=${this.hasActiveSoftConstraints(soft)} timeZone=${timeZoneId}`,
+    );
+
+    return {
+      problemSpec,
+      runId,
+      timeZoneId,
+      accountLabel,
+      solveStart,
+      sortedGames,
+      sortedSlots,
+      maxPlaceable,
+      hard: this.withDefaultHardConstraints(problemSpec.constraints),
+      soft,
+      availability: this.groupUmpireAvailability(
+        problemSpec.umpireAvailability,
+        problemSpec.umpires,
+        problemSpec.season,
+      ),
+      seasonExclusions: this.groupSeasonExclusions(problemSpec.seasonExclusions),
+      teamBlackouts: this.groupTeamBlackouts(problemSpec.teamBlackouts),
+      teamExclusions: this.groupTeamExclusions(problemSpec.teamExclusions),
+      leagueExclusions: this.groupLeagueExclusions(problemSpec.leagueExclusions),
+      umpireExclusions: this.groupUmpireExclusions(problemSpec.umpireExclusions),
+      umpireDailyLimitById: this.buildUmpireDailyLimitIndex(problemSpec.umpires),
+      fieldCapacityById,
+      fieldLightsById: this.buildFieldLightsIndex(problemSpec.fields),
+      fieldGameLengthById: new Map(Object.entries(context?.fieldGameLengthById ?? {})),
+      schedules,
+      assignments: [],
+      unscheduled: [],
+      earlyOutTriggered: false,
+    };
+  }
+
+  private placeGameAt(ctx: SolveContext, gameIndex: number): boolean {
+    if (ctx.assignments.length >= ctx.maxPlaceable) {
+      for (let remaining = gameIndex; remaining < ctx.sortedGames.length; remaining += 1) {
+        ctx.unscheduled.push({
+          gameId: ctx.sortedGames[remaining].id,
+          reason: 'No field capacity remaining',
         });
       }
+      ctx.earlyOutTriggered = true;
+      return true;
     }
 
+    const game = ctx.sortedGames[gameIndex];
+    const durationMinutes = this.resolveGameDuration(game, ctx.problemSpec.season);
+    const candidate: GameCandidateContext = { game, durationMinutes };
+    const assignment = this.findAssignment(
+      candidate,
+      ctx.sortedSlots,
+      ctx.hard,
+      ctx.availability,
+      ctx.seasonExclusions,
+      ctx.teamBlackouts,
+      ctx.teamExclusions,
+      ctx.leagueExclusions,
+      ctx.umpireExclusions,
+      ctx.umpireDailyLimitById,
+      ctx.fieldCapacityById,
+      ctx.fieldLightsById,
+      ctx.fieldGameLengthById,
+      ctx.schedules,
+      ctx.timeZoneId,
+      ctx.soft,
+    );
+
+    if (assignment) {
+      ctx.assignments.push(assignment);
+    } else {
+      ctx.unscheduled.push({
+        gameId: game.id,
+        reason: 'No valid slot found given hard constraints',
+      });
+    }
+    return false;
+  }
+
+  private finalizeSolve(ctx: SolveContext): SchedulerSolveResult {
     const metrics = {
-      totalGames: problemSpec.games.length,
-      scheduledGames: assignments.length,
-      unscheduledGames: unscheduled.length,
-      objectiveValue: assignments.length,
+      totalGames: ctx.problemSpec.games.length,
+      scheduledGames: ctx.assignments.length,
+      unscheduledGames: ctx.unscheduled.length,
+      objectiveValue: ctx.assignments.length,
     };
 
     const status: SchedulerSolveResult['status'] =
@@ -210,12 +328,20 @@ export class SchedulerEngineService {
           ? 'partial'
           : 'infeasible';
 
+    const reasonHistogram = ctx.unscheduled.reduce<Record<string, number>>((acc, item) => {
+      acc[item.reason] = (acc[item.reason] ?? 0) + 1;
+      return acc;
+    }, {});
+    console.log(
+      `[scheduler:solve account=${ctx.accountLabel} run=${ctx.runId}] done: status=${status} scheduled=${metrics.scheduledGames} unscheduled=${metrics.unscheduledGames} earlyOut=${ctx.earlyOutTriggered} durationMs=${Date.now() - ctx.solveStart} reasons=${JSON.stringify(reasonHistogram)}`,
+    );
+
     return {
-      runId,
+      runId: ctx.runId,
       status,
       metrics,
-      assignments,
-      unscheduled,
+      assignments: ctx.assignments,
+      unscheduled: ctx.unscheduled,
     };
   }
 
@@ -621,6 +747,7 @@ export class SchedulerEngineService {
     umpireDailyLimitById: Map<string, number>,
     fieldCapacityById: Map<string, number>,
     fieldLightsById: Map<string, boolean>,
+    fieldGameLengthById: Map<string, number>,
     schedules: {
       teamSchedule: Map<string, Interval[]>;
       fieldSchedule: Map<string, Interval[]>;
@@ -633,7 +760,8 @@ export class SchedulerEngineService {
     const start = new Date(slot.startTime);
     const end = new Date(slot.endTime);
 
-    const durationEnd = new Date(start.getTime() + candidate.durationMinutes * 60000);
+    const durationMinutes = fieldGameLengthById.get(slot.fieldId) ?? candidate.durationMinutes;
+    const durationEnd = new Date(start.getTime() + durationMinutes * 60000);
     if (durationEnd > end) {
       return null;
     }
@@ -788,6 +916,7 @@ export class SchedulerEngineService {
     umpireDailyLimitById: Map<string, number>,
     fieldCapacityById: Map<string, number>,
     fieldLightsById: Map<string, boolean>,
+    fieldGameLengthById: Map<string, number>,
     schedules: {
       teamSchedule: Map<string, Interval[]>;
       fieldSchedule: Map<string, Interval[]>;
@@ -827,6 +956,7 @@ export class SchedulerEngineService {
           umpireDailyLimitById,
           fieldCapacityById,
           fieldLightsById,
+          fieldGameLengthById,
           schedules,
           timeZoneId,
         );
