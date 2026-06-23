@@ -362,14 +362,38 @@ const GameCard: React.FC<GameCardProps> = ({
       return null;
     }
 
+    if (readOnly) {
+      return (
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            minWidth: 0,
+            px: 1.25,
+            py: 0.25,
+            border: '1px solid',
+            borderColor: 'primary.main',
+            borderRadius: 1,
+            color: 'primary.main',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            lineHeight: 1.75,
+          }}
+        >
+          <FmdGoodOutlinedIcon fontSize="small" />
+          {fieldDisplayName}
+        </Box>
+      );
+    }
+
     return (
       <Button
         variant="outlined"
         color="primary"
         size="small"
         startIcon={<FmdGoodOutlinedIcon fontSize="small" />}
-        onClick={readOnly ? undefined : handleFieldLinkClick}
-        disableRipple={readOnly}
+        onClick={handleFieldLinkClick}
         sx={{
           minWidth: 0,
           px: 1.25,
@@ -377,13 +401,9 @@ const GameCard: React.FC<GameCardProps> = ({
           textTransform: 'none',
           fontSize: '0.8125rem',
           fontWeight: 600,
-          ...(readOnly
-            ? { cursor: 'default', '&:hover': { backgroundColor: 'transparent' } }
-            : {
-                '&:hover': {
-                  backgroundColor: (theme) => theme.palette.action.hover,
-                },
-              }),
+          '&:hover': {
+            backgroundColor: (theme) => theme.palette.action.hover,
+          },
         }}
       >
         {fieldDisplayName}

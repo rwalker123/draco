@@ -33,6 +33,7 @@ export const UnscheduledGamesWidget: React.FC<UnscheduledGamesWidgetProps> = ({
     <WidgetShell accent="warning" disablePadding sx={{ mb: 3 }}>
       <Box
         component="button"
+        type="button"
         onClick={() => setExpanded((prev) => !prev)}
         sx={{
           width: '100%',
