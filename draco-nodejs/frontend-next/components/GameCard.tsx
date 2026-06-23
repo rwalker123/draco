@@ -106,6 +106,8 @@ export interface GameCardProps {
   onWatchLiveScoring?: (game: GameCardData) => void;
   accountId?: string;
   currentTeamSeasonId?: string;
+  readOnly?: boolean;
+  timeOnly?: boolean;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -130,6 +132,8 @@ const GameCard: React.FC<GameCardProps> = ({
   onWatchLiveScoring,
   accountId,
   currentTeamSeasonId,
+  readOnly = false,
+  timeOnly = false,
 }) => {
   const { user } = useAuth();
   const isAuthenticated = !!user;
@@ -168,6 +172,7 @@ const GameCard: React.FC<GameCardProps> = ({
     month: 'short',
     day: 'numeric',
   });
+  const scheduledDateTimeLabel = timeOnly ? localTime : `${formattedDateLabel} ${localTime}`;
   const fieldDisplayName = game.fieldShortName || game.fieldName;
   const canEditRecapForCurrentGame = canEditRecap && onEditRecap ? canEditRecap(game) : false;
   const recapButtonProps =
@@ -279,6 +284,10 @@ const GameCard: React.FC<GameCardProps> = ({
   };
 
   const renderLiveScoringButton = () => {
+    if (readOnly) {
+      return null;
+    }
+
     if (!isAuthenticated) {
       return null;
     }
@@ -353,6 +362,31 @@ const GameCard: React.FC<GameCardProps> = ({
       return null;
     }
 
+    if (readOnly) {
+      return (
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            minWidth: 0,
+            px: 1.25,
+            py: 0.25,
+            border: '1px solid',
+            borderColor: 'primary.main',
+            borderRadius: 1,
+            color: 'primary.main',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            lineHeight: 1.75,
+          }}
+        >
+          <FmdGoodOutlinedIcon fontSize="small" />
+          {fieldDisplayName}
+        </Box>
+      );
+    }
+
     return (
       <Button
         variant="outlined"
@@ -391,7 +425,7 @@ const GameCard: React.FC<GameCardProps> = ({
   };
 
   const renderTeamName = (teamSeasonId: string, teamName: string, prefix?: string) => {
-    const href = buildTeamHref(teamSeasonId);
+    const href = readOnly ? null : buildTeamHref(teamSeasonId);
     const label = prefix ? `${prefix}${teamName}` : teamName;
 
     if (!href) {
@@ -654,7 +688,7 @@ const GameCard: React.FC<GameCardProps> = ({
               ) : (
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    {formattedDateLabel} {localTime}
+                    {scheduledDateTimeLabel}
                   </Typography>
                   {renderFieldLink()}
                 </Box>
@@ -811,7 +845,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 {game.gameStatus === GameStatus.Scheduled && (
                   <>
                     <Typography variant="body2" color="text.secondary">
-                      {formattedDateLabel} {localTime}
+                      {scheduledDateTimeLabel}
                     </Typography>
                     {renderFieldLink()}
                   </>

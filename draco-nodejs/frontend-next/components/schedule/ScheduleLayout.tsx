@@ -1,28 +1,16 @@
 'use client';
 import React from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  CircularProgress,
-  FormControl,
-  Select,
-  MenuItem,
-  Paper,
-} from '@mui/material';
+import { Box, Container, Typography, CircularProgress } from '@mui/material';
 import NotificationSnackbar from '../common/NotificationSnackbar';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import AccountPageHeader from '../AccountPageHeader';
 import AdPlacement from '../ads/AdPlacement';
-import WidgetShell from '../ui/WidgetShell';
-import ViewModeTabs from './filters/ViewModeTabs';
-import ViewFactory from './views/ViewFactory';
 import { GameCardData } from '../GameCard';
 import { ScheduleLocation } from './types/sportAdapter';
 import type { TeamSeasonType } from '@draco/shared-schemas';
 import { Game, League, FilterType, ViewMode, NavigationDirection } from '@/types/schedule';
+import ScheduleControl from './ScheduleControl';
 
 export interface ScheduleLayoutProps {
   accountId: string;
@@ -161,140 +149,46 @@ const ScheduleLayout: React.FC<ScheduleLayoutProps> = ({
           </Box>
           {breadcrumbs}
 
-          <Paper
-            elevation={1}
-            sx={{
-              mb: 3,
-              borderRadius: 3,
-              overflow: 'hidden',
-            }}
-          >
-            <ViewModeTabs viewMode={viewMode} onViewModeChange={onViewModeChange} />
-          </Paper>
-
-          <WidgetShell
-            accent="info"
-            sx={{
-              mb: 3,
-              px: 3,
-              py: 2,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
-                Time Period:
-              </Typography>
-
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {(['day', 'week', 'month', 'year'] as const).map((type) => (
-                  <Button
-                    key={type}
-                    variant={filterType === type ? 'contained' : 'outlined'}
-                    size="small"
-                    onClick={() => setFilterType(type)}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Button>
-                ))}
-              </Box>
-
-              {showLeagueTeamFilters ? (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
-                    <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
-                      League:
-                    </Typography>
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                      <Select
-                        value={filterLeagueSeasonId}
-                        onChange={(e) => {
-                          const leagueId = e.target.value;
-                          setFilterLeagueSeasonId(leagueId);
-                          if (!leagueId) {
-                            clearLeagueTeams();
-                          }
-                        }}
-                        displayEmpty
-                      >
-                        <MenuItem value="">
-                          <em>All Leagues</em>
-                        </MenuItem>
-                        {leagues.map((league) => (
-                          <MenuItem key={league.id} value={league.id}>
-                            {league.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
-                      Team:
-                    </Typography>
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                      <Select
-                        value={filterTeamSeasonId}
-                        onChange={(e) => setFilterTeamSeasonId(e.target.value)}
-                        displayEmpty
-                        disabled={!filterLeagueSeasonId}
-                      >
-                        <MenuItem value="">
-                          <em>All Teams</em>
-                        </MenuItem>
-                        {leagueTeams.map((team) => (
-                          <MenuItem key={team.id} value={team.id}>
-                            {team.name ?? 'Unknown Team'}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Box>
-                </>
-              ) : null}
-            </Box>
-          </WidgetShell>
-
-          {summaryContent}
-
-          {children}
-
-          <ViewFactory
-            viewMode={viewMode}
-            filterType={filterType}
+          <ScheduleControl
             accountId={accountId}
             currentTeamSeasonId={currentTeamSeasonId}
-            loadingGames={loadingGames}
             filteredGames={filteredGames}
-            timeZone={timeZone}
-            canEditSchedule={canEditSchedule}
-            onEditGame={onEditGame ?? onGameClick ?? (() => {})}
-            onGameResults={onGameResults ?? (() => {})}
-            onEditRecap={onEditRecap}
-            onViewRecap={onViewRecap}
-            onViewStatistics={onViewStatistics}
-            convertGameToGameCardData={convertGameToGameCardData}
-            canEditRecap={canEditRecap}
+            leagues={leagues}
+            leagueTeams={leagueTeams}
+            loadingGames={loadingGames}
+            filterType={filterType}
             filterDate={filterDate}
+            filterLeagueSeasonId={filterLeagueSeasonId}
+            filterTeamSeasonId={filterTeamSeasonId}
+            viewMode={viewMode}
             setFilterType={setFilterType}
-            setFilterDate={setFilterDate}
-            setStartDate={() => {}}
-            setEndDate={() => {}}
+            setFilterLeagueSeasonId={setFilterLeagueSeasonId}
+            setFilterTeamSeasonId={setFilterTeamSeasonId}
+            onViewModeChange={onViewModeChange}
+            clearLeagueTeams={clearLeagueTeams}
             startDate={startDate}
             endDate={endDate}
             isNavigating={isNavigating}
             navigateToWeek={navigateToWeek}
             navigate={navigate}
+            setFilterDate={setFilterDate}
+            timeZone={timeZone}
+            convertGameToGameCardData={convertGameToGameCardData}
+            onViewRecap={onViewRecap}
+            onViewStatistics={onViewStatistics}
+            canEditSchedule={canEditSchedule}
+            onGameClick={onGameClick}
+            onEditGame={onEditGame}
+            onGameResults={onGameResults}
+            onEditRecap={onEditRecap}
+            canEditRecap={canEditRecap}
+            showLeagueTeamFilters={showLeagueTeamFilters}
+            summaryContent={summaryContent}
             scrollToTodayNonce={scrollToTodayNonce}
             onScrollToToday={onScrollToToday}
-          />
+          >
+            {children}
+          </ScheduleControl>
         </Container>
 
         {feedback && <NotificationSnackbar notification={feedback} onClose={onFeedbackClose} />}

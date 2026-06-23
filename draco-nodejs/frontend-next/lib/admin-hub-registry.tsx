@@ -11,6 +11,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import BusinessIcon from '@mui/icons-material/Business';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import EventRepeatIcon from '@mui/icons-material/EventRepeat';
 import StadiumIcon from '@mui/icons-material/Stadium';
 import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
@@ -143,6 +144,16 @@ export function getBaseballAdminItems(): AdminSearchItem[] {
       keywords: ['businesses', 'members', 'directory', 'showcase'],
     },
     ...baseSeasonItems,
+    {
+      id: 'schedule-generator',
+      title: 'Schedule Generator',
+      description:
+        'Generate round-robin schedules around your existing games, then review and apply.',
+      icon: <EventRepeatIcon />,
+      getHref: (accountId) => `/account/${accountId}/schedule-generator`,
+      category: 'Season',
+      keywords: ['schedule', 'generator', 'round robin', 'matchups', 'generate', 'auto', 'games'],
+    },
     {
       id: 'field-management',
       title: 'Field Management',

@@ -26,7 +26,6 @@ import {
   ViewMode,
   GameStatus,
 } from '../../../../components/schedule';
-import { SeasonSchedulerAdapter } from '../../../../components/scheduler/SeasonSchedulerAdapter';
 import { AdminBreadcrumbs } from '../../../../components/admin';
 import { getFilteredScheduleSummary } from '../../../../components/schedule/utils/getFilteredScheduleSummary';
 import SeasonSummaryWidget from '../../../../components/schedule/SeasonSummaryWidget';
@@ -126,7 +125,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     loadingGames,
     loadingStaticData,
     loadOfficials,
-    loadGamesData,
     clearLeagueTeams,
     upsertGameInCache,
     removeGameFromCache,
@@ -408,25 +406,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         />
       }
     >
-      <SeasonSchedulerAdapter
-        accountId={accountId}
-        seasonId={currentSeasonId}
-        canEdit={true}
-        timeZone={timeZone}
-        leagueSeasonIdFilter={filterLeagueSeasonId || undefined}
-        teamSeasonIdFilter={filterTeamSeasonId || undefined}
-        fields={locations}
-        umpires={officials}
-        leagues={leagues}
-        teams={teams}
-        games={games}
-        onApplied={async () => {
-          await loadGamesData();
-        }}
-        setSuccess={setSuccess}
-        setError={setError}
-      />
-
       <GameDialog
         open={createDialogOpen}
         mode="create"
