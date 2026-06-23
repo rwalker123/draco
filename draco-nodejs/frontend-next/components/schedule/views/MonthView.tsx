@@ -35,6 +35,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
   loadingGames,
   scrollToTodayNonce,
   onScrollToToday,
+  disableScrollToToday,
   readOnly,
 }) => {
   const [currentMonth, setCurrentMonth] = React.useState(filterDate);
@@ -99,6 +100,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
         showZoomColumn={true}
         loadingGames={loadingGames}
         scrollToTodayNonce={scrollToTodayNonce}
+        disableScrollToToday={disableScrollToToday}
         days={monthDays}
         filteredGames={filteredGames}
         minHeight="200px"

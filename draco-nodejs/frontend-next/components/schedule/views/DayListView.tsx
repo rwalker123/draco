@@ -45,6 +45,7 @@ const DayListView: React.FC<DayListViewProps> = ({
   loadingGames,
   scrollToTodayNonce,
   onScrollToToday,
+  disableScrollToToday,
   readOnly,
 }) => {
   const theme = useTheme();
@@ -132,7 +133,11 @@ const DayListView: React.FC<DayListViewProps> = ({
     (periodStartKey === null || todayKey >= periodStartKey) &&
     (periodEndKey === null || todayKey <= periodEndKey);
   const scrollTargetKey =
-    todayInRange && todayKey && sortedDates !== null && sortedDates.length > 0
+    !disableScrollToToday &&
+    todayInRange &&
+    todayKey &&
+    sortedDates !== null &&
+    sortedDates.length > 0
       ? (sortedDates.find((key) => key >= todayKey) ?? sortedDates[sortedDates.length - 1])
       : undefined;
   const focusGroupRef = useScrollToTarget<HTMLDivElement>(scrollTargetKey, {

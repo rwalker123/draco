@@ -47,6 +47,7 @@ export interface ScheduleControlProps {
   summaryContent?: React.ReactNode;
   scrollToTodayNonce?: number;
   onScrollToToday?: () => void;
+  disableScrollToToday?: boolean;
   children?: React.ReactNode;
 }
 
@@ -88,6 +89,7 @@ const ScheduleControl: React.FC<ScheduleControlProps> = ({
   summaryContent,
   scrollToTodayNonce,
   onScrollToToday,
+  disableScrollToToday,
   children,
 }) => {
   return (
@@ -191,6 +193,7 @@ const ScheduleControl: React.FC<ScheduleControlProps> = ({
         navigate={navigate}
         scrollToTodayNonce={scrollToTodayNonce}
         onScrollToToday={onScrollToToday}
+        disableScrollToToday={disableScrollToToday}
       />
     </>
   );

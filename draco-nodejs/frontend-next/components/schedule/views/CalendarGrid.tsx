@@ -22,6 +22,7 @@ export interface CalendarGridProps {
   currentMonthDate?: Date;
   loadingGames?: boolean;
   scrollToTodayNonce?: number;
+  disableScrollToToday?: boolean;
 
   // Data
   days: Date[];
@@ -73,6 +74,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   currentMonthDate,
   loadingGames = false,
   scrollToTodayNonce,
+  disableScrollToToday = false,
   days,
   filteredGames,
   minHeight = '300px',
@@ -154,7 +156,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const todayKey = getDateKeyInTimezone(new Date(), timeZone);
   const todayInView =
     !!todayKey && days.some((day) => getDateKeyInTimezone(day, timeZone) === todayKey);
-  const focusDateKey = todayInView ? todayKey : null;
+  const focusDateKey = disableScrollToToday ? null : todayInView ? todayKey : null;
   const focusCellRef = useScrollToTarget<HTMLDivElement>(focusDateKey, {
     block: 'nearest',
     ready: !loadingGames,

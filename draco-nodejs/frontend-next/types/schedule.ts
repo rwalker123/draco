@@ -189,6 +189,7 @@ export interface ViewComponentProps {
   canEditRecap?: (game: GameCardData) => boolean;
   scrollToTodayNonce?: number;
   onScrollToToday?: () => void;
+  disableScrollToToday?: boolean;
   readOnly?: boolean;
 }
 
