@@ -19,6 +19,8 @@ export interface DraftClosedDate {
 export const DEFAULT_OPEN_START = '09:00';
 export const DEFAULT_OPEN_END = '21:00';
 
+export const DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES = 165;
+
 export const buildDraftDays = (openHours: FieldOpenHourType[]): DraftDayMap => {
   const map: DraftDayMap = new Map();
   for (const day of DAYS) {

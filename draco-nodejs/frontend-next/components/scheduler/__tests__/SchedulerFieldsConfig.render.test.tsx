@@ -155,4 +155,37 @@ describe('SchedulerFieldsConfig table', () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/this field is skipped when scheduling/)).toHaveLength(1);
   });
+
+  it('shows the resolved default length when a field has no per-field game length', async () => {
+    listMock.mockResolvedValue([
+      {
+        fieldId: '1',
+        scheduleEnabled: true,
+        gameLengthMinutes: null,
+        bufferMinutes: 15,
+        openHours: [{ id: 'oh', dayOfWeek: 0, startTimeLocal: '09:00', endTimeLocal: '17:00' }],
+        closedDates: [],
+      },
+    ]);
+
+    render(
+      <ThemeProvider theme={dracoTheme}>
+        <SchedulerFieldsConfig
+          accountId="1"
+          fields={[{ id: '1', name: 'Field 1' }]}
+          setSuccess={vi.fn()}
+          setError={vi.fn()}
+        />
+      </ThemeProvider>,
+    );
+
+    await screen.findByText('1 of 1 available');
+    expandSection();
+    await screen.findByRole('table');
+
+    // 165 minutes formatted as H:MM.
+    expect(screen.getByRole('button', { name: 'Game length for Field 1' })).toHaveTextContent(
+      'Default (2:45)',
+    );
+  });
 });

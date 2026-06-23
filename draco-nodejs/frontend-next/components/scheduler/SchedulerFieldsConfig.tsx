@@ -31,6 +31,7 @@ import {
   buildDraftClosedDates,
   buildDraftDays,
   configToUpsert,
+  DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES,
   formatClosedDateLabel,
   formatMinutesAsHoursMinutes,
   groupOpenHoursLabel,
@@ -302,7 +303,9 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                           >
                             {config.gameLengthMinutes != null
                               ? formatMinutesAsHoursMinutes(config.gameLengthMinutes)
-                              : 'Default'}
+                              : `Default (${formatMinutesAsHoursMinutes(
+                                  DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES,
+                                )})`}
                           </Button>
                         </TableCell>
                         <TableCell align="center">
