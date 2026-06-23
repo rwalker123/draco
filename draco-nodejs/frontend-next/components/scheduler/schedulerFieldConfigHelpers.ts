@@ -126,6 +126,9 @@ export const groupOpenHoursLabel = (openHours: FieldOpenHourType[]): string => {
   return segments.join(' · ');
 };
 
+export const isMissingOpenHours = (config: FieldScheduleConfigType): boolean =>
+  config.scheduleEnabled && config.openHours.length === 0;
+
 export const formatMinutesAsHoursMinutes = (totalMinutes: number): string => {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

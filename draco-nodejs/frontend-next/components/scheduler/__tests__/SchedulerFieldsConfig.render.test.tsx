@@ -98,4 +98,61 @@ describe('SchedulerFieldsConfig table', () => {
     expect(screen.queryByText('Field 2')).not.toBeInTheDocument();
     expect(screen.getByText('Field 1')).toBeInTheDocument(); // index 0 -> available
   });
+
+  it('flags available fields with no open hours in the summary and the row', async () => {
+    const oneHour = [{ id: 'oh', dayOfWeek: 0, startTimeLocal: '09:00', endTimeLocal: '17:00' }];
+    listMock.mockResolvedValue([
+      {
+        fieldId: '1',
+        scheduleEnabled: true,
+        gameLengthMinutes: 90,
+        bufferMinutes: 15,
+        openHours: [],
+        closedDates: [],
+      },
+      {
+        fieldId: '2',
+        scheduleEnabled: true,
+        gameLengthMinutes: 90,
+        bufferMinutes: 15,
+        openHours: oneHour,
+        closedDates: [],
+      },
+      {
+        fieldId: '3',
+        scheduleEnabled: false,
+        gameLengthMinutes: 90,
+        bufferMinutes: 15,
+        openHours: [],
+        closedDates: [],
+      },
+    ]);
+
+    render(
+      <ThemeProvider theme={dracoTheme}>
+        <SchedulerFieldsConfig
+          accountId="1"
+          fields={[
+            { id: '1', name: 'Field 1' },
+            { id: '2', name: 'Field 2' },
+            { id: '3', name: 'Field 3' },
+          ]}
+          setSuccess={vi.fn()}
+          setError={vi.fn()}
+        />
+      </ThemeProvider>,
+    );
+
+    // 2 enabled (fields 1 and 2), 1 of them missing open hours.
+    expect(await screen.findByText('2 of 3 available (1 error)')).toBeInTheDocument();
+
+    expandSection();
+    await screen.findByRole('table');
+
+    // The available-but-unconfigured field shows the inline error alert; the configured one does not.
+    expect(
+      screen.getByText('Set open hours or this field is skipped when scheduling.'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/this field is skipped when scheduling/)).toHaveLength(1);
+  });
 });

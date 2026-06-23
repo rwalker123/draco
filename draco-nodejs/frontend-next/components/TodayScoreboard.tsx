@@ -80,6 +80,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
       accountId={accountId}
       teamId={teamId}
       layout={layout}
+      timeOnly
       currentSeasonId={currentSeasonId}
       onGamesLoaded={onGamesLoaded}
       title="Today"

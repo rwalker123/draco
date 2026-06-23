@@ -1,11 +1,13 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Box, CircularProgress, Container, Typography } from '@mui/material';
+import { Box, CircularProgress, Container, Typography } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { AdminBreadcrumbs } from '../../../../components/admin';
+import NotificationSnackbar from '../../../../components/common/NotificationSnackbar';
 import { useScheduleData } from '../../../../components/schedule';
 import { SeasonSchedulerExperience } from '../../../../components/scheduler/SeasonSchedulerExperience';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
+import { useNotifications } from '../../../../hooks/useNotifications';
 import { useAccount, useAccountTimezone } from '../../../../context/AccountContext';
 
 interface ScheduleGeneratorProps {
@@ -18,8 +20,13 @@ const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ accountId }) => {
   const { currentAccount } = useAccount();
   const accountType = currentAccount?.accountType;
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const { notification, showNotification, hideNotification } = useNotifications();
+  const [{ setError, setSuccess }] = useState(() => ({
+    setError: (message: string | null) =>
+      message ? showNotification(message, 'error') : hideNotification(),
+    setSuccess: (message: string | null) =>
+      message ? showNotification(message, 'success') : hideNotification(),
+  }));
   const [filterDate] = useState(() => new Date());
 
   useEffect(() => {
@@ -74,17 +81,6 @@ const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ accountId }) => {
           currentPage="Schedule Generator"
         />
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-            {success}
-          </Alert>
-        )}
-
         {loadingStaticData ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
@@ -106,6 +102,8 @@ const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ accountId }) => {
           />
         )}
       </Container>
+
+      <NotificationSnackbar notification={notification} onClose={hideNotification} />
     </main>
   );
 };

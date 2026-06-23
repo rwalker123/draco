@@ -33,6 +33,7 @@ export interface GameListDisplayProps {
   onViewStatistics?: (game: Game) => void;
   layout?: 'vertical' | 'horizontal';
   timeZone?: string;
+  timeOnly?: boolean;
   accent?: WidgetAccent | 'none';
   liveSessionGameIds?: Set<string>;
   canStartLiveScoring?: (game: Game) => boolean;
@@ -54,6 +55,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   onViewStatistics,
   layout = 'vertical',
   timeZone = DEFAULT_TIMEZONE,
+  timeOnly = false,
   accent = 'warning',
   liveSessionGameIds,
   canStartLiveScoring,
@@ -226,6 +228,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           key={game.id}
                           game={game}
                           layout={layout}
+                          timeOnly={timeOnly}
                           canEditGames={canEditGames}
                           onEnterGameResults={onEnterGameResults}
                           canEditRecap={canEditRecap}
@@ -247,6 +250,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                           <GameCard
                             game={game}
                             layout={layout}
+                            timeOnly={timeOnly}
                             canEditGames={canEditGames}
                             onEnterGameResults={onEnterGameResults}
                             canEditRecap={canEditRecap}

@@ -9,7 +9,9 @@ import {
   groupOpenHoursLabel,
   formatMinutesAsHoursMinutes,
   configToUpsert,
+  isMissingOpenHours,
 } from '../SchedulerFieldsConfig';
+import type { FieldScheduleConfigType } from '@draco/shared-schemas';
 import { DAYS } from '../../../utils/daysOfWeekUtils';
 
 const makeOpenHour = (
@@ -267,6 +269,32 @@ describe('configToUpsert', () => {
     expect(result.closedDates[0].date).toBe('2026-07-04');
     expect(result.closedDates[0].endDate).toBe('2026-07-06');
     expect(result.closedDates[1].endDate).toBeUndefined();
+  });
+});
+
+describe('isMissingOpenHours', () => {
+  const makeConfig = (
+    scheduleEnabled: boolean,
+    openHours: FieldOpenHourType[],
+  ): FieldScheduleConfigType => ({
+    fieldId: '1',
+    scheduleEnabled,
+    gameLengthMinutes: 90,
+    bufferMinutes: 15,
+    openHours,
+    closedDates: [],
+  });
+
+  it('flags an available field with no open hours', () => {
+    expect(isMissingOpenHours(makeConfig(true, []))).toBe(true);
+  });
+
+  it('does not flag an available field that has open hours', () => {
+    expect(isMissingOpenHours(makeConfig(true, [makeOpenHour(0, '09:00', '17:00')]))).toBe(false);
+  });
+
+  it('does not flag an unavailable field even without open hours', () => {
+    expect(isMissingOpenHours(makeConfig(false, []))).toBe(false);
   });
 });
 
