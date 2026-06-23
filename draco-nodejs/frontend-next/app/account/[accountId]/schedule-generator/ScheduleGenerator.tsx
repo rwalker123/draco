@@ -32,7 +32,7 @@ const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({ accountId }) => {
     useScheduleData({
       accountId,
       accountType,
-      filterType: 'year',
+      filterType: 'day',
       filterDate,
       timeZone,
       onError: setError,

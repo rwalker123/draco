@@ -520,7 +520,11 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         >
           {running ? 'Generating…' : 'Generate Schedule'}
         </Button>
-        <Button variant="outlined" onClick={handleApply} disabled={!proposal || running || loading}>
+        <Button
+          variant="outlined"
+          onClick={handleApply}
+          disabled={!proposal || proposal.assignments.length === 0 || running || loading}
+        >
           Apply
         </Button>
       </Box>

@@ -35,6 +35,8 @@ export const UnscheduledGamesWidget: React.FC<UnscheduledGamesWidgetProps> = ({
         component="button"
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
+        aria-expanded={expanded}
+        aria-controls="unscheduled-games-content"
         sx={{
           width: '100%',
           display: 'flex',
@@ -62,7 +64,7 @@ export const UnscheduledGamesWidget: React.FC<UnscheduledGamesWidgetProps> = ({
           {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         </IconButton>
       </Box>
-      <Collapse in={expanded} unmountOnExit>
+      <Collapse in={expanded} unmountOnExit id="unscheduled-games-content">
         <Stack spacing={1} sx={{ px: 3, pb: 3 }}>
           {unscheduled.map((item) => (
             <Box
