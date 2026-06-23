@@ -2,6 +2,10 @@
 
 import React, { useState } from 'react';
 import { Box, Button, TextField, Typography } from '@mui/material';
+import {
+  DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES,
+  formatMinutesAsHoursMinutes,
+} from './schedulerFieldConfigHelpers';
 
 interface SchedulerFieldGameLengthPopoverProps {
   initialMinutes: number | null;
@@ -55,7 +59,9 @@ export const SchedulerFieldGameLengthPopover: React.FC<SchedulerFieldGameLengthP
         />
       </Box>
       <Typography variant="caption" color="text.secondary">
-        Leave blank for the default length.
+        {`Leave blank for the default length (${formatMinutesAsHoursMinutes(
+          DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES,
+        )}).`}
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
         <Button size="small" color="inherit" onClick={onCancel} disabled={saving}>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -30,9 +31,11 @@ import {
   buildDraftClosedDates,
   buildDraftDays,
   configToUpsert,
+  DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES,
   formatClosedDateLabel,
   formatMinutesAsHoursMinutes,
   groupOpenHoursLabel,
+  isMissingOpenHours,
 } from './schedulerFieldConfigHelpers';
 import { SchedulerFieldOpenHoursPopover } from './SchedulerFieldOpenHoursPopover';
 import { SchedulerFieldClosedDatesPopover } from './SchedulerFieldClosedDatesPopover';
@@ -159,6 +162,18 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
     0,
   );
 
+  const errorCount = fields.reduce((count, field) => {
+    const config = configs.get(field.id);
+    return config && isMissingOpenHours(config) ? count + 1 : count;
+  }, 0);
+
+  const availableLabel =
+    errorCount > 0
+      ? `${enabledCount} of ${fields.length} available (${errorCount} error${
+          errorCount === 1 ? '' : 's'
+        })`
+      : `${enabledCount} of ${fields.length} available`;
+
   const popoverConfig = popover ? (configs.get(popover.fieldId) ?? null) : null;
   const popoverSaving = popover ? savingId === popover.fieldId : false;
 
@@ -189,7 +204,7 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
         {loading ? (
           <CircularProgress size={14} />
         ) : (
-          <Chip size="small" label={`${enabledCount} of ${fields.length} available`} />
+          <Chip size="small" color={errorCount > 0 ? 'error' : 'default'} label={availableLabel} />
         )}
       </Box>
 
@@ -230,6 +245,7 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                     const config = configs.get(field.id)!;
                     const saving = savingId === field.id;
                     const hoursLabel = groupOpenHoursLabel(config.openHours);
+                    const missingOpenHours = isMissingOpenHours(config);
                     const closedCount = config.closedDates.length;
                     return (
                       <TableRow key={field.id} hover>
@@ -248,16 +264,33 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                           />
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="small"
-                            color={hoursLabel ? 'primary' : 'inherit'}
-                            disabled={saving}
-                            onClick={(e) => openPopover(e, field.id, 'hours')}
-                            aria-label={`Open hours for ${field.name}`}
-                            sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
-                          >
-                            {hoursLabel || 'Set hours'}
-                          </Button>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Button
+                              size="small"
+                              color={
+                                missingOpenHours ? 'error' : hoursLabel ? 'primary' : 'inherit'
+                              }
+                              disabled={saving}
+                              onClick={(e) => openPopover(e, field.id, 'hours')}
+                              aria-label={`Open hours for ${field.name}`}
+                              sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                            >
+                              {hoursLabel || 'Set hours'}
+                            </Button>
+                            {missingOpenHours && (
+                              <Alert
+                                severity="error"
+                                sx={{
+                                  py: 0,
+                                  px: 1,
+                                  '& .MuiAlert-message': { py: 0.5 },
+                                  '& .MuiAlert-icon': { py: 0.5 },
+                                }}
+                              >
+                                Set open hours or this field is skipped when scheduling.
+                              </Alert>
+                            )}
+                          </Box>
                         </TableCell>
                         <TableCell align="center">
                           <Button
@@ -270,7 +303,9 @@ export const SchedulerFieldsConfig: React.FC<SchedulerFieldsConfigProps> = ({
                           >
                             {config.gameLengthMinutes != null
                               ? formatMinutesAsHoursMinutes(config.gameLengthMinutes)
-                              : 'Default'}
+                              : `Default (${formatMinutesAsHoursMinutes(
+                                  DEFAULT_SCHEDULER_GAME_LENGTH_MINUTES,
+                                )})`}
                           </Button>
                         </TableCell>
                         <TableCell align="center">

@@ -15,6 +15,21 @@ const makeLeague = (overrides: Partial<GeneratorLeagueInput> = {}): GeneratorLea
 describe('SchedulerMatchupGeneratorService', () => {
   const service = new SchedulerMatchupGeneratorService();
 
+  const expectBalancedHomeAway = (
+    matchups: { homeTeamSeasonId: string; visitorTeamSeasonId: string }[],
+    teamIds: string[],
+  ) => {
+    const homeCount = new Map<string, number>(teamIds.map((id) => [id, 0]));
+    const awayCount = new Map<string, number>(teamIds.map((id) => [id, 0]));
+    for (const m of matchups) {
+      homeCount.set(m.homeTeamSeasonId, (homeCount.get(m.homeTeamSeasonId) ?? 0) + 1);
+      awayCount.set(m.visitorTeamSeasonId, (awayCount.get(m.visitorTeamSeasonId) ?? 0) + 1);
+    }
+    for (const teamId of teamIds) {
+      expect(homeCount.get(teamId)).toBe(awayCount.get(teamId));
+    }
+  };
+
   describe('single division (all divisionSeasonId: null)', () => {
     it('4 teams, inDivisionGameCount=2, cross=0 → 12 games with perfect home/away balance', () => {
       const league = makeLeague({
@@ -62,6 +77,36 @@ describe('SchedulerMatchupGeneratorService', () => {
       }
     });
 
+    it('8 teams, inDivisionGameCount=2, cross=0 → every team has equal home/away', () => {
+      const teamIds = Array.from({ length: 8 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`);
+      const league = makeLeague({
+        leagueSeasonId: 'ls-8',
+        teams: teamIds.map((teamSeasonId) => ({ teamSeasonId, divisionSeasonId: null })),
+        inDivisionGameCount: 2,
+        crossDivisionGameCount: 0,
+      });
+
+      const result = service.generate([league]);
+
+      expect(result.matchups).toHaveLength(8 * 7);
+      expectBalancedHomeAway(result.matchups, teamIds);
+    });
+
+    it('11 teams, inDivisionGameCount=2, cross=0 → every team has equal home/away', () => {
+      const teamIds = Array.from({ length: 11 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`);
+      const league = makeLeague({
+        leagueSeasonId: 'ls-11',
+        teams: teamIds.map((teamSeasonId) => ({ teamSeasonId, divisionSeasonId: null })),
+        inDivisionGameCount: 2,
+        crossDivisionGameCount: 0,
+      });
+
+      const result = service.generate([league]);
+
+      expect(result.matchups).toHaveLength(11 * 10);
+      expectBalancedHomeAway(result.matchups, teamIds);
+    });
+
     it('C(n,2) games produced, crossDivisionGames === 0', () => {
       const league = makeLeague({
         leagueSeasonId: 'ls-nodiv',
@@ -107,6 +152,25 @@ describe('SchedulerMatchupGeneratorService', () => {
       expect(summary.totalGames).toBe(8);
       expect(summary.teamCount).toBe(4);
       expect(result.matchups).toHaveLength(8);
+    });
+
+    it('2 divisions (8 + 11 teams), inDivision=2, cross=0 → every team has equal home/away', () => {
+      const divATeams = Array.from({ length: 8 }, (_, i) => `A${String(i + 1).padStart(2, '0')}`);
+      const divBTeams = Array.from({ length: 11 }, (_, i) => `B${String(i + 1).padStart(2, '0')}`);
+      const league = makeLeague({
+        leagueSeasonId: 'ls-8-11',
+        teams: [
+          ...divATeams.map((teamSeasonId) => ({ teamSeasonId, divisionSeasonId: 'div-A' })),
+          ...divBTeams.map((teamSeasonId) => ({ teamSeasonId, divisionSeasonId: 'div-B' })),
+        ],
+        inDivisionGameCount: 2,
+        crossDivisionGameCount: 0,
+      });
+
+      const result = service.generate([league]);
+
+      expect(result.matchups).toHaveLength(8 * 7 + 11 * 10);
+      expectBalancedHomeAway(result.matchups, [...divATeams, ...divBTeams]);
     });
 
     it('inDivisionGameCount=0, cross=2 → only cross-division games produced', () => {

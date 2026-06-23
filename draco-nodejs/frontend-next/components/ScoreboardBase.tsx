@@ -18,6 +18,7 @@ interface ScoreboardBaseProps {
   accountId: string;
   teamId?: string;
   layout?: 'vertical' | 'horizontal';
+  timeOnly?: boolean;
   currentSeasonId: string;
   onGamesLoaded?: (games: Game[]) => void;
   title: string;
@@ -38,6 +39,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
   accountId,
   teamId,
   layout = 'vertical',
+  timeOnly = false,
   currentSeasonId,
   onGamesLoaded,
   title,
@@ -289,6 +291,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
         onViewStatistics={openViewStatistics}
         layout={layout}
         timeZone={timeZone}
+        timeOnly={timeOnly}
         liveSessionGameIds={liveSessionGameIds}
         canStartLiveScoring={canStartLiveScoring}
         onStartLiveScoring={onStartLiveScoring}

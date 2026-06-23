@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Box, Button, Divider, LinearProgress, Typography } from '@mui/material';
+import { Box, Button, Divider, LinearProgress, Typography } from '@mui/material';
 import type {
   SchedulerGameRequest,
   SchedulerGenerateMatchupsRequest,
@@ -119,7 +119,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     getSeasonRun,
     applySeason,
     loading,
-    error,
     clearError,
   } = ops;
 
@@ -556,12 +555,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         <Typography variant="caption" color="text.secondary">
           {filterLabel}
         </Typography>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }} onClose={clearError}>
-          {error}
-        </Alert>
       )}
 
       <Divider sx={{ my: 2 }} />

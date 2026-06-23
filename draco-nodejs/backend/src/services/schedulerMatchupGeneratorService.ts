@@ -97,10 +97,11 @@ export class SchedulerMatchupGeneratorService {
     const sortedKeys = [...divisionGroups.keys()].sort();
 
     const matchups: SchedulerGameRequest[] = [];
-    const homeGameTally = new Map<string, number>();
+    const homeAwayDiff = new Map<string, number>();
+    const baseHomeByPair = new Map<string, string>();
 
     for (const team of sortedTeams) {
-      homeGameTally.set(team.teamSeasonId, 0);
+      homeAwayDiff.set(team.teamSeasonId, 0);
     }
 
     let inDivisionGames = 0;
@@ -130,30 +131,48 @@ export class SchedulerMatchupGeneratorService {
             teamA.teamSeasonId < teamB.teamSeasonId ? teamB.teamSeasonId : teamA.teamSeasonId;
 
           const id = `gen-${leagueSeasonId}-${minId}-${maxId}-${k}`;
-
-          const tallyA = homeGameTally.get(teamA.teamSeasonId) ?? 0;
-          const tallyB = homeGameTally.get(teamB.teamSeasonId) ?? 0;
+          const pairKey = `${minId}|${maxId}`;
 
           let homeTeamSeasonId: string;
           let visitorTeamSeasonId: string;
 
-          if (tallyA < tallyB) {
-            homeTeamSeasonId = teamA.teamSeasonId;
-            visitorTeamSeasonId = teamB.teamSeasonId;
-          } else if (tallyB < tallyA) {
-            homeTeamSeasonId = teamB.teamSeasonId;
-            visitorTeamSeasonId = teamA.teamSeasonId;
-          } else {
-            if (teamA.teamSeasonId < teamB.teamSeasonId) {
+          if (k === 0) {
+            const diffA = homeAwayDiff.get(teamA.teamSeasonId) ?? 0;
+            const diffB = homeAwayDiff.get(teamB.teamSeasonId) ?? 0;
+
+            if (diffA < diffB) {
               homeTeamSeasonId = teamA.teamSeasonId;
               visitorTeamSeasonId = teamB.teamSeasonId;
-            } else {
+            } else if (diffB < diffA) {
               homeTeamSeasonId = teamB.teamSeasonId;
               visitorTeamSeasonId = teamA.teamSeasonId;
+            } else {
+              if (teamA.teamSeasonId < teamB.teamSeasonId) {
+                homeTeamSeasonId = teamA.teamSeasonId;
+                visitorTeamSeasonId = teamB.teamSeasonId;
+              } else {
+                homeTeamSeasonId = teamB.teamSeasonId;
+                visitorTeamSeasonId = teamA.teamSeasonId;
+              }
+            }
+
+            baseHomeByPair.set(pairKey, homeTeamSeasonId);
+          } else {
+            const baseHome = baseHomeByPair.get(pairKey)!;
+            const baseVisitor =
+              baseHome === teamA.teamSeasonId ? teamB.teamSeasonId : teamA.teamSeasonId;
+
+            if (k % 2 === 0) {
+              homeTeamSeasonId = baseHome;
+              visitorTeamSeasonId = baseVisitor;
+            } else {
+              homeTeamSeasonId = baseVisitor;
+              visitorTeamSeasonId = baseHome;
             }
           }
 
-          homeGameTally.set(homeTeamSeasonId, (homeGameTally.get(homeTeamSeasonId) ?? 0) + 1);
+          homeAwayDiff.set(homeTeamSeasonId, (homeAwayDiff.get(homeTeamSeasonId) ?? 0) + 1);
+          homeAwayDiff.set(visitorTeamSeasonId, (homeAwayDiff.get(visitorTeamSeasonId) ?? 0) - 1);
 
           matchups.push({ id, leagueSeasonId, homeTeamSeasonId, visitorTeamSeasonId });
 
