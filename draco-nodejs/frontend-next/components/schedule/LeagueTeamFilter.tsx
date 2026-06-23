@@ -78,7 +78,12 @@ const LeagueTeamFilter: React.FC<LeagueTeamFilterProps> = ({
           League:
         </Typography>
         <FormControl size="small" sx={{ minWidth: 200 }}>
-          <Select value={leagueValue} onChange={(e) => onLeagueChange(e.target.value)} displayEmpty>
+          <Select
+            value={leagueValue}
+            onChange={(e) => onLeagueChange(e.target.value)}
+            displayEmpty
+            inputProps={{ 'aria-label': 'League' }}
+          >
             <MenuItem value="">
               <em>All Leagues</em>
             </MenuItem>
@@ -101,6 +106,7 @@ const LeagueTeamFilter: React.FC<LeagueTeamFilterProps> = ({
             onChange={(e) => onTeamChange(e.target.value)}
             displayEmpty
             disabled={!leagueValue}
+            inputProps={{ 'aria-label': 'Team' }}
           >
             <MenuItem value="">
               <em>All Teams</em>
