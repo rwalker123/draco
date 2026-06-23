@@ -11,6 +11,8 @@ export { default as DeleteGameDialog } from './dialogs/DeleteGameDialog';
 // Components
 export { default as ScheduleLayout } from './ScheduleLayout';
 export type { ScheduleLayoutProps } from './ScheduleLayout';
+export { default as ScheduleControl } from './ScheduleControl';
+export type { ScheduleControlProps } from './ScheduleControl';
 
 // Types
 export * from '@/types/schedule';

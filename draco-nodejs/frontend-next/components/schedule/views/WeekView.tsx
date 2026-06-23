@@ -32,6 +32,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
   loadingGames,
   scrollToTodayNonce,
   onScrollToToday,
+  readOnly,
 }) => {
   const weekDays =
     startDate && endDate ? eachDayOfInterval({ start: startDate, end: endDate }) : [];
@@ -105,6 +106,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
         canEditRecap={canEditRecap}
+        readOnly={readOnly}
         isNavigating={isNavigating}
         timeZone={timeZone}
         currentMonthDate={filterDate}

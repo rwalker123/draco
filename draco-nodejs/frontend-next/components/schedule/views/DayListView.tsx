@@ -45,6 +45,7 @@ const DayListView: React.FC<DayListViewProps> = ({
   loadingGames,
   scrollToTodayNonce,
   onScrollToToday,
+  readOnly,
 }) => {
   const theme = useTheme();
   const [currentDate, setCurrentDate] = React.useState(filterDate);
@@ -173,7 +174,9 @@ const DayListView: React.FC<DayListViewProps> = ({
               showDate={false}
               canEditGames={canEditSchedule}
               onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
-              onClick={() => _onEditGame(game)}
+              onClick={readOnly ? undefined : () => _onEditGame(game)}
+              readOnly={readOnly}
+              timeOnly
               canEditRecap={canEditRecap}
               onEditRecap={canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined}
               onViewRecap={
@@ -283,7 +286,9 @@ const DayListView: React.FC<DayListViewProps> = ({
                       showDate={false}
                       canEditGames={canEditSchedule}
                       onEnterGameResults={canEditSchedule ? () => onGameResults(game) : undefined}
-                      onClick={() => _onEditGame(game)}
+                      onClick={readOnly ? undefined : () => _onEditGame(game)}
+                      readOnly={readOnly}
+                      timeOnly
                       canEditRecap={canEditRecap}
                       onEditRecap={
                         canEditRecap && onEditRecap ? () => onEditRecap(game) : undefined

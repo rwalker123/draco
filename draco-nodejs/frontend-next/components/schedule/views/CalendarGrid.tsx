@@ -46,6 +46,7 @@ export interface CalendarGridProps {
   // Permissions
   canEditSchedule: boolean;
   canEditRecap?: (game: GameCardData) => boolean;
+  readOnly?: boolean;
 
   // Navigation state
   isNavigating?: boolean;
@@ -86,6 +87,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   convertGameToGameCardData,
   canEditSchedule,
   canEditRecap,
+  readOnly = false,
   isNavigating = false,
   timeZone,
 }) => {
@@ -368,10 +370,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                               return (
                                 <Box
                                   key={game.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // Prevent triggering day view
-                                    onGameClick?.(game);
-                                  }}
+                                  onClick={
+                                    readOnly
+                                      ? undefined
+                                      : (e) => {
+                                          e.stopPropagation(); // Prevent triggering day view
+                                          onGameClick?.(game);
+                                        }
+                                  }
                                 >
                                   <GameCard
                                     game={gameCardData}
@@ -409,7 +415,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                                         : undefined
                                     }
                                     showActions={showActions}
-                                    onClick={() => onGameClick?.(game)}
+                                    onClick={readOnly ? undefined : () => onGameClick?.(game)}
+                                    readOnly={readOnly}
+                                    timeOnly
                                     timeZone={timeZone}
                                     accountId={accountId}
                                     currentTeamSeasonId={currentTeamSeasonId}
@@ -523,10 +531,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         return (
                           <Box
                             key={game.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onGameClick?.(game);
-                            }}
+                            onClick={
+                              readOnly
+                                ? undefined
+                                : (e) => {
+                                    e.stopPropagation();
+                                    onGameClick?.(game);
+                                  }
+                            }
                           >
                             <GameCard
                               game={gameCardData}
@@ -561,7 +573,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                                   : undefined
                               }
                               showActions={showActions}
-                              onClick={() => onGameClick?.(game)}
+                              onClick={readOnly ? undefined : () => onGameClick?.(game)}
+                              readOnly={readOnly}
+                              timeOnly
                               timeZone={timeZone}
                               accountId={accountId}
                               currentTeamSeasonId={currentTeamSeasonId}

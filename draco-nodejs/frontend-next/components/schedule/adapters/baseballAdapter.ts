@@ -313,7 +313,7 @@ async function loadTeams({
     const teams: TeamSeasonType[] = [];
     leagueSeason.divisions?.forEach((division) => {
       division.teams.forEach((team) => {
-        teams.push(team);
+        teams.push({ ...team, division: division.division });
       });
     });
     leagueTeamsCache.set(leagueSeason.id, teams);

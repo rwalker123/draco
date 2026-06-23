@@ -35,6 +35,7 @@ interface SeasonSummaryWidgetProps {
   games?: Game[];
   timeZone?: string;
   title?: string;
+  variant?: 'card' | 'embedded';
 }
 
 const MAX_FIELD_NAME_LENGTH = 40;
@@ -421,6 +422,7 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
   games = [],
   timeZone = 'UTC',
   title = 'Season Summary',
+  variant = 'card',
 }) => {
   const theme = useTheme();
   const [selectedField, setSelectedField] = useState<SelectedField | null>(null);
@@ -436,6 +438,73 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
 
   const hasGames = games.length > 0;
   const onFieldClick = hasGames ? setSelectedField : undefined;
+
+  const summaryBody = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: { xs: 2, md: 3 },
+        alignItems: 'stretch',
+      }}
+    >
+      {summary.homeAway ? (
+        <>
+          <HomeAwaySubCard homeAway={summary.homeAway} />
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              borderColor: theme.palette.widget.border,
+            }}
+          />
+        </>
+      ) : null}
+      <SubCard title="Fields">{renderFields(summary.byField, onFieldClick)}</SubCard>
+      <Divider
+        orientation="vertical"
+        flexItem
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          borderColor: theme.palette.widget.border,
+        }}
+      />
+      <SubCard title="Day of Week">{renderDayType(summary.byDayType)}</SubCard>
+      <Divider
+        orientation="vertical"
+        flexItem
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          borderColor: theme.palette.widget.border,
+        }}
+      />
+      <SubCard title="Start Time">{renderStartTime(summary.byStartTime)}</SubCard>
+    </Box>
+  );
+
+  const fieldDatesDialog = hasGames ? (
+    <FieldDatesDialog
+      open={selectedField !== null}
+      onClose={() => setSelectedField(null)}
+      fieldId={selectedField?.id ?? null}
+      fieldName={selectedField?.name ?? ''}
+      games={games}
+      timeZone={timeZone}
+    />
+  ) : null;
+
+  if (variant === 'embedded') {
+    return (
+      <>
+        <Typography variant="body2" color={theme.palette.widget.supportingText} sx={{ mb: 2 }}>
+          {subtitle}
+        </Typography>
+        {summaryBody}
+        {fieldDatesDialog}
+      </>
+    );
+  }
 
   return (
     <>
@@ -473,61 +542,10 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
               {subtitle}
             </Typography>
           </AccordionSummary>
-          <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                gap: { xs: 2, md: 3 },
-                alignItems: 'stretch',
-              }}
-            >
-              {summary.homeAway ? (
-                <>
-                  <HomeAwaySubCard homeAway={summary.homeAway} />
-                  <Divider
-                    orientation="vertical"
-                    flexItem
-                    sx={{
-                      display: { xs: 'none', md: 'block' },
-                      borderColor: theme.palette.widget.border,
-                    }}
-                  />
-                </>
-              ) : null}
-              <SubCard title="Fields">{renderFields(summary.byField, onFieldClick)}</SubCard>
-              <Divider
-                orientation="vertical"
-                flexItem
-                sx={{
-                  display: { xs: 'none', md: 'block' },
-                  borderColor: theme.palette.widget.border,
-                }}
-              />
-              <SubCard title="Day of Week">{renderDayType(summary.byDayType)}</SubCard>
-              <Divider
-                orientation="vertical"
-                flexItem
-                sx={{
-                  display: { xs: 'none', md: 'block' },
-                  borderColor: theme.palette.widget.border,
-                }}
-              />
-              <SubCard title="Start Time">{renderStartTime(summary.byStartTime)}</SubCard>
-            </Box>
-          </AccordionDetails>
+          <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>{summaryBody}</AccordionDetails>
         </Accordion>
       </WidgetShell>
-      {hasGames ? (
-        <FieldDatesDialog
-          open={selectedField !== null}
-          onClose={() => setSelectedField(null)}
-          fieldId={selectedField?.id ?? null}
-          fieldName={selectedField?.name ?? ''}
-          games={games}
-          timeZone={timeZone}
-        />
-      ) : null}
+      {fieldDatesDialog}
     </>
   );
 };

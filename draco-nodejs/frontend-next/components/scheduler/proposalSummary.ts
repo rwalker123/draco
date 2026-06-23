@@ -1,6 +1,7 @@
 import type { SchedulerProblemSpecPreview, SchedulerSolveResult } from '@draco/shared-schemas';
-import { GameStatus } from '@/types/schedule';
+import { GameStatus, type Game as ScheduleGame } from '@/types/schedule';
 import type { ScheduleSummaryGame } from '../schedule/utils/buildScheduleSummary';
+import { getGameStatusText, getGameStatusShortText } from '../../utils/gameUtils';
 
 type Assignment = SchedulerSolveResult['assignments'][number];
 type GameRequest = SchedulerProblemSpecPreview['games'][number];
@@ -8,6 +9,7 @@ type GameRequest = SchedulerProblemSpecPreview['games'][number];
 export interface ProposalSummaryOption {
   id: string;
   name: string;
+  divisionName?: string;
 }
 
 export interface ProposalSummaryFilters {
@@ -37,6 +39,7 @@ export const collectProposalTeamOptions = (
   gameRequestById: Map<string, GameRequest>,
   teamNameById: Map<string, string>,
   leagueFilter: string,
+  teamDivisionNameById?: Map<string, string>,
 ): ProposalSummaryOption[] => {
   const teamIds = new Set<string>();
   for (const assignment of assignments) {
@@ -47,7 +50,11 @@ export const collectProposalTeamOptions = (
     teamIds.add(matchup.visitorTeamSeasonId);
   }
   return Array.from(teamIds)
-    .map((id) => ({ id, name: teamNameById.get(id) ?? `Team ${id}` }))
+    .map((id) => ({
+      id,
+      name: teamNameById.get(id) ?? `Team ${id}`,
+      divisionName: teamDivisionNameById?.get(id) || undefined,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
@@ -82,6 +89,81 @@ export const buildProposalSummaryGames = (
       },
       homeTeamId: matchup?.homeTeamSeasonId,
       visitorTeamId: matchup?.visitorTeamSeasonId,
+    });
+  }
+  return games;
+};
+
+export const buildMatchupLabel = (
+  gameId: string,
+  gameRequestById: Map<string, GameRequest>,
+  teamNameById: Map<string, string>,
+  leagueNameById: Map<string, string>,
+): string => {
+  const matchup = gameRequestById.get(gameId);
+  if (!matchup) {
+    return `Game ${gameId}`;
+  }
+  const home = teamNameById.get(matchup.homeTeamSeasonId) ?? 'Unknown Home';
+  const visitor = teamNameById.get(matchup.visitorTeamSeasonId) ?? 'Unknown Visitor';
+  const league = matchup.leagueSeasonId ? leagueNameById.get(matchup.leagueSeasonId) : undefined;
+  const label = `${home} vs ${visitor}`;
+  return league ? `[${league}] ${label}` : label;
+};
+
+export const buildProposalScheduleGames = (
+  assignments: Assignment[],
+  gameRequestById: Map<string, GameRequest>,
+  fieldNameById: Map<string, string>,
+  fieldShortNameById: Map<string, string>,
+  teamNameById: Map<string, string>,
+  leagueNameById: Map<string, string>,
+  seasonId: string,
+  seasonName: string,
+): ScheduleGame[] => {
+  const games: ScheduleGame[] = [];
+  for (const assignment of assignments) {
+    const matchup = gameRequestById.get(assignment.gameId);
+    if (!matchup) {
+      continue;
+    }
+    const fieldName = assignment.fieldId
+      ? (fieldNameById.get(assignment.fieldId) ?? `Field ${assignment.fieldId}`)
+      : '';
+    const fieldShortName = assignment.fieldId
+      ? (fieldShortNameById.get(assignment.fieldId) ?? fieldName)
+      : '';
+    games.push({
+      id: assignment.gameId,
+      gameDate: assignment.startTime,
+      homeTeamId: matchup.homeTeamSeasonId,
+      visitorTeamId: matchup.visitorTeamSeasonId,
+      homeTeamName: teamNameById.get(matchup.homeTeamSeasonId) ?? 'Unknown Team',
+      visitorTeamName: teamNameById.get(matchup.visitorTeamSeasonId) ?? 'Unknown Team',
+      homeScore: 0,
+      visitorScore: 0,
+      comment: '',
+      fieldId: assignment.fieldId,
+      field: {
+        id: assignment.fieldId,
+        name: fieldName,
+        shortName: fieldShortName,
+        address: '',
+        city: '',
+        state: '',
+      },
+      gameStatus: GameStatus.Scheduled,
+      gameStatusText: getGameStatusText(GameStatus.Scheduled),
+      gameStatusShortText: getGameStatusShortText(GameStatus.Scheduled),
+      gameType: 0,
+      league: {
+        id: matchup.leagueSeasonId ?? '',
+        name: matchup.leagueSeasonId ? (leagueNameById.get(matchup.leagueSeasonId) ?? '') : '',
+      },
+      season: {
+        id: seasonId,
+        name: seasonName,
+      },
     });
   }
   return games;

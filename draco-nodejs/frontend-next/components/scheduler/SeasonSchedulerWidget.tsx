@@ -16,7 +16,7 @@ import { useSeasonSchedulerOperations } from '../../hooks/useSeasonSchedulerOper
 import { useSeasonSchedulerConstraintHandlers } from '../../hooks/useSeasonSchedulerConstraintHandlers';
 import { useEntityNameMaps } from '../../hooks/useEntityNameMaps';
 import { SeasonSchedulerConfigPanel } from './SeasonSchedulerConfigPanel';
-import { SeasonSchedulerProposalReview } from './SeasonSchedulerProposalReview';
+import { SchedulerSpecPreviewDialog } from './SchedulerSpecPreviewDialog';
 import { SchedulerFieldsConfig } from './SchedulerFieldsConfig';
 import { SchedulerUmpiresConfig } from './SchedulerUmpiresConfig';
 import { SchedulerConstraintsConfig } from './SchedulerConstraintsConfig';
@@ -71,6 +71,11 @@ const saveScheduleUmpires = (accountId: string, seasonId: string, value: boolean
   }
 };
 
+export interface SeasonSchedulerProposalSnapshot {
+  proposal: SchedulerSolveResult;
+  generatedMatchups: SchedulerGameRequest[] | null;
+}
+
 interface SeasonSchedulerWidgetProps {
   accountId: string;
   seasonId: string | null;
@@ -82,8 +87,8 @@ interface SeasonSchedulerWidgetProps {
   leagues: EntityOption[];
   teams: EntityOption[];
   umpires: EntityOption[];
-  getGameSummaryLabel: (gameId: string) => string;
   onApplied: () => Promise<void>;
+  onProposalChange?: (snapshot: SeasonSchedulerProposalSnapshot | null) => void;
   setSuccess: (message: string | null) => void;
   setError: (message: string | null) => void;
 }
@@ -99,8 +104,8 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   leagues,
   teams,
   umpires,
-  getGameSummaryLabel,
   onApplied,
+  onProposalChange,
   setSuccess,
   setError,
 }) => {
@@ -146,9 +151,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
   const [generatedMatchups, setGeneratedMatchups] = useState<SchedulerGameRequest[] | null>(
     persistedProposal?.generatedMatchups ?? null,
   );
-  const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(
-    new Set(persistedProposal?.selectedGameIds ?? []),
-  );
   const [specPreview, setSpecPreview] = useState<SchedulerProblemSpecPreview | null>(null);
   const [specPreviewOpen, setSpecPreviewOpen] = useState(false);
   const [umpiresPerGame, setUmpiresPerGame] = useState<UmpiresPerGame>(2);
@@ -180,14 +182,18 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         proposal,
         proposalFromGenerated,
         generatedMatchups,
-        selectedGameIds: Array.from(selectedGameIds),
+        selectedGameIds: proposal.assignments.map((assignment) => assignment.gameId),
       });
     } else {
       clearPersistedProposal(accountId, seasonId);
     }
-  }, [accountId, seasonId, proposal, proposalFromGenerated, generatedMatchups, selectedGameIds]);
+  }, [accountId, seasonId, proposal, proposalFromGenerated, generatedMatchups]);
 
-  const { fieldNameById, teamNameById, umpireNameById } = useEntityNameMaps({
+  useEffect(() => {
+    onProposalChange?.(proposal ? { proposal, generatedMatchups } : null);
+  }, [proposal, generatedMatchups, onProposalChange]);
+
+  const { teamNameById, umpireNameById } = useEntityNameMaps({
     fields,
     teams,
     umpires,
@@ -213,11 +219,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
     savedLeagueSeasonIds.length > 0 ? savedLeagueSeasonIds : allLeagueSeasonIds;
   const leagueSelectionDirty =
     allLeagueSeasonIds.length > 0 && !sameIdSet(selectedLeagueSeasonIds, dirtyLeagueBaseline);
-
-  const assignments = proposal?.assignments ?? [];
-  const selectedMode: SchedulerSeasonApplyRequest['mode'] =
-    !proposal || selectedGameIds.size === assignments.length ? 'all' : 'subset';
-  const selectedIdsArray = Array.from(selectedGameIds.values()).sort();
 
   useEffect(() => {
     if (!canEdit || !seasonId) return;
@@ -407,7 +408,6 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           setProposal(result);
           setProposalFromGenerated(true);
           setGeneratedMatchups(matchups);
-          setSelectedGameIds(new Set(result.assignments.map((a) => a.gameId)));
           setSuccess(
             `Generated matchups placed (${result.metrics.scheduledGames}/${result.metrics.totalGames} scheduled)`,
           );
@@ -438,8 +438,8 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       clearError();
       const request: SchedulerSeasonApplyRequest = {
         runId: proposal.runId,
-        mode: selectedMode,
-        gameIds: selectedMode === 'subset' ? selectedIdsArray : undefined,
+        mode: 'all',
+        gameIds: undefined,
         assignments: proposal.assignments,
         constraints: {},
         matchups:
@@ -465,44 +465,11 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
       setProposal(null);
       setProposalFromGenerated(false);
       setGeneratedMatchups(null);
-      setSelectedGameIds(new Set());
       setSuccess(message);
       await onApplied();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply proposal');
     }
-  };
-
-  const handleToggleSelection = (gameId: string) => {
-    const next = new Set(selectedGameIds);
-    if (next.has(gameId)) {
-      next.delete(gameId);
-    } else {
-      next.add(gameId);
-    }
-    setSelectedGameIds(next);
-  };
-
-  const handleToggleAll = () => {
-    if (!proposal) return;
-    if (selectedGameIds.size === assignments.length) {
-      setSelectedGameIds(new Set());
-      return;
-    }
-    setSelectedGameIds(new Set(assignments.map((a) => a.gameId)));
-  };
-
-  const handleAssignmentChange = (updated: SchedulerSolveResult['assignments'][number]) => {
-    setProposal((prev) =>
-      prev
-        ? {
-            ...prev,
-            assignments: prev.assignments.map((assignment) =>
-              assignment.gameId === updated.gameId ? updated : assignment,
-            ),
-          }
-        : prev,
-    );
   };
 
   if (!canEdit) {
@@ -552,6 +519,9 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
           }
         >
           {running ? 'Generating…' : 'Generate Schedule'}
+        </Button>
+        <Button variant="outlined" onClick={handleApply} disabled={!proposal || running || loading}>
+          Apply
         </Button>
       </Box>
 
@@ -670,27 +640,10 @@ export const SeasonSchedulerWidget: React.FC<SeasonSchedulerWidgetProps> = ({
         onChange={handleConstraintConfigChange}
       />
 
-      <SeasonSchedulerProposalReview
-        proposal={proposal}
+      <SchedulerSpecPreviewDialog
+        open={specPreviewOpen}
         specPreview={specPreview}
-        specPreviewOpen={specPreviewOpen}
-        loading={loading}
-        timeZone={timeZone}
-        selectedGameIds={selectedGameIds}
-        fields={fields}
-        umpires={umpires}
-        maxUmpires={scheduleUmpires ? umpiresPerGame : 0}
-        fieldNameById={fieldNameById}
-        teamNameById={teamNameById}
-        umpireNameById={umpireNameById}
-        leagueNameById={leagueNameById}
-        generatedMatchups={generatedMatchups}
-        getGameSummaryLabel={getGameSummaryLabel}
-        onToggleSelection={handleToggleSelection}
-        onToggleAll={handleToggleAll}
-        onApply={handleApply}
-        onAssignmentChange={handleAssignmentChange}
-        onCloseSpecPreview={() => setSpecPreviewOpen(false)}
+        onClose={() => setSpecPreviewOpen(false)}
       />
     </>
   );

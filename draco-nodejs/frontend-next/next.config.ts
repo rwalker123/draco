@@ -22,9 +22,6 @@ const nextConfig: NextConfig = {
   experimental: {
     webpackMemoryOptimizations: true,
   },
-  env: {
-    SHOW_SEASON_SCHEDULER: process.env.SHOW_SEASON_SCHEDULER,
-  },
   allowedDevOrigins,
   /* config options here */
   async rewrites() {

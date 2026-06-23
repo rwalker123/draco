@@ -35,6 +35,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
   loadingGames,
   scrollToTodayNonce,
   onScrollToToday,
+  readOnly,
 }) => {
   const [currentMonth, setCurrentMonth] = React.useState(filterDate);
 
@@ -118,6 +119,7 @@ const MonthView: React.FC<ViewComponentProps> = ({
         convertGameToGameCardData={convertGameToGameCardData}
         canEditSchedule={canEditSchedule}
         canEditRecap={canEditRecap}
+        readOnly={readOnly}
         isNavigating={isNavigating || false}
         timeZone={timeZone}
         currentMonthDate={currentMonth}
