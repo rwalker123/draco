@@ -32,6 +32,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
   loadingGames,
   scrollToTodayNonce,
   onScrollToToday,
+  disableScrollToToday,
   readOnly,
 }) => {
   const weekDays =
@@ -90,6 +91,7 @@ const WeekView: React.FC<ViewComponentProps> = ({
         showZoomColumn={false}
         loadingGames={loadingGames}
         scrollToTodayNonce={scrollToTodayNonce}
+        disableScrollToToday={disableScrollToToday}
         days={weekDays}
         filteredGames={filteredGames}
         minHeight="300px"

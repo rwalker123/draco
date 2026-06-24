@@ -178,6 +178,7 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
     } else {
       setFilterDate(today);
     }
+    setScrollToTodayNonce((nonce) => nonce + 1);
   }
 
   const {

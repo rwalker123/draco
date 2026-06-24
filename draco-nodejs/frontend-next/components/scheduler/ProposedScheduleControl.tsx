@@ -137,6 +137,7 @@ export const ProposedScheduleControl: React.FC<ProposedScheduleControlProps> = (
       canEditSchedule={false}
       showLeagueTeamFilters
       readOnly
+      disableScrollToToday
     />
   );
 };
