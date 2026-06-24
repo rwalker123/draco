@@ -3,8 +3,6 @@ import ScoreboardBase from './ScoreboardBase';
 import { Game } from './GameListDisplay';
 import { createGamesLoader } from '../utils/gameTransformers';
 import { useApiClient } from '../hooks/useApiClient';
-import WidgetShell from './ui/WidgetShell';
-import { Typography } from '@mui/material';
 
 interface YesterdayScoreboardProps {
   accountId: string;
@@ -33,38 +31,6 @@ const YesterdayScoreboard: React.FC<YesterdayScoreboardProps> = ({
     return await gamesLoader(yesterday, today, signal);
   };
 
-  const renderWrapper = (
-    content: React.ReactNode,
-    state: 'loading' | 'error' | 'empty' | 'content',
-  ): React.ReactNode => {
-    if (state === 'empty') {
-      return null;
-    }
-
-    return (
-      <WidgetShell
-        title={
-          <Typography variant="h6" fontWeight={700} color="text.primary">
-            Yesterday&apos;s Games
-          </Typography>
-        }
-        subtitle={
-          <Typography variant="body2" color="text.secondary">
-            Recap the action from yesterday.
-          </Typography>
-        }
-        accent="primary"
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-        }}
-      >
-        {content}
-      </WidgetShell>
-    );
-  };
-
   return (
     <ScoreboardBase
       accountId={accountId}
@@ -72,9 +38,8 @@ const YesterdayScoreboard: React.FC<YesterdayScoreboardProps> = ({
       layout={layout}
       currentSeasonId={currentSeasonId}
       onGamesLoaded={onGamesLoaded}
-      title="Yesterday"
+      title="Yesterday's Games"
       loadGames={loadYesterdayGames}
-      renderWrapper={renderWrapper}
     />
   );
 };
