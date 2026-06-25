@@ -57,6 +57,23 @@ const filterGamesByLeagueAndTeam = (
     return leagueMatch && teamMatch;
   });
 
+const buildScheduleHeader = (
+  leagueName: string | undefined,
+  teamName: string | undefined,
+  accountName: string | undefined,
+  seasonName: string | null | undefined,
+): { title: string; subtitle: string } => ({
+  title: [leagueName, teamName].filter(Boolean).join(' ') || accountName || 'Schedule',
+  subtitle: [seasonName, 'Full Season Schedule'].filter(Boolean).join(' '),
+});
+
+interface PrintSnapshot {
+  games: Game[];
+  title: string;
+  subtitle: string;
+  showLeagueColumn: boolean;
+}
+
 const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { token } = useAuth();
   const { currentSeasonId, currentSeasonName, currentSeasonScheduleVisible, fetchCurrentSeason } =
@@ -199,28 +216,38 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { triggerPrint } = usePrintAction();
   const { loadSeasonGames } = useSeasonGamesLoader({ accountId, accountType });
 
-  const [printGames, setPrintGames] = useState<Game[] | null>(null);
+  const [printData, setPrintData] = useState<PrintSnapshot | null>(null);
   const [printLoading, setPrintLoading] = useState(false);
   const [printPending, setPrintPending] = useState(false);
   const printControllerRef = useRef<AbortController | null>(null);
 
-  const filterLeagueName = filterLeagueSeasonId
+  const liveLeagueName = filterLeagueSeasonId
     ? leagues.find((league) => league.id === filterLeagueSeasonId)?.name
     : undefined;
-  const filterTeamName = filterTeamSeasonId
+  const liveTeamName = filterTeamSeasonId
     ? teams.find((team) => team.id === filterTeamSeasonId)?.name
     : undefined;
-  const printTitle =
-    [filterLeagueName, filterTeamName].filter(Boolean).join(' ') ||
-    currentAccount?.name ||
-    'Schedule';
-  const printSubtitle = [currentSeasonName, 'Full Season Schedule'].filter(Boolean).join(' ');
+  const liveHeader = buildScheduleHeader(
+    liveLeagueName,
+    liveTeamName,
+    currentAccount?.name,
+    currentSeasonName,
+  );
 
   const handlePrint = async () => {
     if (!currentSeasonId) {
       triggerPrint();
       return;
     }
+
+    const leagueSeasonId = filterLeagueSeasonId;
+    const teamSeasonId = filterTeamSeasonId;
+    const { title, subtitle } = buildScheduleHeader(
+      leagueSeasonId ? leagues.find((league) => league.id === leagueSeasonId)?.name : undefined,
+      teamSeasonId ? teams.find((team) => team.id === teamSeasonId)?.name : undefined,
+      currentAccount?.name,
+      currentSeasonName,
+    );
 
     printControllerRef.current?.abort();
     const controller = new AbortController();
@@ -230,9 +257,12 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
     try {
       const seasonGames = await loadSeasonGames(currentSeasonId, controller.signal);
       if (controller.signal.aborted) return;
-      setPrintGames(
-        filterGamesByLeagueAndTeam(seasonGames, filterLeagueSeasonId, filterTeamSeasonId),
-      );
+      setPrintData({
+        games: filterGamesByLeagueAndTeam(seasonGames, leagueSeasonId, teamSeasonId),
+        title,
+        subtitle,
+        showLeagueColumn: !leagueSeasonId,
+      });
       setPrintPending(true);
     } catch (err) {
       if (controller.signal.aborted) return;
@@ -246,11 +276,11 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   };
 
   useEffect(() => {
-    if (printPending && printGames !== null) {
+    if (printPending && printData !== null) {
       triggerPrint();
       setPrintPending(false);
     }
-  }, [printPending, printGames, triggerPrint]);
+  }, [printPending, printData, triggerPrint]);
 
   useEffect(() => {
     return () => {
@@ -415,11 +445,11 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       {statsDialogs}
 
       <SchedulePrintView
-        games={printGames ?? filteredGames}
-        title={printTitle}
-        subtitle={printSubtitle}
+        games={printData?.games ?? filteredGames}
+        title={printData?.title ?? liveHeader.title}
+        subtitle={printData?.subtitle ?? liveHeader.subtitle}
         timeZone={timeZone}
-        showLeagueColumn={!filterLeagueSeasonId}
+        showLeagueColumn={printData ? printData.showLeagueColumn : !filterLeagueSeasonId}
       />
     </ScheduleLayout>
   );
