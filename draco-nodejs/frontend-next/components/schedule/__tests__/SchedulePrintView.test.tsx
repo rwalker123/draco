@@ -74,8 +74,8 @@ describe('SchedulePrintView', () => {
     });
   });
 
-  describe('grouping by date', () => {
-    it('renders a date heading for each unique date', () => {
+  describe('single-table layout', () => {
+    it('renders a single table with one header row regardless of date count', () => {
       render(
         <SchedulePrintView
           games={[gameDay1a, gameDay1b, gameDay2]}
@@ -84,11 +84,14 @@ describe('SchedulePrintView', () => {
         />,
       );
 
-      const headings = screen.getAllByRole('heading', { level: 2, hidden: true });
-      expect(headings).toHaveLength(2);
+      const tables = screen.getAllByRole('table', { hidden: true });
+      expect(tables).toHaveLength(1);
+      expect(screen.getAllByRole('columnheader', { hidden: true, name: 'Game No.' })).toHaveLength(
+        1,
+      );
     });
 
-    it('groups games from the same date under one heading', () => {
+    it('does not render per-date section headings', () => {
       render(
         <SchedulePrintView
           games={[gameDay1a, gameDay1b, gameDay2]}
@@ -97,9 +100,63 @@ describe('SchedulePrintView', () => {
         />,
       );
 
-      expect(screen.getByText('Alpha vs Beta')).toBeInTheDocument();
-      expect(screen.getByText('Gamma vs Delta')).toBeInTheDocument();
-      expect(screen.getByText('Epsilon vs Zeta')).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { level: 2, hidden: true })).not.toBeInTheDocument();
+    });
+
+    it('lists every game in one table', () => {
+      render(
+        <SchedulePrintView
+          games={[gameDay1a, gameDay1b, gameDay2]}
+          title="Schedule"
+          timeZone="UTC"
+        />,
+      );
+
+      expect(screen.getByText('Beta @ Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Delta @ Gamma')).toBeInTheDocument();
+      expect(screen.getByText('Zeta @ Epsilon')).toBeInTheDocument();
+    });
+
+    it('numbers games sequentially in ascending order', () => {
+      render(
+        <SchedulePrintView
+          games={[gameDay2, gameDay1a, gameDay1b]}
+          title="Schedule"
+          timeZone="UTC"
+        />,
+      );
+
+      const rows = screen.getAllByRole('row', { hidden: true }).slice(1);
+      expect(rows[0]).toHaveTextContent('1');
+      expect(rows[0]).toHaveTextContent('Beta @ Alpha');
+      expect(rows[2]).toHaveTextContent('3');
+      expect(rows[2]).toHaveTextContent('Zeta @ Epsilon');
+    });
+  });
+
+  describe('game date column', () => {
+    it('renders date and time without the year', () => {
+      render(<SchedulePrintView games={[gameDay1a]} title="Schedule" timeZone="UTC" />);
+
+      expect(screen.getByText('Sat, Jun 15 · 7:00 PM')).toBeInTheDocument();
+    });
+  });
+
+  describe('league column visibility', () => {
+    it('hides the League column when showLeagueColumn is false', () => {
+      render(
+        <SchedulePrintView
+          games={[gameDay1a]}
+          title="Schedule"
+          timeZone="UTC"
+          showLeagueColumn={false}
+        />,
+      );
+
+      expect(
+        screen.queryByRole('columnheader', { hidden: true, name: 'League' }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Weekday League')).not.toBeInTheDocument();
     });
   });
 
@@ -124,17 +181,17 @@ describe('SchedulePrintView', () => {
         <SchedulePrintView games={[laterGame, earlierGame]} title="Schedule" timeZone="UTC" />,
       );
 
-      const matchups = screen.getAllByText(/vs/);
-      expect(matchups[0]).toHaveTextContent('First vs Also First');
-      expect(matchups[1]).toHaveTextContent('Last vs Also Last');
+      const matchups = screen.getAllByText(/ @ /);
+      expect(matchups[0]).toHaveTextContent('Also First @ First');
+      expect(matchups[1]).toHaveTextContent('Also Last @ Last');
     });
 
     it('sorts games within the same date in ascending time order', () => {
       render(<SchedulePrintView games={[gameDay1b, gameDay1a]} title="Schedule" timeZone="UTC" />);
 
-      const matchups = screen.getAllByText(/vs/);
-      expect(matchups[0]).toHaveTextContent('Alpha vs Beta');
-      expect(matchups[1]).toHaveTextContent('Gamma vs Delta');
+      const matchups = screen.getAllByText(/ @ /);
+      expect(matchups[0]).toHaveTextContent('Beta @ Alpha');
+      expect(matchups[1]).toHaveTextContent('Delta @ Gamma');
     });
   });
 
@@ -144,13 +201,13 @@ describe('SchedulePrintView', () => {
         <SchedulePrintView games={[gameDay1a]} title="Schedule" timeZone="America/New_York" />,
       );
 
-      expect(screen.getByText('3:00 PM')).toBeInTheDocument();
+      expect(screen.getByText('Sat, Jun 15 · 3:00 PM')).toBeInTheDocument();
     });
 
     it('formats game time in UTC when timeZone is UTC', () => {
       render(<SchedulePrintView games={[gameDay1a]} title="Schedule" timeZone="UTC" />);
 
-      expect(screen.getByText('7:00 PM')).toBeInTheDocument();
+      expect(screen.getByText('Sat, Jun 15 · 7:00 PM')).toBeInTheDocument();
     });
   });
 
@@ -230,7 +287,7 @@ describe('SchedulePrintView', () => {
       render(<SchedulePrintView games={[game]} title="Schedule" timeZone="UTC" />);
 
       expect(screen.getByText('Scheduled')).toBeInTheDocument();
-      expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/\d+–\d+/)).not.toBeInTheDocument();
     });
 
     it('does not append score for Rainout status (2)', () => {
@@ -246,7 +303,7 @@ describe('SchedulePrintView', () => {
       render(<SchedulePrintView games={[game]} title="Schedule" timeZone="UTC" />);
 
       expect(screen.getByText('Rainout')).toBeInTheDocument();
-      expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/\d+–\d+/)).not.toBeInTheDocument();
     });
 
     it('does not append score for Postponed status (3)', () => {
@@ -262,7 +319,7 @@ describe('SchedulePrintView', () => {
       render(<SchedulePrintView games={[game]} title="Schedule" timeZone="UTC" />);
 
       expect(screen.getByText('Postponed')).toBeInTheDocument();
-      expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/\d+–\d+/)).not.toBeInTheDocument();
     });
   });
 
@@ -323,7 +380,7 @@ describe('SchedulePrintView', () => {
     it('uses team names when available', () => {
       render(<SchedulePrintView games={[gameDay1a]} title="Schedule" timeZone="UTC" />);
 
-      expect(screen.getByText('Alpha vs Beta')).toBeInTheDocument();
+      expect(screen.getByText('Beta @ Alpha')).toBeInTheDocument();
     });
 
     it('falls back to teamId when name is absent', () => {
@@ -345,7 +402,7 @@ describe('SchedulePrintView', () => {
 
       render(<SchedulePrintView games={[game]} title="Schedule" timeZone="UTC" />);
 
-      expect(screen.getByText('team-id-123 vs team-id-456')).toBeInTheDocument();
+      expect(screen.getByText('team-id-456 @ team-id-123')).toBeInTheDocument();
     });
   });
 

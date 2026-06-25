@@ -1,6 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMediaQuery } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { useAccountTimezone, useAccount } from '../../../../context/AccountContext';
@@ -12,6 +13,7 @@ import { useGameStatisticsFlow } from '../../../../hooks/useGameStatisticsFlow';
 import {
   useScheduleData,
   useScheduleFilters,
+  useSeasonGamesLoader,
   ScheduleLayout,
   Game,
   FilterType,
@@ -42,6 +44,35 @@ interface ScheduleProps {
 }
 
 const CALENDAR_VIEW_BREAKPOINT = 900;
+
+const filterGamesByLeagueAndTeam = (
+  games: Game[],
+  leagueSeasonId: string,
+  teamSeasonId: string,
+): Game[] =>
+  games.filter((game) => {
+    const leagueMatch = !leagueSeasonId || game.league?.id === leagueSeasonId;
+    const teamMatch =
+      !teamSeasonId || game.homeTeamId === teamSeasonId || game.visitorTeamId === teamSeasonId;
+    return leagueMatch && teamMatch;
+  });
+
+const buildScheduleHeader = (
+  leagueName: string | undefined,
+  teamName: string | undefined,
+  accountName: string | undefined,
+  seasonName: string | null | undefined,
+): { title: string; subtitle: string } => ({
+  title: [leagueName, teamName].filter(Boolean).join(' ') || accountName || 'Schedule',
+  subtitle: [seasonName, 'Full Season Schedule'].filter(Boolean).join(' '),
+});
+
+interface PrintSnapshot {
+  games: Game[];
+  title: string;
+  subtitle: string;
+  showLeagueColumn: boolean;
+}
 
 const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { token } = useAuth();
@@ -183,8 +214,87 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   });
 
   const { triggerPrint } = usePrintAction();
+  const { loadSeasonGames } = useSeasonGamesLoader({ accountId, accountType });
 
-  const printTitle = currentSeasonName ? `${currentSeasonName} Schedule` : 'Schedule';
+  const [printData, setPrintData] = useState<PrintSnapshot | null>(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [printPending, setPrintPending] = useState(false);
+  const printControllerRef = useRef<AbortController | null>(null);
+
+  const liveLeagueName = filterLeagueSeasonId
+    ? leagues.find((league) => league.id === filterLeagueSeasonId)?.name
+    : undefined;
+  const liveTeamName = filterTeamSeasonId
+    ? teams.find((team) => team.id === filterTeamSeasonId)?.name
+    : undefined;
+  const liveHeader = buildScheduleHeader(
+    liveLeagueName,
+    liveTeamName,
+    currentAccount?.name,
+    currentSeasonName,
+  );
+
+  const handlePrint = async () => {
+    if (!currentSeasonId) {
+      triggerPrint();
+      return;
+    }
+
+    const leagueSeasonId = filterLeagueSeasonId;
+    const teamSeasonId = filterTeamSeasonId;
+    const { title, subtitle } = buildScheduleHeader(
+      leagueSeasonId ? leagues.find((league) => league.id === leagueSeasonId)?.name : undefined,
+      teamSeasonId ? teams.find((team) => team.id === teamSeasonId)?.name : undefined,
+      currentAccount?.name,
+      currentSeasonName,
+    );
+
+    printControllerRef.current?.abort();
+    const controller = new AbortController();
+    printControllerRef.current = controller;
+    setPrintLoading(true);
+
+    try {
+      const seasonGames = await loadSeasonGames(currentSeasonId, controller.signal);
+      if (controller.signal.aborted) return;
+      setPrintData({
+        games: filterGamesByLeagueAndTeam(seasonGames, leagueSeasonId, teamSeasonId),
+        title,
+        subtitle,
+        showLeagueColumn: !leagueSeasonId,
+      });
+      setPrintPending(true);
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError('Unable to load the full schedule for printing. Please try again.');
+    } finally {
+      if (!controller.signal.aborted) {
+        setPrintLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (printPending && printData !== null) {
+      triggerPrint();
+      setPrintPending(false);
+    }
+  }, [printPending, printData, triggerPrint]);
+
+  useEffect(() => {
+    const clearPrintData = () => setPrintData(null);
+    window.addEventListener('afterprint', clearPrintData);
+    return () => {
+      window.removeEventListener('afterprint', clearPrintData);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      printControllerRef.current?.abort();
+    };
+  }, []);
 
   const handleDownloadCalendar = () => {
     if (filteredGames.length === 0) return;
@@ -257,8 +367,9 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
             className="print-hidden"
             variant="outlined"
             size="small"
-            startIcon={<PrintIcon />}
-            onClick={triggerPrint}
+            startIcon={printLoading ? <CircularProgress size={16} /> : <PrintIcon />}
+            onClick={handlePrint}
+            disabled={printLoading}
           >
             Print
           </Button>
@@ -341,7 +452,13 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       {recapDialogs}
       {statsDialogs}
 
-      <SchedulePrintView games={filteredGames} title={printTitle} timeZone={timeZone} />
+      <SchedulePrintView
+        games={printData?.games ?? filteredGames}
+        title={printData?.title ?? liveHeader.title}
+        subtitle={printData?.subtitle ?? liveHeader.subtitle}
+        timeZone={timeZone}
+        showLeagueColumn={printData ? printData.showLeagueColumn : !filterLeagueSeasonId}
+      />
     </ScheduleLayout>
   );
 };
