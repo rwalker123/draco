@@ -29,6 +29,7 @@ import { GameFormProvider } from '../contexts/GameFormContext';
 import GameFormFields from '../forms/GameFormFields';
 import { useGameOperations, GameFormValues } from '../hooks/useGameOperations';
 import { convertUTCToZonedDate, formatGameDateTime } from '../../../utils/dateUtils';
+import { isGameTimeWithinAllowedRange, GAME_TIME_RANGE_MESSAGE } from '../gameTimeRange';
 import type { GameDialogProps } from '../types/sportAdapter';
 
 const preprocessDate = (message: string) =>
@@ -69,6 +70,14 @@ const createGameDialogSchema = (gameStatus: number, timeZone: string) =>
           code: z.ZodIssueCode.custom,
           path: ['homeTeamId'],
           message: 'Home and visitor teams must be different',
+        });
+      }
+
+      if (data.gameTime && !isGameTimeWithinAllowedRange(data.gameTime)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['gameTime'],
+          message: GAME_TIME_RANGE_MESSAGE,
         });
       }
 
