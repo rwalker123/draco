@@ -803,15 +803,25 @@ export class ScheduleService {
     }
 
     const fieldId = payload.field?.id ? BigInt(payload.field.id) : undefined;
-    const fieldChanged = payload.field !== undefined && fieldId !== existingGame.fieldid;
 
-    if (fieldChanged && fieldId) {
-      const gameDate = payload.gameDate
-        ? this.parseGameDate(payload.gameDate)
-        : existingGame.gamedate;
+    const effectiveFieldId =
+      payload.field === undefined
+        ? existingGame.fieldid
+        : payload.field === null
+          ? null
+          : (fieldId ?? null);
+    const effectiveGameDate = payload.gameDate
+      ? this.parseGameDate(payload.gameDate)
+      : existingGame.gamedate;
+
+    const fieldOrDateChanged =
+      effectiveFieldId !== existingGame.fieldid ||
+      effectiveGameDate.getTime() !== existingGame.gamedate.getTime();
+
+    if (effectiveFieldId !== null && fieldOrDateChanged) {
       const conflict = await this.scheduleRepository.findFieldConflict(
-        fieldId,
-        gameDate,
+        effectiveFieldId,
+        effectiveGameDate,
         existingGame.leagueid,
         gameId,
       );

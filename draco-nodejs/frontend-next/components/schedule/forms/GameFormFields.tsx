@@ -10,9 +10,13 @@ import { getReadOnlyInputProps, getReadOnlyDatePickerInputProps } from '../../..
 import { useGameFormContext } from '../contexts/GameFormContext';
 import { Controller, useFormContext, type FieldPath } from 'react-hook-form';
 import type { GameDialogFormValues } from '../dialogs/GameDialog';
+import { GAME_TIME_MIN_HOUR, GAME_TIME_MAX_HOUR } from '../gameTimeRange';
 import { GameType } from '@/types/schedule';
 
 const EMPTY_LABEL = 'None';
+
+const GAME_TIME_MIN = new Date(2000, 0, 1, GAME_TIME_MIN_HOUR, 0, 0, 0);
+const GAME_TIME_MAX = new Date(2000, 0, 1, GAME_TIME_MAX_HOUR, 0, 0, 0);
 
 type AutoOption = { id: string; label: string };
 
@@ -188,6 +192,8 @@ const GameFormFields: React.FC = () => {
                 value={field.value ?? null}
                 onChange={(time) => field.onChange(time ?? null)}
                 readOnly={!canEditSchedule}
+                minTime={GAME_TIME_MIN}
+                maxTime={GAME_TIME_MAX}
                 slotProps={{
                   textField: {
                     fullWidth: true,
