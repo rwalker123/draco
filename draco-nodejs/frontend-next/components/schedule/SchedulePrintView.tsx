@@ -1,10 +1,6 @@
 import React from 'react';
 import PrintableLayout from '../print/PrintableLayout';
-import {
-  getDateKeyInTimezone,
-  formatDateInTimezone,
-  formatTimeInTimezone,
-} from '../../utils/dateUtils';
+import { formatDateInTimezone, formatTimeInTimezone } from '../../utils/dateUtils';
 import type { Game } from '@/types/schedule';
 import { GameStatus } from '@/types/schedule';
 
@@ -13,6 +9,7 @@ interface SchedulePrintViewProps {
   title: string;
   subtitle?: string;
   timeZone: string;
+  showLeagueColumn?: boolean;
 }
 
 const PLAYED_STATUSES = new Set([
@@ -38,40 +35,22 @@ const getMatchup = (game: Game): string => {
   return `${home} vs ${visitor}`;
 };
 
-const groupAndSortGames = (
-  games: Game[],
-  timeZone: string,
-): Array<{ dateKey: string; dateLabel: string; games: Game[] }> => {
-  const sorted = [...games].sort(
-    (a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime(),
-  );
-
-  const groups = new Map<string, { dateLabel: string; games: Game[] }>();
-
-  for (const game of sorted) {
-    const key = getDateKeyInTimezone(game.gameDate, timeZone) ?? 'unknown';
-    if (!groups.has(key)) {
-      const label = formatDateInTimezone(game.gameDate, timeZone, {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-      groups.set(key, { dateLabel: label, games: [] });
-    }
-    groups.get(key)!.games.push(game);
-  }
-
-  return Array.from(groups.entries()).map(([dateKey, value]) => ({
-    dateKey,
-    ...value,
-  }));
+const getGameDateTime = (game: Game, timeZone: string): string => {
+  const date = formatDateInTimezone(game.gameDate, timeZone, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = formatTimeInTimezone(game.gameDate, timeZone);
+  return `${date} · ${time}`;
 };
+
+const sortGames = (games: Game[]): Game[] =>
+  [...games].sort((a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime());
 
 const tableStyle: React.CSSProperties = {
   width: '100%',
   borderCollapse: 'collapse',
-  marginBottom: '16px',
   fontSize: '11px',
 };
 
@@ -90,12 +69,15 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: 'top',
 };
 
-const dateHeadingStyle: React.CSSProperties = {
-  margin: '16px 0 4px 0',
-  fontSize: '13px',
-  fontWeight: 700,
-  borderBottom: '1px solid #999',
-  paddingBottom: '2px',
+const numberCellStyle: React.CSSProperties = {
+  ...tdStyle,
+  textAlign: 'right',
+  whiteSpace: 'nowrap',
+};
+
+const dateCellStyle: React.CSSProperties = {
+  ...tdStyle,
+  whiteSpace: 'nowrap',
 };
 
 const SchedulePrintView: React.FC<SchedulePrintViewProps> = ({
@@ -103,6 +85,7 @@ const SchedulePrintView: React.FC<SchedulePrintViewProps> = ({
   title,
   subtitle,
   timeZone,
+  showLeagueColumn = true,
 }) => {
   if (games.length === 0) {
     return (
@@ -112,40 +95,37 @@ const SchedulePrintView: React.FC<SchedulePrintViewProps> = ({
     );
   }
 
-  const groups = groupAndSortGames(games, timeZone);
+  const sortedGames = sortGames(games);
 
   return (
     <PrintableLayout title={title} subtitle={subtitle}>
-      {groups.map(({ dateKey, dateLabel, games: dayGames }) => (
-        <div key={dateKey}>
-          <h2 style={dateHeadingStyle}>{dateLabel}</h2>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Time</th>
-                <th style={thStyle}>League</th>
-                <th style={thStyle}>Matchup</th>
-                <th style={thStyle}>Field</th>
-                <th style={thStyle}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dayGames.map((game) => (
-                <tr key={game.id} className="dr-print-row">
-                  <td style={tdStyle}>{formatTimeInTimezone(game.gameDate, timeZone)}</td>
-                  <td style={tdStyle}>{game.league.name}</td>
-                  <td style={tdStyle}>{getMatchup(game)}</td>
-                  <td style={tdStyle}>{getFieldLabel(game)}</td>
-                  <td style={tdStyle}>
-                    {game.gameStatusText}
-                    {getScoreSuffix(game)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+      <table style={tableStyle}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Game No.</th>
+            <th style={thStyle}>Game Date</th>
+            {showLeagueColumn && <th style={thStyle}>League</th>}
+            <th style={thStyle}>Matchup</th>
+            <th style={thStyle}>Field</th>
+            <th style={thStyle}>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedGames.map((game, index) => (
+            <tr key={game.id} className="dr-print-row">
+              <td style={numberCellStyle}>{index + 1}</td>
+              <td style={dateCellStyle}>{getGameDateTime(game, timeZone)}</td>
+              {showLeagueColumn && <td style={tdStyle}>{game.league.name}</td>}
+              <td style={tdStyle}>{getMatchup(game)}</td>
+              <td style={tdStyle}>{getFieldLabel(game)}</td>
+              <td style={tdStyle}>
+                {game.gameStatusText}
+                {getScoreSuffix(game)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </PrintableLayout>
   );
 };

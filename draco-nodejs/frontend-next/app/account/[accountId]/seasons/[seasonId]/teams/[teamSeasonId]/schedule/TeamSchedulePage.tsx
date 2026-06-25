@@ -245,7 +245,12 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
 
   const { triggerPrint } = usePrintAction();
 
-  const printTitle = [teamName ?? 'Team', seasonName ?? ''].filter(Boolean).join(' — ');
+  const printLeagueNames = Array.from(
+    new Set(summaryGames.map((game) => game.league.name).filter(Boolean)),
+  );
+  const printLeagueName = printLeagueNames.length === 1 ? printLeagueNames[0] : null;
+  const printTitle = [printLeagueName, teamName ?? 'Team'].filter(Boolean).join(' ');
+  const printSubtitle = [seasonName, 'Full Season Schedule'].filter(Boolean).join(' ');
 
   const handleDownloadCalendar = () => {
     if (filteredGames.length === 0) return;
@@ -428,8 +433,9 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
       <SchedulePrintView
         games={summaryGames}
         title={printTitle}
-        subtitle="Full Season Schedule"
+        subtitle={printSubtitle}
         timeZone={timeZone}
+        showLeagueColumn={printLeagueName === null}
       />
     </ScheduleLayout>
   );
