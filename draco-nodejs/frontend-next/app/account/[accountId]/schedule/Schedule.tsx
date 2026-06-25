@@ -283,6 +283,14 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   }, [printPending, printData, triggerPrint]);
 
   useEffect(() => {
+    const clearPrintData = () => setPrintData(null);
+    window.addEventListener('afterprint', clearPrintData);
+    return () => {
+      window.removeEventListener('afterprint', clearPrintData);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       printControllerRef.current?.abort();
     };
