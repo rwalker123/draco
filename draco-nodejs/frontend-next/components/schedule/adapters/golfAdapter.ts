@@ -152,8 +152,8 @@ async function loadGames({
     client: apiClient,
     path: { accountId, seasonId },
     query: {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      ...(startDate ? { startDate: startDate.toISOString() } : {}),
+      ...(endDate ? { endDate: endDate.toISOString() } : {}),
     },
     signal,
     throwOnError: false,

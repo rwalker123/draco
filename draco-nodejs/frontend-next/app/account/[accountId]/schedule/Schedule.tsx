@@ -1,6 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMediaQuery } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { useAccountTimezone, useAccount } from '../../../../context/AccountContext';
@@ -12,6 +13,7 @@ import { useGameStatisticsFlow } from '../../../../hooks/useGameStatisticsFlow';
 import {
   useScheduleData,
   useScheduleFilters,
+  useSeasonGamesLoader,
   ScheduleLayout,
   Game,
   FilterType,
@@ -42,6 +44,18 @@ interface ScheduleProps {
 }
 
 const CALENDAR_VIEW_BREAKPOINT = 900;
+
+const filterGamesByLeagueAndTeam = (
+  games: Game[],
+  leagueSeasonId: string,
+  teamSeasonId: string,
+): Game[] =>
+  games.filter((game) => {
+    const leagueMatch = !leagueSeasonId || game.league?.id === leagueSeasonId;
+    const teamMatch =
+      !teamSeasonId || game.homeTeamId === teamSeasonId || game.visitorTeamId === teamSeasonId;
+    return leagueMatch && teamMatch;
+  });
 
 const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   const { token } = useAuth();
@@ -183,8 +197,66 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
   });
 
   const { triggerPrint } = usePrintAction();
+  const { loadSeasonGames } = useSeasonGamesLoader({ accountId, accountType });
 
-  const printTitle = currentSeasonName ? `${currentSeasonName} Schedule` : 'Schedule';
+  const [printGames, setPrintGames] = useState<Game[] | null>(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [printPending, setPrintPending] = useState(false);
+  const printControllerRef = useRef<AbortController | null>(null);
+
+  const filterLeagueName = filterLeagueSeasonId
+    ? leagues.find((league) => league.id === filterLeagueSeasonId)?.name
+    : undefined;
+  const filterTeamName = filterTeamSeasonId
+    ? teams.find((team) => team.id === filterTeamSeasonId)?.name
+    : undefined;
+  const printTitle =
+    [filterLeagueName, filterTeamName].filter(Boolean).join(' ') ||
+    currentAccount?.name ||
+    'Schedule';
+  const printSubtitle = [currentSeasonName, 'Full Season Schedule'].filter(Boolean).join(' ');
+
+  const handlePrint = async () => {
+    if (!currentSeasonId) {
+      triggerPrint();
+      return;
+    }
+
+    printControllerRef.current?.abort();
+    const controller = new AbortController();
+    printControllerRef.current = controller;
+    setPrintLoading(true);
+
+    try {
+      const seasonGames = await loadSeasonGames(currentSeasonId, controller.signal);
+      if (controller.signal.aborted) return;
+      setPrintGames(
+        filterGamesByLeagueAndTeam(seasonGames, filterLeagueSeasonId, filterTeamSeasonId),
+      );
+      setPrintPending(true);
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError('Unable to load the full schedule for printing. Please try again.');
+    } finally {
+      if (!controller.signal.aborted) {
+        setPrintLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (printPending && printGames !== null) {
+      triggerPrint();
+      setPrintPending(false);
+    }
+  }, [printPending, printGames, triggerPrint]);
+
+  useEffect(() => {
+    return () => {
+      printControllerRef.current?.abort();
+    };
+  }, []);
 
   const handleDownloadCalendar = () => {
     if (filteredGames.length === 0) return;
@@ -257,8 +329,9 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
             className="print-hidden"
             variant="outlined"
             size="small"
-            startIcon={<PrintIcon />}
-            onClick={triggerPrint}
+            startIcon={printLoading ? <CircularProgress size={16} /> : <PrintIcon />}
+            onClick={handlePrint}
+            disabled={printLoading}
           >
             Print
           </Button>
@@ -341,7 +414,13 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
       {recapDialogs}
       {statsDialogs}
 
-      <SchedulePrintView games={filteredGames} title={printTitle} timeZone={timeZone} />
+      <SchedulePrintView
+        games={printGames ?? filteredGames}
+        title={printTitle}
+        subtitle={printSubtitle}
+        timeZone={timeZone}
+        showLeagueColumn={!filterLeagueSeasonId}
+      />
     </ScheduleLayout>
   );
 };

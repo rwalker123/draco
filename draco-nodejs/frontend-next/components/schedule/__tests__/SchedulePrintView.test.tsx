@@ -112,9 +112,9 @@ describe('SchedulePrintView', () => {
         />,
       );
 
-      expect(screen.getByText('Alpha vs Beta')).toBeInTheDocument();
-      expect(screen.getByText('Gamma vs Delta')).toBeInTheDocument();
-      expect(screen.getByText('Epsilon vs Zeta')).toBeInTheDocument();
+      expect(screen.getByText('Beta @ Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Delta @ Gamma')).toBeInTheDocument();
+      expect(screen.getByText('Zeta @ Epsilon')).toBeInTheDocument();
     });
 
     it('numbers games sequentially in ascending order', () => {
@@ -128,9 +128,9 @@ describe('SchedulePrintView', () => {
 
       const rows = screen.getAllByRole('row', { hidden: true }).slice(1);
       expect(rows[0]).toHaveTextContent('1');
-      expect(rows[0]).toHaveTextContent('Alpha vs Beta');
+      expect(rows[0]).toHaveTextContent('Beta @ Alpha');
       expect(rows[2]).toHaveTextContent('3');
-      expect(rows[2]).toHaveTextContent('Epsilon vs Zeta');
+      expect(rows[2]).toHaveTextContent('Zeta @ Epsilon');
     });
   });
 
@@ -181,17 +181,17 @@ describe('SchedulePrintView', () => {
         <SchedulePrintView games={[laterGame, earlierGame]} title="Schedule" timeZone="UTC" />,
       );
 
-      const matchups = screen.getAllByText(/vs/);
-      expect(matchups[0]).toHaveTextContent('First vs Also First');
-      expect(matchups[1]).toHaveTextContent('Last vs Also Last');
+      const matchups = screen.getAllByText(/ @ /);
+      expect(matchups[0]).toHaveTextContent('Also First @ First');
+      expect(matchups[1]).toHaveTextContent('Also Last @ Last');
     });
 
     it('sorts games within the same date in ascending time order', () => {
       render(<SchedulePrintView games={[gameDay1b, gameDay1a]} title="Schedule" timeZone="UTC" />);
 
-      const matchups = screen.getAllByText(/vs/);
-      expect(matchups[0]).toHaveTextContent('Alpha vs Beta');
-      expect(matchups[1]).toHaveTextContent('Gamma vs Delta');
+      const matchups = screen.getAllByText(/ @ /);
+      expect(matchups[0]).toHaveTextContent('Beta @ Alpha');
+      expect(matchups[1]).toHaveTextContent('Delta @ Gamma');
     });
   });
 
@@ -380,7 +380,7 @@ describe('SchedulePrintView', () => {
     it('uses team names when available', () => {
       render(<SchedulePrintView games={[gameDay1a]} title="Schedule" timeZone="UTC" />);
 
-      expect(screen.getByText('Alpha vs Beta')).toBeInTheDocument();
+      expect(screen.getByText('Beta @ Alpha')).toBeInTheDocument();
     });
 
     it('falls back to teamId when name is absent', () => {
@@ -402,7 +402,7 @@ describe('SchedulePrintView', () => {
 
       render(<SchedulePrintView games={[game]} title="Schedule" timeZone="UTC" />);
 
-      expect(screen.getByText('team-id-123 vs team-id-456')).toBeInTheDocument();
+      expect(screen.getByText('team-id-456 @ team-id-123')).toBeInTheDocument();
     });
   });
 

@@ -32,7 +32,7 @@ const getScoreSuffix = (game: Game): string => {
 const getMatchup = (game: Game): string => {
   const home = game.homeTeamName ?? game.homeTeamId;
   const visitor = game.visitorTeamName ?? game.visitorTeamId;
-  return `${home} vs ${visitor}`;
+  return `${visitor} @ ${home}`;
 };
 
 const getGameDateTime = (game: Game, timeZone: string): string => {
