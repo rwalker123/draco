@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PrismaClient } from '#prisma/client';
 import { MinimumCalculator } from '../minimumCalculator.js';
 import { GameStatus, GameType } from '../../types/gameEnums.js';
+import { partialPrismaMock } from '../../test-utils/partialMock.js';
 
 interface PrismaMockOptions {
   leagueSeasonIds: bigint[];
@@ -14,11 +14,11 @@ const createPrismaMock = ({ leagueSeasonIds, totalGames, numTeams }: PrismaMockO
   const scheduleCount = vi.fn().mockResolvedValue(totalGames);
   const teamsCount = vi.fn().mockResolvedValue(numTeams);
 
-  const prisma = {
+  const prisma = partialPrismaMock({
     leagueseason: { findMany },
     leagueschedule: { count: scheduleCount },
     teamsseason: { count: teamsCount },
-  } as unknown as PrismaClient;
+  });
 
   return { prisma, findMany, scheduleCount, teamsCount };
 };

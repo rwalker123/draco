@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PrismaClient } from '#prisma/client';
 import { PrismaPitchingStatisticsRepository } from '../PrismaPitchingStatisticsRepository.js';
 import type { PitchingStatisticsQueryOptions } from '../../interfaces/IPitchingStatisticsRepository.js';
+import { partialPrismaMock } from '../../../test-utils/partialMock.js';
 
 const baseQuery: PitchingStatisticsQueryOptions = {
   accountId: 99n,
@@ -16,7 +16,7 @@ const baseQuery: PitchingStatisticsQueryOptions = {
 
 const createRepo = () => {
   const queryRawUnsafe = vi.fn().mockResolvedValue([]);
-  const prisma = { $queryRawUnsafe: queryRawUnsafe } as unknown as PrismaClient;
+  const prisma = partialPrismaMock({ $queryRawUnsafe: queryRawUnsafe });
   return { repo: new PrismaPitchingStatisticsRepository(prisma), queryRawUnsafe };
 };
 
