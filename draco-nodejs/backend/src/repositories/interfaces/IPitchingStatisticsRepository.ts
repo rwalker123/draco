@@ -6,6 +6,8 @@ import {
 import { PlayerTeamsQueryOptions } from './IBattingStatisticsRepository.js';
 
 export interface PitchingStatisticsQueryOptions {
+  accountId: bigint;
+  seasonId?: bigint;
   leagueId?: bigint;
   divisionId?: bigint;
   teamId?: bigint;

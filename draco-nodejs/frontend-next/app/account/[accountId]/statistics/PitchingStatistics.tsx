@@ -77,6 +77,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
           accountId,
           filters.leagueId,
           {
+            seasonId: filters.seasonId,
             divisionId: filters.divisionId,
             isHistorical: filters.isHistorical,
             page,
@@ -117,6 +118,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
     filters.divisionId,
     filters.isHistorical,
     filters.leagueId,
+    filters.seasonId,
     page,
     pageSize,
     sortField,
@@ -154,6 +156,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
       client: apiClient,
       path: { accountId, leagueId: filters.leagueId },
       query: {
+        seasonId: filters.seasonId && filters.seasonId !== '0' ? filters.seasonId : undefined,
         divisionId:
           filters.divisionId && filters.divisionId !== '0' ? filters.divisionId : undefined,
         isHistorical: filters.isHistorical,

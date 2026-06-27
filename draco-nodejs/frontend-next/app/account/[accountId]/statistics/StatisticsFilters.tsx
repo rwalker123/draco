@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -8,8 +8,6 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
-  FormControlLabel,
-  Switch,
   Typography,
 } from '@mui/material';
 import { listAccountSeasons, listAllTimeLeagues } from '@draco/shared-api-client';
@@ -63,6 +61,9 @@ export default function StatisticsFilters({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   useEffect(() => {
     const controller = new AbortController();
     const loadSeasons = async () => {
@@ -93,7 +94,7 @@ export default function StatisticsFilters({
         const allSeasons = [allTimeOption, ...mappedSeasons];
         setSeasons(allSeasons);
 
-        if (mappedSeasons.length > 0) {
+        if (mappedSeasons.length > 0 && !filtersRef.current.seasonId) {
           const currentSeason = mappedSeasons.find((s) => s.isCurrent) ?? mappedSeasons[0];
           onChangeRef.current({ seasonId: currentSeason.id });
         }
@@ -156,7 +157,7 @@ export default function StatisticsFilters({
         if (controller.signal.aborted) return;
         setLeagues(formattedLeagues);
 
-        if (formattedLeagues.length > 0) {
+        if (formattedLeagues.length > 0 && !filtersRef.current.leagueId) {
           onChangeRef.current({ leagueId: formattedLeagues[0].id });
         }
       } catch (error) {
@@ -190,7 +191,9 @@ export default function StatisticsFilters({
       const allDivisions = [{ id: '0', name: 'All Divisions' }, ...divisionsData];
       setDivisions(allDivisions);
 
-      onChangeRef.current({ divisionId: '0' });
+      if (!filtersRef.current.divisionId) {
+        onChangeRef.current({ divisionId: '0' });
+      }
     } catch (error) {
       console.error('Error loading divisions:', error);
     } finally {
@@ -218,17 +221,6 @@ export default function StatisticsFilters({
 
   const handleDivisionChange = (event: SelectChangeEvent) => {
     onChange({ divisionId: event.target.value });
-  };
-
-  const handleHistoricalToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const isHistorical = event.target.checked;
-    const seasonId = isHistorical ? '0' : seasons.find((s) => s.id !== '0')?.id || '';
-    onChange({
-      isHistorical,
-      seasonId,
-      leagueId: '',
-      divisionId: '',
-    });
   };
 
   return (
@@ -267,6 +259,7 @@ export default function StatisticsFilters({
               onChange={handleLeagueChange}
               disabled={loading.leagues || !filters.seasonId}
             >
+              <MenuItem value="0">All Leagues</MenuItem>
               {leagues.map((league) => (
                 <MenuItem key={league.id} value={league.id}>
                   {league.name}
@@ -293,19 +286,6 @@ export default function StatisticsFilters({
               ))}
             </Select>
           </FormControl>
-        </Box>
-
-        <Box sx={{ minWidth: 200 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={filters.isHistorical}
-                onChange={handleHistoricalToggle}
-                name="historical"
-              />
-            }
-            label="All-Time Stats"
-          />
         </Box>
       </Box>
     </Box>

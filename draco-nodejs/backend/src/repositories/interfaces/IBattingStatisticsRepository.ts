@@ -5,6 +5,8 @@ import {
 } from '../types/dbTypes.js';
 
 export interface BattingStatisticsQueryOptions {
+  accountId: bigint;
+  seasonId?: bigint;
   leagueId?: bigint;
   divisionId?: bigint;
   teamId?: bigint;
@@ -18,6 +20,8 @@ export interface BattingStatisticsQueryOptions {
 }
 
 export interface PlayerTeamsQueryOptions {
+  accountId: bigint;
+  seasonId?: bigint;
   leagueId?: bigint;
   teamId?: bigint;
   isHistorical: boolean;

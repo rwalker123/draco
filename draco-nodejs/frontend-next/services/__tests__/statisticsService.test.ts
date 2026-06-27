@@ -138,6 +138,31 @@ describe('statisticsService', () => {
       );
     });
 
+    it('passes seasonId for the All Leagues case (leagueId "0")', async () => {
+      vi.mocked(listBattingStatistics).mockResolvedValue(makeOkResult([]));
+
+      await fetchBattingStatistics('acct-1', '0', { seasonId: 'season-7' }, { client: mockClient });
+
+      expect(listBattingStatistics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: 'acct-1', leagueId: '0' },
+          query: expect.objectContaining({ seasonId: 'season-7' }),
+        }),
+      );
+    });
+
+    it('strips a zero-value seasonId from the query', async () => {
+      vi.mocked(listBattingStatistics).mockResolvedValue(makeOkResult([]));
+
+      await fetchBattingStatistics('acct-1', 'league-1', { seasonId: '0' }, { client: mockClient });
+
+      expect(listBattingStatistics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          query: expect.objectContaining({ seasonId: undefined }),
+        }),
+      );
+    });
+
     it('throws ApiClientError on failure', async () => {
       vi.mocked(listBattingStatistics).mockResolvedValue(makeErrorResult('Server error'));
 
@@ -176,6 +201,24 @@ describe('statisticsService', () => {
       expect(listPitchingStatistics).toHaveBeenCalledWith(
         expect.objectContaining({
           query: expect.objectContaining({ minIP: '20' }),
+        }),
+      );
+    });
+
+    it('passes seasonId for the All Leagues case (leagueId "0")', async () => {
+      vi.mocked(listPitchingStatistics).mockResolvedValue(makeOkResult([]));
+
+      await fetchPitchingStatistics(
+        'acct-1',
+        '0',
+        { seasonId: 'season-7' },
+        { client: mockClient },
+      );
+
+      expect(listPitchingStatistics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: 'acct-1', leagueId: '0' },
+          query: expect.objectContaining({ seasonId: 'season-7' }),
         }),
       );
     });
@@ -226,6 +269,25 @@ describe('statisticsService', () => {
       expect(listStatisticalLeaders).toHaveBeenCalledWith(
         expect.objectContaining({
           query: expect.objectContaining({ limit: '5' }),
+        }),
+      );
+    });
+
+    it('passes seasonId for the All Leagues case (leagueId "0")', async () => {
+      vi.mocked(listStatisticalLeaders).mockResolvedValue(makeOkResult([]));
+
+      await fetchStatisticalLeaders(
+        'acct-1',
+        '0',
+        'HR',
+        { seasonId: 'season-7' },
+        { client: mockClient },
+      );
+
+      expect(listStatisticalLeaders).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { accountId: 'acct-1', leagueId: '0' },
+          query: expect.objectContaining({ category: 'HR', seasonId: 'season-7' }),
         }),
       );
     });

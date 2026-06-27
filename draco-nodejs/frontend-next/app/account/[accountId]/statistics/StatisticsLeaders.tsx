@@ -59,6 +59,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
             filters.leagueId,
             category.key,
             {
+              seasonId: filters.seasonId,
               divisionId: filters.divisionId,
               isHistorical: filters.isHistorical,
             },
@@ -74,6 +75,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
             filters.leagueId,
             category.key,
             {
+              seasonId: filters.seasonId,
               divisionId: filters.divisionId,
               isHistorical: filters.isHistorical,
             },
@@ -131,6 +133,7 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
     filters.divisionId,
     filters.isHistorical,
     filters.leagueId,
+    filters.seasonId,
     pitchingCategories,
   ]);
 
