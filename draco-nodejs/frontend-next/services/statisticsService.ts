@@ -65,6 +65,7 @@ export async function fetchLeaderCategories(
 }
 
 export interface BattingStatisticsQueryOptions {
+  seasonId?: string;
   divisionId?: string;
   teamId?: string;
   isHistorical?: boolean;
@@ -84,6 +85,7 @@ export async function fetchBattingStatistics(
 ): Promise<PlayerBattingStatsType[]> {
   const client = resolveClient(options);
   const {
+    seasonId,
     divisionId,
     teamId,
     isHistorical,
@@ -99,6 +101,7 @@ export async function fetchBattingStatistics(
     client,
     path: { accountId, leagueId },
     query: {
+      seasonId: sanitizeId(seasonId),
       divisionId: sanitizeId(divisionId),
       teamId: sanitizeId(teamId),
       isHistorical,
@@ -117,6 +120,7 @@ export async function fetchBattingStatistics(
 }
 
 export interface PitchingStatisticsQueryOptions {
+  seasonId?: string;
   divisionId?: string;
   teamId?: string;
   isHistorical?: boolean;
@@ -136,6 +140,7 @@ export async function fetchPitchingStatistics(
 ): Promise<PlayerPitchingStatsType[]> {
   const client = resolveClient(options);
   const {
+    seasonId,
     divisionId,
     teamId,
     isHistorical,
@@ -151,6 +156,7 @@ export async function fetchPitchingStatistics(
     client,
     path: { accountId, leagueId },
     query: {
+      seasonId: sanitizeId(seasonId),
       divisionId: sanitizeId(divisionId),
       teamId: sanitizeId(teamId),
       isHistorical,
@@ -169,6 +175,7 @@ export async function fetchPitchingStatistics(
 }
 
 export interface LeaderQueryOptions {
+  seasonId?: string;
   divisionId?: string;
   teamId?: string;
   isHistorical?: boolean;
@@ -189,6 +196,7 @@ export async function fetchStatisticalLeaders(
 ): Promise<LeaderRowType[]> {
   const client = resolveClient(options);
   const {
+    seasonId,
     divisionId,
     teamId,
     isHistorical,
@@ -205,6 +213,7 @@ export async function fetchStatisticalLeaders(
     path: { accountId, leagueId },
     query: {
       category,
+      seasonId: sanitizeId(seasonId),
       divisionId: sanitizeId(divisionId),
       teamId: sanitizeId(teamId),
       isHistorical,

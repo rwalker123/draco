@@ -111,17 +111,19 @@ export class StatisticsService {
 
   // Get batting statistics with pagination and filtering
   async getBattingStats(
-    _accountId: bigint,
+    accountId: bigint,
     filters: BattingStatisticsFiltersType,
   ): Promise<PlayerBattingStatsType[]> {
-    const stats = await this.queryBattingStats(filters);
+    const stats = await this.queryBattingStats(filters, accountId);
     return StatsResponseFormatter.formatPlayerBattingStats(stats);
   }
 
   private async queryBattingStats(
     filters: BattingStatisticsFiltersType,
+    accountId: bigint,
   ): Promise<dbBattingStatisticsRow[]> {
     const {
+      seasonId,
       leagueId,
       divisionId,
       teamId,
@@ -138,7 +140,11 @@ export class StatisticsService {
       throw new Error('Sort field is required');
     }
 
+    const effectiveIncludeAllGameTypes = isHistorical || includeAllGameTypes;
+
     const stats = await this.battingStatisticsRepository.findBattingStatistics({
+      accountId,
+      seasonId,
       leagueId,
       divisionId,
       teamId,
@@ -148,10 +154,10 @@ export class StatisticsService {
       page,
       pageSize,
       minAtBats: minAB,
-      includeAllGameTypes,
+      includeAllGameTypes: effectiveIncludeAllGameTypes,
     });
 
-    await this.attachTeamsToStats(stats, filters, (playerIds, query) =>
+    await this.attachTeamsToStats(stats, filters, accountId, (playerIds, query) =>
       this.battingStatisticsRepository.findTeamsForPlayers(playerIds, query),
     );
 
@@ -162,6 +168,7 @@ export class StatisticsService {
   private async attachTeamsToStats(
     stats: Array<dbBattingStatisticsRow | dbPitchingStatisticsRow>,
     filters: StatisticsFilters,
+    accountId: bigint,
     fetchTeams: (
       playerIds: bigint[],
       query: PlayerTeamsQueryOptions,
@@ -174,10 +181,13 @@ export class StatisticsService {
     const playerIds = stats.map((stat) => stat.playerId);
 
     const teamResults = await fetchTeams(playerIds, {
+      accountId,
+      seasonId: filters.seasonId,
       leagueId: filters.leagueId,
       teamId: filters.teamId,
       isHistorical: filters.isHistorical ?? false,
-      includeAllGameTypes: filters.includeAllGameTypes ?? false,
+      includeAllGameTypes:
+        (filters.isHistorical ?? false) || (filters.includeAllGameTypes ?? false),
     });
 
     const teamsByPlayer = new Map<string, string[]>();
@@ -209,10 +219,10 @@ export class StatisticsService {
 
   // Get pitching statistics with pagination and filtering
   async getPitchingStats(
-    _accountId: bigint,
+    accountId: bigint,
     filters: PitchingStatisticsFiltersType,
   ): Promise<PlayerPitchingStatsType[]> {
-    const stats = await this.queryPitchingStats(filters);
+    const stats = await this.queryPitchingStats(filters, accountId);
     return StatsResponseFormatter.formatPlayerPitchingStats(stats);
   }
 
@@ -258,8 +268,10 @@ export class StatisticsService {
 
   private async queryPitchingStats(
     filters: PitchingStatisticsFiltersType,
+    accountId: bigint,
   ): Promise<dbPitchingStatisticsRow[]> {
     const {
+      seasonId,
       leagueId,
       divisionId,
       teamId,
@@ -276,7 +288,11 @@ export class StatisticsService {
       throw new Error('Sort field is required');
     }
 
+    const effectiveIncludeAllGameTypes = isHistorical || includeAllGameTypes;
+
     const stats = await this.pitchingStatisticsRepository.findPitchingStatistics({
+      accountId,
+      seasonId,
       leagueId,
       divisionId,
       teamId,
@@ -286,10 +302,10 @@ export class StatisticsService {
       page,
       pageSize,
       minInningsPitched: minIP,
-      includeAllGameTypes,
+      includeAllGameTypes: effectiveIncludeAllGameTypes,
     });
 
-    await this.attachTeamsToStats(stats, filters, (playerIds, query) =>
+    await this.attachTeamsToStats(stats, filters, accountId, (playerIds, query) =>
       this.pitchingStatisticsRepository.findTeamsForPlayers(playerIds, query),
     );
 
@@ -321,6 +337,8 @@ export class StatisticsService {
         minAB = await this.minimumCalculator.calculateTeamMinAB(filters.teamId);
       } else if (filters.leagueId) {
         minAB = await this.minimumCalculator.calculateLeagueMinAB(filters.leagueId);
+      } else if (filters.seasonId) {
+        minAB = await this.minimumCalculator.calculateSeasonMinAB(filters.seasonId, accountId);
       } else {
         minAB = MinimumCalculator.MIN_AB_PER_SEASON;
       }
@@ -333,6 +351,8 @@ export class StatisticsService {
         minIP = await this.minimumCalculator.calculateTeamMinIP(filters.teamId);
       } else if (filters.leagueId) {
         minIP = await this.minimumCalculator.calculateLeagueMinIP(filters.leagueId);
+      } else if (filters.seasonId) {
+        minIP = await this.minimumCalculator.calculateSeasonMinIP(filters.seasonId, accountId);
       } else {
         minIP = MinimumCalculator.MIN_IP_PER_SEASON;
       }
@@ -1080,23 +1100,27 @@ export class StatisticsService {
   }
 
   private async getBattingLeaders(
-    _accountId: bigint,
+    accountId: bigint,
     category: string,
     filters: LeaderStatisticsFiltersType,
   ): Promise<LeaderRowType[]> {
     const sortOrder = this.getBattingSortOrder(category);
-    const stats = await this.queryBattingStats({
-      leagueId: filters.leagueId,
-      divisionId: filters.divisionId,
-      teamId: filters.teamId,
-      isHistorical: filters.isHistorical,
-      includeAllGameTypes: filters.includeAllGameTypes,
-      page: filters.page,
-      pageSize: filters.pageSize,
-      minAB: filters.minAB,
-      sortField: category,
-      sortOrder,
-    });
+    const stats = await this.queryBattingStats(
+      {
+        seasonId: filters.seasonId,
+        leagueId: filters.leagueId,
+        divisionId: filters.divisionId,
+        teamId: filters.teamId,
+        isHistorical: filters.isHistorical,
+        includeAllGameTypes: filters.includeAllGameTypes,
+        page: filters.page,
+        pageSize: filters.pageSize,
+        minAB: filters.minAB,
+        sortField: category,
+        sortOrder,
+      },
+      accountId,
+    );
 
     return this.processLeadersWithTies(stats, category, filters.limit, (stat) =>
       this.getStatValue(stat, category),
@@ -1104,23 +1128,27 @@ export class StatisticsService {
   }
 
   private async getPitchingLeaders(
-    _accountId: bigint,
+    accountId: bigint,
     category: string,
     filters: LeaderStatisticsFiltersType,
   ): Promise<LeaderRowType[]> {
     const sortOrder = this.getPitchingSortOrder(category);
-    const stats = await this.queryPitchingStats({
-      leagueId: filters.leagueId,
-      divisionId: filters.divisionId,
-      teamId: filters.teamId,
-      isHistorical: filters.isHistorical,
-      includeAllGameTypes: filters.includeAllGameTypes,
-      page: filters.page,
-      pageSize: filters.pageSize,
-      minIP: filters.minIP,
-      sortField: category,
-      sortOrder,
-    });
+    const stats = await this.queryPitchingStats(
+      {
+        seasonId: filters.seasonId,
+        leagueId: filters.leagueId,
+        divisionId: filters.divisionId,
+        teamId: filters.teamId,
+        isHistorical: filters.isHistorical,
+        includeAllGameTypes: filters.includeAllGameTypes,
+        page: filters.page,
+        pageSize: filters.pageSize,
+        minIP: filters.minIP,
+        sortField: category,
+        sortOrder,
+      },
+      accountId,
+    );
 
     return this.processLeadersWithTies(stats, category, filters.limit, (stat) =>
       this.getPitchingStatValue(stat, category),

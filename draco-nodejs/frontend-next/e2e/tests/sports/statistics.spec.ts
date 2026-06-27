@@ -25,7 +25,13 @@ test.describe('Statistics', () => {
     await expect(statsPage.leagueSelect).toBeVisible();
   });
 
-  test('displays all-time stats toggle', async () => {
-    await expect(statsPage.historicalToggle).toBeVisible();
+  test('restores the All Time season from the URL', async ({ accountId }) => {
+    await statsPage.gotoWithQuery(accountId, 'season=0');
+    await expect(statsPage.seasonSelect).toContainText('All Time');
+  });
+
+  test('restores the All Leagues selection from the URL', async ({ accountId }) => {
+    await statsPage.gotoWithQuery(accountId, 'season=0&league=0');
+    await expect(statsPage.leagueSelect).toContainText('All Leagues');
   });
 });

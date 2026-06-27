@@ -159,9 +159,7 @@ export const StatisticsFiltersSchema = z.object({
     .default(50),
 });
 
-export const BattingStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
-  seasonId: true,
-}).extend({
+export const BattingStatisticsFiltersSchema = StatisticsFiltersSchema.extend({
   minAB: z
     .string()
     .transform((val) => parseInt(val))
@@ -170,9 +168,7 @@ export const BattingStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-export const PitchingStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
-  seasonId: true,
-}).extend({
+export const PitchingStatisticsFiltersSchema = StatisticsFiltersSchema.extend({
   minIP: z
     .string()
     .transform((val) => parseInt(val))
@@ -181,9 +177,7 @@ export const PitchingStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
-export const LeaderStatisticsFiltersSchema = StatisticsFiltersSchema.omit({
-  seasonId: true,
-}).extend({
+export const LeaderStatisticsFiltersSchema = StatisticsFiltersSchema.extend({
   minAB: z
     .string()
     .transform((val) => parseInt(val))

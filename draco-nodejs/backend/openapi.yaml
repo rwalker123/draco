@@ -10348,6 +10348,8 @@ components:
     BattingStatisticsFilters:
       type: object
       properties:
+        seasonId:
+          type: string
         leagueId:
           type: string
         divisionId:
@@ -10381,6 +10383,8 @@ components:
     PitchingStatisticsFilters:
       type: object
       properties:
+        seasonId:
+          type: string
         leagueId:
           type: string
         divisionId:
@@ -10414,6 +10418,8 @@ components:
     LeaderStatisticsFilters:
       type: object
       properties:
+        seasonId:
+          type: string
         leagueId:
           type: string
         divisionId:
@@ -51403,6 +51409,11 @@ paths:
         - schema:
             type: string
           required: false
+          name: seasonId
+          in: query
+        - schema:
+            type: string
+          required: false
           name: leagueId
           in: query
         - schema:
@@ -51502,6 +51513,11 @@ paths:
           schema:
             type: string
             format: number
+        - schema:
+            type: string
+          required: false
+          name: seasonId
+          in: query
         - schema:
             type: string
           required: false
@@ -51656,6 +51672,11 @@ paths:
           description: "Statistic category key (for example: avg, era, hr)."
           schema:
             type: string
+        - schema:
+            type: string
+          required: false
+          name: seasonId
+          in: query
         - schema:
             type: string
           required: false
@@ -52223,6 +52244,11 @@ paths:
         - schema:
             type: string
           required: false
+          name: seasonId
+          in: query
+        - schema:
+            type: string
+          required: false
           name: leagueId
           in: query
         - schema:
@@ -52329,6 +52355,11 @@ paths:
           schema:
             type: string
             format: number
+        - schema:
+            type: string
+          required: false
+          name: seasonId
+          in: query
         - schema:
             type: string
           required: false

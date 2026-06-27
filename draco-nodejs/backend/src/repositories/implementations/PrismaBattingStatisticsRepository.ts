@@ -18,6 +18,8 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
     query: BattingStatisticsQueryOptions,
   ): Promise<dbBattingStatisticsRow[]> {
     const {
+      accountId,
+      seasonId,
       leagueId,
       divisionId,
       teamId,
@@ -32,7 +34,11 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
 
     const offset = (page - 1) * pageSize;
     let whereClause = '';
+    const seasonJoin = 'LEFT JOIN season s ON ls.seasonid = s.id';
     const params: (bigint | number)[] = [];
+
+    whereClause += ' AND s.accountid = $' + (params.length + 1);
+    params.push(accountId);
 
     if (leagueId && leagueId !== BigInt(0)) {
       if (isHistorical) {
@@ -41,6 +47,9 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
         whereClause += ' AND ls.id = $' + (params.length + 1);
       }
       params.push(leagueId);
+    } else if (seasonId && seasonId !== BigInt(0)) {
+      whereClause += ' AND ls.seasonid = $' + (params.length + 1);
+      params.push(seasonId);
     }
 
     if (divisionId && divisionId !== BigInt(0)) {
@@ -129,6 +138,7 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       LEFT JOIN contacts c ON r.contactid = c.id
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
+      ${seasonJoin}
       ${teamJoin}
       WHERE ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}
@@ -238,13 +248,17 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       return [];
     }
 
-    const { leagueId, teamId, isHistorical, includeAllGameTypes } = query;
+    const { accountId, seasonId, leagueId, teamId, isHistorical, includeAllGameTypes } = query;
     let whereClause = '';
+    const seasonJoin = 'LEFT JOIN season s ON ls.seasonid = s.id';
     const params: (bigint | number | bigint[])[] = [];
 
     // Use parameterized query for player IDs to prevent SQL injection
     const playerIdParamIndex = params.length + 1;
     params.push(playerIds);
+
+    whereClause += ' AND s.accountid = $' + (params.length + 1);
+    params.push(accountId);
 
     if (leagueId && leagueId !== BigInt(0)) {
       if (isHistorical) {
@@ -253,6 +267,9 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
         whereClause += ' AND ls.id = $' + (params.length + 1);
       }
       params.push(leagueId);
+    } else if (seasonId && seasonId !== BigInt(0)) {
+      whereClause += ' AND ls.seasonid = $' + (params.length + 1);
+      params.push(seasonId);
     }
 
     if (teamId && teamId !== BigInt(0)) {
@@ -273,6 +290,7 @@ export class PrismaBattingStatisticsRepository implements IBattingStatisticsRepo
       LEFT JOIN teams t ON ts.teamid = t.id
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
+      ${seasonJoin}
       WHERE c.id = ANY($${playerIdParamIndex}::bigint[])
         AND ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}

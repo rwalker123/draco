@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Box, Container, Typography, Tabs, Tab, Paper } from '@mui/material';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import AdPlacement from '../../../../components/ads/AdPlacement';
@@ -52,14 +53,40 @@ interface StatisticsProps {
   accountId: string;
 }
 
+const TAB_COUNT = 6;
+
 export default function Statistics({ accountId }: StatisticsProps) {
-  const [tabValue, setTabValue] = useState(0);
-  const [filters, setFilters] = useState<StatisticsFilters>({
-    seasonId: '',
-    leagueId: '',
-    divisionId: '',
-    isHistorical: false,
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [tabValue, setTabValue] = useState(() => {
+    const parsed = Number(searchParams.get('tab'));
+    return Number.isInteger(parsed) && parsed >= 0 && parsed < TAB_COUNT ? parsed : 0;
   });
+  const [filters, setFilters] = useState<StatisticsFilters>(() => {
+    const seasonId = searchParams.get('season') ?? '';
+    const leagueId = searchParams.get('league') ?? '';
+    return {
+      seasonId,
+      leagueId,
+      divisionId: leagueId === '0' ? '' : (searchParams.get('division') ?? ''),
+      isHistorical: seasonId === '0',
+    };
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.seasonId) params.set('season', filters.seasonId);
+    if (filters.leagueId) params.set('league', filters.leagueId);
+    if (filters.divisionId) params.set('division', filters.divisionId);
+    if (tabValue > 0) params.set('tab', String(tabValue));
+    const query = params.toString();
+    if (query !== searchParams.toString()) {
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    }
+  }, [filters, tabValue, pathname, router, searchParams]);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -67,6 +94,8 @@ export default function Statistics({ accountId }: StatisticsProps) {
   const handleFiltersChange = (newFilters: Partial<StatisticsFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
+
+  const isAllLeagues = filters.leagueId === '0';
 
   return (
     <main className="min-h-screen bg-background">
@@ -128,7 +157,16 @@ export default function Statistics({ accountId }: StatisticsProps) {
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
-            <TeamStatistics accountId={accountId} seasonId={filters.seasonId} />
+            {isAllLeagues ? (
+              <Box p={3}>
+                <Typography variant="body1" color="text.secondary">
+                  Team statistics are not available when All Leagues is selected. Choose a specific
+                  league to view team statistics.
+                </Typography>
+              </Box>
+            ) : (
+              <TeamStatistics accountId={accountId} seasonId={filters.seasonId} />
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={4}>
@@ -136,7 +174,16 @@ export default function Statistics({ accountId }: StatisticsProps) {
           </TabPanel>
 
           <TabPanel value={tabValue} index={5}>
-            <Standings accountId={accountId} seasonId={filters.seasonId} showHeader={false} />
+            {isAllLeagues ? (
+              <Box p={3}>
+                <Typography variant="body1" color="text.secondary">
+                  Standings are not available when All Leagues is selected. Choose a specific league
+                  to view standings.
+                </Typography>
+              </Box>
+            ) : (
+              <Standings accountId={accountId} seasonId={filters.seasonId} showHeader={false} />
+            )}
           </TabPanel>
         </Paper>
       </Container>

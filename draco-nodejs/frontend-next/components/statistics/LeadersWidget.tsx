@@ -250,7 +250,7 @@ export default function LeadersWidget(props: LeadersWidgetProps) {
     isTeamVariant && teamSeasonIdForHref
       ? `/account/${accountId}/seasons/${teamSeasonSeasonIdProp}/teams/${teamSeasonIdForHref}/stat-entry`
       : seasonIdProp
-        ? `/account/${accountId}/statistics?seasonId=${seasonIdProp}`
+        ? `/account/${accountId}/statistics?season=${seasonIdProp}`
         : `/account/${accountId}/statistics`;
 
   const teamIdFilter =

@@ -13834,6 +13834,9 @@
       "BattingStatisticsFilters": {
         "type": "object",
         "properties": {
+          "seasonId": {
+            "type": "string"
+          },
           "leagueId": {
             "type": "string"
           },
@@ -13880,6 +13883,9 @@
       "PitchingStatisticsFilters": {
         "type": "object",
         "properties": {
+          "seasonId": {
+            "type": "string"
+          },
           "leagueId": {
             "type": "string"
           },
@@ -13926,6 +13932,9 @@
       "LeaderStatisticsFilters": {
         "type": "object",
         "properties": {
+          "seasonId": {
+            "type": "string"
+          },
           "leagueId": {
             "type": "string"
           },
@@ -76248,6 +76257,14 @@
               "type": "string"
             },
             "required": false,
+            "name": "seasonId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
             "name": "leagueId",
             "in": "query"
           },
@@ -76398,6 +76415,14 @@
               "type": "string",
               "format": "number"
             }
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "seasonId",
+            "in": "query"
           },
           {
             "schema": {
@@ -76635,6 +76660,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "seasonId",
+            "in": "query"
           },
           {
             "schema": {
@@ -77508,6 +77541,14 @@
               "type": "string"
             },
             "required": false,
+            "name": "seasonId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
             "name": "leagueId",
             "in": "query"
           },
@@ -77666,6 +77707,14 @@
               "type": "string",
               "format": "number"
             }
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "seasonId",
+            "in": "query"
           },
           {
             "schema": {
