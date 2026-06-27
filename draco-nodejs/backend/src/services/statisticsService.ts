@@ -338,7 +338,7 @@ export class StatisticsService {
       } else if (filters.leagueId) {
         minAB = await this.minimumCalculator.calculateLeagueMinAB(filters.leagueId);
       } else if (filters.seasonId) {
-        minAB = await this.minimumCalculator.calculateSeasonMinAB(filters.seasonId);
+        minAB = await this.minimumCalculator.calculateSeasonMinAB(filters.seasonId, accountId);
       } else {
         minAB = MinimumCalculator.MIN_AB_PER_SEASON;
       }
@@ -352,7 +352,7 @@ export class StatisticsService {
       } else if (filters.leagueId) {
         minIP = await this.minimumCalculator.calculateLeagueMinIP(filters.leagueId);
       } else if (filters.seasonId) {
-        minIP = await this.minimumCalculator.calculateSeasonMinIP(filters.seasonId);
+        minIP = await this.minimumCalculator.calculateSeasonMinIP(filters.seasonId, accountId);
       } else {
         minIP = MinimumCalculator.MIN_IP_PER_SEASON;
       }

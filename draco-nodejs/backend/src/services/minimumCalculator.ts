@@ -48,12 +48,12 @@ export class MinimumCalculator {
     return this.calculateTeamMin(teamSeasonId, 1.0);
   }
 
-  async calculateSeasonMinAB(seasonId: bigint): Promise<number> {
-    return this.calculateSeasonMin(seasonId, 1.5);
+  async calculateSeasonMinAB(seasonId: bigint, accountId: bigint): Promise<number> {
+    return this.calculateSeasonMin(seasonId, accountId, 1.5);
   }
 
-  async calculateSeasonMinIP(seasonId: bigint): Promise<number> {
-    return this.calculateSeasonMin(seasonId, 1.0);
+  async calculateSeasonMinIP(seasonId: bigint, accountId: bigint): Promise<number> {
+    return this.calculateSeasonMin(seasonId, accountId, 1.0);
   }
 
   /**
@@ -91,9 +91,13 @@ export class MinimumCalculator {
     return Math.max(0, Math.floor(curMin));
   }
 
-  private async calculateSeasonMin(seasonId: bigint, minMultiplier: number): Promise<number> {
+  private async calculateSeasonMin(
+    seasonId: bigint,
+    accountId: bigint,
+    minMultiplier: number,
+  ): Promise<number> {
     const leagueSeasons = await this.prisma.leagueseason.findMany({
-      where: { seasonid: seasonId },
+      where: { seasonid: seasonId, season: { accountid: accountId } },
       select: { id: true },
     });
     const leagueSeasonIds = leagueSeasons.map((ls) => ls.id);

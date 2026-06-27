@@ -32,13 +32,12 @@ describe('MinimumCalculator season-wide minimums', () => {
     });
     const calculator = new MinimumCalculator(prisma);
 
-    const result = await calculator.calculateSeasonMinAB(5n);
+    const result = await calculator.calculateSeasonMinAB(5n, 7n);
 
-    // (40 games * 2 appearances) / 8 teams * 1.5 = 15
     expect(result).toBe(15);
 
     expect(findMany).toHaveBeenCalledWith({
-      where: { seasonid: 5n },
+      where: { seasonid: 5n, season: { accountid: 7n } },
       select: { id: true },
     });
     expect(scheduleCount).toHaveBeenCalledWith({
@@ -63,8 +62,7 @@ describe('MinimumCalculator season-wide minimums', () => {
     });
     const calculator = new MinimumCalculator(prisma);
 
-    // (40 * 2) / 8 * 1.0 = 10
-    await expect(calculator.calculateSeasonMinIP(5n)).resolves.toBe(10);
+    await expect(calculator.calculateSeasonMinIP(5n, 7n)).resolves.toBe(10);
   });
 
   it('returns 0 when the season has no leagues', async () => {
@@ -75,8 +73,7 @@ describe('MinimumCalculator season-wide minimums', () => {
     });
     const calculator = new MinimumCalculator(prisma);
 
-    await expect(calculator.calculateSeasonMinAB(5n)).resolves.toBe(0);
-    // Short-circuits before counting games once no leagues exist
+    await expect(calculator.calculateSeasonMinAB(5n, 7n)).resolves.toBe(0);
     expect(scheduleCount).not.toHaveBeenCalled();
   });
 
@@ -88,6 +85,6 @@ describe('MinimumCalculator season-wide minimums', () => {
     });
     const calculator = new MinimumCalculator(prisma);
 
-    await expect(calculator.calculateSeasonMinAB(5n)).resolves.toBe(0);
+    await expect(calculator.calculateSeasonMinAB(5n, 7n)).resolves.toBe(0);
   });
 });
