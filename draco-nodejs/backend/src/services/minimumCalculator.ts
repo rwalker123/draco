@@ -48,18 +48,10 @@ export class MinimumCalculator {
     return this.calculateTeamMin(teamSeasonId, 1.0);
   }
 
-  /**
-   * Calculate minimum AB across all leagues in a season
-   * Formula: (totalGames * 2) / numTeams * 1.5
-   */
   async calculateSeasonMinAB(seasonId: bigint): Promise<number> {
     return this.calculateSeasonMin(seasonId, 1.5);
   }
 
-  /**
-   * Calculate minimum IP across all leagues in a season
-   * Formula: (totalGames * 2) / numTeams * 1.0
-   */
   async calculateSeasonMinIP(seasonId: bigint): Promise<number> {
     return this.calculateSeasonMin(seasonId, 1.0);
   }
@@ -99,10 +91,6 @@ export class MinimumCalculator {
     return Math.max(0, Math.floor(curMin));
   }
 
-  /**
-   * Private method to calculate a season-wide minimum across all leagues
-   * Mirrors calculateLeagueMin but aggregates every leagueseason in the season
-   */
   private async calculateSeasonMin(seasonId: bigint, minMultiplier: number): Promise<number> {
     const leagueSeasons = await this.prisma.leagueseason.findMany({
       where: { seasonid: seasonId },
@@ -114,7 +102,6 @@ export class MinimumCalculator {
       return 0;
     }
 
-    // Count total completed regular-season games across all leagues in the season
     const totalGames = await this.prisma.leagueschedule.count({
       where: {
         leagueid: { in: leagueSeasonIds },
@@ -125,10 +112,8 @@ export class MinimumCalculator {
       },
     });
 
-    // Each game involves 2 teams, so multiply by 2
     const numGames = totalGames * 2;
 
-    // Count number of teams across all leagues in the season
     const numTeams = await this.prisma.teamsseason.count({
       where: {
         leagueseasonid: { in: leagueSeasonIds },

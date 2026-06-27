@@ -66,10 +66,11 @@ export default function Statistics({ accountId }: StatisticsProps) {
   });
   const [filters, setFilters] = useState<StatisticsFilters>(() => {
     const seasonId = searchParams.get('season') ?? '';
+    const leagueId = searchParams.get('league') ?? '';
     return {
       seasonId,
-      leagueId: searchParams.get('league') ?? '',
-      divisionId: searchParams.get('division') ?? '',
+      leagueId,
+      divisionId: leagueId === '0' ? '' : (searchParams.get('division') ?? ''),
       isHistorical: seasonId === '0',
     };
   });
