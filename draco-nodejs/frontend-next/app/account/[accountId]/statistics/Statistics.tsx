@@ -81,8 +81,10 @@ export default function Statistics({ accountId }: StatisticsProps) {
     if (filters.divisionId) params.set('division', filters.divisionId);
     if (tabValue > 0) params.set('tab', String(tabValue));
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }, [filters, tabValue, pathname, router]);
+    if (query !== searchParams.toString()) {
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    }
+  }, [filters, tabValue, pathname, router, searchParams]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
