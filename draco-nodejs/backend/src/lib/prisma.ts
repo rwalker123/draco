@@ -59,7 +59,7 @@ type ExtendedPrismaClient = ReturnType<typeof createExtendedPrismaClient>;
 // Build the connection URL with pool configuration
 const baseUrl = process.env.DATABASE_URL || 'postgresql://postgres@localhost:5432/ezrecsports';
 const connectionUrl = buildConnectionUrl(baseUrl, databaseConfig);
-const adapter = new PrismaPg({ connectionString: connectionUrl });
+const adapter = new PrismaPg({ connectionString: connectionUrl, options: '-c timezone=UTC' });
 
 // Create a singleton PrismaClient instance with enhanced configuration
 const prisma =
