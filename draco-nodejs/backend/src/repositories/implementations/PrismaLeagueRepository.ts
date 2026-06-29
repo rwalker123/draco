@@ -717,9 +717,7 @@ export class PrismaLeagueRepository implements ILeagueRepository {
           },
         },
       },
-      orderBy: {
-        gamedate: 'asc',
-      },
+      orderBy: [{ gamedate: 'asc' }, { id: 'asc' }],
     }) as Promise<dbScheduleGameWithDetails[]>;
   }
 }

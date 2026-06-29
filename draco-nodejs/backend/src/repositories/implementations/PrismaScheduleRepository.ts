@@ -184,9 +184,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
             },
           },
         },
-        orderBy: {
-          gamedate: options.sortOrder,
-        },
+        orderBy: [{ gamedate: options.sortOrder }, { id: options.sortOrder }],
         skip: options.skip,
         take: options.take,
       }) as Promise<dbScheduleGameWithRecaps[]>;
@@ -208,9 +206,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
           },
         },
       },
-      orderBy: {
-        gamedate: options.sortOrder,
-      },
+      orderBy: [{ gamedate: options.sortOrder }, { id: options.sortOrder }],
       skip: options.skip,
       take: options.take,
     }) as Promise<dbScheduleGameWithDetails[]>;
@@ -565,7 +561,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
         gamedate: { gte: referenceDate },
       },
       select: teamGameSelect,
-      orderBy: { gamedate: 'asc' },
+      orderBy: [{ gamedate: 'asc' }, { id: 'asc' }],
       take: Math.max(limit, 0),
     });
 
@@ -584,7 +580,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
         gamedate: { lt: referenceDate },
       },
       select: teamGameSelect,
-      orderBy: { gamedate: 'desc' },
+      orderBy: [{ gamedate: 'desc' }, { id: 'desc' }],
       take: Math.max(limit, 0),
     });
 

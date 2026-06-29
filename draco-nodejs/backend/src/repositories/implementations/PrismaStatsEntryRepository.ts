@@ -80,9 +80,7 @@ export class PrismaStatsEntryRepository implements IStatsEntryRepository {
         ],
       },
       select: statsGameSelect,
-      orderBy: {
-        gamedate: 'desc',
-      },
+      orderBy: [{ gamedate: 'desc' }, { id: 'desc' }],
     });
   }
 
