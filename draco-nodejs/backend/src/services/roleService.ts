@@ -27,6 +27,7 @@ import {
 import { RoleResponseFormatter } from '../responseFormatters/index.js';
 import { RoleContextData } from './interfaces/roleInterfaces.js';
 import { ValidationError } from '../utils/customErrors.js';
+import { validateRoleContext as validateRoleContextByLevel } from '../utils/roleContext.js';
 import { UserService } from './userService.js';
 import { ServiceFactory } from './serviceFactory.js';
 import { AccountsService } from './accountsService.js';
@@ -568,28 +569,12 @@ export class RoleService implements IRoleService {
    * Validate role context (check if roleData matches context)
    */
   private validateRoleContext(contactRole: RoleWithContactType, context: RoleContextData): boolean {
-    // For account-level roles, just check accountId
-    if (
-      contactRole.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_ADMIN] ||
-      contactRole.roleId === ROLE_IDS[RoleNamesType.ACCOUNT_PHOTO_ADMIN]
-    ) {
-      return contactRole.accountId === context.accountId.toString();
-    }
-
-    // For team-level roles, check if roleData matches teamId
-    if (
-      contactRole.roleId === ROLE_IDS[RoleNamesType.TEAM_ADMIN] ||
-      contactRole.roleId === ROLE_IDS[RoleNamesType.TEAM_PHOTO_ADMIN]
-    ) {
-      return contactRole.roleData === context.teamId?.toString();
-    }
-
-    // For league-level roles, check if roleData matches leagueId
-    if (contactRole.roleId === ROLE_IDS[RoleNamesType.LEAGUE_ADMIN]) {
-      return contactRole.roleData === context.leagueId?.toString();
-    }
-
-    return false;
+    const level = ROLE_PERMISSIONS_BY_ID[contactRole.roleId]?.context;
+    return validateRoleContextByLevel(contactRole, level, {
+      accountId: context.accountId.toString(),
+      teamId: context.teamId?.toString(),
+      leagueId: context.leagueId?.toString(),
+    });
   }
 
   /**

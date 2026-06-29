@@ -160,3 +160,101 @@ export function isLeagueBasedRole(roleId: string): boolean {
   const roleName = ROLE_ID_TO_NAME[roleId] || roleId;
   return LEAGUE_BASED_ROLES.includes(roleName);
 }
+
+export type RoleLevel = 'global' | 'account' | 'team' | 'league';
+
+export interface ContactRoleLike {
+  roleId: string;
+  accountId?: string;
+  roleData?: string;
+}
+
+export interface PermissionContextLike {
+  accountId?: string;
+  teamId?: string;
+  leagueId?: string;
+}
+
+export function validateRoleContext(
+  contactRole: ContactRoleLike,
+  level: RoleLevel | string | undefined,
+  context: PermissionContextLike | undefined,
+): boolean {
+  if (level === 'account') {
+    return Boolean(context?.accountId) && contactRole.accountId === context!.accountId;
+  }
+
+  if (level === 'team') {
+    return (
+      Boolean(context?.accountId) &&
+      Boolean(context?.teamId) &&
+      contactRole.accountId === context!.accountId &&
+      contactRole.roleData === context!.teamId
+    );
+  }
+
+  if (level === 'league') {
+    return (
+      Boolean(context?.accountId) &&
+      Boolean(context?.leagueId) &&
+      contactRole.accountId === context!.accountId &&
+      contactRole.roleData === context!.leagueId
+    );
+  }
+
+  return false;
+}
+
+export interface RolePermissionEntry {
+  roleId: string;
+  permissions: string[];
+  context: string;
+}
+
+export type RolePermissionsByRoleId = Record<string, RolePermissionEntry>;
+
+export interface UserRolesLike {
+  globalRoles: string[];
+  contactRoles: ContactRoleLike[];
+}
+
+export function lookupRolePermissions(
+  permissions: RolePermissionsByRoleId | undefined,
+  roleId?: string | null,
+): RolePermissionEntry | undefined {
+  if (!permissions || !roleId) return undefined;
+
+  const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
+  for (const candidate of candidates) {
+    const perms = permissions[candidate];
+    if (perms) return perms;
+  }
+  return undefined;
+}
+
+export function evaluatePermission(
+  userRoles: UserRolesLike,
+  permissions: RolePermissionsByRoleId,
+  permission: string,
+  context?: PermissionContextLike,
+): boolean {
+  const grants = (entry: RolePermissionEntry | undefined): boolean =>
+    Boolean(entry) && (entry!.permissions.includes('*') || entry!.permissions.includes(permission));
+
+  for (const globalRole of userRoles.globalRoles) {
+    const entry = lookupRolePermissions(permissions, ROLE_NAME_TO_ID[globalRole] || globalRole);
+    if (grants(entry)) return true;
+  }
+
+  for (const contactRole of userRoles.contactRoles) {
+    const entry = lookupRolePermissions(
+      permissions,
+      ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
+    );
+    if (!entry) continue;
+    if (!validateRoleContext(contactRole, entry.context, context)) continue;
+    if (grants(entry)) return true;
+  }
+
+  return false;
+}

@@ -93,6 +93,8 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
         } else {
           evaluation = { status: 'pending' };
         }
+      } else if (checkAccountBoundary && !currentAccount) {
+        evaluation = { status: 'pending' };
       } else {
         const hasRequiredPermission =
           checkAccountBoundary && currentAccount

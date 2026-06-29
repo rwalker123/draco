@@ -67,7 +67,7 @@ export function LeagueSubstitutesPage() {
   const rosterService = useGolfRosters(accountId);
   const { hasPermission } = useRole();
   const { notification, showNotification, hideNotification } = useNotifications();
-  const canManage = hasPermission('account.manage');
+  const canManage = hasPermission('account.manage', { accountId });
 
   const [season, setSeason] = useState<SeasonType | null>(null);
   const [substitutes, setSubstitutes] = useState<GolfSubstituteType[]>([]);
