@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { ROLE_NAME_TO_ID } from '../utils/roleUtils';
+import { ROLE_NAME_TO_ID, evaluatePermission } from '../utils/roleUtils';
 import { useParams } from 'next/navigation';
 import { getCurrentUserRoles, getRoleMetadata } from '@draco/shared-api-client';
 import { unwrapApiResult } from '../utils/apiResult';
@@ -70,21 +70,6 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     return [];
-  };
-
-  const getPermissionsForRole = (
-    roleId?: string | null,
-  ): { roleId: string; permissions: string[]; context: string } | undefined => {
-    if (!roleMetadata || !roleId) return undefined;
-
-    const candidates = [roleId, roleId.toUpperCase(), roleId.toLowerCase()];
-    for (const candidate of candidates) {
-      const perms = roleMetadata.permissions[candidate];
-      if (perms) {
-        return perms;
-      }
-    }
-    return undefined;
   };
 
   // Update loading state based on auth state
@@ -273,45 +258,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const hasPermission = (permission: string, context?: RoleContext): boolean => {
     if (!userRoles || !roleMetadata) return false;
-
-    // Check global roles first
-    for (const globalRole of userRoles.globalRoles) {
-      const globalRoleId = normalizeRoleId(ROLE_NAME_TO_ID[globalRole] || globalRole);
-      const rolePerms = getPermissionsForRole(globalRoleId);
-      if (
-        rolePerms &&
-        (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
-      ) {
-        return true;
-      }
-    }
-
-    // Check contact roles
-    for (const contactRole of userRoles.contactRoles) {
-      // Validate context if provided
-      if (context?.accountId && contactRole.accountId !== context.accountId) {
-        continue;
-      }
-      if (context?.teamId && contactRole.roleData !== context.teamId) {
-        continue;
-      }
-      if (context?.leagueId && contactRole.roleData !== context.leagueId) {
-        continue;
-      }
-
-      const contactRoleId = normalizeRoleId(
-        ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId,
-      );
-      const rolePerms = getPermissionsForRole(contactRoleId);
-      if (
-        rolePerms &&
-        (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
-      ) {
-        return true;
-      }
-    }
-
-    return false;
+    return evaluatePermission(userRoles, roleMetadata.permissions, permission, context);
   };
 
   const hasRoleInAccount = (roleId: string, accountId: string): boolean => {

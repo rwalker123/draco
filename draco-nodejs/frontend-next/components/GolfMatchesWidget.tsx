@@ -56,7 +56,7 @@ export default function GolfMatchesWidget({
   const { user } = useAuth();
   const { hasPermission } = useRole();
   const isAuthenticated = !!user;
-  const canManageLeague = hasPermission('account.manage');
+  const canManageLeague = hasPermission('account.manage', { accountId });
 
   const apiClientRef = useRef(apiClient);
   useEffect(() => {

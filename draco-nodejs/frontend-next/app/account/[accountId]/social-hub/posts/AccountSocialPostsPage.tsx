@@ -42,7 +42,7 @@ const AccountSocialPostsPage: React.FC = () => {
     seasonId: currentSeasonId ?? undefined,
   });
   const { hasPermission } = useRole();
-  const canManage = hasPermission('account.manage', accountId ? { accountId } : undefined);
+  const canManage = hasPermission('account.manage', { accountId });
 
   const [posts, setPosts] = React.useState<SocialFeedItemType[]>([]);
   const [loading, setLoading] = React.useState(false);

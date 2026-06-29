@@ -31,7 +31,7 @@ const SocialPostsWidget: React.FC<SocialPostsWidgetProps> = ({
   });
   const apiClient = useApiClient();
   const { hasPermission } = useRole();
-  const canManage = hasPermission('account.manage', accountId ? { accountId } : undefined);
+  const canManage = hasPermission('account.manage', { accountId });
   const [state, setState] = useState<{
     items: SocialFeedItemType[];
     error: string | null;

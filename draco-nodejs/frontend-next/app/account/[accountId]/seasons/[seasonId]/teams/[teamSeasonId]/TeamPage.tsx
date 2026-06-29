@@ -214,7 +214,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRoleInTeam('TeamAdmin', teamSeasonId) ||
     hasRoleInTeam('TeamPhotoAdmin', teamSeasonId);
 
-  const canEditPlayerPhotos = hasPermission('account.contacts.photos.manage', { accountId });
+  const canEditPlayerPhotos = hasPermission('account.contacts.manage', { accountId });
 
   const canViewRosterDetails =
     hasRole('Administrator') ||
@@ -507,10 +507,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRoleInTeam('TeamAdmin', teamSeasonId) ||
     hasRoleInTeam('TeamPhotoAdmin', teamSeasonId);
 
-  const canSendTeamCommunications =
-    hasRole('Administrator') ||
-    hasRoleInAccount('AccountAdmin', accountId) ||
-    hasRoleInTeam('TeamAdmin', teamSeasonId);
+  const canSendTeamCommunications = hasPermission('team.communications.send', {
+    accountId,
+    seasonId,
+    teamId: teamSeasonId,
+  });
 
   const canManageInformationMessages =
     hasRole('Administrator') ||
