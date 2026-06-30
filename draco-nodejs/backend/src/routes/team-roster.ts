@@ -306,7 +306,7 @@ router.delete(
 
     const contact = await contactService.getContact(accountId, contactId);
 
-    res.json(contact);
+    res.json({ ...contact, photoUrl: undefined });
   }),
 );
 
