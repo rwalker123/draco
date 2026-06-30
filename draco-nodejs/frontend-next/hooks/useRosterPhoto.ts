@@ -39,11 +39,6 @@ const toContact = (contact: ApiContact): ContactType => ({
   photoUrl: contact.photoUrl ? addCacheBuster(contact.photoUrl, Date.now()) : undefined,
 });
 
-/**
- * Hook for uploading and deleting a roster member's photo via the team-scoped
- * roster endpoints. Used from the team roster page so account admins and
- * (when enabled) team admins share a single authorization path.
- */
 export const useRosterPhoto = (accountId: string, seasonId: string, teamSeasonId: string) => {
   const apiClient = useApiClient();
   const [loading, setLoading] = useState(false);

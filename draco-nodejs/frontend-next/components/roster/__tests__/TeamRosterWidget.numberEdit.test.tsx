@@ -59,24 +59,23 @@ vi.mock('@/components/users/UserAvatar', () => ({
   default: () => <div data-testid="user-avatar" />,
 }));
 
-const buildRoster = (playerNumber: string): TeamRosterMembersType =>
-  ({
-    teamSeason: { id: '3', name: 'Test Team' },
-    rosterMembers: [
-      {
-        id: '100',
-        playerNumber,
-        inactive: false,
-        dateAdded: null,
-        player: {
-          id: '200',
-          submittedDriversLicense: false,
-          firstYear: 2020,
-          contact: { id: '300', firstName: 'Jane', lastName: 'Doe' },
-        },
+const buildRoster = (playerNumber: string): TeamRosterMembersType => ({
+  teamSeason: { id: '3', name: 'Test Team' },
+  rosterMembers: [
+    {
+      id: '100',
+      playerNumber,
+      inactive: false,
+      dateAdded: null,
+      player: {
+        id: '200',
+        submittedDriversLicense: false,
+        firstYear: 2020,
+        contact: { id: '300', firstName: 'Jane', lastName: 'Doe' },
       },
-    ],
-  }) as unknown as TeamRosterMembersType;
+    },
+  ],
+});
 
 const renderWidget = () =>
   render(

@@ -208,12 +208,6 @@ export class RouteProtection {
     });
   };
 
-  /**
-   * Middleware allowing access when the user either holds the given account-level
-   * permission, or is a TeamAdmin for the team in context AND the named account
-   * setting is enabled. Sets `req.isAccountLevelEditor` so handlers can apply
-   * narrower field restrictions to the TeamAdmin path.
-   */
   requirePermissionOrTeamAdminWithSetting = (
     accountPermission: string,
     settingKey: AccountSettingKey,
@@ -223,7 +217,11 @@ export class RouteProtection {
         throw new AuthenticationError('Authentication required');
       }
 
-      const accountId = this.extractAccountId(req) || BigInt(0);
+      const accountId = req.accountBoundary?.accountId ?? this.extractAccountId(req);
+      if (!accountId) {
+        throw new ValidationError('Account ID required');
+      }
+
       const seasonId = this.extractSeasonId(req);
       const teamId = await this.getTeamSeasonId(accountId, seasonId, req);
 
