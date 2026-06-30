@@ -1114,6 +1114,14 @@ export const registerRostersEndpoints = ({ registry, schemaRefs, z }: RegisterCo
           },
         },
       },
+      400: {
+        description: 'Validation error',
+        content: {
+          'application/json': {
+            schema: ValidationErrorSchemaRef,
+          },
+        },
+      },
       401: {
         description: 'Authentication required',
         content: {
