@@ -17,6 +17,7 @@ export const ACCOUNT_SETTING_KEYS = [
   'ShowRosterCard',
   'EnableTeamEmail',
   'ShowUserInfoOnRosterPage',
+  'AllowTeamAdminPlayerEdits',
   'ShowContactInfo',
   'EditContactInfo',
   'EmailGameResultsToTeams',
@@ -575,6 +576,24 @@ export const ACCOUNT_SETTING_DEFINITIONS: AccountSettingDefinition[] = [
         id: 'roster.contactInformation',
         type: 'widget',
         displayName: 'Roster Contact Information block',
+        expectedValue: true,
+      },
+    ],
+  }),
+  booleanSetting({
+    key: 'AllowTeamAdminPlayerEdits',
+    label: 'Allow Team Admins to edit player photo and number',
+    description:
+      "When enabled, team administrators can edit a player's photo and jersey number from the team roster page.",
+    groupId: AccountSettingGroupEnum.enum.teamPages,
+    groupLabel: 'Team Pages',
+    sortOrder: 25,
+    defaultValue: false,
+    componentGates: [
+      {
+        id: 'roster.teamAdminPlayerEdits',
+        type: 'widget',
+        displayName: 'Team Admin Player Edit Controls',
         expectedValue: true,
       },
     ],

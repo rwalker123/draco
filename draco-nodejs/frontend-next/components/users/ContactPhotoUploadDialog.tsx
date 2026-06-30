@@ -27,6 +27,10 @@ interface ContactPhotoUploadDialogProps {
   onClose: () => void;
   onPhotoUpdated?: (contact: ContactType) => void;
   onError?: (message: string) => void;
+  onUploadPhoto?: (
+    file: File,
+  ) => Promise<{ success: boolean; contact?: ContactType; error?: string }>;
+  uploading?: boolean;
 }
 
 const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
@@ -37,13 +41,20 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
   onClose,
   onPhotoUpdated,
   onError,
+  onUploadPhoto,
+  uploading = false,
 }) => {
   const avatarRef = useRef<EditableContactAvatarHandle | null>(null);
   const photoSize = getPhotoSize();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { notification, showNotification, hideNotification } = useNotifications();
-  const { uploadContactPhoto, loading, clearError } = useContactPhotoUpload(accountId);
+  const {
+    uploadContactPhoto,
+    loading: internalLoading,
+    clearError,
+  } = useContactPhotoUpload(accountId);
+  const loading = onUploadPhoto ? uploading : internalLoading;
 
   useEffect(() => {
     return () => {
@@ -95,7 +106,9 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
       return;
     }
 
-    const result = await uploadContactPhoto(contact, selectedFile);
+    const result = onUploadPhoto
+      ? await onUploadPhoto(selectedFile)
+      : await uploadContactPhoto(contact, selectedFile);
     if (result.success && result.contact) {
       handlePhotoUpdated(result.contact);
       return;

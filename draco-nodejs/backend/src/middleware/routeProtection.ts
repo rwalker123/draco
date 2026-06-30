@@ -16,20 +16,24 @@ import {
 import { ContactService } from '../services/contactService.js';
 import { UserService } from '../services/userService.js';
 import { ServiceFactory } from '../services/serviceFactory.js';
+import { AccountSettingsService } from '../services/accountSettingsService.js';
 import { TeamService } from '@/services/teamService.js';
 import { getStringParam } from '../utils/paramExtraction.js';
+import { AccountSettingKey } from '@draco/shared-schemas';
 
 export class RouteProtection {
   private roleService: IRoleMiddleware;
   private contactService: ContactService;
   private userService: UserService;
   private teamService: TeamService;
+  private accountSettingsService: AccountSettingsService;
 
   constructor() {
     this.roleService = ServiceFactory.getRoleService();
     this.contactService = ServiceFactory.getContactService();
     this.userService = ServiceFactory.getUserService();
     this.teamService = ServiceFactory.getTeamService();
+    this.accountSettingsService = ServiceFactory.getAccountSettingsService();
   }
 
   /**
@@ -201,6 +205,70 @@ export class RouteProtection {
       }
 
       throw new AuthorizationError("Permission 'account.polls.manage' or TeamAdmin role required");
+    });
+  };
+
+  /**
+   * Middleware allowing access when the user either holds the given account-level
+   * permission, or is a TeamAdmin for the team in context AND the named account
+   * setting is enabled. Sets `req.isAccountLevelEditor` so handlers can apply
+   * narrower field restrictions to the TeamAdmin path.
+   */
+  requirePermissionOrTeamAdminWithSetting = (
+    accountPermission: string,
+    settingKey: AccountSettingKey,
+  ) => {
+    return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        throw new AuthenticationError('Authentication required');
+      }
+
+      const accountId = this.extractAccountId(req) || BigInt(0);
+      const seasonId = this.extractSeasonId(req);
+      const teamId = await this.getTeamSeasonId(accountId, seasonId, req);
+
+      const roleContext: RoleContextData = {
+        accountId,
+        teamId,
+        leagueId: this.extractLeagueId(req),
+        seasonId,
+      };
+
+      const hasPermission = await this.roleService.hasPermission(
+        req.user.id,
+        accountPermission,
+        roleContext,
+      );
+
+      if (hasPermission) {
+        req.isAccountLevelEditor = true;
+        req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+        next();
+        return;
+      }
+
+      const hasTeamAdminRole = await this.roleService.hasRole(
+        req.user.id,
+        ROLE_IDS[RoleNamesType.TEAM_ADMIN],
+        roleContext,
+      );
+
+      if (!hasTeamAdminRole.hasRole) {
+        throw new AuthorizationError(`Permission '${accountPermission}' required`);
+      }
+
+      const settings = await this.accountSettingsService.getAccountSettings(accountId);
+      const settingEnabled = settings.some(
+        (setting) => setting.definition.key === settingKey && Boolean(setting.effectiveValue),
+      );
+
+      if (!settingEnabled) {
+        throw new AuthorizationError('Editing is disabled for this account');
+      }
+
+      req.isAccountLevelEditor = false;
+      req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+      next();
     });
   };
 

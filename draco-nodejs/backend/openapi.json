@@ -7810,6 +7810,7 @@
                     "ShowRosterCard",
                     "EnableTeamEmail",
                     "ShowUserInfoOnRosterPage",
+                    "AllowTeamAdminPlayerEdits",
                     "ShowContactInfo",
                     "EditContactInfo",
                     "EmailGameResultsToTeams",
@@ -7901,6 +7902,7 @@
                           "ShowRosterCard",
                           "EnableTeamEmail",
                           "ShowUserInfoOnRosterPage",
+                          "AllowTeamAdminPlayerEdits",
                           "ShowContactInfo",
                           "EditContactInfo",
                           "EmailGameResultsToTeams",
@@ -8059,6 +8061,7 @@
                   "ShowRosterCard",
                   "EnableTeamEmail",
                   "ShowUserInfoOnRosterPage",
+                  "AllowTeamAdminPlayerEdits",
                   "ShowContactInfo",
                   "EditContactInfo",
                   "EmailGameResultsToTeams",
@@ -8150,6 +8153,7 @@
                         "ShowRosterCard",
                         "EnableTeamEmail",
                         "ShowUserInfoOnRosterPage",
+                        "AllowTeamAdminPlayerEdits",
                         "ShowContactInfo",
                         "EditContactInfo",
                         "EmailGameResultsToTeams",
@@ -8319,6 +8323,7 @@
           "ShowRosterCard",
           "EnableTeamEmail",
           "ShowUserInfoOnRosterPage",
+          "AllowTeamAdminPlayerEdits",
           "ShowContactInfo",
           "EditContactInfo",
           "EmailGameResultsToTeams",
@@ -41065,6 +41070,7 @@
                 "ShowRosterCard",
                 "EnableTeamEmail",
                 "ShowUserInfoOnRosterPage",
+                "AllowTeamAdminPlayerEdits",
                 "ShowContactInfo",
                 "EditContactInfo",
                 "EmailGameResultsToTeams",
@@ -69258,6 +69264,248 @@
           },
           "404": {
             "description": "Roster member or team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/roster/{rosterMemberId}/photo": {
+      "put": {
+        "description": "Upload or replace a roster member's photo. Available to account contact managers or, when the AllowTeamAdminPlayerEdits setting is enabled, the team's administrators.",
+        "operationId": "uploadRosterMemberPhoto",
+        "summary": "Upload roster member photo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "rosterMemberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Roster member photo file"
+                  }
+                },
+                "required": [
+                  "photo"
+                ]
+              },
+              "encoding": {
+                "photo": {
+                  "contentType": "image/*"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Photo updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseContact"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Roster member not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a roster member's photo. Available to account contact photo managers or, when the AllowTeamAdminPlayerEdits setting is enabled, the team's administrators.",
+        "operationId": "deleteRosterMemberPhoto",
+        "summary": "Delete roster member photo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "Rosters"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "seasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "teamSeasonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          },
+          {
+            "name": "rosterMemberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photo deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseContact"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Roster member not found",
             "content": {
               "application/json": {
                 "schema": {

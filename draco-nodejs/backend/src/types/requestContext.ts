@@ -35,6 +35,7 @@ declare global {
       frontendBaseUrl?: string;
       userRoles?: UserRolesType;
       accountBoundary?: AccountBoundaryContext;
+      isAccountLevelEditor?: boolean;
       accountId?: string;
       account?: AccountContext;
       hasAccountRoleAccess?: boolean;

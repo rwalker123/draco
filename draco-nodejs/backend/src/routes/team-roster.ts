@@ -9,12 +9,14 @@ import {
   SignRosterMemberSchema,
   UpdateRosterMemberSchema,
 } from '@draco/shared-schemas';
-import { AuthorizationError, NotFoundError } from '../utils/customErrors.js';
+import { AuthorizationError, NotFoundError, ValidationError } from '../utils/customErrors.js';
+import { handlePhotoUploadMiddleware, validatePhotoUpload } from '../middleware/fileUpload.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();
 const rosterService = ServiceFactory.getRosterService();
+const contactService = ServiceFactory.getContactService();
 const accountSettingsService = ServiceFactory.getAccountSettingsService();
 const csvExportService = ServiceFactory.getCsvExportService();
 
@@ -190,7 +192,10 @@ router.put(
   '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermissionOrTeamAdminWithSetting(
+    'account.contacts.manage',
+    'AllowTeamAdminPlayerEdits',
+  ),
   asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
       req.params,
@@ -202,6 +207,16 @@ router.put(
 
     const updateData = UpdateRosterMemberSchema.parse(req.body);
 
+    if (req.isAccountLevelEditor === false) {
+      const { playerNumber, submittedWaiver, player } = updateData;
+      if (submittedWaiver !== undefined || player !== undefined) {
+        throw new AuthorizationError('Team administrators may only edit the player number');
+      }
+      if (playerNumber === undefined) {
+        throw new ValidationError('No roster updates were provided');
+      }
+    }
+
     const updatedRosterMember = await rosterService.updateRosterMember(
       rosterMemberId,
       teamSeasonId,
@@ -211,6 +226,87 @@ router.put(
     );
 
     res.json(updatedRosterMember);
+  }),
+);
+
+/**
+ * PUT /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/:rosterMemberId/photo
+ * Upload or replace a roster member's photo (team-scoped)
+ */
+router.put(
+  '/:teamSeasonId/roster/:rosterMemberId/photo',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermissionOrTeamAdminWithSetting(
+    'account.contacts.manage',
+    'AllowTeamAdminPlayerEdits',
+  ),
+  handlePhotoUploadMiddleware,
+  validatePhotoUpload,
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+      'rosterMemberId',
+    );
+
+    if (!req.file) {
+      throw new ValidationError('No photo provided');
+    }
+
+    const contactId = await rosterService.getRosterMemberContactId(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    await contactService.uploadContactPhoto(accountId, contactId, req.file);
+
+    const contact = await contactService.getContact(accountId, contactId);
+
+    res.json(contact);
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/:rosterMemberId/photo
+ * Delete a roster member's photo (team-scoped)
+ */
+router.delete(
+  '/:teamSeasonId/roster/:rosterMemberId/photo',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermissionOrTeamAdminWithSetting(
+    'account.contacts.photos.manage',
+    'AllowTeamAdminPlayerEdits',
+  ),
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+      req.params,
+      'accountId',
+      'seasonId',
+      'teamSeasonId',
+      'rosterMemberId',
+    );
+
+    const contactId = await rosterService.getRosterMemberContactId(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    await ServiceFactory.getStorageService().deleteContactPhoto(
+      accountId.toString(),
+      contactId.toString(),
+    );
+
+    const contact = await contactService.getContact(accountId, contactId);
+
+    res.json(contact);
   }),
 );
 

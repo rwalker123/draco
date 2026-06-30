@@ -13,10 +13,16 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
 import UserAvatar from '@/components/users/UserAvatar';
 import ContactPhotoUploadDialog from '@/components/users/ContactPhotoUploadDialog';
 import { useRosterDataManager } from '@/hooks/useRosterDataManager';
+import { useRosterPhoto } from '@/hooks/useRosterPhoto';
 import { useAccountSettings } from '@/hooks/useAccountSettings';
 import { getContactDisplayName } from '@/utils/contactUtils';
 import {
@@ -31,16 +37,19 @@ import {
   getPublicTeamRosterMembers,
   getTeamRosterMembers as apiGetTeamRosterMembers,
   listTeamManagers as apiListTeamManagers,
+  updateRosterMember as apiUpdateRosterMember,
 } from '@draco/shared-api-client';
 import WidgetShell from '@/components/ui/WidgetShell';
-import type {
-  AccountSettingKey,
-  BaseContactType,
-  ContactType,
-  PublicRosterMemberType,
-  PublicTeamRosterResponseType,
-  TeamManagerType,
-  TeamRosterMembersType,
+import {
+  UpdateRosterMemberSchema,
+  type AccountSettingKey,
+  type BaseContactType,
+  type ContactType,
+  type PublicRosterMemberType,
+  type PublicTeamRosterResponseType,
+  type RosterMemberType,
+  type TeamManagerType,
+  type TeamRosterMembersType,
 } from '@draco/shared-schemas';
 import PhotoDeleteDialog from '@/components/users/PhotoDeleteDialog';
 
@@ -50,6 +59,7 @@ interface TeamRosterWidgetProps {
   teamSeasonId: string;
   canViewSensitiveDetails?: boolean;
   canEditPhotos?: boolean;
+  isTeamAdmin?: boolean;
 }
 
 const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
@@ -58,6 +68,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   teamSeasonId,
   canViewSensitiveDetails = false,
   canEditPhotos = false,
+  isTeamAdmin = false,
 }) => {
   const { setError: setRosterError } = useRosterDataManager({
     accountId,
@@ -65,6 +76,11 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     teamSeasonId,
   });
   const { settings: accountSettings } = useAccountSettings(accountId);
+  const {
+    uploadPhoto,
+    deletePhoto,
+    loading: photoLoading,
+  } = useRosterPhoto(accountId, seasonId, teamSeasonId);
   const apiClient = useApiClient();
   const { token } = useAuth();
   const pathname = usePathname();
@@ -79,13 +95,17 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const playerLinkLabel = 'Team Roster';
   const isAuthenticated = Boolean(token);
   const hasPrivateAccess = isAuthenticated && canViewSensitiveDetails;
-  const allowPhotoEdit = Boolean(canEditPhotos);
   const [publicRoster, setPublicRoster] = React.useState<PublicTeamRosterResponseType | null>(null);
   const [publicLoading, setPublicLoading] = React.useState(false);
   const [publicError, setPublicError] = React.useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = React.useState(false);
   const [selectedContact, setSelectedContact] = React.useState<BaseContactType | null>(null);
+  const [selectedRosterMemberId, setSelectedRosterMemberId] = React.useState<string | null>(null);
   const [deleteContactId, setDeleteContactId] = React.useState<string | null>(null);
+  const [editingNumberId, setEditingNumberId] = React.useState<string | null>(null);
+  const [numberDraft, setNumberDraft] = React.useState('');
+  const [savingNumber, setSavingNumber] = React.useState(false);
+  const [numberError, setNumberError] = React.useState<string | null>(null);
   const [privateRosterData, setPrivateRosterData] = React.useState<TeamRosterMembersType | null>(
     null,
   );
@@ -211,6 +231,11 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const showGamesPlayed = getSettingValue('TrackGamesPlayed');
   const canShowContactInfo = canViewSensitiveDetails && showContactInfoOnRoster;
 
+  const allowTeamAdminEdits = getSettingValue('AllowTeamAdminPlayerEdits');
+  const canManagePlayers = Boolean(canEditPhotos) || (Boolean(isTeamAdmin) && allowTeamAdminEdits);
+  const allowPhotoEdit = canManagePlayers;
+  const canEditNumber = canManagePlayers;
+
   const effectiveRosterData = hasPrivateAccess ? privateRosterData : null;
   const effectiveLoading = hasPrivateAccess ? privateLoading : publicLoading;
   const effectiveError = hasPrivateAccess ? privateError : publicError;
@@ -254,17 +279,19 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
   const managers = hasPrivateAccess ? privateManagers : [];
   const managerIds = new Set(managers.map((manager) => manager.contact.id));
 
-  const openPhotoDialog = (contact: BaseContactType) => {
+  const openPhotoDialog = (member: RosterMemberType) => {
     if (!allowPhotoEdit) {
       return;
     }
-    setSelectedContact(contact);
+    setSelectedContact(member.player.contact);
+    setSelectedRosterMemberId(member.id);
     setPhotoDialogOpen(true);
   };
 
   const closePhotoDialog = () => {
     setPhotoDialogOpen(false);
     setSelectedContact(null);
+    setSelectedRosterMemberId(null);
   };
 
   const handlePhotoUpdated = (updatedContact: ContactType) => {
@@ -295,16 +322,18 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     closePhotoDialog();
   };
 
-  const openDeletePhotoDialog = (contact: BaseContactType) => {
+  const openDeletePhotoDialog = (member: RosterMemberType) => {
     if (!allowPhotoEdit) {
       return;
     }
-    setSelectedContact(contact);
-    setDeleteContactId(contact.id);
+    setSelectedContact(member.player.contact);
+    setSelectedRosterMemberId(member.id);
+    setDeleteContactId(member.player.contact.id);
   };
 
   const closeDeletePhotoDialog = () => {
     setDeleteContactId(null);
+    setSelectedRosterMemberId(null);
   };
 
   const handlePhotoDeleted = () => {
@@ -338,6 +367,152 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
     closeDeletePhotoDialog();
   };
 
+  const startEditNumber = (member: RosterMemberType) => {
+    if (!canEditNumber) {
+      return;
+    }
+    setEditingNumberId(member.id);
+    setNumberDraft(member.playerNumber ?? '');
+    setNumberError(null);
+  };
+
+  const cancelEditNumber = () => {
+    setEditingNumberId(null);
+    setNumberDraft('');
+    setNumberError(null);
+    setSavingNumber(false);
+  };
+
+  const saveNumber = async (member: RosterMemberType) => {
+    const parsed = UpdateRosterMemberSchema.shape.playerNumber.safeParse(numberDraft);
+    if (!parsed.success) {
+      setNumberError(parsed.error.issues[0]?.message ?? 'Invalid player number');
+      return;
+    }
+
+    setSavingNumber(true);
+    setNumberError(null);
+
+    try {
+      const result = await apiUpdateRosterMember({
+        client: apiClient,
+        path: { accountId, seasonId, teamSeasonId, rosterMemberId: member.id },
+        body: { playerNumber: parsed.data },
+        throwOnError: false,
+      });
+
+      const updatedMember = unwrapApiResult(result, 'Failed to update number');
+      const updatedNumber = updatedMember.playerNumber;
+
+      setPrivateRosterData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          rosterMembers: prev.rosterMembers.map((rosterMember) =>
+            rosterMember.id === member.id
+              ? { ...rosterMember, playerNumber: updatedNumber }
+              : rosterMember,
+          ),
+        };
+      });
+
+      setEditingNumberId(null);
+      setNumberDraft('');
+    } catch (err) {
+      setNumberError(err instanceof Error ? err.message : 'Failed to update number');
+    } finally {
+      setSavingNumber(false);
+    }
+  };
+
+  const renderNumberCell = (member: RosterMemberType) => {
+    if (editingNumberId === member.id) {
+      return (
+        <TableCell>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TextField
+              value={numberDraft}
+              onChange={(event) =>
+                setNumberDraft(event.target.value.replace(/\D/g, '').slice(0, 2))
+              }
+              size="small"
+              autoFocus
+              error={Boolean(numberError)}
+              helperText={numberError ?? undefined}
+              disabled={savingNumber}
+              slotProps={{
+                htmlInput: { maxLength: 2, inputMode: 'numeric', 'aria-label': 'Player number' },
+              }}
+              sx={{ width: 88 }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void saveNumber(member);
+                } else if (event.key === 'Escape') {
+                  event.preventDefault();
+                  cancelEditNumber();
+                }
+              }}
+            />
+            <IconButton
+              size="small"
+              color="primary"
+              aria-label="Save player number"
+              disabled={savingNumber}
+              onClick={() => void saveNumber(member)}
+            >
+              <CheckIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              aria-label="Cancel editing player number"
+              disabled={savingNumber}
+              onClick={cancelEditNumber}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </TableCell>
+      );
+    }
+
+    if (!canEditNumber) {
+      return <TableCell>{member.playerNumber || '-'}</TableCell>;
+    }
+
+    return (
+      <TableCell>
+        <Box
+          role="button"
+          tabIndex={0}
+          aria-label="Edit player number"
+          onClick={() => startEditNumber(member)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              startEditNumber(member);
+            }
+          }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            cursor: 'pointer',
+            borderRadius: 1,
+            px: 0.5,
+            '&:hover .edit-number-icon': { opacity: 1 },
+          }}
+        >
+          {member.playerNumber || '-'}
+          <EditIcon
+            className="edit-number-icon"
+            sx={{ opacity: 0, fontSize: 14, color: 'text.secondary' }}
+          />
+        </Box>
+      </TableCell>
+    );
+  };
+
   const renderPrivateTable = () => (
     <TableContainer sx={{ width: 'fit-content', maxWidth: '100%' }}>
       <Table size="small" sx={{ width: 'auto' }}>
@@ -368,21 +543,19 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
 
             return (
               <TableRow key={member.id} hover>
-                <TableCell>{member.playerNumber || '-'}</TableCell>
+                {renderNumberCell(member)}
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <UserAvatar
                       user={user}
                       size={32}
-                      onClick={
-                        allowPhotoEdit ? () => openPhotoDialog(member.player.contact) : undefined
-                      }
+                      onClick={allowPhotoEdit ? () => openPhotoDialog(member) : undefined}
                       showHoverEffects={allowPhotoEdit}
                       enablePhotoActions={allowPhotoEdit}
                       onPhotoDelete={
                         allowPhotoEdit
                           ? async () => {
-                              openDeletePhotoDialog(member.player.contact);
+                              openDeletePhotoDialog(member);
                             }
                           : undefined
                       }
@@ -580,7 +753,7 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
           {renderContent()}
         </Box>
       </WidgetShell>
-      {photoDialogOpen && selectedContact ? (
+      {photoDialogOpen && selectedContact && selectedRosterMemberId ? (
         <ContactPhotoUploadDialog
           open={photoDialogOpen}
           accountId={accountId}
@@ -589,9 +762,11 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
           onClose={closePhotoDialog}
           onPhotoUpdated={handlePhotoUpdated}
           onError={setRosterError}
+          onUploadPhoto={(file) => uploadPhoto(selectedRosterMemberId, file)}
+          uploading={photoLoading}
         />
       ) : null}
-      {deleteContactId ? (
+      {deleteContactId && selectedRosterMemberId ? (
         <PhotoDeleteDialog
           open
           contactId={deleteContactId}
@@ -599,6 +774,8 @@ const TeamRosterWidget: React.FC<TeamRosterWidgetProps> = ({
           onClose={closeDeletePhotoDialog}
           onSuccess={handlePhotoDeleted}
           accountId={accountId}
+          onDeletePhoto={() => deletePhoto(selectedRosterMemberId)}
+          deleting={photoLoading}
         />
       ) : null}
     </>

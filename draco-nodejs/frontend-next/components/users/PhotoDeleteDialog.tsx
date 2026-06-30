@@ -15,6 +15,8 @@ interface PhotoDeleteDialogProps {
   onClose: () => void;
   onSuccess?: (result: { message: string; contactId: string }) => void;
   accountId: string;
+  onDeletePhoto?: () => Promise<{ success: boolean; error?: string }>;
+  deleting?: boolean;
 }
 
 /**
@@ -28,9 +30,12 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
   onClose,
   onSuccess,
   accountId,
+  onDeletePhoto,
+  deleting = false,
 }) => {
   const [error, setError] = useState<string | null>(null);
-  const { deletePhoto, loading } = usePhotoOperations(accountId);
+  const { deletePhoto, loading: internalLoading } = usePhotoOperations(accountId);
+  const loading = onDeletePhoto ? deleting : internalLoading;
 
   // Handle photo deletion with internal error handling
   const handleDeletePhoto = async () => {
@@ -38,6 +43,17 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
 
     // Clear any previous errors
     setError(null);
+
+    if (onDeletePhoto) {
+      const overrideResult = await onDeletePhoto();
+      if (overrideResult.success) {
+        onSuccess?.({ message: 'Photo deleted successfully', contactId });
+        onClose();
+      } else {
+        setError(overrideResult.error || 'Failed to delete photo');
+      }
+      return;
+    }
 
     const result = await deletePhoto(contactId);
 
