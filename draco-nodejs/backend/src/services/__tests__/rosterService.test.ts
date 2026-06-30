@@ -396,3 +396,70 @@ describe('RosterService.releaseOrActivatePlayer substitute guard', () => {
     expect(rosterRepo.updateRosterSeasonEntry).not.toHaveBeenCalled();
   });
 });
+
+describe('RosterService.getRosterMemberContactId', () => {
+  let rosterRepo: RosterRepositoryStub;
+  let service: RosterService;
+
+  const rosterMemberId = 100n;
+  const teamSeasonId = 10n;
+  const seasonId = 20n;
+  const accountId = 30n;
+  const contactId = 42n;
+
+  beforeEach(() => {
+    rosterRepo = new RosterRepositoryStub();
+
+    vi.spyOn(ServiceFactory, 'getAccountsService').mockReturnValue(
+      {} as ReturnType<typeof ServiceFactory.getAccountsService>,
+    );
+    vi.spyOn(ServiceFactory, 'getDiscordIntegrationService').mockReturnValue(
+      partialMock<ReturnType<typeof ServiceFactory.getDiscordIntegrationService>>({}),
+    );
+
+    service = new RosterService(
+      rosterRepo,
+      partialMock<ITeamRepository>({}),
+      partialMock<IContactRepository>({}),
+      partialMock<ISeasonsRepository>({}),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns the contact id for a roster member scoped to the team', async () => {
+    rosterRepo.findRosterMemberForAccount.mockResolvedValue(
+      partialMock<dbRosterMember>({
+        id: rosterMemberId,
+        roster: partialMock<dbRosterMember['roster']>({
+          contacts: partialMock<dbRosterMember['roster']['contacts']>({ id: contactId }),
+        }),
+      }),
+    );
+
+    const result = await service.getRosterMemberContactId(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    expect(result).toBe(contactId);
+    expect(rosterRepo.findRosterMemberForAccount).toHaveBeenCalledWith(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+  });
+
+  it('throws NotFoundError when the roster member is not on the team', async () => {
+    rosterRepo.findRosterMemberForAccount.mockResolvedValue(null);
+
+    await expect(
+      service.getRosterMemberContactId(rosterMemberId, teamSeasonId, seasonId, accountId),
+    ).rejects.toThrow('Roster member not found');
+  });
+});

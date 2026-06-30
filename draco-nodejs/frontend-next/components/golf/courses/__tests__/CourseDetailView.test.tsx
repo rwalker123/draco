@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { GolfCourseWithTeesType, GolfCourseTeeType } from '@draco/shared-schemas';
 import CourseDetailView from '../CourseDetailView';
@@ -209,45 +209,43 @@ describe('CourseDetailView', () => {
   });
 
   describe('reset behavior', () => {
-    it('enables reset button after making changes', async () => {
-      const user = userEvent.setup();
+    it('enables reset button after making changes', () => {
       const course = createMockCourse();
 
       render(<CourseDetailView course={course} editMode={true} onSave={vi.fn()} />);
 
       const courseNameInput = screen.getByDisplayValue('Test Golf Course');
-      await user.clear(courseNameInput);
-      await user.type(courseNameInput, 'Modified');
+      fireEvent.change(courseNameInput, { target: { value: 'Modified' } });
 
       expect(screen.getByRole('button', { name: 'Reset Changes' })).not.toBeDisabled();
     });
 
-    it('resets form to original values when reset button is clicked', async () => {
-      const user = userEvent.setup();
+    it('resets form to original values when reset button is clicked', () => {
       const course = createMockCourse();
 
       render(<CourseDetailView course={course} editMode={true} onSave={vi.fn()} />);
 
       const courseNameInput = screen.getByDisplayValue('Test Golf Course');
-      await user.clear(courseNameInput);
-      await user.type(courseNameInput, 'Temporary Name');
+      fireEvent.change(courseNameInput, { target: { value: 'Temporary Name' } });
 
-      await user.click(screen.getByRole('button', { name: 'Reset Changes' }));
+      const resetButton = screen.getByRole('button', { name: 'Reset Changes' });
+      expect(resetButton).not.toBeDisabled();
+      fireEvent.click(resetButton);
 
       expect(screen.getByDisplayValue('Test Golf Course')).toBeInTheDocument();
     });
 
-    it('disables reset button after resetting', async () => {
-      const user = userEvent.setup();
+    it('disables reset button after resetting', () => {
       const course = createMockCourse();
 
       render(<CourseDetailView course={course} editMode={true} onSave={vi.fn()} />);
 
       const courseNameInput = screen.getByDisplayValue('Test Golf Course');
-      await user.clear(courseNameInput);
-      await user.type(courseNameInput, 'Changed');
+      fireEvent.change(courseNameInput, { target: { value: 'Changed' } });
 
-      await user.click(screen.getByRole('button', { name: 'Reset Changes' }));
+      const resetButton = screen.getByRole('button', { name: 'Reset Changes' });
+      expect(resetButton).not.toBeDisabled();
+      fireEvent.click(resetButton);
 
       expect(screen.getByRole('button', { name: 'Reset Changes' })).toBeDisabled();
     });

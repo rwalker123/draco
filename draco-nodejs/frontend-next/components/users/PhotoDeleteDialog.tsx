@@ -8,7 +8,7 @@ import UserAvatar from './UserAvatar';
 import type { BaseContactType } from '@draco/shared-schemas';
 import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
-interface PhotoDeleteDialogProps {
+interface PhotoDeleteDialogBaseProps {
   open: boolean;
   contactId: string | null;
   contact?: Pick<BaseContactType, 'id' | 'firstName' | 'lastName' | 'photoUrl'> | null;
@@ -16,6 +16,12 @@ interface PhotoDeleteDialogProps {
   onSuccess?: (result: { message: string; contactId: string }) => void;
   accountId: string;
 }
+
+type PhotoDeleteOverrideProps =
+  | { onDeletePhoto?: undefined; deleting?: undefined }
+  | { onDeletePhoto: () => Promise<{ success: boolean; error?: string }>; deleting: boolean };
+
+type PhotoDeleteDialogProps = PhotoDeleteDialogBaseProps & PhotoDeleteOverrideProps;
 
 /**
  * PhotoDeleteDialog Component
@@ -28,9 +34,12 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
   onClose,
   onSuccess,
   accountId,
+  onDeletePhoto,
+  deleting = false,
 }) => {
   const [error, setError] = useState<string | null>(null);
-  const { deletePhoto, loading } = usePhotoOperations(accountId);
+  const { deletePhoto, loading: internalLoading } = usePhotoOperations(accountId);
+  const loading = onDeletePhoto ? deleting : internalLoading;
 
   // Handle photo deletion with internal error handling
   const handleDeletePhoto = async () => {
@@ -38,6 +47,21 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
 
     // Clear any previous errors
     setError(null);
+
+    if (onDeletePhoto) {
+      try {
+        const overrideResult = await onDeletePhoto();
+        if (overrideResult.success) {
+          onSuccess?.({ message: 'Photo deleted successfully', contactId });
+          onClose();
+        } else {
+          setError(overrideResult.error || 'Failed to delete photo');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete photo');
+      }
+      return;
+    }
 
     const result = await deletePhoto(contactId);
 

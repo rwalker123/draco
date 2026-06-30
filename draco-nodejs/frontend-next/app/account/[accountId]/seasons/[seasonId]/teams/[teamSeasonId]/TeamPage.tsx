@@ -215,6 +215,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     hasRoleInTeam('TeamPhotoAdmin', teamSeasonId);
 
   const canEditPlayerPhotos = hasPermission('account.contacts.manage', { accountId });
+  const isTeamAdminForTeam = hasRoleInTeam('TeamAdmin', teamSeasonId);
 
   const canViewRosterDetails =
     hasRole('Administrator') ||
@@ -845,6 +846,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 teamSeasonId={teamSeasonId}
                 canViewSensitiveDetails={canViewRosterDetails}
                 canEditPhotos={canEditPlayerPhotos}
+                isTeamAdmin={isTeamAdminForTeam}
               />
             </Box>
 

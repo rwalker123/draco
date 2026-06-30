@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
+import { ValidationError } from '../utils/customErrors.js';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -13,10 +14,7 @@ const executePhotoUpload = (req: Request, res: Response, next: NextFunction): vo
   upload.single('photo')(req, res, (err: unknown) => {
     if (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      res.status(400).json({
-        success: false,
-        message: message,
-      });
+      next(new ValidationError(message));
       return;
     }
 
@@ -38,13 +36,13 @@ export const parseFormDataJSON = (req: Request, res: Response, next: NextFunctio
         try {
           req.body[field] = JSON.parse(req.body[field]);
         } catch (error) {
-          res.status(400).json({
-            success: false,
-            message:
+          next(
+            new ValidationError(
               error instanceof Error
                 ? error.message
                 : `Invalid ${field} format - must be valid JSON`,
-          });
+            ),
+          );
           return;
         }
       }
@@ -65,18 +63,12 @@ export const validatePhotoUpload = (req: Request, res: Response, next: NextFunct
   const maxSize = 5 * 1024 * 1024; // 5MB
 
   if (!allowedMimeTypes.includes(file.mimetype)) {
-    res.status(400).json({
-      error: 'Invalid file type',
-      details: `Allowed types: ${allowedMimeTypes.join(', ')}`,
-    });
+    next(new ValidationError(`Invalid file type. Allowed types: ${allowedMimeTypes.join(', ')}`));
     return;
   }
 
   if (file.size > maxSize) {
-    res.status(400).json({
-      error: 'File too large',
-      details: `Maximum file size is ${maxSize / (1024 * 1024)}MB`,
-    });
+    next(new ValidationError(`File too large. Maximum file size is ${maxSize / (1024 * 1024)}MB`));
     return;
   }
 

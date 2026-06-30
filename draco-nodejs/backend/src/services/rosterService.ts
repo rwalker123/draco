@@ -596,6 +596,22 @@ export class RosterService {
     return newContact.id;
   }
 
+  async getRosterMemberContactId(
+    rosterMemberId: bigint,
+    teamSeasonId: bigint,
+    seasonId: bigint,
+    accountId: bigint,
+  ): Promise<bigint> {
+    const rosterMember = await this.getRosterMemberForAccount(
+      rosterMemberId,
+      teamSeasonId,
+      seasonId,
+      accountId,
+    );
+
+    return rosterMember.roster.contacts.id;
+  }
+
   private async getRosterMemberForAccount(
     rosterMemberId: bigint,
     teamSeasonId: bigint,
