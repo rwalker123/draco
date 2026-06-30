@@ -232,6 +232,9 @@ describe('CourseDetailView', () => {
       await user.clear(courseNameInput);
       await user.type(courseNameInput, 'Temporary Name');
 
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Reset Changes' })).not.toBeDisabled(),
+      );
       await user.click(screen.getByRole('button', { name: 'Reset Changes' }));
 
       expect(screen.getByDisplayValue('Test Golf Course')).toBeInTheDocument();
@@ -247,6 +250,9 @@ describe('CourseDetailView', () => {
       await user.clear(courseNameInput);
       await user.type(courseNameInput, 'Changed');
 
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Reset Changes' })).not.toBeDisabled(),
+      );
       await user.click(screen.getByRole('button', { name: 'Reset Changes' }));
 
       expect(screen.getByRole('button', { name: 'Reset Changes' })).toBeDisabled();
