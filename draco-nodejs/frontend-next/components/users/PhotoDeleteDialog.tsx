@@ -45,12 +45,16 @@ const PhotoDeleteDialog: React.FC<PhotoDeleteDialogProps> = ({
     setError(null);
 
     if (onDeletePhoto) {
-      const overrideResult = await onDeletePhoto();
-      if (overrideResult.success) {
-        onSuccess?.({ message: 'Photo deleted successfully', contactId });
-        onClose();
-      } else {
-        setError(overrideResult.error || 'Failed to delete photo');
+      try {
+        const overrideResult = await onDeletePhoto();
+        if (overrideResult.success) {
+          onSuccess?.({ message: 'Photo deleted successfully', contactId });
+          onClose();
+        } else {
+          setError(overrideResult.error || 'Failed to delete photo');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete photo');
       }
       return;
     }

@@ -106,16 +106,22 @@ const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
       return;
     }
 
-    const result = onUploadPhoto
-      ? await onUploadPhoto(selectedFile)
-      : await uploadContactPhoto(contact, selectedFile);
-    if (result.success && result.contact) {
-      handlePhotoUpdated(result.contact);
-      return;
+    try {
+      const result = onUploadPhoto
+        ? await onUploadPhoto(selectedFile)
+        : await uploadContactPhoto(contact, selectedFile);
+      if (result.success && result.contact) {
+        handlePhotoUpdated(result.contact);
+        return;
+      }
+      const failure = result.error || 'Failed to update contact photo';
+      showNotification(failure, 'error');
+      onError?.(failure);
+    } catch (err) {
+      const failure = err instanceof Error ? err.message : 'Failed to update contact photo';
+      showNotification(failure, 'error');
+      onError?.(failure);
     }
-    const failure = result.error || 'Failed to update contact photo';
-    showNotification(failure, 'error');
-    onError?.(failure);
   };
 
   if (!contact) {
