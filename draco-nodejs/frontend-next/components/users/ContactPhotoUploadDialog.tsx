@@ -19,7 +19,7 @@ import { getPhotoSize } from '@/config/contacts';
 import NotificationSnackbar from '../common/NotificationSnackbar';
 import { useNotifications } from '../../hooks/useNotifications';
 
-interface ContactPhotoUploadDialogProps {
+interface ContactPhotoUploadDialogBaseProps {
   open: boolean;
   accountId: string;
   contact: BaseContactType | null;
@@ -27,11 +27,19 @@ interface ContactPhotoUploadDialogProps {
   onClose: () => void;
   onPhotoUpdated?: (contact: ContactType) => void;
   onError?: (message: string) => void;
-  onUploadPhoto?: (
-    file: File,
-  ) => Promise<{ success: boolean; contact?: ContactType; error?: string }>;
-  uploading?: boolean;
 }
+
+type ContactPhotoUploadOverrideProps =
+  | { onUploadPhoto?: undefined; uploading?: undefined }
+  | {
+      onUploadPhoto: (
+        file: File,
+      ) => Promise<{ success: boolean; contact?: ContactType; error?: string }>;
+      uploading: boolean;
+    };
+
+type ContactPhotoUploadDialogProps = ContactPhotoUploadDialogBaseProps &
+  ContactPhotoUploadOverrideProps;
 
 const ContactPhotoUploadDialog: React.FC<ContactPhotoUploadDialogProps> = ({
   open,

@@ -17,18 +17,11 @@ export interface RosterPhotoResult {
   error?: string;
 }
 
-interface ApiContact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  email?: string;
-  userId?: string;
-  loginEmail?: string;
-  photoUrl?: string;
-}
+type RosterPhotoContact = NonNullable<
+  Awaited<ReturnType<typeof apiUploadRosterMemberPhoto>>['data']
+>;
 
-const toContact = (contact: ApiContact): ContactType => ({
+const toContact = (contact: RosterPhotoContact): ContactType => ({
   id: contact.id,
   firstName: contact.firstName,
   lastName: contact.lastName,

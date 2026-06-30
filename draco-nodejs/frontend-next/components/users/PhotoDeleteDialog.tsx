@@ -8,16 +8,20 @@ import UserAvatar from './UserAvatar';
 import type { BaseContactType } from '@draco/shared-schemas';
 import ConfirmDeleteDialog from '../social/ConfirmDeleteDialog';
 
-interface PhotoDeleteDialogProps {
+interface PhotoDeleteDialogBaseProps {
   open: boolean;
   contactId: string | null;
   contact?: Pick<BaseContactType, 'id' | 'firstName' | 'lastName' | 'photoUrl'> | null;
   onClose: () => void;
   onSuccess?: (result: { message: string; contactId: string }) => void;
   accountId: string;
-  onDeletePhoto?: () => Promise<{ success: boolean; error?: string }>;
-  deleting?: boolean;
 }
+
+type PhotoDeleteOverrideProps =
+  | { onDeletePhoto?: undefined; deleting?: undefined }
+  | { onDeletePhoto: () => Promise<{ success: boolean; error?: string }>; deleting: boolean };
+
+type PhotoDeleteDialogProps = PhotoDeleteDialogBaseProps & PhotoDeleteOverrideProps;
 
 /**
  * PhotoDeleteDialog Component

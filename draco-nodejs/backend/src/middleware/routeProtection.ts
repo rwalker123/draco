@@ -240,7 +240,9 @@ export class RouteProtection {
 
       if (hasPermission) {
         req.isAccountLevelEditor = true;
-        req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+        if (!req.userRoles) {
+          req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+        }
         next();
         return;
       }
@@ -265,7 +267,9 @@ export class RouteProtection {
       }
 
       req.isAccountLevelEditor = false;
-      req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+      if (!req.userRoles) {
+        req.userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
+      }
       next();
     });
   };
