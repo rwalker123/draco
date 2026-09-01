@@ -408,6 +408,8 @@ const TeamSchedulePage: React.FC<TeamSchedulePageProps> = ({
           ready={!loadingDateRange}
           games={summaryGames}
           timeZone={timeZone}
+          printTitle={printTitle}
+          printSubtitle={printSubtitle}
         />
       }
     >

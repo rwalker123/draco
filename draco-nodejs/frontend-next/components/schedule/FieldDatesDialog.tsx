@@ -3,7 +3,9 @@
 import React from 'react';
 import {
   Box,
+  Button,
   Dialog,
+  DialogActions,
   DialogTitle,
   DialogContent,
   IconButton,
@@ -15,9 +17,16 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PrintIcon from '@mui/icons-material/Print';
 import type { Game } from '@/types/schedule';
-import { GameStatus } from '@/types/schedule';
-import { formatDateInTimezone, formatTimeInTimezone } from '../../utils/dateUtils';
+import {
+  formatFieldGameDate,
+  formatFieldGameMatchup,
+  formatFieldGameResult,
+  formatFieldGameTime,
+  selectFieldGames,
+} from './utils/fieldGames';
 
 interface FieldDatesDialogProps {
   open: boolean;
@@ -26,34 +35,9 @@ interface FieldDatesDialogProps {
   fieldName: string;
   games: Game[];
   timeZone: string;
+  onExport?: () => void;
+  onPrint?: () => void;
 }
-
-const normalizeFieldId = (value?: string | null): string | null => {
-  if (typeof value === 'string' && value.trim().length > 0) return value;
-  return null;
-};
-
-const matchesField = (game: Game, fieldId: string | null): boolean => {
-  const gameFieldId = normalizeFieldId(game.field?.id) ?? normalizeFieldId(game.fieldId) ?? null;
-  return gameFieldId === fieldId;
-};
-
-const sortByGameDate = (a: Game, b: Game): number => {
-  return new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
-};
-
-const formatMatchup = (game: Game): string => {
-  const home = game.homeTeamName || game.homeTeamId;
-  const visitor = game.visitorTeamName || game.visitorTeamId;
-  return `${home} vs ${visitor}`;
-};
-
-const formatResult = (game: Game): string => {
-  if (game.gameStatus === GameStatus.Scheduled) {
-    return 'Upcoming';
-  }
-  return game.gameStatusText || '—';
-};
 
 const FieldDatesDialog: React.FC<FieldDatesDialogProps> = ({
   open,
@@ -62,8 +46,12 @@ const FieldDatesDialog: React.FC<FieldDatesDialogProps> = ({
   fieldName,
   games,
   timeZone,
+  onExport,
+  onPrint,
 }) => {
-  const fieldGames = games.filter((game) => matchesField(game, fieldId)).sort(sortByGameDate);
+  const fieldGames = selectFieldGames(games, fieldId);
+  const hasActions = Boolean(onExport || onPrint);
+  const hasGames = fieldGames.length > 0;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -124,28 +112,19 @@ const FieldDatesDialog: React.FC<FieldDatesDialogProps> = ({
               {fieldGames.map((game) => (
                 <TableRow key={game.id}>
                   <TableCell>
-                    <Typography variant="body2">
-                      {formatDateInTimezone(game.gameDate, timeZone, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </Typography>
+                    <Typography variant="body2">{formatFieldGameDate(game, timeZone)}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {formatTimeInTimezone(game.gameDate, timeZone)}
-                    </Typography>
+                    <Typography variant="body2">{formatFieldGameTime(game, timeZone)}</Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">{game.league?.name ?? ''}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">{formatMatchup(game)}</Typography>
+                    <Typography variant="body2">{formatFieldGameMatchup(game)}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">{formatResult(game)}</Typography>
+                    <Typography variant="body2">{formatFieldGameResult(game)}</Typography>
                   </TableCell>
                 </TableRow>
               ))}
@@ -153,6 +132,32 @@ const FieldDatesDialog: React.FC<FieldDatesDialogProps> = ({
           </Table>
         )}
       </DialogContent>
+      {hasActions ? (
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          {onExport ? (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FileDownloadIcon />}
+              onClick={onExport}
+              disabled={!hasGames}
+            >
+              Export CSV
+            </Button>
+          ) : null}
+          {onPrint ? (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PrintIcon />}
+              onClick={onPrint}
+              disabled={!hasGames}
+            >
+              Print
+            </Button>
+          ) : null}
+        </DialogActions>
+      ) : null}
     </Dialog>
   );
 };

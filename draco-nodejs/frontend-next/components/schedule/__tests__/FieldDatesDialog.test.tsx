@@ -192,6 +192,53 @@ describe('FieldDatesDialog', () => {
     });
   });
 
+  describe('export and print actions', () => {
+    it('does not render action buttons when no callbacks are supplied', () => {
+      render(<FieldDatesDialog {...defaultProps} />);
+
+      expect(screen.queryByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Print' })).not.toBeInTheDocument();
+    });
+
+    it('calls onExport when Export CSV is clicked', async () => {
+      const user = userEvent.setup();
+      const onExport = vi.fn();
+
+      render(<FieldDatesDialog {...defaultProps} onExport={onExport} />);
+
+      await user.click(screen.getByRole('button', { name: 'Export CSV' }));
+
+      expect(onExport).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onPrint when Print is clicked', async () => {
+      const user = userEvent.setup();
+      const onPrint = vi.fn();
+
+      render(<FieldDatesDialog {...defaultProps} onPrint={onPrint} />);
+
+      await user.click(screen.getByRole('button', { name: 'Print' }));
+
+      expect(onPrint).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables both actions when the field has no games', () => {
+      render(
+        <FieldDatesDialog
+          {...defaultProps}
+          fieldId={FIELD_B_ID}
+          fieldName="Field B"
+          games={[gameAtFieldA1]}
+          onExport={vi.fn()}
+          onPrint={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Print' })).toBeDisabled();
+    });
+  });
+
   describe('onClose wiring', () => {
     it('calls onClose when Escape key is pressed', async () => {
       const user = userEvent.setup();

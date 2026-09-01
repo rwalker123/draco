@@ -1,5 +1,11 @@
 import React from 'react';
 import PrintableLayout from '../print/PrintableLayout';
+import {
+  printNoWrapTdStyle,
+  printTableStyle,
+  printTdStyle,
+  printThStyle,
+} from '../print/printTableStyles';
 import { formatDateInTimezone, formatTimeInTimezone } from '../../utils/dateUtils';
 import type { Game } from '@/types/schedule';
 import { GameStatus } from '@/types/schedule';
@@ -48,36 +54,9 @@ const getGameDateTime = (game: Game, timeZone: string): string => {
 const sortGames = (games: Game[]): Game[] =>
   [...games].sort((a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime());
 
-const tableStyle: React.CSSProperties = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  fontSize: '11px',
-};
-
-const thStyle: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '4px 6px',
-  borderBottom: '2px solid #333',
-  fontWeight: 700,
-  fontSize: '10px',
-  textTransform: 'uppercase',
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '3px 6px',
-  borderBottom: '1px solid #ccc',
-  verticalAlign: 'top',
-};
-
 const numberCellStyle: React.CSSProperties = {
-  ...tdStyle,
+  ...printNoWrapTdStyle,
   textAlign: 'right',
-  whiteSpace: 'nowrap',
-};
-
-const dateCellStyle: React.CSSProperties = {
-  ...tdStyle,
-  whiteSpace: 'nowrap',
 };
 
 const SchedulePrintView: React.FC<SchedulePrintViewProps> = ({
@@ -99,26 +78,26 @@ const SchedulePrintView: React.FC<SchedulePrintViewProps> = ({
 
   return (
     <PrintableLayout title={title} subtitle={subtitle}>
-      <table style={tableStyle}>
+      <table style={printTableStyle}>
         <thead>
           <tr>
-            <th style={thStyle}>Game No.</th>
-            <th style={thStyle}>Game Date</th>
-            {showLeagueColumn && <th style={thStyle}>League</th>}
-            <th style={thStyle}>Matchup</th>
-            <th style={thStyle}>Field</th>
-            <th style={thStyle}>Status</th>
+            <th style={printThStyle}>Game No.</th>
+            <th style={printThStyle}>Game Date</th>
+            {showLeagueColumn && <th style={printThStyle}>League</th>}
+            <th style={printThStyle}>Matchup</th>
+            <th style={printThStyle}>Field</th>
+            <th style={printThStyle}>Status</th>
           </tr>
         </thead>
         <tbody>
           {sortedGames.map((game, index) => (
             <tr key={game.id} className="dr-print-row">
               <td style={numberCellStyle}>{index + 1}</td>
-              <td style={dateCellStyle}>{getGameDateTime(game, timeZone)}</td>
-              {showLeagueColumn && <td style={tdStyle}>{game.league.name}</td>}
-              <td style={tdStyle}>{getMatchup(game)}</td>
-              <td style={tdStyle}>{getFieldLabel(game)}</td>
-              <td style={tdStyle}>
+              <td style={printNoWrapTdStyle}>{getGameDateTime(game, timeZone)}</td>
+              {showLeagueColumn && <td style={printTdStyle}>{game.league.name}</td>}
+              <td style={printTdStyle}>{getMatchup(game)}</td>
+              <td style={printTdStyle}>{getFieldLabel(game)}</td>
+              <td style={printTdStyle}>
                 {game.gameStatusText}
                 {getScoreSuffix(game)}
               </td>

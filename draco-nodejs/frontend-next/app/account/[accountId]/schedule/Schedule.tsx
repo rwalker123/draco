@@ -383,6 +383,8 @@ const Schedule: React.FC<ScheduleProps> = ({ accountId }) => {
             ready={!loadingStaticData}
             games={filteredGames}
             timeZone={timeZone}
+            printTitle={liveHeader.title}
+            printSubtitle={liveHeader.subtitle}
           />
           {scheduleHiddenNotice}
         </>
