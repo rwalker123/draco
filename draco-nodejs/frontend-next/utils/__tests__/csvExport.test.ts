@@ -22,14 +22,27 @@ describe('escapeCsvValue', () => {
     expect(escapeCsvValue('=SUM(A1:A2)')).toBe("'=SUM(A1:A2)");
     expect(escapeCsvValue('+1')).toBe("'+1");
     expect(escapeCsvValue('@field')).toBe("'@field");
+    expect(escapeCsvValue('\tcmd')).toBe("'\tcmd");
+  });
+
+  it('neutralizes a formula prefix hidden behind leading whitespace', () => {
+    expect(escapeCsvValue(' =SUM(A1:A2)')).toBe("' =SUM(A1:A2)");
+    expect(escapeCsvValue('   @field')).toBe("'   @field");
+  });
+
+  it('neutralizes a leading minus when the value is not a plain number', () => {
+    expect(escapeCsvValue('-2+3+cmd|calc')).toBe("'-2+3+cmd|calc");
+    expect(escapeCsvValue('-Field A')).toBe("'-Field A");
   });
 
   it('quotes a neutralized value that also contains a comma', () => {
     expect(escapeCsvValue('=a,b')).toBe('"\'=a,b"');
   });
 
-  it('does not neutralize a leading minus so negative numbers survive', () => {
+  it('does not neutralize negative numbers, padded or not', () => {
     expect(escapeCsvValue('-3')).toBe('-3');
+    expect(escapeCsvValue('-3.25')).toBe('-3.25');
+    expect(escapeCsvValue(' -3')).toBe(' -3');
   });
 });
 
@@ -59,6 +72,12 @@ describe('escapeCsvValue with preserveText', () => {
   it('keeps the formula-injection guard ahead of the text literal', () => {
     expect(asText('=SUM(A1:A2)')).toBe("'=SUM(A1:A2)");
     expect(asText('+1')).toBe("'+1");
+    expect(asText(' =SUM(A1:A2)')).toBe("' =SUM(A1:A2)");
+    expect(asText('-2+3+cmd|calc')).toBe("'-2+3+cmd|calc");
+  });
+
+  it('still pins plain negative numbers as text rather than guarding them', () => {
+    expect(asText('-3')).toBe('="-3"');
   });
 });
 
