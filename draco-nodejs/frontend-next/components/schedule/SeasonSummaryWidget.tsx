@@ -1,17 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Box,
   Divider,
+  IconButton,
   Link,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PrintIcon from '@mui/icons-material/Print';
 import WidgetShell from '../ui/WidgetShell';
 import type {
   SeasonSummary,
@@ -22,6 +26,17 @@ import type {
 } from './hooks/useTeamSeasonSummary';
 import type { Game } from '@/types/schedule';
 import FieldDatesDialog from './FieldDatesDialog';
+import FieldSchedulePrintView from './FieldSchedulePrintView';
+import usePrintAction from '../print/usePrintAction';
+import {
+  buildFieldGamesCsv,
+  groupGamesByField,
+  selectFieldGames,
+  type FieldGameGroup,
+} from './utils/fieldGames';
+import { formatLocalDateStamp } from '../../utils/calendar';
+import { downloadCsvFile } from '../../utils/csvExport';
+import { sanitizeDownloadName } from '../../utils/downloadUtils';
 
 interface SelectedField {
   id: string | null;
@@ -36,6 +51,13 @@ interface SeasonSummaryWidgetProps {
   timeZone?: string;
   title?: string;
   variant?: 'card' | 'embedded';
+  printTitle?: string;
+  printSubtitle?: string;
+}
+
+interface FieldPrintSelection {
+  scopeLabel: string;
+  groups: FieldGameGroup[];
 }
 
 const MAX_FIELD_NAME_LENGTH = 40;
@@ -130,9 +152,10 @@ const SummaryRow: React.FC<SummaryRowProps> = ({
 interface SubCardProps {
   title: string;
   children: React.ReactNode;
+  action?: React.ReactNode;
 }
 
-const SubCard: React.FC<SubCardProps> = ({ title, children }) => {
+const SubCard: React.FC<SubCardProps> = ({ title, children, action }) => {
   const theme = useTheme();
 
   return (
@@ -144,14 +167,26 @@ const SubCard: React.FC<SubCardProps> = ({ title, children }) => {
         flexDirection: 'column',
       }}
     >
-      <Typography
-        variant="subtitle2"
-        fontWeight={700}
-        color={theme.palette.widget.headerText}
-        sx={{ mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}
+      <Box
+        sx={{
+          mb: 1,
+          minHeight: 28,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+        }}
       >
-        {title}
-      </Typography>
+        <Typography
+          variant="subtitle2"
+          fontWeight={700}
+          color={theme.palette.widget.headerText}
+          sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          {title}
+        </Typography>
+        {action}
+      </Box>
       <Box>{children}</Box>
     </Box>
   );
@@ -423,9 +458,26 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
   timeZone = 'UTC',
   title = 'Season Summary',
   variant = 'card',
+  printTitle,
+  printSubtitle,
 }) => {
   const theme = useTheme();
+  const { triggerPrint } = usePrintAction();
   const [selectedField, setSelectedField] = useState<SelectedField | null>(null);
+  const [printSelection, setPrintSelection] = useState<FieldPrintSelection | null>(null);
+
+  useEffect(() => {
+    if (printSelection === null) return;
+    triggerPrint();
+  }, [printSelection, triggerPrint]);
+
+  useEffect(() => {
+    const clearPrintSelection = () => setPrintSelection(null);
+    window.addEventListener('afterprint', clearPrintSelection);
+    return () => {
+      window.removeEventListener('afterprint', clearPrintSelection);
+    };
+  }, []);
 
   if (!ready || loading || !summary || summary.totalGames === 0) {
     return null;
@@ -438,6 +490,63 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
 
   const hasGames = games.length > 0;
   const onFieldClick = hasGames ? setSelectedField : undefined;
+
+  const exportBaseName = printTitle ?? 'schedule';
+
+  const exportGroups = (groups: FieldGameGroup[], baseName: string) => {
+    if (groups.length === 0) return;
+    const stamp = formatLocalDateStamp(new Date());
+    const filename = `${sanitizeDownloadName(`${baseName}-field-schedule-${stamp}`)}.csv`;
+    downloadCsvFile(filename, buildFieldGamesCsv(groups, timeZone));
+  };
+
+  const requestPrint = (scopeLabel: string, groups: FieldGameGroup[]) => {
+    if (groups.length === 0) return;
+    setPrintSelection({ scopeLabel, groups });
+  };
+
+  const buildSelectedFieldGroups = (field: SelectedField): FieldGameGroup[] => {
+    const fieldGames = selectFieldGames(games, field.id);
+    if (fieldGames.length === 0) return [];
+    return [{ fieldId: field.id, fieldName: field.name, games: fieldGames }];
+  };
+
+  const handleExportSelectedField = () => {
+    if (!selectedField) return;
+    exportGroups(buildSelectedFieldGroups(selectedField), selectedField.name);
+  };
+
+  const handlePrintSelectedField = () => {
+    if (!selectedField) return;
+    requestPrint(`${selectedField.name} Field Schedule`, buildSelectedFieldGroups(selectedField));
+  };
+
+  const handleExportAllFields = () => {
+    exportGroups(groupGamesByField(games, summary.byField), exportBaseName);
+  };
+
+  const handlePrintAllFields = () => {
+    requestPrint('Schedule by Field', groupGamesByField(games, summary.byField));
+  };
+
+  const fieldsActions = hasGames ? (
+    <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+      <Tooltip title="Export all fields (CSV)">
+        <IconButton
+          size="small"
+          aria-label="Export all fields to CSV"
+          onClick={handleExportAllFields}
+        >
+          <FileDownloadIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Print all fields">
+        <IconButton size="small" aria-label="Print all fields" onClick={handlePrintAllFields}>
+          <PrintIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  ) : null;
 
   const summaryBody = (
     <Box
@@ -461,7 +570,9 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
           />
         </>
       ) : null}
-      <SubCard title="Fields">{renderFields(summary.byField, onFieldClick)}</SubCard>
+      <SubCard title="Fields" action={fieldsActions}>
+        {renderFields(summary.byField, onFieldClick)}
+      </SubCard>
       <Divider
         orientation="vertical"
         flexItem
@@ -491,6 +602,17 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
       fieldName={selectedField?.name ?? ''}
       games={games}
       timeZone={timeZone}
+      onExport={handleExportSelectedField}
+      onPrint={handlePrintSelectedField}
+    />
+  ) : null;
+
+  const fieldPrintView = printSelection ? (
+    <FieldSchedulePrintView
+      groups={printSelection.groups}
+      title={printTitle ?? 'Schedule'}
+      subtitle={[printSubtitle, printSelection.scopeLabel].filter(Boolean).join(' · ')}
+      timeZone={timeZone}
     />
   ) : null;
 
@@ -502,6 +624,7 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
         </Typography>
         {summaryBody}
         {fieldDatesDialog}
+        {fieldPrintView}
       </>
     );
   }
@@ -546,6 +669,7 @@ const SeasonSummaryWidget: React.FC<SeasonSummaryWidgetProps> = ({
         </Accordion>
       </WidgetShell>
       {fieldDatesDialog}
+      {fieldPrintView}
     </>
   );
 };

@@ -403,6 +403,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           ready={!loadingStaticData}
           games={filteredGames}
           timeZone={timeZone}
+          printTitle={printTitle}
         />
       }
     >
