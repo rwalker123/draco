@@ -15,6 +15,9 @@ const sampleSnapshot: ScheduleSnapshot = {
         id: 'field-1',
         name: 'Main Field',
         shortName: 'MF',
+        hasLights: false,
+        scheduleEnabled: false,
+        bufferMinutes: 0,
         latitude: null,
         longitude: null
       },

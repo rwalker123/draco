@@ -41,7 +41,7 @@ export async function fetchTeamRoster({ token, accountId, seasonId, teamSeasonId
     }));
 }
 
-function buildDisplayName(firstName: string, lastName: string, playerNumber?: number): string {
+function buildDisplayName(firstName: string, lastName: string, playerNumber?: string): string {
   const fullName = `${firstName ?? ''} ${lastName ?? ''}`.trim();
   if (!fullName) {
     return playerNumber ? `#${playerNumber}` : 'Unnamed Player';

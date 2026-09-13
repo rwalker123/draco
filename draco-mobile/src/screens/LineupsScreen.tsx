@@ -563,7 +563,7 @@ function LineupForm({
       .filter((player) => !selectedIds.has(player.rosterMemberId))
       .sort((a, b) => {
         if (a.playerNumber && b.playerNumber && a.playerNumber !== b.playerNumber) {
-          return a.playerNumber - b.playerNumber;
+          return Number(a.playerNumber) - Number(b.playerNumber);
         }
         return a.displayName.localeCompare(b.displayName);
       });

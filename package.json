@@ -48,7 +48,7 @@
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
     "format": "pnpm -r run format",
-    "type-check": "pnpm -r run type-check",
+    "type-check": "pnpm -r --no-bail run type-check",
     "test": "pnpm -r run test",
     "start": "concurrently \"pnpm --filter @draco/backend start\" \"pnpm --filter @draco/frontend-next start\"",
     "secrets:update-baseline": "node scripts/update-baseline.js",
