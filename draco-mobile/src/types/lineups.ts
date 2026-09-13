@@ -51,6 +51,6 @@ export type TeamRosterPlayer = {
   firstName: string;
   lastName: string;
   displayName: string;
-  playerNumber?: number;
+  playerNumber?: string;
   inactive?: boolean;
 };
